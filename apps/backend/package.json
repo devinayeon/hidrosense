@@ -1,12 +1,21 @@
 {
-  "name": "backend",
+  "name": "@hidrosense/backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:migrate": "node --env-file-if-exists=.env src/db/cli.js up",
+    "db:status": "node --env-file-if-exists=.env src/db/cli.js status",
+    "db:rollback": "node --env-file-if-exists=.env src/db/cli.js down",
+    "db:backup": "node --env-file-if-exists=.env src/db/cli.js backup",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "HidroSense backend database setup and SQLite/libSQL migrations",
+  "dependencies": {
+    "@libsql/client": "0.18.0"
+  }
 }

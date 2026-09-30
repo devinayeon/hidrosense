@@ -1,0 +1,20 @@
+-- DESTRUCTIVE: removes all HidroSense domain data. Back up before use.
+DROP TABLE detail_penjualan;
+DROP TABLE penjualan;
+DROP TABLE detail_panen;
+DROP TABLE panen;
+DROP TABLE penanganan_cuaca;
+DROP TABLE detail_stok;
+DROP TABLE stok;
+DROP TABLE perawatan;
+DROP TABLE rekomendasi_perawatan;
+DROP TABLE hasil_deteksi;
+DROP TABLE kerusakan_tanaman;
+DROP TABLE pemindahan;
+DROP TABLE meja_tanam;
+DROP TABLE penyemaian;
+DROP TABLE inventaris;
+DROP TABLE obat;
+DROP TABLE jenis_inventaris;
+DROP TABLE users;
+DROP TABLE roles;

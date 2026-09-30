@@ -7,3 +7,5 @@ Sistem Manajemen Budidaya Selada Hidroponik NFT dengan Deteksi Hama dan Rekomend
 - `apps/backend` — Backend API (integrasi BMKG, sinkronisasi data)
 - `ml` — Training pipeline model deteksi hama
 - `docs` — Dokumen SRS, System Request, dan ERD
+
+Setup dan migrasi database SQLite/Turso: [panduan backend](apps/backend/README.md).

@@ -150,10 +150,10 @@
     "semantic_hash": "688b94f0ccc44fd3e265998e7f669f7d"
   },
   "apps/backend/package.json": {
-    "mtime": 1790683955.8525667,
-    "seen": 1790751687.385366,
-    "ast_hash": "86d4d8b3084f178ed6f4697bf3c944f8",
-    "semantic_hash": "86d4d8b3084f178ed6f4697bf3c944f8"
+    "mtime": 1790754278.290382,
+    "seen": 1790754439.759992,
+    "ast_hash": "1cdf08a489a5e2932298499583f3e585",
+    "semantic_hash": ""
   },
   "apps/mobile/android/app/build.gradle.kts": {
     "mtime": 1790683922.5321836,
@@ -906,10 +906,10 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1790685192.092527,
-    "seen": 1790751687.3854103,
-    "ast_hash": "736875ba6cf054139be332de2d4ce6d6",
-    "semantic_hash": "736875ba6cf054139be332de2d4ce6d6"
+    "mtime": 1790754415.861759,
+    "seen": 1790754439.8381367,
+    "ast_hash": "2140d32929fb1bd6a9dc00dfbc689022",
+    "semantic_hash": ""
   },
   "apps/mobile/README.md": {
     "mtime": 1790683922.933023,
@@ -948,9 +948,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/pubspec.yaml": {
-    "mtime": 1790683922.9290175,
-    "seen": 1790751152.6019516,
-    "ast_hash": "1f127e4c69094cca91b88bb155cc946b",
+    "mtime": 1790752410.4727814,
+    "seen": 1790753196.324191,
+    "ast_hash": "7899a6a4735996376b9a5489dac26a7a",
     "semantic_hash": ""
   },
   "apps/mobile/web/index.html": {
@@ -1203,6 +1203,72 @@
     "mtime": 1780291130.8972864,
     "seen": 1790751152.6020463,
     "ast_hash": "301a7604d45b3e739efc881eb04896ea",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/main.dart": {
+    "mtime": 1790752410.46879,
+    "seen": 1790753196.3240037,
+    "ast_hash": "51cca4900f980f46eb2a19a9910b59cd",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/models/note_model.dart": {
+    "mtime": 1790752410.4697835,
+    "seen": 1790753196.3240058,
+    "ast_hash": "9a17a306e02a08a3c0479fd412f82e60",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/viewmodels/note_viewmodel.dart": {
+    "mtime": 1790752410.4707844,
+    "seen": 1790753196.3240077,
+    "ast_hash": "d4f7fd5a941e4f77cc2e53e39eed696f",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/views/note_screen.dart": {
+    "mtime": 1790752410.4717836,
+    "seen": 1790753196.324009,
+    "ast_hash": "a7ffa1e6d2bf8cd3ca6e1d5f93211a1d",
+    "semantic_hash": ""
+  },
+  ".agents/rules/caveman.md": {
+    "mtime": 1790750993.749407,
+    "seen": 1790753196.3240414,
+    "ast_hash": "9bd9be427c39dfdd9b52546f8ac98d36",
+    "semantic_hash": ""
+  },
+  "docs/timeline-pengembangan.md": {
+    "mtime": 1790753745.022952,
+    "seen": 1790753791.829825,
+    "ast_hash": "87a45e17d6685dc92e8cb4262a99cd57",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/db/cli.js": {
+    "mtime": 1790754278.2984207,
+    "seen": 1790754439.7599993,
+    "ast_hash": "94cca0120feaf6dac129d6432a7f5690",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/db/client.js": {
+    "mtime": 1790754278.2964244,
+    "seen": 1790754439.7600033,
+    "ast_hash": "d25e9c3979b36cfc83667ddd49a593b6",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/db/migrate.js": {
+    "mtime": 1790754278.2974238,
+    "seen": 1790754439.7600067,
+    "ast_hash": "4dfc46afbee4451d3cbb1a2d2a05d2ce",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/migrations.test.js": {
+    "mtime": 1790754415.8648212,
+    "seen": 1790754439.7600095,
+    "ast_hash": "0c01261d594f683a6c83d267b6bce9f7",
+    "semantic_hash": ""
+  },
+  "apps/backend/README.md": {
+    "mtime": 1790754415.8607576,
+    "seen": 1790754439.83814,
+    "ast_hash": "0f8faab886d0970b63a08062a4ab3705",
     "semantic_hash": ""
   }
 }
