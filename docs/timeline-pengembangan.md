@@ -1,5 +1,7 @@
 # Acuan Pengembangan HidroSense
 
+> Pembaruan prioritas backend, 30 September 2026: gunakan [urutan pengerjaan backend](./rencana-backend.md) sebagai acuan eksekusi aktif. Fokus pada backend; `apps/mobile` tidak diubah. Seluruh implementasi terkait BMKG menjadi fitur terakhir setelah revisi tim perancangan tersedia. Tanggal dan target sprint di bawah dipertahankan sebagai baseline dari dokumen awal, bukan penetapan ulang urutan backend.
+
 Sumber utama: [A9_PPL IF_WEEK5.docx.md](./A9_PPL%20IF_WEEK5.docx.md), khususnya Product Backlog (baris 668–721), Project Charter (723–815), dan WBS (825–976). Tanggal sprint dan target berasal dari dokumen. Rincian urutan kerja di bawah adalah penjabaran untuk pelaksanaan, bukan kutipan jadwal harian resmi. Gantt Chart di sumber masih berupa placeholder.
 
 ## Konteks produk
@@ -18,9 +20,9 @@ Di luar cakupan produk awal: iOS, sensor otomatis, kendali perangkat hidroponik,
 | Sprint 3: perawatan dan siklus usaha | 16 Oktober–7 November 2026 | PB-06 rekomendasi dan tindakan aktual; PB-08 panen; PB-09 penjualan; PB-10 cuaca BMKG; PB-11 profil; penyelesaian PB-07 sinkronisasi dan gambar | Riwayat obat dan pemakaian stok konsisten; panen dan penjualan terhubung ke batch; cuaca menampilkan kondisi gagal; perubahan profil sesuai kewenangan; alur penyemaian sampai penjualan diuji; review, retrospektif, laporan uji |
 | Sprint 4: penyempurnaan dan penyerahan | 8–28 November 2026 | Perbaikan fungsi/UI, konflik dan pengiriman ulang sinkronisasi, optimasi, pengujian akhir/lapangan, dokumentasi, paket produk | Black box/API/regresi/usability lulus; hak akses dan pemulihan koneksi diverifikasi; model diuji pada data terpisah; aplikasi Android, backend, model, laporan, dan panduan pengguna diserahkan paling lambat 28 November |
 
-## Urutan pelaksanaan yang disarankan
+## Urutan pelaksanaan pada baseline awal
 
-Urutan ini menurunkan dependensi dari backlog dan WBS; tanggal antarpekerjaan dapat disesuaikan pada sprint planning.
+Urutan ini menurunkan dependensi dari backlog dan WBS asli. Untuk pekerjaan backend berikutnya, prioritas aktif pada `rencana-backend.md` menggantikan urutan baseline ini, terutama penempatan BMKG pada tahap terakhir.
 
 1. **Sprint 1:** tetapkan matriks hak akses, aturan sesi luring dan konflik, pilihan backend (Node.js atau FastAPI), serta skema identitas transaksi. Bangun autentikasi → model barang/transaksi stok → penyemaian → SQLite dan sinkronisasi awal. Secara paralel siapkan dataset tiga hama, pedoman anotasi, dan uji inferensi TFLite pada perangkat sasaran.
 2. **Sprint 2:** bangun meja dan kapasitas → pemindahan dari penyemaian menjadi batch → kerusakan dan jumlah tanaman aktif. Selesaikan anotasi dan pemisahan data latih/validasi/uji → latih dan evaluasi YOLO → konversi TFLite → integrasikan kamera/galeri dan simpan hasil per batch. Uji hasil tanpa deteksi tanpa menyimpulkan tanaman bebas hama.
@@ -36,6 +38,8 @@ Urutan ini menurunkan dependensi dari backlog dan WBS; tanggal antarpekerjaan da
 - Target awal yang harus diuji pada kondisi terdokumentasi: halaman utama <3 detik; inferensi lokal <5 detik/gambar; sinkronisasi <1 menit setelah koneksi tersedia; pencocokan aturan cuaca <2 detik setelah data valid diterima. Evaluasi model memakai precision, recall, F1-score, dan mAP; ambang mutu model masih perlu disepakati.
 - Definition of Done tiap backlog: kriteria penerimaan terpenuhi, kode ditinjau dan terintegrasi, tes relevan lulus, tidak ada cacat penghambat alur utama/hak akses/kehilangan data, dokumentasi dan bukti uji diperbarui.
 
-## Kondisi repo saat acuan ini dibuat (30 September 2026)
+## Kondisi repo saat acuan pertama dibuat (30 September 2026)
 
 Repo sudah mempunyai kerangka Flutter di `apps/mobile`, `apps/backend/package.json` yang masih minimal, dan skrip ML di `ml`. Ini hanya inventaris singkat, bukan klaim bahwa target Sprint 1 sudah selesai. Pada tanggal acuan, jadwal resmi sedang berada di Sprint 2; status penyelesaian fitur perlu diverifikasi per kriteria penerimaan sebelum pekerjaan berikutnya diprioritaskan.
+
+Pembaruan berikutnya pada hari yang sama: setup migrasi SQLite/Turso sudah tersedia di `apps/backend`, termasuk migrasi 19 tabel, koneksi, backup/rollback, dan tes. Endpoint bisnis belum diimplementasikan. Progres dan urutan berikutnya dirangkum pada [rencana backend](./rencana-backend.md).

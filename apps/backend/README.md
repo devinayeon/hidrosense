@@ -1,5 +1,7 @@
 # Database backend HidroSense
 
+Acuan pekerjaan fitur berikutnya: [urutan pengerjaan backend](../../docs/rencana-backend.md). Backend mengikuti pola vertical slice; seluruh fitur terkait BMKG ditempatkan terakhir sambil menunggu revisi rancangan.
+
 Setup Node.js (ES modules) untuk migrasi SQLite lokal dan Turso **libSQL**, menggunakan `@libsql/client`. Node.js mengikuti fondasi `package.json` yang sudah ada. Target SQLite/Turso telah dikonfirmasi; header PostgreSQL pada [DBML asli tim](../../docs/database/hidrosense.dbml) dipertahankan sebagai arsip sumber.
 
 ## Menjalankan lokal
