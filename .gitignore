@@ -489,7 +489,12 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# ML specific
 ml/venv/
 ml/dataset/raw/
 *.pt
+
+graphify-out/cache/
+graphify-out/.graphify_root
+graphify-out/.graphify_python
+graphify-out/.graphify_analysis.json
+graphify-out/needs_update
