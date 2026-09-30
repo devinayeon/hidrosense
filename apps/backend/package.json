@@ -3,19 +3,37 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.13.0" },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx --watch src/server.ts",
+    "build": "tsc",
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "check:lines": "node scripts/check-lines.mjs",
+    "auth:bootstrap": "node --env-file-if-exists=.env dist/features/auth/bootstrap-cli.js",
     "db:migrate": "node --env-file-if-exists=.env src/db/cli.js up",
     "db:status": "node --env-file-if-exists=.env src/db/cli.js status",
     "db:rollback": "node --env-file-if-exists=.env src/db/cli.js down",
     "db:backup": "node --env-file-if-exists=.env src/db/cli.js backup",
-    "test": "node --test"
+    "test": "node --import tsx --test",
+    "check": "npm run typecheck && npm run check:lines && npm test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "HidroSense backend database setup and SQLite/libSQL migrations",
   "dependencies": {
-    "@libsql/client": "0.18.0"
+    "@fastify/cors": "11.3.0",
+    "@fastify/helmet": "13.1.1",
+    "@libsql/client": "0.18.0",
+    "fastify": "5.12.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
   }
 }

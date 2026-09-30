@@ -2,6 +2,8 @@
 
 Status: acuan urutan kerja aktif berdasarkan arahan pengguna pada 30 September 2026. Dokumen ini menetapkan pekerjaan berikutnya; daftar fitur di bawah belum berarti sudah diimplementasikan.
 
+Pembaruan B001/B002 (alias B01/B02): fondasi HTTP dan autentikasi sudah diimplementasikan. [Breakdown dan bukti](./backend-b001-b002.md) serta [kontrak API](./backend-api.md) menjadi acuan integrasi. Keputusan hak akses sudah final: ikuti System Request; pegawai dapat mengelola panen, tetapi tidak boleh mengakses penjualan. Tahap berikutnya B03.
+
 Keputusan: fokus pengembangan pada `apps/backend` dan dokumentasi kontrak API. `apps/mobile` tidak diubah. Seluruh pekerjaan yang bergantung pada API BMKG, termasuk aturan cuaca dan perubahan skemanya, ditempatkan sebagai fitur terakhir sampai revisi tim perancangan tersedia. Rekomendasi obat berdasarkan hama tetap dikerjakan lebih awal karena tidak bergantung pada BMKG.
 
 ## Sumber dan kondisi awal
@@ -164,7 +166,7 @@ Handler tidak memanggil handler fitur lain. Contoh: `record-care` tidak memanggi
 
 | Keputusan | Temuan / alasan | Selesaikan sebelum |
 | --- | --- | --- |
-| Matriks hak akses | System Request baris 18 memberi pegawai tugas panen, tetapi PB-01/PB-08 membatasi pegawai pada inventaris, semai, dan pertumbuhan serta menempatkan panen pada petani. Baseline rencana mengikuti PB yang lebih rinci; PO/perancang perlu menyelaraskan dokumen | B02 |
+| Matriks hak akses — selesai | Pengguna menetapkan System Request sebagai acuan: pegawai memiliki akses panen dan tidak memiliki akses penjualan. Matrix dan tes guard tersedia pada B002; rincian ada di kontrak API | Diputuskan sebelum B02 |
 | Siklus akun/sesi | Bootstrap petani, izin profil, masa berlaku sesi, pencabutan, dan aturan sesi luring belum lengkap pada DDL | B02–B03 |
 | Representasi angka dan waktu | Affinity SQLite, desimal uang, zona waktu HSS, dan aturan pembulatan harus konsisten | B01 sebelum B06 |
 | Identitas sinkronisasi | PK integer lokal dapat bertabrakan antardevice; DDL belum memiliki ID operasi global, versi, atau catatan konflik | B04 |
@@ -191,4 +193,4 @@ Definition of Done untuk setiap slice backend:
 5. Kode ditinjau, hasil terintegrasi, dan tidak ada cacat yang menghambat alur utama, melanggar akses, atau menghilangkan data.
 6. Status dicatat terpisah antara backend siap, integrasi mobile belum/selesai, dan validasi perangkat/mitra. Kesiapan backend tidak otomatis menutup keseluruhan PB-05/PB-07 produk.
 
-Pekerjaan konkret berikutnya: **B01**, lalu **B02**. Implementasi BMKG baru dibuka di **B19**.
+Pekerjaan konkret berikutnya: **B03**, setelah fondasi B001/B002 tersedia. Implementasi BMKG baru dibuka di **B19**.

@@ -2,11 +2,13 @@
 
 > Pembaruan prioritas backend, 30 September 2026: gunakan [urutan pengerjaan backend](./rencana-backend.md) sebagai acuan eksekusi aktif. Fokus pada backend; `apps/mobile` tidak diubah. Seluruh implementasi terkait BMKG menjadi fitur terakhir setelah revisi tim perancangan tersedia. Tanggal dan target sprint di bawah dipertahankan sebagai baseline dari dokumen awal, bukan penetapan ulang urutan backend.
 
+> Keputusan hak akses terbaru: System Request menjadi acuan. Pegawai dapat mengelola panen, tetapi tidak boleh mengakses penjualan. B001/B002 tersedia; lihat [breakdown implementasi](./backend-b001-b002.md).
+
 Sumber utama: [A9_PPL IF_WEEK5.docx.md](./A9_PPL%20IF_WEEK5.docx.md), khususnya Product Backlog (baris 668–721), Project Charter (723–815), dan WBS (825–976). Tanggal sprint dan target berasal dari dokumen. Rincian urutan kerja di bawah adalah penjabaran untuk pelaksanaan, bukan kutipan jadwal harian resmi. Gantt Chart di sumber masih berupa placeholder.
 
 ## Konteks produk
 
-HidroSense adalah aplikasi Android berbasis Flutter untuk mitra Hidro Selada di Ambulu, Jember. Aplikasi membantu pengelolaan selada hidroponik NFT dari inventaris, penyemaian, meja tanam, pemindahan, kerusakan, deteksi hama, perawatan, panen, hingga penjualan. Aktor manusia: petani dan pegawai; akses pegawai dibatasi pada inventaris, penyemaian, dan pertumbuhan/meja tanam. Deteksi awal mencakup thrips, whitefly, dan aphids memakai YOLO yang dikonversi ke TensorFlow Lite untuk inferensi lokal. Rekomendasi penanganan memakai hasil deteksi dan riwayat obat; rekomendasi cuaca memakai data BMKG dan aturan yang divalidasi. Data operasional disimpan di SQLite lalu disinkronkan melalui backend ke Turso. Gambar disimpan di Cloudinary saat koneksi tersedia. Status fisik meja diubah manual.
+HidroSense adalah aplikasi Android berbasis Flutter untuk mitra Hidro Selada di Ambulu, Jember. Aplikasi membantu pengelolaan selada hidroponik NFT dari inventaris, penyemaian, meja tanam, pemindahan, kerusakan, deteksi hama, perawatan, panen, hingga penjualan. Aktor manusia: petani dan pegawai; pegawai dapat mengelola inventaris, penyemaian, pertumbuhan/meja tanam, dan panen; penjualan hanya untuk petani. Deteksi awal mencakup thrips, whitefly, dan aphids memakai YOLO yang dikonversi ke TensorFlow Lite untuk inferensi lokal. Rekomendasi penanganan memakai hasil deteksi dan riwayat obat; rekomendasi cuaca memakai data BMKG dan aturan yang divalidasi. Data operasional disimpan di SQLite lalu disinkronkan melalui backend ke Turso. Gambar disimpan di Cloudinary saat koneksi tersedia. Status fisik meja diubah manual.
 
 Di luar cakupan produk awal: iOS, sensor otomatis, kendali perangkat hidroponik, dan pelaksanaan perawatan otomatis. Rekomendasi adalah pendukung keputusan petani.
 

@@ -1,5 +1,40 @@
 # Database backend HidroSense
 
+API B001/B002 sudah tersedia: fondasi HTTP, autentikasi, sesi, dan guard hak akses. Lihat [kontrak API](../../docs/backend-api.md) dan [breakdown pekerjaan](../../docs/backend-b001-b002.md). Pegawai memiliki akses panen dan tidak memiliki akses penjualan sesuai System Request.
+
+## Menjalankan API dan autentikasi
+
+Jalankan dari `apps/backend`:
+
+```powershell
+npm ci
+npm run db:migrate
+npm run check
+npm run build
+npm start
+```
+
+Default: `http://127.0.0.1:3000`. `npm run dev` menjalankan source TypeScript dengan watch. Migrasi tidak dijalankan otomatis saat startup; server menolak mulai jika ada migrasi tertunda. `GET /health/live` memeriksa proses, `GET /health/ready` memeriksa koneksi dan kesiapan skema. `npm run check` menjalankan typecheck, batas 400 baris kode/file, dan tes. File yang ditulis ditargetkan di bawah 300 baris.
+
+Bootstrap akun petani pertama dilakukan dari terminal terpisah setelah migrasi dan build. Pilih username/nama lalu masukkan password melalui prompt tersembunyi:
+
+```powershell
+$env:BOOTSTRAP_USERNAME = 'username-petani'
+$env:BOOTSTRAP_NAME = 'Nama Petani'
+try {
+  $env:BOOTSTRAP_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Password (12-128 karakter)' -AsSecureString)).Password
+  npm run auth:bootstrap
+} finally {
+  Remove-Item Env:BOOTSTRAP_PASSWORD -ErrorAction SilentlyContinue
+  Remove-Item Env:BOOTSTRAP_USERNAME -ErrorAction SilentlyContinue
+  Remove-Item Env:BOOTSTRAP_NAME -ErrorAction SilentlyContinue
+}
+```
+
+Bootstrap menolak jika petani sudah ada, termasuk akun nonaktif. Tidak ada password bawaan atau endpoint registrasi publik. Akun pegawai dikelola pada B03. Migrasi `0002_auth_sessions` menambah tabel sesi dan counter throttle; rollback versi ini mencabut semua sesi tetapi mempertahankan tabel/data domain.
+
+Konfigurasi API tersedia di `.env.example`: `NODE_ENV`, `HOST`, `PORT`, `LOG_LEVEL`, `CORS_ORIGINS`, dan `TRUSTED_PROXIES`. Production memerlukan HTTPS melalui proxy tepercaya. Semua instance harus memakai database bersama agar sesi dan rate limit konsisten. Startup membersihkan sesi/counter kedaluwarsa; pada deployment yang berjalan lama, jadwalkan penghapusan data infrastruktur kedaluwarsa secara berkala. SQL penghapusan memakai batas `refresh_expires_at`/`resets_at` dalam epoch milidetik dan tidak menyentuh data domain.
+
 Acuan pekerjaan fitur berikutnya: [urutan pengerjaan backend](../../docs/rencana-backend.md). Backend mengikuti pola vertical slice; seluruh fitur terkait BMKG ditempatkan terakhir sambil menunggu revisi rancangan.
 
 Setup Node.js (ES modules) untuk migrasi SQLite lokal dan Turso **libSQL**, menggunakan `@libsql/client`. Node.js mengikuti fondasi `package.json` yang sudah ada. Target SQLite/Turso telah dikonfirmasi; header PostgreSQL pada [DBML asli tim](../../docs/database/hidrosense.dbml) dipertahankan sebagai arsip sumber.
@@ -87,4 +122,4 @@ Koneksi lokal mengaktifkan foreign key, WAL untuk database berbasis file, dan bu
 
 `npm test` membandingkan skema aktual terhadap DBML asli dan menguji relasi/indeks, NOT NULL/unique/default, boolean/panjang teks, input dengan karakter SQL melalui parameter, rantai data budidaya, pengulangan tanpa kehilangan data, rollback/reapply, transaksi gagal, perubahan checksum, database lama, dan backup lokal yang dapat dibaca ulang. Query plan juga diperiksa agar pencarian berdasarkan foreign key memakai indeks.
 
-Ini adalah fondasi database, belum implementasi endpoint, autentikasi, sinkronisasi mobile, atau aturan bisnis. Kolom `password` nantinya hanya boleh berisi hash password. DBML belum menyediakan identitas transaksi global/idempotency, versi perubahan untuk konflik sinkronisasi, golongan bahan aktif untuk rotasi obat, atau representasi terpisah hasil tanpa deteksi/banyak objek. Hal tersebut dicatat untuk migrasi berikutnya saat kontrak fitur ditetapkan. Validasi kapasitas meja, saldo stok, jumlah panen, dan batas penjualan membutuhkan transaksi service; migrasi ini tidak menambahkan aturan di luar DBML.
+Fondasi HTTP dan autentikasi B001/B002 sudah diimplementasikan; endpoint bisnis dan sinkronisasi mobile mengikuti tahap berikutnya. Kolom `password` menyimpan hash scrypt, sedangkan hash token disimpan dalam `auth_sessions`. DBML belum menyediakan identitas transaksi global/idempotency, versi perubahan untuk konflik sinkronisasi, golongan bahan aktif untuk rotasi obat, atau representasi terpisah hasil tanpa deteksi/banyak objek. Hal tersebut dicatat untuk migrasi berikutnya saat kontrak fitur ditetapkan. Validasi kapasitas meja, saldo stok, jumlah panen, dan batas penjualan membutuhkan transaksi pada handler fitur terkait.

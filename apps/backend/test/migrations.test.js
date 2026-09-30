@@ -6,7 +6,8 @@ import { test } from 'node:test';
 import { openDatabase, backupDatabase } from '../src/db/client.js';
 import { loadMigrations, migrate, migrationStatus } from '../src/db/migrate.js';
 
-const migrations = await loadMigrations();
+// Preserve the original DBML contract; later migrations have separate upgrade tests.
+const migrations = (await loadMigrations()).filter((migration) => migration.id === '0001_initial_schema');
 const source = await readFile(new URL('../../../docs/database/hidrosense.dbml', import.meta.url), 'utf8');
 const tables = [...source.matchAll(/Table (\w+) \{([^}]+)\}/g)];
 const refs = [...source.matchAll(/Ref: (\w+)\.(\w+) > (\w+)\.(\w+)/g)];

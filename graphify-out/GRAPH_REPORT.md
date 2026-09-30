@@ -1,17 +1,17 @@
 # Graph Report - hidrosense  (2026-09-30)
 
 ## Corpus Check
-- 156 files · ~100,743 words
+- 181 files · ~107,609 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 55 file(s) not represented in the graph (top: (none) 12, .xcconfig 8, .xml 7)
 
 ## Summary
-- 1023 nodes · 1249 edges · 104 communities (64 shown, 40 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 23 edges (avg confidence: 0.87)
+- 1139 nodes · 1541 edges · 105 communities (66 shown, 39 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 23 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bf90e6c8`
+- Built from commit: `89358af8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,8 +24,8 @@
 - my_application.cc
 - utils.cpp
 - Path
-- .agents/skills/caveman-compress/scripts/compress.py
-- migrations.test.js
+- _compress_file_locked
+- app.ts
 - .codex/skills/caveman-compress/scripts/compress.py
 - What You Must Do When Invoked
 - write_bytes_atomic
@@ -36,10 +36,10 @@
 - backend/package.json
 - .codex/skills/caveman-explore/package.json
 - .codex/skills/caveman-learn/package.json
-- call_claude
+- .agents/skills/caveman-compress/scripts/compress.py
 - note_viewmodel.dart
 - MainActivity.kt
-- Urutan Pengerjaan Backend HidroSense
+- Database backend HidroSense
 - What You Must Do When Invoked
 - .agents/skills/caveman-compress/README.md
 - .codex/skills/caveman-compress/README.md
@@ -68,6 +68,7 @@
 - caveman-stats
 - Evaluate an optimization observation
 - caveman-stats
+- compilerOptions
 - .agents/skills/caveman-discover/SKILL.md
 - graphify reference: query, path, explain
 - .codex/skills/caveman-discover/SKILL.md
@@ -110,15 +111,15 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `Win32Window` - 24 edges
-2. `_compress_file_locked()` - 18 edges
+2. `ApiError` - 19 edges
 3. `_compress_file_locked()` - 18 edges
-4. `validate()` - 14 edges
+4. `_compress_file_locked()` - 18 edges
 5. `validate()` - 14 edges
-6. `MessageHandler` - 12 edges
-7. `What You Must Do When Invoked` - 12 edges
-8. `What You Must Do When Invoked` - 12 edges
-9. `FlutterWindow` - 10 edges
-10. `Create` - 10 edges
+6. `validate()` - 14 edges
+7. `buildApp()` - 14 edges
+8. `scripts` - 13 edges
+9. `compilerOptions` - 12 edges
+10. `MessageHandler` - 12 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Mobile App (Flutter)` --conceptually_related_to--> `Inventory Management (Benih & Pupuk)`  [INFERRED]
@@ -138,10 +139,10 @@
 ## Hyperedges (group relationships)
 - **Hidroponik Cultivation Lifecycle** — srs_nursery_management, srs_table_capacity_management, srs_growth_monitoring, srs_harvest_sales_tracking [INFERRED 0.95]
 
-## Communities (104 total, 40 thin omitted)
+## Communities (105 total, 39 thin omitted)
 
 ### Community 0 - ".agents/skills/caveman-compress/scripts/cli.py"
-Cohesion: 0.15
+Cohesion: 0.16
 Nodes (6): main(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
 
 ### Community 1 - "Win32Window"
@@ -153,11 +154,11 @@ Cohesion: 0.07
 Nodes (11): AppDelegate, SceneDelegate, RunnerTests, AppDelegate, MainFlutterWindow, RunnerTests, Cocoa, Flutter (+3 more)
 
 ### Community 3 - ".agents/skills/caveman-compress/scripts/validate.py"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (21): benchmark_pair(), count_tokens(), main(), print_table(), count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings() (+13 more)
 
 ### Community 4 - ".codex/skills/caveman-compress/scripts/validate.py"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (21): benchmark_pair(), count_tokens(), main(), print_table(), count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings() (+13 more)
 
 ### Community 5 - "my_application.cc"
@@ -169,19 +170,19 @@ Cohesion: 0.13
 Nodes (4): wWinMain(), CreateAndAttachConsole(), GetCommandLineArguments(), Utf8FromUtf16()
 
 ### Community 7 - "Path"
-Cohesion: 0.17
-Nodes (8): backup_dir_for(), compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), _state_base_dir(), _try_lock_nonblocking(), _unlock()
+Cohesion: 0.21
+Nodes (7): backup_dir_for(), compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), _state_base_dir(), _unlock()
 
-### Community 8 - ".agents/skills/caveman-compress/scripts/compress.py"
-Cohesion: 0.11
+### Community 8 - "_compress_file_locked"
+Cohesion: 0.12
 Nodes (9): build_compress_prompt(), build_fix_prompt(), _compress_file_locked(), first_nonblank_line(), _is_smaller_than_body(), mask_code_blocks(), read_source(), restore_code_blocks() (+1 more)
 
-### Community 9 - "migrations.test.js"
-Cohesion: 0.11
-Nodes (19): md, skillFile, skill, [command, ...args], backendRoot, backupDatabase(), openDatabase(), appliedMigrations() (+11 more)
+### Community 9 - "app.ts"
+Cohesion: 0.06
+Nodes (62): md, skillFile, skill, extensions, largest, root, AppOptions, buildApp() (+54 more)
 
 ### Community 10 - ".codex/skills/caveman-compress/scripts/compress.py"
-Cohesion: 0.05
+Cohesion: 0.06
 Nodes (29): main(), backup_dir_for(), build_compress_prompt(), build_fix_prompt(), call_claude(), compress_file(), _compress_file_locked(), file_lock() (+21 more)
 
 ### Community 11 - "What You Must Do When Invoked"
@@ -209,8 +210,8 @@ Cohesion: 0.20
 Nodes (9): description, files, license, name, private, scripts, test, type (+1 more)
 
 ### Community 17 - "backend/package.json"
-Cohesion: 0.10
-Nodes (19): author, dependencies, @libsql/client, description, engines, node, keywords, license (+11 more)
+Cohesion: 0.05
+Nodes (39): author, dependencies, fastify, @fastify/cors, @fastify/helmet, @libsql/client, zod, description (+31 more)
 
 ### Community 18 - ".codex/skills/caveman-explore/package.json"
 Cohesion: 0.20
@@ -220,13 +221,17 @@ Nodes (9): description, files, license, name, private, scripts, test, type (+1 m
 Cohesion: 0.20
 Nodes (9): description, files, license, name, private, scripts, test, type (+1 more)
 
+### Community 20 - ".agents/skills/caveman-compress/scripts/compress.py"
+Cohesion: 0.11
+Nodes (3): call_claude(), strip_llm_wrapper(), _try_lock_nonblocking()
+
 ### Community 21 - "note_viewmodel.dart"
 Cohesion: 0.09
 Nodes (11): build, main, MyApp, addNote, build, noteProvider, NoteViewModel, removeNote (+3 more)
 
-### Community 23 - "Urutan Pengerjaan Backend HidroSense"
-Cohesion: 0.07
-Nodes (26): Backup dan pemulihan, Bukti pengujian dan batas pekerjaan, Database backend HidroSense, Disiplin migrasi, Menjalankan lokal, Pemetaan DBML ke SQLite, Target Turso/libSQL, B01–B04: akses dan kontrak pencatatan (+18 more)
+### Community 23 - "Database backend HidroSense"
+Cohesion: 0.05
+Nodes (39): Backup dan pemulihan, Bukti pengujian dan batas pekerjaan, Database backend HidroSense, Disiplin migrasi, Menjalankan API dan autentikasi, Menjalankan lokal, Pemetaan DBML ke SQLite, Target Turso/libSQL (+31 more)
 
 ### Community 33 - "What You Must Do When Invoked"
 Cohesion: 0.08
@@ -336,6 +341,10 @@ Nodes (6): 1. Read the exact observations, 2. Ask the operator to choose, 3. Des
 Cohesion: 0.29
 Nodes (5): caveman-stats, Example output, How to invoke, See also, What it does
 
+### Community 61 - "compilerOptions"
+Cohesion: 0.14
+Nodes (13): compilerOptions, allowJs, checkJs, esModuleInterop, module, moduleResolution, outDir, rootDir (+5 more)
+
 ### Community 62 - ".agents/skills/caveman-discover/SKILL.md"
 Cohesion: 0.33
 Nodes (5): Step 1 — Inventory the workflows, Step 2 — Name them, Step 3 — Propose, then apply, Step 4 — Verify, Step 5 — Report
@@ -397,24 +406,24 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ## Knowledge Gaps
-- **438 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+433 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 641 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **489 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+484 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 695 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Win32Window` connect `Win32Window` to `utils.cpp`?**
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+- **Why does `@libsql/client` connect `app.ts` to `backend/package.json`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `validate()` connect `.agents/skills/caveman-compress/scripts/validate.py` to `.agents/skills/caveman-compress/scripts/compress.py`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
 - **What connects `name`, `version`, `license` to the rest of the system?**
-  _438 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _489 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Win32Window` be split into smaller, more focused modules?**
   _Cohesion score 0.05407925407925408 - nodes in this community are weakly interconnected._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.07058823529411765 - nodes in this community are weakly interconnected._
 - **Should `.agents/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.08858858858858859 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0957983193277311 - nodes in this community are weakly interconnected._
 - **Should `.codex/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.09982174688057041 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09206349206349207 - nodes in this community are weakly interconnected._
