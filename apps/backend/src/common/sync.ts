@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { Transaction } from '@libsql/client';
 import { ApiError } from './errors.js';
 
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Operation = { operation_key: string; operation_type: string; payload: Json; resource_type?: string; client_id?: string };
 
 function canonicalJson(value: Json): string {
@@ -12,20 +12,42 @@ function canonicalJson(value: Json): string {
 }
 
 function hashPayload(operation: Operation) {
-  return createHash('sha256').update(canonicalJson({ operation_type: operation.operation_type, payload: operation.payload })).digest('hex');
+  return createHash('sha256').update(canonicalJson({
+    operation_type: operation.operation_type,
+    payload: operation.payload,
+    resource_type: operation.resource_type ?? null,
+    client_id: operation.client_id ?? null,
+  })).digest('hex');
 }
 
-export async function replayOperation(tx: Transaction, actorId: string, operation: Operation, now: number) {
+async function executeOperation<T extends Json>(
+  tx: Transaction, actorId: string, operation: Operation, now: number,
+  effect: (publicId: string | null) => Promise<T>,
+) {
   const payloadHash = hashPayload(operation);
   const existing = (await tx.execute({
     sql: `SELECT operation_type,payload_hash,result_json FROM sync_operations
       WHERE id_user=? AND operation_key=?`, args: [actorId, operation.operation_key],
   })).rows[0];
   if (existing) {
-    if (existing.operation_type !== operation.operation_type || existing.payload_hash !== payloadHash) {
+    const stored = JSON.parse(String(existing.result_json));
+    const legacyHash = createHash('sha256').update(canonicalJson({
+      operation_type: operation.operation_type, payload: operation.payload,
+    })).digest('hex');
+    let legacyIdentityMatches = operation.client_id === undefined && operation.resource_type === undefined;
+    if (operation.operation_type === 'sync.reserve-id' && operation.resource_type && operation.client_id) {
+      const mapping = (await tx.execute({
+        sql: 'SELECT public_id FROM sync_id_maps WHERE id_user=? AND resource_type=? AND client_id=?',
+        args: [actorId, operation.resource_type, operation.client_id],
+      })).rows[0];
+      legacyIdentityMatches = Boolean(mapping && mapping.public_id === stored.data?.public_id);
+    }
+    const legacyMatch = legacyIdentityMatches && stored.data !== undefined
+      && stored.operation !== undefined && existing.payload_hash === legacyHash;
+    if (existing.operation_type !== operation.operation_type || (existing.payload_hash !== payloadHash && !legacyMatch)) {
       throw new ApiError(409, 'OPERATION_CONFLICT', 'Kunci operasi sudah dipakai dengan isi berbeda.');
     }
-    return { data: JSON.parse(String(existing.result_json)), replayed: true };
+    return { ...stored, replayed: true } as { data: T; operation: Json; replayed: true };
   }
 
   let publicId: string | null = null;
@@ -40,19 +62,59 @@ export async function replayOperation(tx: Transaction, actorId: string, operatio
       args: [actorId, operation.resource_type, operation.client_id, publicId, now],
     });
   }
+  const data = await effect(publicId);
   const inserted = await tx.execute({
     sql: `INSERT INTO sync_operations (id_user,operation_key,operation_type,payload_hash,result_json,created_at)
       VALUES (?,?,?,?,?,?) RETURNING CAST(id_change AS TEXT) AS revision`,
     args: [actorId, operation.operation_key, operation.operation_type, payloadHash, '{}', now],
   });
-  const data = { operation_key: operation.operation_key, revision: String(inserted.rows[0].revision), public_id: publicId };
+  const result = { data, operation: {
+    operation_key: operation.operation_key, revision: String(inserted.rows[0].revision),
+    public_id: typeof data === 'object' && data !== null && !Array.isArray(data) ? data.public_id ?? publicId : publicId,
+    ...(typeof data === 'object' && data !== null && !Array.isArray(data) && 'version' in data ? { version: data.version } : {}),
+  } };
   await tx.execute({ sql: 'UPDATE sync_operations SET result_json=? WHERE id_user=? AND operation_key=?',
-    args: [JSON.stringify(data), actorId, operation.operation_key] });
-  return { data, replayed: false };
+    args: [JSON.stringify(result), actorId, operation.operation_key] });
+  return { ...result, replayed: false };
 }
 
-export async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
+async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
   await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
     ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at`, args: [resourceType, publicId, now] });
   return String((await tx.execute({ sql: `SELECT version FROM sync_resource_versions WHERE resource_type=? AND public_id=?`, args: [resourceType, publicId] })).rows[0].version);
+}
+
+export function reserveClientId(tx: Transaction, actorId: string, operation: Operation, now: number) {
+  return executeOperation(tx, actorId, operation, now, async (publicId) => ({ public_id: publicId }));
+}
+
+type DomainMutation<T extends Json> = {
+  resourceType: string;
+  domainId?: string;
+  idField: string;
+  effect: () => Promise<T>;
+};
+
+export function executeDomainMutation<T extends Json & Record<string, Json>>(
+  tx: Transaction, actorId: string, operation: Operation, now: number, mutation: DomainMutation<T>,
+) {
+  return executeOperation(tx, actorId, operation, now, async (reservedId) => {
+    if (!mutation.domainId && reservedId) {
+      const existing = await tx.execute({ sql: 'SELECT 1 FROM sync_resource_links WHERE public_id=?', args: [reservedId] });
+      if (existing.rows.length) throw new ApiError(409, 'RESOURCE_ALREADY_EXISTS', 'Identitas klien sudah terikat ke resource.');
+    }
+    const data = await mutation.effect();
+    const domainId = mutation.domainId ?? String(data[mutation.idField]);
+    const linked = (await tx.execute({
+      sql: 'SELECT public_id FROM sync_resource_links WHERE resource_type=? AND domain_id=?',
+      args: [mutation.resourceType, domainId],
+    })).rows[0];
+    const publicId = linked ? String(linked.public_id) : reservedId ?? randomUUID();
+    if (!linked) await tx.execute({
+      sql: 'INSERT INTO sync_resource_links (resource_type,domain_id,public_id) VALUES (?,?,?)',
+      args: [mutation.resourceType, domainId, publicId],
+    });
+    const version = await nextResourceVersion(tx, mutation.resourceType, publicId, now);
+    return { ...(data as Record<string, Json>), public_id: publicId, version } as T & { public_id: string; version: string };
+  });
 }

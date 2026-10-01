@@ -20,8 +20,9 @@ test('auth migration upgrades and rolls back without changing original users or 
   await migrate(db, migrations);
   assert.deepEqual((await db.execute('SELECT * FROM users')).rows, before);
   await assert.rejects(db.execute(`INSERT INTO auth_sessions VALUES ('a',999,'b','c','d',1,2,3)`), /FOREIGN KEY/);
+  for (let i = 1; i < migrations.length; i++) {
   await migrate(db, migrations, { direction: 'down', allowDataLoss: true });
-  await migrate(db, migrations, { direction: 'down', allowDataLoss: true });
+  }
   assert.deepEqual((await db.execute('SELECT * FROM users')).rows, before);
   assert.equal((await db.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='auth_sessions'")).rows[0].n, 0);
   await migrate(db, migrations);

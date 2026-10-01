@@ -498,3 +498,6 @@ graphify-out/.graphify_root
 graphify-out/.graphify_python
 graphify-out/.graphify_analysis.json
 graphify-out/needs_update
+
+# Feature-local generated graphs; root graph remains project knowledge source.
+apps/**/graphify-out/

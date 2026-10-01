@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ApiError } from '../../common/errors.js';
+import { activeListQuerySchema, idParamSchema } from '../../common/validation.js';
+export { parseInput } from '../../common/validation.js';
 
 const fields = {
   nama: z.string().trim().min(1).max(100),
@@ -18,20 +19,7 @@ export const updateProfileSchema = z.strictObject({
 }).partial().refine((value) => Object.keys(value).some((key) => key !== 'current_password'))
   .refine((value) => (!value.username && !value.password) || Boolean(value.current_password));
 
-export const employeeIdSchema = z.strictObject({
-  id: z.string().regex(/^[1-9][0-9]{0,18}$/)
-    .pipe(z.string().refine((value) => BigInt(value) <= 9223372036854775807n)),
-});
-export const listEmployeesSchema = z.strictObject({
-  page: z.string().regex(/^[1-9][0-9]{0,5}$/).default('1').transform(Number),
-  limit: z.string().regex(/^[1-9][0-9]{0,2}$/).default('20').transform(Number)
-    .refine((value) => value <= 100),
-  status_aktif: z.enum(['0', '1']).optional(),
-});
+export const employeeIdSchema = idParamSchema;
+export const listEmployeesSchema = activeListQuerySchema;
 
 export type AccountChanges = z.infer<typeof updateEmployeeSchema>;
-export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
-  const result = schema.safeParse(input);
-  if (!result.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.');
-  return result.data;
-}

@@ -7,19 +7,10 @@ import { readConfig, type AppConfig } from './config.js';
 import { ApiError, installErrors } from './common/errors.js';
 import { consumeLimit } from './common/rate-limit.js';
 import { loadMigrations, migrationStatus } from './db/migrate.js';
-import { registerLogin } from './features/auth/login.js';
-import { registerRefresh } from './features/auth/refresh.js';
-import { registerMe } from './features/auth/me.js';
-import { registerLogout } from './features/auth/logout.js';
-import { registerCreateEmployee } from './features/accounts/create-employee.js';
-import { registerReadEmployees } from './features/accounts/read-employees.js';
-import { registerUpdateEmployee } from './features/accounts/update-employee.js';
-import { registerDeactivateEmployee } from './features/accounts/deactivate-employee.js';
-import { registerProfile } from './features/accounts/profile.js';
-import { registerSyncOperations } from './features/sync/operations.js';
-import { registerJenisInventaris } from './features/inventory/jenis-inventaris.js';
-import { registerObat } from './features/inventory/obat.js';
-import { registerInventaris } from './features/inventory/inventaris.js';
+import { registerAuth } from './features/auth/index.js';
+import { registerAccounts } from './features/accounts/index.js';
+import { registerSync } from './features/sync/index.js';
+import { registerInventory } from './features/inventory/index.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
 
@@ -52,7 +43,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   app.register(cors, {
     origin: config.origins.length ? config.origins : false,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Client-Id'],
     exposedHeaders: ['X-Request-Id', 'Retry-After'],
     credentials: false,
   });
@@ -82,18 +73,9 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
       throw new ApiError(503, 'NOT_READY', 'Layanan belum siap.');
     }
   });
-  registerLogin(app, db, clock);
-  registerRefresh(app, db, clock);
-  registerMe(app, db, clock);
-  registerLogout(app, db, clock);
-  registerCreateEmployee(app, db, clock);
-  registerReadEmployees(app, db, clock);
-  registerUpdateEmployee(app, db, clock);
-  registerDeactivateEmployee(app, db, clock);
-  registerProfile(app, db, clock);
-  registerSyncOperations(app, db, clock);
-  registerJenisInventaris(app, db, clock);
-  registerObat(app, db, clock);
-  registerInventaris(app, db, clock);
+  registerAuth(app, db, clock);
+  registerAccounts(app, db, clock);
+  registerSync(app, db, clock);
+  registerInventory(app, db, clock);
   return app;
 }

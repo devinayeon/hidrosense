@@ -4,13 +4,14 @@ import { requirePermission } from '../../common/authorization.js';
 import { hashPassword } from '../../common/passwords.js';
 import { ApiError } from '../../common/errors.js';
 import { createEmployeeSchema, parseInput } from './contracts.js';
-import { accountWrite, assertUsernameAvailable, getAccount } from './store.js';
+import { authenticatedWrite } from '../../common/authenticated-write.js';
+import { assertUsernameAvailable, getAccount } from './store.js';
 
 export function registerCreateEmployee(app: FastifyInstance, db: Client, clock: () => number) {
   app.post('/api/v1/employees', { preHandler: requirePermission(db, 'pegawai:manage', clock) }, async (request, reply) => {
     const input = parseInput(createEmployeeSchema, request.body);
     const passwordHash = await hashPassword(input.password);
-    const data = await accountWrite(db, request.headers.authorization, 'pegawai:manage', clock, async (tx) => {
+    const data = await authenticatedWrite(db, request.headers.authorization, 'pegawai:manage', clock, async (tx) => {
       await assertUsernameAvailable(tx, input.username);
       const role = (await tx.execute("SELECT id_role FROM roles WHERE nama_role='pegawai'")).rows[0];
       if (!role) throw new ApiError(503, 'NOT_READY', 'Role pegawai belum tersedia.');

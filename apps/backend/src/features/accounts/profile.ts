@@ -4,7 +4,8 @@ import { requirePermission } from '../../common/authorization.js';
 import { hashPassword, verifyPassword } from '../../common/passwords.js';
 import { ApiError } from '../../common/errors.js';
 import { parseInput, updateProfileSchema } from './contracts.js';
-import { accountWrite, assertUsernameAvailable, getAccount, updateAccount } from './store.js';
+import { authenticatedWrite } from '../../common/authenticated-write.js';
+import { assertUsernameAvailable, getAccount, updateAccount } from './store.js';
 
 export function registerProfile(app: FastifyInstance, db: Client, clock: () => number) {
   app.get('/api/v1/profile', { preHandler: requirePermission(db, 'profil:read', clock) }, async (request) => {
@@ -22,7 +23,7 @@ export function registerProfile(app: FastifyInstance, db: Client, clock: () => n
       }
     }
     const passwordHash = input.password ? await hashPassword(input.password) : undefined;
-    const data = await accountWrite(db, request.headers.authorization, 'profil:write', clock, async (tx, actor) => {
+    const data = await authenticatedWrite(db, request.headers.authorization, 'profil:write', clock, async (tx, actor) => {
       if (verifiedHash !== undefined) {
         const row = (await tx.execute({ sql: 'SELECT password FROM users WHERE id_user=?', args: [actor.id_user] })).rows[0];
         if (row.password !== verifiedHash) throw new ApiError(409, 'ACCOUNT_CHANGED', 'Akun berubah; ulangi setelah login.');

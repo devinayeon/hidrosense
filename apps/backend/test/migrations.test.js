@@ -178,6 +178,20 @@ test('loads stable checksums across CRLF and rejects incomplete migration pairs'
   assert.equal((await loadMigrations(dir))[0].checksum, first[0].checksum);
 });
 
+test('inventory master migration preserves rows and rolls back its added status column', async (t) => {
+  const db = await database(t);
+  const all = (await loadMigrations()).slice(0, 4);
+  await migrate(db, all.slice(0, 3));
+  await db.execute("INSERT INTO jenis_inventaris (nama_jenis) VALUES ('Nutrisi')");
+  await migrate(db, all);
+  assert.equal((await db.execute('SELECT status_aktif FROM jenis_inventaris')).rows[0].status_aktif, 1);
+  await migrate(db, all, { direction: 'down', allowDataLoss: true });
+  assert.equal((await db.execute('SELECT nama_jenis FROM jenis_inventaris')).rows[0].nama_jenis, 'Nutrisi');
+  assert.equal((await db.execute("SELECT COUNT(*) AS n FROM pragma_table_info('jenis_inventaris') WHERE name='status_aktif'")).rows[0].n, 0);
+  await migrate(db, all);
+  assert.equal((await db.execute('SELECT status_aktif FROM jenis_inventaris')).rows[0].status_aktif, 1);
+});
+
 test('local file uses WAL, persists data, and creates a restorable consistent backup', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'hidrosense-backup-'));
   t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 100 }));

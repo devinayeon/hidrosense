@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fixture, bearer, password } from '../test-support/fixture.js';
-import { accountWrite } from '../src/features/accounts/store.ts';
+import { authenticatedWrite as accountWrite } from '../src/common/authenticated-write.ts';
 
 test('deactivation rolls back status if session deletion fails', async (t) => {
   const { app, db, login } = await fixture(t);

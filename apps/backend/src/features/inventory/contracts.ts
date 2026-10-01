@@ -1,15 +1,18 @@
 import { z } from 'zod';
-import { ApiError } from '../../common/errors.js';
+import { integerIdSchema as intId } from '../../common/validation.js';
+export { idParamSchema, activeListQuerySchema as listQuerySchema, parseInput } from '../../common/validation.js';
 
 // ── shared field definitions ──────────────────────────────────────────────────
 
-const intId = z.string().regex(/^[1-9][0-9]{0,18}$/)
-  .pipe(z.string().refine((v) => BigInt(v) <= 9223372036854775807n));
-
 const positiveDecimal = z.string()
   .regex(/^\d{1,10}(\.\d{1,2})?$/)
-  .transform(Number)
-  .refine((n) => n > 0);
+  .refine((value) => /[1-9]/.test(value))
+  .transform((value) => {
+    const [whole, fraction] = value.split('.');
+    const normalizedWhole = BigInt(whole).toString();
+    const normalizedFraction = fraction?.replace(/0+$/, '');
+    return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
+  });
 
 // ── jenis_inventaris ──────────────────────────────────────────────────────────
 
@@ -53,17 +56,3 @@ export const updateInventarisSchema = z.strictObject({
 }).refine((v) => Object.keys(v).length > 0);
 
 // ── shared params ─────────────────────────────────────────────────────────────
-
-export const idParamSchema = z.strictObject({ id: intId });
-
-export const listQuerySchema = z.strictObject({
-  page: z.string().regex(/^[1-9][0-9]{0,5}$/).default('1').transform(Number),
-  limit: z.string().regex(/^[1-9][0-9]{0,2}$/).default('20').transform(Number).refine((v) => v <= 100),
-  status_aktif: z.enum(['0', '1']).optional(),
-});
-
-export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
-  const result = schema.safeParse(input);
-  if (!result.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.');
-  return result.data;
-}

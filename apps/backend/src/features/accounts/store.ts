@@ -1,6 +1,5 @@
 import type { Client, InValue, Row, Transaction } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
-import { authenticate, type Principal } from '../../common/sessions.js';
 import type { AccountChanges } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -32,22 +31,6 @@ export async function assertUsernameAvailable(db: Executor, username: string, ex
     args: [username, exceptId ?? null, exceptId ?? null],
   });
   if (result.rows.length) throw new ApiError(409, 'USERNAME_TAKEN', 'Username sudah digunakan.');
-}
-
-// Recheck authorization inside the write transaction, including after slow password hashing.
-export async function accountWrite<T>(db: Client, authorization: string | undefined, permission: string,
-  clock: () => number, operation: (tx: Transaction, actor: Principal) => Promise<T>): Promise<T> {
-  const tx = await db.transaction('write');
-  try {
-    const actor = await authenticate(tx, authorization, clock());
-    if (!actor.permissions.includes(permission)) throw new ApiError(403, 'FORBIDDEN', 'Akses tidak diizinkan untuk akun ini.');
-    const result = await operation(tx, actor);
-    await tx.commit();
-    return result;
-  } catch (error) {
-    if (!tx.closed) await tx.rollback();
-    throw error;
-  } finally { tx.close(); }
 }
 
 export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash?: string) {

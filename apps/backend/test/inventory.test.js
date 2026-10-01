@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { fixture, bearer } from '../test-support/fixture.js';
 
@@ -52,6 +53,24 @@ test('jenis_inventaris enforces unique name', async (t) => {
   const dup = await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Duplikat' } });
   assert.equal(dup.statusCode, 409);
   assert.equal(dup.json().error.code, 'JENIS_NAME_TAKEN');
+});
+
+test('jenis_inventaris deactivation preserves history and blocks new references', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const created = await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Arsip' } });
+  const jenis = created.json().data;
+  const deactivated = await app.inject({ method: 'POST', url: `${created.headers.location}/deactivate`, headers });
+  assert.equal(deactivated.statusCode, 200, deactivated.body);
+  assert.equal(deactivated.json().data.status_aktif, 0);
+  assert.equal((await app.inject({ url: `${created.headers.location}`, headers })).json().data.status_aktif, 0);
+  const item = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: 'Ditolak', satuan: 'kg',
+  } });
+  assert.equal(item.statusCode, 422, item.body);
+  const list = await app.inject({ url: '/api/v1/jenis-inventaris?status_aktif=0&limit=1&page=1', headers });
+  assert.equal(list.json().meta.total, 1);
+  assert.equal(list.json().data[0].id_jenis_inventaris, jenis.id_jenis_inventaris);
 });
 
 test('jenis_inventaris routes reject anonymous, petani write, bad IDs and extra fields', async (t) => {
@@ -164,7 +183,7 @@ test('pegawai creates, lists, reads, updates and deactivates inventaris', async 
   const item = created.json().data;
   assert.equal(item.nama_barang, 'Pupuk A');
   assert.equal(item.satuan, 'kg');
-  assert.equal(item.stok_minimum, 10.5);
+  assert.equal(item.stok_minimum, '10.5');
   assert.equal(item.status_aktif, 1);
   assert.equal(item.nama_jenis, 'Kimia');
   assert.equal(item.nama_obat, 'Obat X');
@@ -229,4 +248,22 @@ test('inventaris routes reject anonymous, petani write, bad inputs', async (t) =
   assert.equal((await app.inject({ url: '/api/v1/inventaris/9999', headers: pegawaiHdr })).statusCode, 404);
   // empty update
   assert.equal((await app.inject({ method: 'PATCH', url: '/api/v1/inventaris/9999', headers: pegawaiHdr, payload: {} })).statusCode, 400);
+});
+
+test('inventaris writes replay atomically and reject reused keys with different payloads', async (t) => {
+  const { app, login, db } = await fixture(t);
+  const auth = await pegawaiHeaders(login);
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers: auth, payload: { nama_jenis: 'Replay' } })).json().data;
+  const key = randomUUID();
+  const headers = { ...auth, 'idempotency-key': key };
+  const payload = { id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: 'Sekop', satuan: 'unit', stok_minimum: '1.00' };
+  const first = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload });
+  const replay = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload });
+  assert.equal(first.statusCode, 201, first.body);
+  assert.equal(replay.statusCode, 200, replay.body);
+  assert.deepEqual(replay.json().data, first.json().data);
+  assert.equal(first.json().data.stok_minimum, '1');
+  assert.equal((await db.execute("SELECT COUNT(*) AS n FROM inventaris WHERE nama_barang='Sekop'")).rows[0].n, 1);
+  const conflict = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: { ...payload, nama_barang: 'Cangkul' } });
+  assert.equal(conflict.statusCode, 409, conflict.body);
 });

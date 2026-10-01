@@ -4,18 +4,33 @@ import { ApiError } from '../../common/errors.js';
 
 type Executor = Pick<Client, 'execute'>;
 
+export function syncColumns(resourceType: string, idColumn: string) {
+  return `(SELECT l.public_id FROM sync_resource_links l WHERE l.resource_type='${resourceType}'
+    AND l.domain_id=CAST(${idColumn} AS TEXT)) AS public_id,
+    (SELECT CAST(v.version AS TEXT) FROM sync_resource_links l JOIN sync_resource_versions v
+    ON v.resource_type=l.resource_type AND v.public_id=l.public_id
+    WHERE l.resource_type='${resourceType}' AND l.domain_id=CAST(${idColumn} AS TEXT)) AS version`;
+}
+
+function syncResponse(row: Row) {
+  return { public_id: row.public_id == null ? null : String(row.public_id),
+    version: row.version == null ? null : String(row.version) };
+}
+
 // ── jenis_inventaris ──────────────────────────────────────────────────────────
 
 export function jenisResponse(row: Row) {
   return {
+    ...syncResponse(row),
     id_jenis_inventaris: String(row.id_jenis_inventaris),
     nama_jenis: String(row.nama_jenis),
+    status_aktif: Number(row.status_aktif),
   };
 }
 
 export async function getJenis(db: Executor, id: string) {
   const row = (await db.execute({
-    sql: 'SELECT id_jenis_inventaris,nama_jenis FROM jenis_inventaris WHERE id_jenis_inventaris=?',
+    sql: `SELECT id_jenis_inventaris,nama_jenis,status_aktif,${syncColumns('jenis-inventaris', 'jenis_inventaris.id_jenis_inventaris')} FROM jenis_inventaris WHERE id_jenis_inventaris=?`,
     args: [id],
   })).rows[0];
   if (!row) throw new ApiError(404, 'JENIS_NOT_FOUND', 'Jenis inventaris tidak ditemukan.');
@@ -34,6 +49,7 @@ export async function assertJenisNameAvailable(db: Executor, nama_jenis: string,
 
 export function obatResponse(row: Row) {
   return {
+    ...syncResponse(row),
     id_obat: String(row.id_obat),
     nama_obat: String(row.nama_obat),
     jenis_obat: row.jenis_obat === null ? null : String(row.jenis_obat),
@@ -46,7 +62,7 @@ export function obatResponse(row: Row) {
 
 export async function getObat(db: Executor, id: string) {
   const row = (await db.execute({
-    sql: 'SELECT id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif FROM obat WHERE id_obat=?',
+    sql: `SELECT id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif,${syncColumns('obat', 'obat.id_obat')} FROM obat WHERE id_obat=?`,
     args: [id],
   })).rows[0];
   if (!row) throw new ApiError(404, 'OBAT_NOT_FOUND', 'Obat tidak ditemukan.');
@@ -56,17 +72,18 @@ export async function getObat(db: Executor, id: string) {
 // ── inventaris ────────────────────────────────────────────────────────────────
 
 const inventarisColumns = `i.id_inventaris,i.id_jenis_inventaris,i.id_obat,
-  i.nama_barang,i.satuan,i.stok_minimum,i.status_aktif,
-  j.nama_jenis,o.nama_obat`;
+  i.nama_barang,i.satuan,CAST(i.stok_minimum AS TEXT) AS stok_minimum,i.status_aktif,
+  j.nama_jenis,o.nama_obat,${syncColumns('inventaris', 'i.id_inventaris')}`;
 
 export function inventarisResponse(row: Row) {
   return {
+    ...syncResponse(row),
     id_inventaris: String(row.id_inventaris),
     id_jenis_inventaris: String(row.id_jenis_inventaris),
     id_obat: row.id_obat === null ? null : String(row.id_obat),
     nama_barang: String(row.nama_barang),
     satuan: String(row.satuan),
-    stok_minimum: row.stok_minimum === null ? null : Number(row.stok_minimum),
+    stok_minimum: row.stok_minimum === null ? null : String(row.stok_minimum),
     status_aktif: Number(row.status_aktif),
     nama_jenis: String(row.nama_jenis),
     nama_obat: row.nama_obat === null ? null : String(row.nama_obat),
@@ -87,9 +104,9 @@ export async function getInventaris(db: Executor, id: string) {
 
 export async function assertJenisExists(db: Executor, id: string) {
   const row = (await db.execute({
-    sql: 'SELECT 1 FROM jenis_inventaris WHERE id_jenis_inventaris=?', args: [id],
+    sql: 'SELECT 1 FROM jenis_inventaris WHERE id_jenis_inventaris=? AND status_aktif=1', args: [id],
   })).rows[0];
-  if (!row) throw new ApiError(422, 'JENIS_NOT_FOUND', 'Jenis inventaris tidak ditemukan.');
+  if (!row) throw new ApiError(422, 'JENIS_NOT_FOUND', 'Jenis inventaris tidak ditemukan atau tidak aktif.');
 }
 
 export async function assertObatExists(db: Executor, id: string) {
