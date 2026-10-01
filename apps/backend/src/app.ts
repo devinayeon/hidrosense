@@ -16,6 +16,7 @@ import { registerReadEmployees } from './features/accounts/read-employees.js';
 import { registerUpdateEmployee } from './features/accounts/update-employee.js';
 import { registerDeactivateEmployee } from './features/accounts/deactivate-employee.js';
 import { registerProfile } from './features/accounts/profile.js';
+import { registerSyncOperations } from './features/sync/operations.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
 
@@ -87,5 +88,6 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   registerUpdateEmployee(app, db, clock);
   registerDeactivateEmployee(app, db, clock);
   registerProfile(app, db, clock);
+  registerSyncOperations(app, db, clock);
   return app;
 }

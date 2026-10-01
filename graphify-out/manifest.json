@@ -336,9 +336,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "skills-lock.json": {
-    "mtime": 1790844855.5688834,
-    "seen": 1790845457.5495005,
-    "ast_hash": "157c689fd35e9e2748f7f8529765a499",
+    "mtime": 1790848874.360852,
+    "seen": 1790849325.79991,
+    "ast_hash": "08843bad1f0296c696d48e25bef50935",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1242,9 +1242,9 @@
     "semantic_hash": ""
   },
   "apps/backend/test/migrations.test.js": {
-    "mtime": 1790762464.454254,
-    "seen": 1790762891.8157964,
-    "ast_hash": "8ab2689d8b90011d0ceb1bbd18e1666f",
+    "mtime": 1790849170.9345455,
+    "seen": 1790849325.7937405,
+    "ast_hash": "9d46c2e3cbdc27533f533e0dda8d3cf0",
     "semantic_hash": ""
   },
   "apps/backend/README.md": {
@@ -1254,9 +1254,9 @@
     "semantic_hash": ""
   },
   "docs/rencana-backend.md": {
-    "mtime": 1790845421.7955623,
-    "seen": 1790845457.6238337,
-    "ast_hash": "cb7e099376cee32873fc219737e636b8",
+    "mtime": 1790849259.6003525,
+    "seen": 1790849325.8201983,
+    "ast_hash": "b872ef1ba49ca3b62fcf92091ae75b43",
     "semantic_hash": ""
   },
   "apps/backend/scripts/check-lines.mjs": {
@@ -1266,9 +1266,9 @@
     "semantic_hash": ""
   },
   "apps/backend/src/app.ts": {
-    "mtime": 1790847816.016845,
-    "seen": 1790847904.6448512,
-    "ast_hash": "3b304e3cd9af39014a85e83cbd03f113",
+    "mtime": 1790849016.775486,
+    "seen": 1790849325.7881868,
+    "ast_hash": "33f945da910f5faf04cb9877bab81e71",
     "semantic_hash": ""
   },
   "apps/backend/src/common/authorization.ts": {
@@ -1362,9 +1362,9 @@
     "semantic_hash": ""
   },
   "apps/backend/test/auth-infrastructure.test.js": {
-    "mtime": 1790847789.412872,
-    "seen": 1790847904.6520667,
-    "ast_hash": "1c6817361141fa1064c486ee09384a36",
+    "mtime": 1790849134.036192,
+    "seen": 1790849325.7927444,
+    "ast_hash": "0b9b76331536f5777a33d2faf1fa0fed",
     "semantic_hash": ""
   },
   "apps/backend/test/auth.test.js": {
@@ -1386,9 +1386,9 @@
     "semantic_hash": ""
   },
   "docs/backend-api.md": {
-    "mtime": 1790845421.7878027,
-    "seen": 1790845457.6233075,
-    "ast_hash": "04db00277f269789bf2a8f7ef73ecff2",
+    "mtime": 1790849259.59595,
+    "seen": 1790849325.8198762,
+    "ast_hash": "a572bc3b3a4e591b1dc889409754f392",
     "semantic_hash": ""
   },
   "docs/backend-b001-b002.md": {
@@ -1539,6 +1539,108 @@
     "mtime": 1790846481.9012773,
     "seen": 1790846604.7525625,
     "ast_hash": "f374754ba290206f75cde8d40a36b77d",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/common/sync.ts": {
+    "mtime": 1790849011.8267672,
+    "seen": 1790849325.7891161,
+    "ast_hash": "bf08f9d1b1ab95b127369ee79aeeb0fb",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/sync/operations.ts": {
+    "mtime": 1790849022.3512497,
+    "seen": 1790849325.7919328,
+    "ast_hash": "d2fa9b1751d57b0586a2f176942ece31",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/sync.test.js": {
+    "mtime": 1790849269.4037766,
+    "seen": 1790849325.793935,
+    "ast_hash": "e72bec4f27d46a5a7153194ea376a043",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/SKILL.md": {
+    "mtime": 1790847703.5326645,
+    "seen": 1790849325.8002226,
+    "ast_hash": "8a54d6857f4cb184b9fe96f7dedd769f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/architecture-overview.md": {
+    "mtime": 1790848855.5505762,
+    "seen": 1790849325.8002253,
+    "ast_hash": "514771021c3f13a5f198ff427615a0e7",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/async-and-errors.md": {
+    "mtime": 1790848855.5515792,
+    "seen": 1790849325.8002264,
+    "ast_hash": "2b908ef52639ba79c52c3255741fbf8c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/complete-examples.md": {
+    "mtime": 1790848855.5525804,
+    "seen": 1790849325.800228,
+    "ast_hash": "5bdda40a7f9475466e1f8f2c2a11f18e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/configuration.md": {
+    "mtime": 1790848855.5525804,
+    "seen": 1790849325.8002293,
+    "ast_hash": "c8cd498ab6c57817e7ae594f0c99ee19",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/database-patterns.md": {
+    "mtime": 1790848855.5540924,
+    "seen": 1790849325.8002312,
+    "ast_hash": "d46fe2a661489ac9312456c4e0a33aa5",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/middleware-guide.md": {
+    "mtime": 1790848855.5540924,
+    "seen": 1790849325.8002324,
+    "ast_hash": "0e6570009997b49dac0cb72dcee3406e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md": {
+    "mtime": 1790848855.5551116,
+    "seen": 1790849325.8002343,
+    "ast_hash": "8006eae755ce41606aa1abeab912b92a",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/sentry-and-monitoring.md": {
+    "mtime": 1790848855.5561066,
+    "seen": 1790849325.8002357,
+    "ast_hash": "b547d321a00501f5411eec94a5d815a0",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/services-and-repositories.md": {
+    "mtime": 1790848855.557135,
+    "seen": 1790849325.8002374,
+    "ast_hash": "6363f25f8abe2568259bf4c75cbd9d06",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/testing-guide.md": {
+    "mtime": 1790848855.557135,
+    "seen": 1790849325.8002386,
+    "ast_hash": "edc575c8d31bf5250619067dd9a63d6c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/backend-dev-guidelines/resources/validation-patterns.md": {
+    "mtime": 1790848855.558107,
+    "seen": 1790849325.8002398,
+    "ast_hash": "4245eb428dfa721dc3685937fdc7d221",
+    "semantic_hash": ""
+  },
+  ".agents/skills/typescript-best-practices/SKILL.md": {
+    "mtime": 1790848922.7119288,
+    "seen": 1790849325.8079689,
+    "ast_hash": "5954ae1c403e32e33dd200248d73d443",
+    "semantic_hash": ""
+  },
+  "docs/backend-b004.md": {
+    "mtime": 1790849259.585132,
+    "seen": 1790849325.820196,
+    "ast_hash": "418b581637d39a953fa82f530e8047b9",
     "semantic_hash": ""
   }
 }

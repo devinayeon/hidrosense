@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "backend-dev-guidelines": {
+      "source": "sickn33/agentic-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/backend-dev-guidelines/SKILL.md",
+      "computedHash": "074094e8e4c78e2e767095145b099ffd3a595d7e6898e9f3f62943d03b2ec21c"
+    },
     "backend-patterns": {
       "source": "affaan-m/ecc",
       "sourceType": "github",
@@ -126,6 +132,12 @@
       "sourceType": "github",
       "skillPath": "skills/surgical-patch/SKILL.md",
       "computedHash": "028b9c3574142d19639d9f8eb11fbb01c58479f8f441e957d598a7215e79f95d"
+    },
+    "typescript-best-practices": {
+      "source": "alleneubank/claude-code",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/typescript-best-practices/SKILL.md",
+      "computedHash": "b73b69197553b711e02839015e6abca717eb2305e90de3cc86403c92d92b00d9"
     },
     "verify-and-stop": {
       "source": "JuliusBrussee/caveman",

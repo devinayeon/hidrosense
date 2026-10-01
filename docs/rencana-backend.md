@@ -2,7 +2,7 @@
 
 Status: acuan urutan kerja aktif berdasarkan arahan pengguna pada 30 September 2026. Dokumen ini menetapkan pekerjaan berikutnya; daftar fitur di bawah belum berarti sudah diimplementasikan.
 
-Pembaruan 1 Oktober 2026: B001/B002 (alias B01/B02) sudah ditinjau ulang; [laporan review](./review-backend-b001-b002.md) mencatat hasil dan batas verifikasi. B003/B03 akun pegawai dan profil sudah diimplementasikan; lihat [breakdown B003](./backend-b003.md) dan [kontrak akun/profil](./backend-accounts-api.md). [Breakdown B001/B002](./backend-b001-b002.md) serta [kontrak API utama](./backend-api.md) tetap menjadi acuan. Hak akses mengikuti System Request: pegawai dapat mengelola panen dan tidak dapat mengakses penjualan. Tahap berikutnya B004/B04.
+Pembaruan 1 Oktober 2026: B001/B002 (alias B01/B02) sudah ditinjau ulang; [laporan review](./review-backend-b001-b002.md) mencatat hasil dan batas verifikasi. B003/B03 akun pegawai dan profil sudah diimplementasikan; lihat [breakdown B003](./backend-b003.md) dan [kontrak akun/profil](./backend-accounts-api.md). B004/B04 fondasi sinkronisasi tersedia; lihat [breakdown B004](./backend-b004.md). [Breakdown B001/B002](./backend-b001-b002.md) serta [kontrak API utama](./backend-api.md) tetap menjadi acuan. Hak akses mengikuti System Request: pegawai dapat mengelola panen dan tidak dapat mengakses penjualan. Tahap berikutnya B005/B05.
 
 Keputusan: fokus pengembangan pada `apps/backend` dan dokumentasi kontrak API. `apps/mobile` tidak diubah. Seluruh pekerjaan yang bergantung pada API BMKG, termasuk aturan cuaca dan perubahan skemanya, ditempatkan sebagai fitur terakhir sampai revisi tim perancangan tersedia. Rekomendasi obat berdasarkan hama tetap dikerjakan lebih awal karena tidak bergantung pada BMKG.
 

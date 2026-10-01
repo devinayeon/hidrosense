@@ -13,7 +13,7 @@ Versi B001–B003. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api
 | GET | `/api/v1/auth/me` | Bearer access token | 200 identitas dan izin saat ini; 401 |
 | POST | `/api/v1/auth/logout` | Bearer access token | 204 tanpa body; 401 |
 
-Bootstrap tersedia melalui CLI `npm run auth:bootstrap`, bukan endpoint publik. Tujuh endpoint akun pegawai/profil tersedia pada [kontrak B003](./backend-accounts-api.md): POST/GET `/employees`, GET/PATCH `/employees/:id`, POST `/employees/:id/deactivate`, serta GET/PATCH `/profile`. Endpoint inventaris, panen, penjualan, dan cuaca belum dibuat.
+Bootstrap tersedia melalui CLI `npm run auth:bootstrap`, bukan endpoint publik. Tujuh endpoint akun pegawai/profil tersedia pada [kontrak B003](./backend-accounts-api.md): POST/GET `/employees`, GET/PATCH `/employees/:id`, POST `/employees/:id/deactivate`, serta GET/PATCH `/profile`. B004 menambah POST `/api/v1/sync/operations`: Bearer token, `operation_key` UUID, `operation_type`, payload JSON, serta pasangan opsional `resource_type`/`client_id` UUID. Replay sama memberi 200 dengan receipt sama; key sama berisi berbeda memberi 409 `OPERATION_CONFLICT`. Endpoint inventaris, panen, penjualan, dan cuaca belum dibuat.
 
 ## Request dan respons
 

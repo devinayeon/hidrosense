@@ -169,7 +169,7 @@ test('does not adopt or overwrite an unmanaged existing schema', async (t) => {
 
 test('loads stable checksums across CRLF and rejects incomplete migration pairs', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'hidrosense-migrations-'));
-  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 100 }));
   await writeFile(join(dir, '0001_test.up.sql'), 'CREATE TABLE t (id INTEGER);\n');
   await assert.rejects(loadMigrations(dir), /down|pair/i);
   await writeFile(join(dir, '0001_test.down.sql'), 'DROP TABLE t;\n');
@@ -180,7 +180,7 @@ test('loads stable checksums across CRLF and rejects incomplete migration pairs'
 
 test('local file uses WAL, persists data, and creates a restorable consistent backup', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'hidrosense-backup-'));
-  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 100 }));
   const url = `file:${join(dir, 'database.db').replaceAll('\\', '/')}`;
   let db = await openDatabase({ url });
   try {

@@ -1,17 +1,17 @@
 # Graph Report - hidrosense  (2026-10-01)
 
 ## Corpus Check
-- 202 files · ~119,118 words
+- 221 files · ~134,686 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 55 file(s) not represented in the graph (top: (none) 12, .xcconfig 8, .xml 7)
 
 ## Summary
-- 1288 nodes · 1848 edges · 131 communities (87 shown, 44 thin omitted)
+- 1577 nodes · 2174 edges · 146 communities (101 shown, 45 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 26 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7204bdfc`
+- Built from commit: `69475b33`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -122,6 +122,7 @@
 - MessageHandler
 - LockTimeoutError
 - Urutan Pengerjaan Backend HidroSense
+- Validation Patterns - Input Validation with Zod
 - Node.js Backend Patterns
 - Kontrak API Backend HidroSense
 - B001 dan B002: fondasi API dan autentikasi
@@ -132,18 +133,31 @@
 - Point
 - Size
 - Review B001/B002
+- Backend Development Guidelines
+- Architecture Overview - Backend Services
+- Routing and Controllers - Best Practices
+- Services and Repositories - Business Logic Layer
+- Configuration Management - UnifiedConfig Pattern
+- Database Patterns - Prisma Best Practices
+- Async Patterns and Error Handling
+- Sentry Integration and Monitoring
+- Testing Guide - Backend Testing Strategies
+- Complete Examples - Full Working Code
+- Middleware Guide - Express Middleware Patterns
+- TypeScript Best Practices
+- B004 — Fondasi sinkronisasi server
 
 ## God Nodes (most connected - your core abstractions)
-1. `ApiError` - 32 edges
+1. `ApiError` - 36 edges
 2. `Win32Window` - 24 edges
-3. `buildApp()` - 20 edges
-4. `_compress_file_locked()` - 18 edges
-5. `_compress_file_locked()` - 18 edges
-6. `requirePermission()` - 18 edges
-7. `@libsql/client` - 17 edges
-8. `validate()` - 14 edges
-9. `validate()` - 14 edges
-10. `fastify` - 14 edges
+3. `buildApp()` - 21 edges
+4. `requirePermission()` - 20 edges
+5. `@libsql/client` - 19 edges
+6. `_compress_file_locked()` - 18 edges
+7. `_compress_file_locked()` - 18 edges
+8. `Backend Development Guidelines` - 16 edges
+9. `fastify` - 15 edges
+10. `validate()` - 14 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Perubahan untuk B003` --references--> `authenticate()`  [INFERRED]
@@ -163,7 +177,7 @@
 ## Hyperedges (group relationships)
 - **Hidroponik Cultivation Lifecycle** — srs_nursery_management, srs_table_capacity_management, srs_growth_monitoring, srs_harvest_sales_tracking [INFERRED 0.95]
 
-## Communities (131 total, 44 thin omitted)
+## Communities (146 total, 45 thin omitted)
 
 ### Community 0 - ".agents/skills/caveman-compress/scripts/cli.py"
 Cohesion: 0.16
@@ -178,11 +192,11 @@ Cohesion: 0.07
 Nodes (11): AppDelegate, SceneDelegate, RunnerTests, AppDelegate, MainFlutterWindow, RunnerTests, Cocoa, Flutter (+3 more)
 
 ### Community 3 - ".agents/skills/caveman-compress/scripts/validate.py"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (21): benchmark_pair(), count_tokens(), main(), print_table(), count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings() (+13 more)
 
 ### Community 4 - ".codex/skills/caveman-compress/scripts/validate.py"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (21): benchmark_pair(), count_tokens(), main(), print_table(), count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings() (+13 more)
 
 ### Community 5 - "my_application.cc"
@@ -203,7 +217,7 @@ Nodes (4): Penerapan guideline, Review dan perbaikan B003, Temuan yang telah dip
 
 ### Community 9 - "auth-infrastructure.test.js"
 Cohesion: 0.08
-Nodes (31): md, skillFile, skill, extensions, largest, root, environmentSchema, readConfig() (+23 more)
+Nodes (33): md, skillFile, skill, extensions, largest, root, nextResourceVersion(), environmentSchema (+25 more)
 
 ### Community 10 - "_compress_file_locked"
 Cohesion: 0.08
@@ -422,8 +436,8 @@ Cohesion: 0.33
 Nodes (3): build, DashboardHeader, preferredSize
 
 ### Community 75 - "app.ts"
-Cohesion: 0.11
-Nodes (54): AppOptions, buildApp(), requestPath(), fastify, FastifyRequest, requirePermission(), ApiError, installErrors() (+46 more)
+Cohesion: 0.09
+Nodes (62): AppOptions, buildApp(), requestPath(), fastify, FastifyRequest, requirePermission(), ApiError, installErrors() (+54 more)
 
 ### Community 76 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -473,6 +487,10 @@ Nodes (5): EnableFullDpiSupportIfAvailable(), GetHandle, GetThisFromHandle, Mess
 Cohesion: 0.29
 Nodes (7): Cakupan lengkap terhadap backlog dan serahan tim, Hubungan dengan sprint dan Definition of Done, Keputusan yang harus ditutup pada tahap terkait, Pola vertical slice untuk implementasi, Sumber dan kondisi awal, Urutan Pengerjaan Backend HidroSense, Urutan sekuensial yang dipakai
 
+### Community 121 - "Validation Patterns - Input Validation with Zod"
+Cohesion: 0.06
+Nodes (32): Advanced Patterns, Arrays, Basic Zod Patterns, Benefits Over Joi/Other Libraries, Conditional Validation, Controller Validation, Custom Error Messages, DTO Pattern (+24 more)
+
 ### Community 122 - "Node.js Backend Patterns"
 Cohesion: 0.33
 Nodes (5): Best Practices, Detailed patterns and worked examples, Node.js Backend Patterns, Testing Patterns, When to Use This Skill
@@ -513,25 +531,77 @@ Nodes (3): Size, height, width
 Cohesion: 0.50
 Nodes (4): Hasil dan perbaikan, Penggunaan skill, Perubahan untuk B003, Review B001/B002
 
+### Community 132 - "Backend Development Guidelines"
+Cohesion: 0.06
+Nodes (30): 10. Anti-Patterns (Immediate Rejection), 11. Integration With Other Skills, 12. Operator Validation Checklist, 13. Skill Status, 1. Backend Feasibility & Risk Index (BFRI), 1. Layered Architecture Is Mandatory, 2. Core Architecture Doctrine (Non-Negotiable), 2. Routes Only Route (+22 more)
+
+### Community 133 - "Architecture Overview - Backend Services"
+Cohesion: 0.08
+Nodes (25): Architecture Overview - Backend Services, Complete Flow Example, Config Directory, Controllers Directory, Directory Structure Rationale, Email Service (Mature Pattern ✅), Example: User Creation, Feature-Based Organization (+17 more)
+
+### Community 134 - "Routing and Controllers - Best Practices"
+Cohesion: 0.08
+Nodes (25): Anti-Pattern 1: Business Logic in Routes (Bad ❌), Anti-Patterns, BaseController Pattern, BaseController Pattern (Template), Clean Route Pattern, Controller Error Handling, Custom Error Status Codes, Error Handling (+17 more)
+
+### Community 135 - "Services and Repositories - Business Logic Layer"
+Cohesion: 0.08
+Nodes (24): 1. In-Memory Caching, 1. Single Responsibility, 2. Cache Invalidation, 2. Clear Method Names, 3. Return Types, 4. Error Handling, 5. Avoid God Services, Caching Strategies (+16 more)
+
+### Community 136 - "Configuration Management - UnifiedConfig Pattern"
+Cohesion: 0.11
+Nodes (19): config.ini Structure, Configuration Management - UnifiedConfig Pattern, Configuration Structure, DO NOT Commit Secrets, Environment Overrides, Environment-Specific Configs, Find All process.env Usage, Implementation Pattern (+11 more)
+
+### Community 137 - "Database Patterns - Prisma Best Practices"
+Cohesion: 0.11
+Nodes (19): Basic Pattern, Check Availability, Database Patterns - Prisma Best Practices, Error Handling, Interactive Transaction, N+1 Query Prevention, Prisma Error Types, PrismaService Usage (+11 more)
+
+### Community 138 - "Async Patterns and Error Handling"
+Cohesion: 0.11
+Nodes (18): Always Use Try-Catch, Async/Await Best Practices, Async Patterns and Error Handling, asyncErrorWrapper Utility, Avoid .then() Chains, Common Async Pitfalls, Custom Error Types, Define Custom Errors (+10 more)
+
+### Community 139 - "Sentry Integration and Monitoring"
+Cohesion: 0.12
+Nodes (17): 1. BaseController Pattern, 2. Workflow Error Handling, 3. Service Layer Error Handling, API Endpoint Spans, Common Mistakes, Core Principles, Cron Job Monitoring, Database Performance Tracking (+9 more)
+
+### Community 140 - "Testing Guide - Backend Testing Strategies"
+Cohesion: 0.12
+Nodes (17): Coverage Targets, Integration Testing, Mock Authentication in Tests, Mock PrismaService, Mock Services, Mocking Strategies, Recommended Coverage, Run Coverage (+9 more)
+
+### Community 141 - "Complete Examples - Full Working Code"
+Cohesion: 0.13
+Nodes (15): AFTER: Clean Separation ✅, BEFORE: Business Logic in Routes ❌, Complete Controller Example, Complete Examples - Full Working Code, Complete Repository, Complete Route File, Complete Service with DI, Complete User Management Feature (+7 more)
+
+### Community 142 - "Middleware Guide - Express Middleware Patterns"
+Cohesion: 0.15
+Nodes (12): Audit Middleware with AsyncLocalStorage, Authentication Middleware, Composable Middleware, Comprehensive Error Handler, Critical Order (Must Follow), Error Boundary Middleware, Excellent Pattern from Blog API, Middleware Guide - Express Middleware Patterns (+4 more)
+
+### Community 144 - "TypeScript Best Practices"
+Cohesion: 0.33
+Nodes (5): Make Illegal States Unrepresentable, Optional: type-fest, Pair with React Best Practices, Runtime Validation with Zod, TypeScript Best Practices
+
+### Community 145 - "B004 — Fondasi sinkronisasi server"
+Cohesion: 0.40
+Nodes (4): B004 — Fondasi sinkronisasi server, Bukti, Implementasi, Review B000–B003
+
 ## Knowledge Gaps
-- **564 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+559 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 778 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **44 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **742 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+737 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 958 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **45 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `authenticate()` connect `app.ts` to `Review B001/B002`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Why does `Review B001/B002` connect `Review B001/B002` to `rencana-backend.md`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **Why does `Perubahan untuk B003` connect `Review B001/B002` to `app.ts`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **What connects `name`, `version`, `license` to the rest of the system?**
-  _564 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _742 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.07058823529411765 - nodes in this community are weakly interconnected._
 - **Should `.agents/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.08858858858858859 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0957983193277311 - nodes in this community are weakly interconnected._
 - **Should `.codex/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.09982174688057041 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09206349206349207 - nodes in this community are weakly interconnected._
