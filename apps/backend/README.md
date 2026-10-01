@@ -1,6 +1,6 @@
 # Database backend HidroSense
 
-API B001/B002 sudah tersedia: fondasi HTTP, autentikasi, sesi, dan guard hak akses. Lihat [kontrak API](../../docs/backend-api.md) dan [breakdown pekerjaan](../../docs/backend-b001-b002.md). Pegawai memiliki akses panen dan tidak memiliki akses penjualan sesuai System Request.
+API B001–B003 sudah tersedia: fondasi HTTP, autentikasi, sesi, guard hak akses, pengelolaan pegawai, dan profil petani. Lihat [kontrak API](../../docs/backend-api.md), [kontrak akun/profil](../../docs/backend-accounts-api.md), dan [breakdown B003](../../docs/backend-b003.md). Pegawai memiliki akses panen dan tidak memiliki akses penjualan sesuai System Request.
 
 ## Menjalankan API dan autentikasi
 
@@ -31,7 +31,7 @@ try {
 }
 ```
 
-Bootstrap menolak jika petani sudah ada, termasuk akun nonaktif. Tidak ada password bawaan atau endpoint registrasi publik. Akun pegawai dikelola pada B03. Migrasi `0002_auth_sessions` menambah tabel sesi dan counter throttle; rollback versi ini mencabut semua sesi tetapi mempertahankan tabel/data domain.
+Bootstrap menolak jika petani sudah ada, termasuk akun nonaktif. Tidak ada password bawaan atau endpoint registrasi publik. Petani mengelola pegawai melalui `/api/v1/employees` dan profil sendiri melalui `/api/v1/profile`; perubahan kredensial mencabut seluruh sesi akun target. B003 tidak memerlukan migrasi baru. Migrasi `0002_auth_sessions` menambah tabel sesi dan counter throttle; rollback versi ini mencabut semua sesi tetapi mempertahankan tabel/data domain.
 
 Konfigurasi API tersedia di `.env.example`: `NODE_ENV`, `HOST`, `PORT`, `LOG_LEVEL`, `CORS_ORIGINS`, dan `TRUSTED_PROXIES`. Production memerlukan HTTPS melalui proxy tepercaya. Semua instance harus memakai database bersama agar sesi dan rate limit konsisten. Startup membersihkan sesi/counter kedaluwarsa; pada deployment yang berjalan lama, jadwalkan penghapusan data infrastruktur kedaluwarsa secara berkala. SQL penghapusan memakai batas `refresh_expires_at`/`resets_at` dalam epoch milidetik dan tidak menyentuh data domain.
 

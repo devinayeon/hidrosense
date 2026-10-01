@@ -23,11 +23,11 @@ export async function bootstrapPetani(db: Client, input: unknown) {
     await tx.execute("INSERT INTO roles (nama_role) VALUES ('petani'),('pegawai') ON CONFLICT(nama_role) DO NOTHING");
     const result = await tx.execute({
       sql: `INSERT INTO users (id_role,nama,username,password)
-        SELECT id_role,?,?,? FROM roles WHERE nama_role='petani' RETURNING id_user,nama,username`,
+        SELECT id_role,?,?,? FROM roles WHERE nama_role='petani' RETURNING CAST(id_user AS TEXT) AS id_user,nama,username`,
       args: [nama, username, hash],
     });
     await tx.commit();
-    return { id_user: String(result.rows[0].id_user), nama, username };
+    return { id_user: result.rows[0].id_user, nama, username };
   } catch (error) {
     if (!tx.closed) await tx.rollback();
     throw error;

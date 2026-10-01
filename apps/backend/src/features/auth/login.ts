@@ -18,7 +18,8 @@ export function registerLogin(app: FastifyInstance, db: Client, clock: () => num
     const { username, password } = request.body;
     await consumeLimit(db, `login:${username.toLowerCase()}`, 10, 15 * 60 * 1000, clock(), reply);
     const user = (await db.execute({
-      sql: 'SELECT id_user,password,status_aktif FROM users WHERE username=?', args: [username],
+      // Preserve SQLite 64-bit IDs as strings throughout the authentication path.
+      sql: 'SELECT CAST(id_user AS TEXT) AS id_user,username,password,status_aktif FROM users WHERE username=?', args: [username],
     })).rows[0];
     const valid = await verifyPassword(password, user ? String(user.password) : '');
     if (!valid || !user || user.status_aktif !== 1) {

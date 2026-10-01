@@ -38,6 +38,13 @@ test('unknown routes and internal errors share a safe error envelope', async (t)
   }
 });
 
+test('malformed percent-encoding receives a safe client error', async (t) => {
+  const { app } = await fixture(t);
+  const response = await app.inject('/%zz');
+  assert.equal(response.statusCode, 400);
+  assert.doesNotMatch(response.body, /stack|secret|internal-data/i);
+});
+
 test('login rejects empty, unexpected, oversized and malformed payloads', async (t) => {
   const { app } = await fixture(t);
   for (const payload of [{}, { username: '', password }, { username: 'petani', password, role: 'petani' }, { username: 1, password }]) {

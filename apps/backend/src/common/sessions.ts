@@ -18,11 +18,11 @@ export function publicUser(row: Row) {
 
 export type Principal = ReturnType<typeof publicUser> & { sessionId: string };
 
-export async function authenticate(db: Client, authorization: string | undefined, now: number): Promise<Principal> {
+export async function authenticate(db: Pick<Client, 'execute'>, authorization: string | undefined, now: number): Promise<Principal> {
   const match = /^Bearer ([A-Za-z0-9_-]{43})$/i.exec(authorization ?? '');
   if (!match) throw new ApiError(401, 'UNAUTHENTICATED', 'Sesi tidak valid atau kedaluwarsa.');
   const result = await db.execute({
-    sql: `SELECT s.id_session, u.id_user, u.nama, u.username, r.nama_role
+    sql: `SELECT s.id_session, CAST(u.id_user AS TEXT) AS id_user, u.nama, u.username, r.nama_role
       FROM auth_sessions s JOIN users u ON u.id_user=s.id_user JOIN roles r ON r.id_role=u.id_role
       WHERE s.access_token_hash=? AND s.access_expires_at>? AND s.refresh_expires_at>?
       AND u.status_aktif=1 AND s.credential_hash=u.password`,
@@ -52,8 +52,11 @@ export async function createSession(db: Client, user: Row, now: number) {
     sql: `INSERT INTO auth_sessions
       (id_session,id_user,access_token_hash,refresh_token_hash,credential_hash,created_at,access_expires_at,refresh_expires_at)
       SELECT ?,u.id_user,?,?,u.password,?,?,? FROM users u JOIN roles r ON r.id_role=u.id_role
-      WHERE u.id_user=? AND u.status_aktif=1 AND u.password=? AND r.nama_role IN ('petani','pegawai')`,
-    args: [randomUUID(), tokenHash(tokens.access), tokenHash(tokens.refresh), now, accessExpiry, refreshExpiry, user.id_user, user.password],
+      WHERE u.id_user=? AND u.username=? AND u.status_aktif=1 AND u.password=?
+        AND r.nama_role IN ('petani','pegawai')`,
+    // Credentials read before scrypt must still identify the same account at commit time.
+    args: [randomUUID(), tokenHash(tokens.access), tokenHash(tokens.refresh), now, accessExpiry, refreshExpiry,
+      user.id_user, user.username, user.password],
   });
   if (!inserted.rowsAffected) throw new ApiError(401, 'INVALID_CREDENTIALS', 'Username atau password tidak valid.');
   const principal = await authenticate(db, `Bearer ${tokens.access}`, now);

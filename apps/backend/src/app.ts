@@ -11,8 +11,21 @@ import { registerLogin } from './features/auth/login.js';
 import { registerRefresh } from './features/auth/refresh.js';
 import { registerMe } from './features/auth/me.js';
 import { registerLogout } from './features/auth/logout.js';
+import { registerCreateEmployee } from './features/accounts/create-employee.js';
+import { registerReadEmployees } from './features/accounts/read-employees.js';
+import { registerUpdateEmployee } from './features/accounts/update-employee.js';
+import { registerDeactivateEmployee } from './features/accounts/deactivate-employee.js';
+import { registerProfile } from './features/accounts/profile.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
+
+function requestPath(url: string) {
+  try {
+    return decodeURIComponent(url.split('?', 1)[0]);
+  } catch {
+    throw new ApiError(400, 'BAD_REQUEST', 'URL permintaan tidak valid.');
+  }
+}
 
 export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOptions) {
   const app = Fastify({
@@ -41,7 +54,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   });
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id).header('cache-control', 'no-store');
-    const path = request.url.split('?')[0];
+    const path = requestPath(request.url);
     if (path.startsWith('/api/')) {
       if (config.environment === 'production' && request.protocol !== 'https') {
         throw new ApiError(426, 'HTTPS_REQUIRED', 'Gunakan HTTPS untuk mengakses API.');
@@ -69,5 +82,10 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   registerRefresh(app, db, clock);
   registerMe(app, db, clock);
   registerLogout(app, db, clock);
+  registerCreateEmployee(app, db, clock);
+  registerReadEmployees(app, db, clock);
+  registerUpdateEmployee(app, db, clock);
+  registerDeactivateEmployee(app, db, clock);
+  registerProfile(app, db, clock);
   return app;
 }

@@ -2,7 +2,7 @@
 
 Status: acuan urutan kerja aktif berdasarkan arahan pengguna pada 30 September 2026. Dokumen ini menetapkan pekerjaan berikutnya; daftar fitur di bawah belum berarti sudah diimplementasikan.
 
-Pembaruan B001/B002 (alias B01/B02): fondasi HTTP dan autentikasi sudah diimplementasikan. [Breakdown dan bukti](./backend-b001-b002.md) serta [kontrak API](./backend-api.md) menjadi acuan integrasi. Keputusan hak akses sudah final: ikuti System Request; pegawai dapat mengelola panen, tetapi tidak boleh mengakses penjualan. Tahap berikutnya B03.
+Pembaruan 1 Oktober 2026: B001/B002 (alias B01/B02) sudah ditinjau ulang; [laporan review](./review-backend-b001-b002.md) mencatat hasil dan batas verifikasi. B003/B03 akun pegawai dan profil sudah diimplementasikan; lihat [breakdown B003](./backend-b003.md) dan [kontrak akun/profil](./backend-accounts-api.md). [Breakdown B001/B002](./backend-b001-b002.md) serta [kontrak API utama](./backend-api.md) tetap menjadi acuan. Hak akses mengikuti System Request: pegawai dapat mengelola panen dan tidak dapat mengakses penjualan. Tahap berikutnya B004/B04.
 
 Keputusan: fokus pengembangan pada `apps/backend` dan dokumentasi kontrak API. `apps/mobile` tidak diubah. Seluruh pekerjaan yang bergantung pada API BMKG, termasuk aturan cuaca dan perubahan skemanya, ditempatkan sebagai fitur terakhir sampai revisi tim perancangan tersedia. Rekomendasi obat berdasarkan hama tetap dikerjakan lebih awal karena tidak bergantung pada BMKG.
 
@@ -193,4 +193,4 @@ Definition of Done untuk setiap slice backend:
 5. Kode ditinjau, hasil terintegrasi, dan tidak ada cacat yang menghambat alur utama, melanggar akses, atau menghilangkan data.
 6. Status dicatat terpisah antara backend siap, integrasi mobile belum/selesai, dan validasi perangkat/mitra. Kesiapan backend tidak otomatis menutup keseluruhan PB-05/PB-07 produk.
 
-Pekerjaan konkret berikutnya: **B03**, setelah fondasi B001/B002 tersedia. Implementasi BMKG baru dibuka di **B19**.
+Pekerjaan konkret berikutnya: **B004/B04**, setelah B001–B003 tersedia. Implementasi BMKG baru dibuka di **B19**.

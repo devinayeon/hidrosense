@@ -42,6 +42,16 @@ test('bootstrap creates the first petani with a hash and never replaces an exist
   assert.equal((await db.execute('SELECT COUNT(*) AS n FROM roles')).rows[0].n, 2);
 });
 
+test('bootstrap preserves an id beyond the JavaScript safe integer range', async (t) => {
+  const db = await openDatabase({ url: ':memory:' });
+  t.after(() => db.close());
+  await migrate(db, await loadMigrations());
+  await db.execute("INSERT INTO sqlite_sequence(name,seq) VALUES ('users','9007199254740991')");
+  const user = await bootstrapPetani(db, { username: 'large-id', nama: 'Petani', password });
+  assert.equal(user.id_user, '9007199254740992');
+  assert.equal((await db.execute("SELECT CAST(id_user AS TEXT) AS id_user FROM users WHERE username='large-id'")).rows[0].id_user, user.id_user);
+});
+
 test('bootstrap duplicate username rolls back without creating partial roles', async (t) => {
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());
@@ -66,6 +76,7 @@ test('database rate limits survive separate app instances and reset after their 
   assert.equal(limited.headers['retry-after'], '60');
   // Untrusted forwarded headers cannot bypass the IP bucket.
   assert.equal((await app.inject({ url: '/api/v1/auth/me', headers: { 'x-forwarded-for': '192.0.2.99' } })).statusCode, 429);
+  assert.equal((await app.inject('/%61pi/v1/auth/me')).statusCode, 429);
   advance(60000);
   assert.equal((await app.inject('/api/v1/auth/me')).statusCode, 401);
 });
@@ -83,6 +94,7 @@ test('production requires HTTPS and trusts forwarded protocol only from configur
   const { app } = await fixture(t, { env: { NODE_ENV: 'production' } });
   const spoofed = await app.inject({ url: '/api/v1/auth/me', headers: { 'x-forwarded-proto': 'https' } });
   assert.equal(spoofed.statusCode, 426);
+  assert.equal((await app.inject({ method: 'POST', url: '/%61pi/v1/auth/login', payload: { username: 'petani', password } })).statusCode, 426);
   const trusted = await fixture(t, { env: { NODE_ENV: 'production', TRUSTED_PROXIES: '127.0.0.1/32' } });
   assert.equal((await trusted.app.inject({ url: '/api/v1/auth/me', headers: { 'x-forwarded-proto': 'https' } })).statusCode, 401);
   assert.throws(() => readConfig({ TRUSTED_PROXIES: 'true' }), /configuration/);

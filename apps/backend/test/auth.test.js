@@ -79,3 +79,49 @@ test('simultaneous refresh requests cannot both rotate one refresh token', async
   const responses = await Promise.all([1, 2].map(() => app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refresh_token: data.refresh_token } })));
   assert.deepEqual(responses.map((r) => r.statusCode).sort(), [200, 401]);
 });
+
+test('login with a stale username cannot create a session after an account rename', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const ownerHeaders = bearer((await login()).json().data.access_token);
+  const execute = db.execute.bind(db);
+  let release;
+  let selected;
+  const continueLogin = new Promise((resolve) => { release = resolve; });
+  const credentialsRead = new Promise((resolve) => { selected = resolve; });
+  db.execute = async (statement) => {
+    const result = await execute(statement);
+    if (typeof statement === 'object' && statement.sql.includes('FROM users WHERE username=?') &&
+      statement.args[0] === 'pegawai') {
+      selected();
+      await continueLogin;
+    }
+    return result;
+  };
+  try {
+    const pendingLogin = login('pegawai');
+    await credentialsRead;
+    const renamed = await app.inject({ method: 'PATCH', url: '/api/v1/employees/2', headers: ownerHeaders,
+      payload: { username: 'pegawai-baru' } });
+    assert.equal(renamed.statusCode, 200, renamed.body);
+    release();
+    const response = await pendingLogin;
+    assert.equal(response.statusCode, 401, response.body);
+    assert.equal((await db.execute('SELECT COUNT(*) AS n FROM auth_sessions WHERE id_user=2')).rows[0].n, 0);
+  } finally { db.execute = execute; }
+});
+
+test('authentication accepts a created account whose ID exceeds JavaScript safe integers', async (t) => {
+  const { app, db, login } = await fixture(t);
+  await db.execute({ sql: "UPDATE sqlite_sequence SET seq=? WHERE name='users'", args: ['9007199254740991'] });
+  const ownerHeaders = bearer((await login()).json().data.access_token);
+  const created = await app.inject({ method: 'POST', url: '/api/v1/employees', headers: ownerHeaders,
+    payload: { nama: 'ID Besar', username: 'id-besar', password } });
+  assert.equal(created.statusCode, 201, created.body);
+  assert.equal(created.json().data.id_user, '9007199254740992');
+  const loggedIn = await login('id-besar');
+  assert.equal(loggedIn.statusCode, 200, loggedIn.body);
+  assert.equal(loggedIn.json().data.user.id_user, '9007199254740992');
+  const me = await app.inject({ url: '/api/v1/auth/me', headers: bearer(loggedIn.json().data.access_token) });
+  assert.equal(me.statusCode, 200, me.body);
+  assert.equal(me.json().data.id_user, '9007199254740992');
+});

@@ -1,6 +1,6 @@
 # Kontrak API Backend HidroSense
 
-Versi awal B001/B002. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api/v1`. Production menggunakan HTTPS melalui reverse proxy dengan IP/CIDR tepercaya pada `TRUSTED_PROXIES`. HTTP API production ditolak dengan 426; health checks tetap dapat diakses dari jaringan internal.
+Versi B001–B003. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api/v1`. Production menggunakan HTTPS melalui reverse proxy dengan IP/CIDR tepercaya pada `TRUSTED_PROXIES`. HTTP API production ditolak dengan 426; health checks tetap dapat diakses dari jaringan internal.
 
 ## Endpoint yang tersedia
 
@@ -13,7 +13,7 @@ Versi awal B001/B002. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/
 | GET | `/api/v1/auth/me` | Bearer access token | 200 identitas dan izin saat ini; 401 |
 | POST | `/api/v1/auth/logout` | Bearer access token | 204 tanpa body; 401 |
 
-Bootstrap tersedia melalui CLI `npm run auth:bootstrap`, bukan endpoint publik. Endpoint akun, inventaris, panen, penjualan, dan cuaca belum dibuat.
+Bootstrap tersedia melalui CLI `npm run auth:bootstrap`, bukan endpoint publik. Tujuh endpoint akun pegawai/profil tersedia pada [kontrak B003](./backend-accounts-api.md): POST/GET `/employees`, GET/PATCH `/employees/:id`, POST `/employees/:id/deactivate`, serta GET/PATCH `/profile`. Endpoint inventaris, panen, penjualan, dan cuaca belum dibuat.
 
 ## Request dan respons
 

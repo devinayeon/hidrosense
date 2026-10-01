@@ -12,11 +12,11 @@ Arahan pengguna pada 30 September 2026 menetapkan System Request sebagai acuan: 
 | --- | --- | --- |
 | B001.1 | Host HTTP dan konfigurasi | Fastify, TypeScript, validasi environment, host/port, build dan start |
 | B001.2 | Health, readiness, dan shutdown | `/health/live`, `/health/ready`, pemeriksaan histori migrasi, penutupan HTTP dan database pada SIGINT/SIGTERM |
-| B001.3 | Batas request dan validasi | JSON Schema pada request, penolakan field tambahan, batas body 16 KiB, timeout request, CORS allowlist, security headers |
+| B001.3 | Batas request dan validasi | JSON Schema pada request, penolakan field tambahan, batas body 16 KiB, timeout request, CORS allowlist, security headers, serta normalisasi URL sebelum HTTPS dan throttle |
 | B001.4 | Respons dan observabilitas | Envelope sukses/error, ID request dari server, log terstruktur tanpa body/credential, error internal disamarkan |
 | B001.5 | Kontrak lintas fitur | Versi `/api/v1`, matriks akses, ID string, tanggal/waktu, pagination, dan aturan representasi desimal didokumentasikan |
 | B002.1 | Skema autentikasi | Migrasi `0002_auth_sessions` menambah sesi dan rate limit; tabel/data domain `0001` dipertahankan |
-| B002.2 | Bootstrap pertama | CLI khusus membuat petani pertama dan dua role, hash scrypt, transaksi atomik, menolak penggantian akun lama |
+| B002.2 | Bootstrap pertama | CLI khusus membuat petani pertama dan dua role, hash scrypt, transaksi atomik, menolak penggantian akun lama, dan ID SQLite dikembalikan sebagai string |
 | B002.3 | Login | Username/password, respons gagal seragam, verifikasi hash, hanya akun aktif dan role yang dikenal |
 | B002.4 | Sesi dan refresh | Token opaque acak, hash SHA-256 pada database, access 15 menit, refresh maksimum 7 hari sejak login, rotasi atomik |
 | B002.5 | Identitas dan logout | `/auth/me` mengembalikan identitas/izin aktual; logout menghapus sesi dan kedua tokennya |
