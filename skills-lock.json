@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "backend-code-review": {
+      "source": "langgenius/dify",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/backend-code-review/SKILL.md",
+      "computedHash": "035e9d7c308754bc9aeec29e7208b2e72ce9d30e91fb6cc3c10f25f8823febea"
+    },
     "backend-dev-guidelines": {
       "source": "sickn33/agentic-awesome-skills",
       "sourceType": "github",
@@ -96,6 +102,12 @@
       "sourceType": "github",
       "skillPath": "skills/caveman-stats/SKILL.md",
       "computedHash": "f59785c3571b4016fda470fef975adf48af2b29cac0df0ad43c8c8a8d1bd8f88"
+    },
+    "crud-development": {
+      "source": "juaniquillo/resume",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/crud-development/SKILL.md",
+      "computedHash": "558f1d64ffe1a40bed5876a222c0b02f2b4308c2ae6d9c659225f82990a7064e"
     },
     "investigate-first": {
       "source": "JuliusBrussee/caveman",

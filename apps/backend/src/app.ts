@@ -17,6 +17,9 @@ import { registerUpdateEmployee } from './features/accounts/update-employee.js';
 import { registerDeactivateEmployee } from './features/accounts/deactivate-employee.js';
 import { registerProfile } from './features/accounts/profile.js';
 import { registerSyncOperations } from './features/sync/operations.js';
+import { registerJenisInventaris } from './features/inventory/jenis-inventaris.js';
+import { registerObat } from './features/inventory/obat.js';
+import { registerInventaris } from './features/inventory/inventaris.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
 
@@ -89,5 +92,8 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   registerDeactivateEmployee(app, db, clock);
   registerProfile(app, db, clock);
   registerSyncOperations(app, db, clock);
+  registerJenisInventaris(app, db, clock);
+  registerObat(app, db, clock);
+  registerInventaris(app, db, clock);
   return app;
 }
