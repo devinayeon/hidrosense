@@ -1926,9 +1926,9 @@
     "semantic_hash": ""
   },
   "docs/review-backend-b000-b005.md": {
-    "mtime": 1790904871.7795405,
-    "seen": 1790904887.7228143,
-    "ast_hash": "d72171d27af39d31f83eba1e40c078f9",
+    "mtime": 1790904917.9517465,
+    "seen": 1790960237.2530925,
+    "ast_hash": "4862c2069dbe70ce0339d7a8a3917167",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20261002_004103_43f6795d_act_as_a_backend_engineer_to_evaluate_and_ensure_t.md": {
@@ -1971,6 +1971,72 @@
     "mtime": 1790904500.5532098,
     "seen": 1790904887.6892655,
     "ast_hash": "c8deb6ffec642c780a0e9c3283ae770c",
+    "semantic_hash": ""
+  },
+  "apps/backend/scripts/verify-turso-live.mjs": {
+    "mtime": 1790960297.7619264,
+    "seen": 1790960305.7323947,
+    "ast_hash": "2bd5b2da92c66374eba6fc34a17a3626",
+    "semantic_hash": ""
+  },
+  "docs/verification-turso-live-evidence.json": {
+    "mtime": 1790960156.304031,
+    "seen": 1790960237.235802,
+    "ast_hash": "ceeaff812e112dcd805c96c3e39bc5e3",
+    "semantic_hash": ""
+  },
+  "docs/verification-turso-live.md": {
+    "mtime": 1790961819.6257062,
+    "seen": 1790961842.1840422,
+    "ast_hash": "c829c82538f0a24f03d6ee190498564a",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_013539_6ec63b27_execute_remediation_steps_in_the_following_strict.md": {
+    "mtime": 1790904939.8162744,
+    "seen": 1790960237.2537093,
+    "ast_hash": "aa09531e73124b81f980ee40b7590ea9",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_165803_e43eb915_database_migration_transaction_sync_inventory.md": {
+    "mtime": 1790960283.285158,
+    "seen": 1790960305.7598865,
+    "ast_hash": "4a282a445ba3492d9f342cf09b19c552",
+    "semantic_hash": ""
+  },
+  "apps/backend/scripts/deploy-turso-migrations.mjs": {
+    "mtime": 1790961521.999881,
+    "seen": 1790961842.1539047,
+    "ast_hash": "7c1ed0c4f205168b0be042869cbac1db",
+    "semantic_hash": ""
+  },
+  "apps/backend/scripts/verify-turso-features.mjs": {
+    "mtime": 1790961745.9971702,
+    "seen": 1790961842.1539063,
+    "ast_hash": "e36ce2515ec4f852f1b3e92289095ee2",
+    "semantic_hash": ""
+  },
+  "docs/deployment-turso-features-evidence.json": {
+    "mtime": 1790961755.5299473,
+    "seen": 1790961842.16624,
+    "ast_hash": "5028ebbe79c94ef338dc9e194614c03b",
+    "semantic_hash": ""
+  },
+  "docs/deployment-turso-migrations-evidence.json": {
+    "mtime": 1790961543.6852999,
+    "seen": 1790961842.1662412,
+    "ast_hash": "979cb1a26cb8082144e67868e1ca9353",
+    "semantic_hash": ""
+  },
+  "docs/deployment-turso-verification-evidence.json": {
+    "mtime": 1790961588.9969072,
+    "seen": 1790961842.1662426,
+    "ast_hash": "c0975d296616e4cd3e5424a2ca788f68",
+    "semantic_hash": ""
+  },
+  "docs/deployment-turso-migrations.md": {
+    "mtime": 1790961819.6247296,
+    "seen": 1790961842.1835546,
+    "ast_hash": "231cecce02915b53e9048e461d9af870",
     "semantic_hash": ""
   }
 }

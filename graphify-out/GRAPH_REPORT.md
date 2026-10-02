@@ -1,17 +1,17 @@
-# Graph Report - hidrosense  (2026-10-02)
+# Graph Report - hidrosense  (2026-10-03)
 
 ## Corpus Check
-- 280 files · ~163,637 words
+- 291 files · ~170,803 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 56 file(s) not represented in the graph (top: (none) 13, .xcconfig 8, .xml 7)
 
 ## Summary
-- 1826 nodes · 2598 edges · 164 communities (115 shown, 49 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 31 edges (avg confidence: 0.87)
+- 1867 nodes · 2680 edges · 173 communities (121 shown, 52 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 32 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dfb61268`
+- Built from commit: `331624c7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -26,7 +26,7 @@
 - .codex/skills/caveman-compress/scripts/cli.py
 - Review dan perbaikan B003
 - app.ts
-- Path
+- _compress_file_locked
 - What You Must Do When Invoked
 - dashboard_page.dart
 - Mobile App (Flutter)
@@ -114,9 +114,9 @@
 - StatelessWidget
 - nodejs-backend-patterns — detailed patterns and worked examples
 - Backend Development Patterns
-- .agents/skills/caveman-compress/scripts/compress.py
+- Q: database migration transaction sync inventory
 - Win32Window
-- .codex/skills/caveman-compress/scripts/benchmark.py
+- LockTimeoutError
 - _compress_file_locked
 - MessageHandler
 - MessageHandler
@@ -149,6 +149,7 @@
 - Rules
 - What You Must Do When Invoked
 - graphify reference: extra exports and benchmark
+- .agents/skills/caveman-compress/scripts/benchmark.py
 - graphify reference: query, path, explain
 - API inventaris B005
 - graphify reference: add a URL and watch a folder
@@ -163,11 +164,19 @@
 - Q: Act as a Backend Engineer to evaluate and ensure that the work executed from B000 through B005 has not been overengineered.
 - Q: Based on the available documentation, review all work and completed tasks from B000 through B005.
 - .codex/skills/caveman-compress/scripts/validate.py
+- .codex/skills/caveman-compress/scripts/benchmark.py
 - Q: Review B000 sampai B004 untuk development B005
+- extract_indented_code_blocks
+- .agents/skills/caveman-compress/scripts/compress.py
+- Directory Structure Rationale
+- Deployment migrasi Turso 0002–0005
+- ValidationResult
+- Q: Execute remediation steps in the following strict priority order
+- Error Capture Patterns
 
 ## God Nodes (most connected - your core abstractions)
 1. `ApiError` - 45 edges
-2. `@libsql/client` - 29 edges
+2. `@libsql/client` - 30 edges
 3. `requirePermission()` - 26 edges
 4. `Win32Window` - 24 edges
 5. `fastify` - 23 edges
@@ -175,7 +184,7 @@
 7. `fixture()` - 20 edges
 8. `_compress_file_locked()` - 18 edges
 9. `_compress_file_locked()` - 18 edges
-10. `buildApp()` - 16 edges
+10. `buildApp()` - 17 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Perubahan untuk B003` --references--> `authenticate()`  [INFERRED]
@@ -195,11 +204,11 @@
 ## Hyperedges (group relationships)
 - **Hidroponik Cultivation Lifecycle** — srs_nursery_management, srs_table_capacity_management, srs_growth_monitoring, srs_harvest_sales_tracking [INFERRED 0.95]
 
-## Communities (164 total, 49 thin omitted)
+## Communities (173 total, 52 thin omitted)
 
 ### Community 0 - ".agents/skills/caveman-compress/scripts/cli.py"
-Cohesion: 0.15
-Nodes (7): main(), backup_dir_for(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
+Cohesion: 0.16
+Nodes (6): main(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
 
 ### Community 1 - "win32_window.cpp"
 Cohesion: 0.16
@@ -210,12 +219,12 @@ Cohesion: 0.07
 Nodes (11): AppDelegate, SceneDelegate, RunnerTests, AppDelegate, MainFlutterWindow, RunnerTests, Cocoa, Flutter (+3 more)
 
 ### Community 3 - ".agents/skills/caveman-compress/scripts/validate.py"
-Cohesion: 0.09
-Nodes (21): benchmark_pair(), count_tokens(), main(), print_table(), count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings() (+13 more)
+Cohesion: 0.17
+Nodes (14): count_bullets(), extract_code_blocks(), extract_headings(), extract_inline_codes(), extract_paths(), extract_urls(), read_file(), validate() (+6 more)
 
 ### Community 4 - "Path"
 Cohesion: 0.11
-Nodes (11): compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), LockTimeoutError, _state_base_dir(), _try_lock_nonblocking(), _unlock() (+3 more)
+Nodes (12): backup_dir_for(), compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), LockTimeoutError, _state_base_dir(), _try_lock_nonblocking() (+4 more)
 
 ### Community 5 - "my_application.cc"
 Cohesion: 0.10
@@ -226,8 +235,8 @@ Cohesion: 0.18
 Nodes (4): wWinMain(), CreateAndAttachConsole(), GetCommandLineArguments(), Utf8FromUtf16()
 
 ### Community 7 - ".codex/skills/caveman-compress/scripts/cli.py"
-Cohesion: 0.15
-Nodes (7): main(), backup_dir_for(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
+Cohesion: 0.16
+Nodes (6): main(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
 
 ### Community 8 - "Review dan perbaikan B003"
 Cohesion: 0.40
@@ -235,11 +244,11 @@ Nodes (4): Penerapan guideline, Review dan perbaikan B003, Temuan yang telah dip
 
 ### Community 9 - "app.ts"
 Cohesion: 0.06
-Nodes (47): md, skillFile, skill, extensions, largest, root, AppOptions, buildApp() (+39 more)
+Nodes (44): md, skillFile, skill, extensions, largest, root, backupPath, report (+36 more)
 
-### Community 10 - "Path"
-Cohesion: 0.11
-Nodes (11): compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), LockTimeoutError, _state_base_dir(), _try_lock_nonblocking(), _unlock() (+3 more)
+### Community 10 - "_compress_file_locked"
+Cohesion: 0.08
+Nodes (18): backup_dir_for(), build_compress_prompt(), build_fix_prompt(), compress_file(), _compress_file_locked(), file_lock(), first_nonblank_line(), is_sensitive_path() (+10 more)
 
 ### Community 11 - "What You Must Do When Invoked"
 Cohesion: 0.08
@@ -455,7 +464,7 @@ Nodes (3): build, DashboardHeader, preferredSize
 
 ### Community 75 - "ApiError"
 Cohesion: 0.06
-Nodes (90): authenticatedWrite(), fastify, FastifyRequest, requirePermission(), ApiError, hashPassword(), commonReads, permissionsFor() (+82 more)
+Nodes (98): now, report, authenticatedWrite(), fastify, FastifyRequest, requirePermission(), ApiError, installErrors() (+90 more)
 
 ### Community 76 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -481,17 +490,13 @@ Nodes (30): API Response Format, Authentication & Authorization, Caching Strateg
 Cohesion: 0.08
 Nodes (25): API Design Patterns, Authentication & Authorization, Backend Development Patterns, Background Jobs & Queues, Cache-Aside Pattern, Caching Strategies, Centralized Error Handler, Database Patterns (+17 more)
 
-### Community 111 - ".agents/skills/caveman-compress/scripts/compress.py"
-Cohesion: 0.09
-Nodes (11): build_compress_prompt(), build_fix_prompt(), call_claude(), _compress_file_locked(), first_nonblank_line(), _is_smaller_than_body(), mask_code_blocks(), read_source() (+3 more)
+### Community 111 - "Q: database migration transaction sync inventory"
+Cohesion: 0.50
+Nodes (3): Answer, Outcome, Q: database migration transaction sync inventory
 
 ### Community 112 - "Win32Window"
 Cohesion: 0.16
 Nodes (13): FlutterWindow, flutter_controller_, OnCreate, OnDestroy, project_, Win32Window, child_content_, GetClientArea (+5 more)
-
-### Community 113 - ".codex/skills/caveman-compress/scripts/benchmark.py"
-Cohesion: 0.43
-Nodes (4): benchmark_pair(), count_tokens(), main(), print_table()
 
 ### Community 114 - "_compress_file_locked"
 Cohesion: 0.10
@@ -558,8 +563,8 @@ Cohesion: 0.06
 Nodes (30): 10. Anti-Patterns (Immediate Rejection), 11. Integration With Other Skills, 12. Operator Validation Checklist, 13. Skill Status, 1. Backend Feasibility & Risk Index (BFRI), 1. Layered Architecture Is Mandatory, 2. Core Architecture Doctrine (Non-Negotiable), 2. Routes Only Route (+22 more)
 
 ### Community 133 - "Architecture Overview - Backend Services"
-Cohesion: 0.08
-Nodes (25): Architecture Overview - Backend Services, Complete Flow Example, Config Directory, Controllers Directory, Directory Structure Rationale, Email Service (Mature Pattern ✅), Example: User Creation, Feature-Based Organization (+17 more)
+Cohesion: 0.12
+Nodes (17): Architecture Overview - Backend Services, Complete Flow Example, Email Service (Mature Pattern ✅), Example: User Creation, Feature-Based Organization, Flat Organization, Form Service (Transitioning ⚠️), Layered Architecture Pattern (+9 more)
 
 ### Community 134 - "Routing and Controllers - Best Practices"
 Cohesion: 0.08
@@ -582,8 +587,8 @@ Cohesion: 0.11
 Nodes (18): Always Use Try-Catch, Async/Await Best Practices, Async Patterns and Error Handling, asyncErrorWrapper Utility, Avoid .then() Chains, Common Async Pitfalls, Custom Error Types, Define Custom Errors (+10 more)
 
 ### Community 139 - "Sentry Integration and Monitoring"
-Cohesion: 0.12
-Nodes (17): 1. BaseController Pattern, 2. Workflow Error Handling, 3. Service Layer Error Handling, API Endpoint Spans, Common Mistakes, Core Principles, Cron Job Monitoring, Database Performance Tracking (+9 more)
+Cohesion: 0.15
+Nodes (13): API Endpoint Spans, Common Mistakes, Core Principles, Cron Job Monitoring, Database Performance Tracking, Error Context Best Practices, instrument.ts Pattern, Mandatory Pattern (+5 more)
 
 ### Community 140 - "Testing Guide - Backend Testing Strategies"
 Cohesion: 0.12
@@ -616,6 +621,10 @@ Nodes (24): For /graphify add and --watch, For /graphify query, For the commit h
 ### Community 148 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
+
+### Community 149 - ".agents/skills/caveman-compress/scripts/benchmark.py"
+Cohesion: 0.43
+Nodes (4): benchmark_pair(), count_tokens(), main(), print_table()
 
 ### Community 150 - "graphify reference: query, path, explain"
 Cohesion: 0.33
@@ -653,14 +662,38 @@ Nodes (4): Answer, Outcome, Q: Based on the available documentation, review all 
 Cohesion: 0.12
 Nodes (17): count_bullets(), extract_code_blocks(), extract_fenced_spans(), extract_headings(), extract_indented_code_blocks(), extract_inline_codes(), extract_paths(), extract_urls() (+9 more)
 
+### Community 164 - ".codex/skills/caveman-compress/scripts/benchmark.py"
+Cohesion: 0.43
+Nodes (4): benchmark_pair(), count_tokens(), main(), print_table()
+
 ### Community 165 - "Q: Review B000 sampai B004 untuk development B005"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Review B000 sampai B004 untuk development B005, Source Nodes
 
+### Community 167 - ".agents/skills/caveman-compress/scripts/compress.py"
+Cohesion: 0.13
+Nodes (4): call_claude(), split_frontmatter(), strip_llm_wrapper(), _unlock()
+
+### Community 168 - "Directory Structure Rationale"
+Cohesion: 0.25
+Nodes (8): Config Directory, Controllers Directory, Directory Structure Rationale, Middleware Directory, Repositories Directory, Routes Directory, Services Directory, Types Directory
+
+### Community 169 - "Deployment migrasi Turso 0002–0005"
+Cohesion: 0.14
+Nodes (12): Backup dan preservasi, Bukti dan perintah, Deployment migrasi Turso 0002–0005, Hasil, Pengujian setelah migrasi, Skill yang digunakan, Hasil pengujian, Keamanan dan cakupan (+4 more)
+
+### Community 171 - "Q: Execute remediation steps in the following strict priority order"
+Cohesion: 0.40
+Nodes (4): Answer, Outcome, Q: Execute remediation steps in the following strict priority order, Source Nodes
+
+### Community 172 - "Error Capture Patterns"
+Cohesion: 0.50
+Nodes (4): 1. BaseController Pattern, 2. Workflow Error Handling, 3. Service Layer Error Handling, Error Capture Patterns
+
 ## Knowledge Gaps
-- **868 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+863 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1102 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **49 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **888 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+883 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1133 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **52 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -668,14 +701,14 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `authenticate()` connect `ApiError` to `Review B001/B002`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Why does `Perubahan untuk B003` connect `Review B001/B002` to `ApiError`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `version`, `license` to the rest of the system?**
-  _868 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _888 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.07058823529411765 - nodes in this community are weakly interconnected._
-- **Should `.agents/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.08858858858858859 - nodes in this community are weakly interconnected._
 - **Should `Path` be split into smaller, more focused modules?**
-  _Cohesion score 0.11462450592885376 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11 - nodes in this community are weakly interconnected._
 - **Should `my_application.cc` be split into smaller, more focused modules?**
   _Cohesion score 0.09846153846153846 - nodes in this community are weakly interconnected._
+- **Should `app.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.058278981695771094 - nodes in this community are weakly interconnected._
