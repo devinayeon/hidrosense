@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import { randomUUID } from 'node:crypto';
 import type { Client } from '@libsql/client';
 import { readConfig, type AppConfig } from './config.js';
-import { ApiError, installErrors } from './common/errors.js';
+import { ApiError, installErrors, sendError } from './common/errors.js';
 import { consumeLimit } from './common/rate-limit.js';
 import { loadMigrations, migrationStatus } from './db/migrate.js';
 import { registerAuth } from './features/auth/index.js';
@@ -36,6 +36,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
     requestTimeout: 15000,
     connectionTimeout: 15000,
     ajv: { customOptions: { removeAdditional: false, coerceTypes: false } },
+    frameworkErrors: sendError,
   });
   app.decorateRequest('principal', null);
   installErrors(app);
@@ -46,6 +47,9 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
     allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Client-Id'],
     exposedHeaders: ['X-Request-Id', 'Retry-After'],
     credentials: false,
+    // Prepare CORS headers for policy errors, but let the universal hook decide the response.
+    preflightContinue: true,
+    strictPreflight: false,
   });
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id).header('cache-control', 'no-store');
@@ -55,6 +59,13 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
         throw new ApiError(426, 'HTTPS_REQUIRED', 'Gunakan HTTPS untuk mengakses API.');
       }
       await consumeLimit(db, `ip:${request.ip}`, 120, 60000, clock(), reply);
+    }
+    if (request.method === 'OPTIONS'
+      && (!request.headers.origin || !request.headers['access-control-request-method'])) {
+      throw new ApiError(400, 'BAD_REQUEST', 'Preflight CORS tidak valid.');
+    }
+    if (request.method === 'OPTIONS' && config.origins.length) {
+      return reply.code(204).header('content-length', '0').send();
     }
   });
   app.addHook('onResponse', async (request, reply) => {
