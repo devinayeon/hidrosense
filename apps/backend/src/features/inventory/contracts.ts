@@ -2,8 +2,6 @@ import { z } from 'zod';
 import { integerIdSchema as intId } from '../../common/validation.js';
 export { idParamSchema, activeListQuerySchema as listQuerySchema, parseInput } from '../../common/validation.js';
 
-// ── shared field definitions ──────────────────────────────────────────────────
-
 const positiveDecimal = z.string()
   .regex(/^\d{1,10}(\.\d{1,2})?$/)
   .refine((value) => /[1-9]/.test(value))
@@ -14,17 +12,11 @@ const positiveDecimal = z.string()
     return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
   });
 
-// ── jenis_inventaris ──────────────────────────────────────────────────────────
-
 export const createJenisSchema = z.strictObject({
   nama_jenis: z.string().trim().min(1).max(50),
 });
 
-export const updateJenisSchema = z.strictObject({
-  nama_jenis: z.string().trim().min(1).max(50),
-});
-
-// ── obat ──────────────────────────────────────────────────────────────────────
+export const updateJenisSchema = createJenisSchema;
 
 export const createObatSchema = z.strictObject({
   nama_obat: z.string().trim().min(1).max(100),
@@ -37,8 +29,6 @@ export const createObatSchema = z.strictObject({
 export const updateObatSchema = createObatSchema.partial()
   .refine((v) => Object.keys(v).length > 0);
 
-// ── inventaris ────────────────────────────────────────────────────────────────
-
 export const createInventarisSchema = z.strictObject({
   id_jenis_inventaris: intId,
   id_obat: intId.nullable().optional(),
@@ -47,12 +37,5 @@ export const createInventarisSchema = z.strictObject({
   stok_minimum: positiveDecimal.nullable().optional(),
 });
 
-export const updateInventarisSchema = z.strictObject({
-  id_jenis_inventaris: intId.optional(),
-  id_obat: intId.nullable().optional(),
-  nama_barang: z.string().trim().min(1).max(100).optional(),
-  satuan: z.string().trim().min(1).max(30).optional(),
-  stok_minimum: positiveDecimal.nullable().optional(),
-}).refine((v) => Object.keys(v).length > 0);
-
-// ── shared params ─────────────────────────────────────────────────────────────
+export const updateInventarisSchema = createInventarisSchema.partial()
+  .refine((v) => Object.keys(v).length > 0);
