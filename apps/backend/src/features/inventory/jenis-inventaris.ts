@@ -28,8 +28,8 @@ export function registerJenisInventaris(app: FastifyInstance, db: Client, clock:
     const filter = status_aktif === undefined ? null : Number(status_aktif);
     const [count, records] = await db.batch([
       { sql: 'SELECT COUNT(*) AS total FROM jenis_inventaris WHERE (? IS NULL OR status_aktif=?)', args: [filter, filter] },
-      { sql: `SELECT id_jenis_inventaris,nama_jenis,status_aktif,${syncColumns('jenis-inventaris', 'jenis_inventaris.id_jenis_inventaris')} FROM jenis_inventaris
-          WHERE (? IS NULL OR status_aktif=?) ORDER BY id_jenis_inventaris LIMIT ? OFFSET ?`,
+      { sql: `SELECT CAST(id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,nama_jenis,status_aktif,${syncColumns('jenis-inventaris', 'jenis_inventaris.id_jenis_inventaris')} FROM jenis_inventaris
+          WHERE (? IS NULL OR status_aktif=?) ORDER BY jenis_inventaris.id_jenis_inventaris LIMIT ? OFFSET ?`,
         args: [filter, filter, limit, (page - 1) * limit] },
     ], 'read');
     const total = Number(count.rows[0].total);

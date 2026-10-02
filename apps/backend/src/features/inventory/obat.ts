@@ -29,8 +29,8 @@ export function registerObat(app: FastifyInstance, db: Client, clock: () => numb
     const filter = status_aktif === undefined ? null : Number(status_aktif);
     const [count, records] = await db.batch([
       { sql: 'SELECT COUNT(*) AS total FROM obat WHERE (? IS NULL OR status_aktif=?)', args: [filter, filter] },
-      { sql: `SELECT id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif,${syncColumns('obat', 'obat.id_obat')} FROM obat
-          WHERE (? IS NULL OR status_aktif=?) ORDER BY id_obat LIMIT ? OFFSET ?`,
+      { sql: `SELECT CAST(id_obat AS TEXT) AS id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif,${syncColumns('obat', 'obat.id_obat')} FROM obat
+          WHERE (? IS NULL OR status_aktif=?) ORDER BY obat.id_obat LIMIT ? OFFSET ?`,
         args: [filter, filter, limit, (page - 1) * limit] },
     ], 'read');
     const total = Number(count.rows[0].total);
