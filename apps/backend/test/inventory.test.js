@@ -3,8 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { fixture, bearer } from '../test-support/fixture.js';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 function petaniHeaders(login) {
   return login().then((r) => bearer(r.json().data.access_token));
 }
@@ -17,8 +15,6 @@ const obatPayload = {
   nama_obat: 'Fungisida A', jenis_obat: 'Fungisida',
   dosis: '2ml/L', aturan_penggunaan: 'Semprotkan', deskripsi: 'Untuk jamur',
 };
-
-// ── jenis_inventaris ─────────────────────────────────────────────────────────
 
 test('pegawai creates, lists, reads and updates jenis_inventaris', async (t) => {
   const { app, login } = await fixture(t);
@@ -95,8 +91,6 @@ test('jenis_inventaris routes reject anonymous, petani write, bad IDs and extra 
   })).statusCode, 400);
 });
 
-// ── obat ─────────────────────────────────────────────────────────────────────
-
 test('pegawai creates, lists, reads, updates and deactivates obat', async (t) => {
   const { app, login } = await fixture(t);
   const headers = await pegawaiHeaders(login);
@@ -160,8 +154,6 @@ test('obat routes reject anonymous, petani write, bad inputs', async (t) => {
   assert.equal((await app.inject({ method: 'POST', url: '/api/v1/obat', headers: pegawaiHdr, payload: {} })).statusCode, 400);
   assert.equal((await app.inject({ method: 'PATCH', url: '/api/v1/obat/1', headers: pegawaiHdr, payload: {} })).statusCode, 400);
 });
-
-// ── inventaris ───────────────────────────────────────────────────────────────
 
 test('pegawai creates, lists, reads, updates and deactivates inventaris', async (t) => {
   const { app, login, db } = await fixture(t);
@@ -266,4 +258,31 @@ test('inventaris writes replay atomically and reject reused keys with different 
   assert.equal((await db.execute("SELECT COUNT(*) AS n FROM inventaris WHERE nama_barang='Sekop'")).rows[0].n, 1);
   const conflict = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: { ...payload, nama_barang: 'Cangkul' } });
   assert.equal(conflict.statusCode, 409, conflict.body);
+});
+
+test('inventory PATCH rejects empty jenis, unknown fields and null required fields without changing records', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const jenis = await app.inject({
+    method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: jenisPayload,
+  });
+  assert.equal(jenis.statusCode, 201, jenis.body);
+  const item = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.json().data.id_jenis_inventaris, nama_barang: 'Sekop', satuan: 'unit',
+  } });
+  assert.equal(item.statusCode, 201, item.body);
+
+  for (const payload of [{}, { nama_jenis: 'Pupuk', extra: true }, { nama_jenis: null }]) {
+    const response = await app.inject({ method: 'PATCH', url: jenis.headers.location, headers, payload });
+    assert.equal(response.statusCode, 400, response.body);
+  }
+  for (const payload of [
+    { extra: true }, { nama_barang: 'Berubah', extra: true },
+    { id_jenis_inventaris: null }, { nama_barang: null }, { satuan: null },
+  ]) {
+    const response = await app.inject({ method: 'PATCH', url: item.headers.location, headers, payload });
+    assert.equal(response.statusCode, 400, response.body);
+  }
+  assert.deepEqual((await app.inject({ url: jenis.headers.location, headers })).json().data, jenis.json().data);
+  assert.deepEqual((await app.inject({ url: item.headers.location, headers })).json().data, item.json().data);
 });

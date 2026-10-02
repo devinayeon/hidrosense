@@ -42,6 +42,11 @@ test('malformed percent-encoding receives a safe client error', async (t) => {
   const { app } = await fixture(t);
   const response = await app.inject('/%zz');
   assert.equal(response.statusCode, 400);
+  assert.equal(response.json().error.code, 'BAD_REQUEST');
+  assert.equal(response.json().error.request_id, response.headers['x-request-id']);
+  assert.ok(response.headers['x-request-id']);
+  assert.equal(response.headers['cache-control'], 'no-store');
+  assert.doesNotMatch(response.body, /%zz|FST_ERR_BAD_URL/);
   assert.doesNotMatch(response.body, /stack|secret|internal-data/i);
 });
 
