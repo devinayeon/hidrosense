@@ -16,9 +16,9 @@ export async function bootstrapPetani(db: Client, input: unknown) {
   const hash = await hashPassword(password);
   const tx = await db.transaction('write');
   try {
-    const existing = await tx.execute("SELECT u.id_user FROM users u JOIN roles r ON r.id_role=u.id_role WHERE r.nama_role='petani' LIMIT 1");
+    const existing = await tx.execute("SELECT 1 FROM users u JOIN roles r ON r.id_role=u.id_role WHERE r.nama_role='petani' LIMIT 1");
     if (existing.rows.length) throw new ApiError(409, 'ALREADY_BOOTSTRAPPED', 'Akun petani sudah ada. Bootstrap tidak mengubah akun lama.');
-    const duplicate = await tx.execute({ sql: 'SELECT id_user FROM users WHERE username=?', args: [username] });
+    const duplicate = await tx.execute({ sql: 'SELECT 1 FROM users WHERE username=?', args: [username] });
     if (duplicate.rows.length) throw new ApiError(409, 'USERNAME_EXISTS', 'Username sudah digunakan.');
     await tx.execute("INSERT INTO roles (nama_role) VALUES ('petani'),('pegawai') ON CONFLICT(nama_role) DO NOTHING");
     const result = await tx.execute({
