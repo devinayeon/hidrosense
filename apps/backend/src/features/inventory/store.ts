@@ -17,8 +17,6 @@ function syncResponse(row: Row) {
     version: row.version == null ? null : String(row.version) };
 }
 
-// ── jenis_inventaris ──────────────────────────────────────────────────────────
-
 export function jenisResponse(row: Row) {
   return {
     ...syncResponse(row),
@@ -30,7 +28,7 @@ export function jenisResponse(row: Row) {
 
 export async function getJenis(db: Executor, id: string) {
   const row = (await db.execute({
-    sql: `SELECT id_jenis_inventaris,nama_jenis,status_aktif,${syncColumns('jenis-inventaris', 'jenis_inventaris.id_jenis_inventaris')} FROM jenis_inventaris WHERE id_jenis_inventaris=?`,
+    sql: `SELECT CAST(id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,nama_jenis,status_aktif,${syncColumns('jenis-inventaris', 'jenis_inventaris.id_jenis_inventaris')} FROM jenis_inventaris WHERE id_jenis_inventaris=?`,
     args: [id],
   })).rows[0];
   if (!row) throw new ApiError(404, 'JENIS_NOT_FOUND', 'Jenis inventaris tidak ditemukan.');
@@ -44,8 +42,6 @@ export async function assertJenisNameAvailable(db: Executor, nama_jenis: string,
   });
   if (result.rows.length) throw new ApiError(409, 'JENIS_NAME_TAKEN', 'Nama jenis inventaris sudah digunakan.');
 }
-
-// ── obat ──────────────────────────────────────────────────────────────────────
 
 export function obatResponse(row: Row) {
   return {
@@ -62,16 +58,15 @@ export function obatResponse(row: Row) {
 
 export async function getObat(db: Executor, id: string) {
   const row = (await db.execute({
-    sql: `SELECT id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif,${syncColumns('obat', 'obat.id_obat')} FROM obat WHERE id_obat=?`,
+    sql: `SELECT CAST(id_obat AS TEXT) AS id_obat,nama_obat,jenis_obat,dosis,aturan_penggunaan,deskripsi,status_aktif,${syncColumns('obat', 'obat.id_obat')} FROM obat WHERE id_obat=?`,
     args: [id],
   })).rows[0];
   if (!row) throw new ApiError(404, 'OBAT_NOT_FOUND', 'Obat tidak ditemukan.');
   return obatResponse(row);
 }
 
-// ── inventaris ────────────────────────────────────────────────────────────────
-
-const inventarisColumns = `i.id_inventaris,i.id_jenis_inventaris,i.id_obat,
+const inventarisColumns = `CAST(i.id_inventaris AS TEXT) AS id_inventaris,
+  CAST(i.id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,CAST(i.id_obat AS TEXT) AS id_obat,
   i.nama_barang,i.satuan,CAST(i.stok_minimum AS TEXT) AS stok_minimum,i.status_aktif,
   j.nama_jenis,o.nama_obat,${syncColumns('inventaris', 'i.id_inventaris')}`;
 
