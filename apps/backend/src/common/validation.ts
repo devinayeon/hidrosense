@@ -4,6 +4,7 @@ import { ApiError } from './errors.js';
 export const integerIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$/)
   .pipe(z.string().refine((value) => BigInt(value) <= 9223372036854775807n));
 export const uuidSchema = z.string().uuid();
+export const clientUuidSchema = uuidSchema.transform((value) => value.toLowerCase());
 export const idParamSchema = z.strictObject({ id: integerIdSchema });
 export const activeListQuerySchema = z.strictObject({
   page: z.string().regex(/^[1-9][0-9]{0,5}$/).default('1').transform(Number),

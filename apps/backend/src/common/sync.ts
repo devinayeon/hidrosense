@@ -24,6 +24,16 @@ async function executeOperation<T extends Json>(
   tx: Transaction, actorId: string, operation: Operation, now: number,
   effect: (publicId: string | null) => Promise<T>,
 ) {
+  // Canonicalize at the transaction boundary too; old mappings keep their original spelling.
+  operation = { ...operation, ...(operation.client_id ? { client_id: operation.client_id.toLowerCase() } : {}) };
+  const mappings = operation.resource_type && operation.client_id ? (await tx.execute({
+    sql: `SELECT client_id,public_id FROM sync_id_maps
+      WHERE id_user=? AND resource_type=? AND lower(client_id)=?`,
+    args: [actorId, operation.resource_type, operation.client_id],
+  })).rows : [];
+  if (new Set(mappings.map((row) => String(row.public_id))).size > 1) {
+    throw new ApiError(409, 'CLIENT_ID_CONFLICT', 'UUID klien memiliki mapping lama yang bertentangan.');
+  }
   const payloadHash = hashPayload(operation);
   const existing = (await tx.execute({
     sql: `SELECT operation_type,payload_hash,result_json FROM sync_operations
@@ -36,15 +46,15 @@ async function executeOperation<T extends Json>(
     })).digest('hex');
     let legacyIdentityMatches = operation.client_id === undefined && operation.resource_type === undefined;
     if (operation.operation_type === 'sync.reserve-id' && operation.resource_type && operation.client_id) {
-      const mapping = (await tx.execute({
-        sql: 'SELECT public_id FROM sync_id_maps WHERE id_user=? AND resource_type=? AND client_id=?',
-        args: [actorId, operation.resource_type, operation.client_id],
-      })).rows[0];
-      legacyIdentityMatches = Boolean(mapping && mapping.public_id === stored.data?.public_id);
+      legacyIdentityMatches = mappings.some((row) => row.public_id === stored.data?.public_id);
     }
     const legacyMatch = legacyIdentityMatches && stored.data !== undefined
       && stored.operation !== undefined && existing.payload_hash === legacyHash;
-    if (existing.operation_type !== operation.operation_type || (existing.payload_hash !== payloadHash && !legacyMatch)) {
+    const priorCasingMatches = mappings.some((row) =>
+      row.public_id === stored.data?.public_id
+      && existing.payload_hash === hashPayload({ ...operation, client_id: String(row.client_id) }));
+    if (existing.operation_type !== operation.operation_type
+      || (existing.payload_hash !== payloadHash && !legacyMatch && !priorCasingMatches)) {
       throw new ApiError(409, 'OPERATION_CONFLICT', 'Kunci operasi sudah dipakai dengan isi berbeda.');
     }
     return { ...stored, replayed: true } as { data: T; operation: Json; replayed: true };
@@ -52,10 +62,7 @@ async function executeOperation<T extends Json>(
 
   let publicId: string | null = null;
   if (operation.resource_type && operation.client_id) {
-    const mapping = (await tx.execute({
-      sql: `SELECT public_id FROM sync_id_maps WHERE id_user=? AND resource_type=? AND client_id=?`,
-      args: [actorId, operation.resource_type, operation.client_id],
-    })).rows[0];
+    const mapping = mappings[0];
     publicId = mapping ? String(mapping.public_id) : randomUUID();
     if (!mapping) await tx.execute({
       sql: `INSERT INTO sync_id_maps (id_user,resource_type,client_id,public_id,created_at) VALUES (?,?,?,?,?)`,
@@ -79,9 +86,10 @@ async function executeOperation<T extends Json>(
 }
 
 async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
-  await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
-    ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at`, args: [resourceType, publicId, now] });
-  return String((await tx.execute({ sql: `SELECT version FROM sync_resource_versions WHERE resource_type=? AND public_id=?`, args: [resourceType, publicId] })).rows[0].version);
+  const result = await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
+    ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at
+    RETURNING CAST(version AS TEXT) AS version`, args: [resourceType, publicId, now] });
+  return String(result.rows[0].version);
 }
 
 export function reserveClientId(tx: Transaction, actorId: string, operation: Operation, now: number) {

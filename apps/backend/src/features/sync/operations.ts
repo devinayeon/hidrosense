@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { requirePermission } from '../../common/authorization.js';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { reserveClientId } from '../../common/sync.js';
-import { parseInput, uuidSchema } from '../../common/validation.js';
+import { clientUuidSchema, parseInput, uuidSchema } from '../../common/validation.js';
 
 const schema = z.strictObject({
   operation_key: uuidSchema,
   operation_type: z.literal('sync.reserve-id'),
   payload: z.strictObject({}),
   resource_type: z.string().regex(/^[a-z][a-z0-9_.-]*$/).max(80),
-  client_id: uuidSchema,
+  client_id: clientUuidSchema,
 });
 
 export function registerSyncOperations(app: FastifyInstance, db: Client, clock: () => number) {
