@@ -15,6 +15,8 @@ Versi B001–B005. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api
 
 Bootstrap tersedia melalui CLI `npm run auth:bootstrap`, bukan endpoint publik. Tujuh endpoint akun pegawai/profil tersedia pada [kontrak B003](./backend-accounts-api.md). B004 menambah POST `/api/v1/sync/operations` khusus `sync.reserve-id`. B005 menambah daftar/detail/tambah/ubah/nonaktifkan untuk `jenis-inventaris`, `obat`, dan `inventaris`. Penulisan menerima `Idempotency-Key` UUID; replay sama memberi 200 dan key sama dengan isi berbeda memberi 409 `OPERATION_CONFLICT`. `stok_minimum` memakai string desimal.
 
+Reservasi B004 memakai `operation_key` wajib pada body, bukan header `Idempotency-Key`; schema, contoh, response, dan error tersedia pada [kontrak reservasi B004](./backend-b004.md#kontrak-http-reservasi). Key operasi dipakai ulang sebagai teks exact. UUID klien pada body B004/header B005 dinormalisasi lowercase sebelum lookup/hash; mapping casing lama tetap dikenali tanpa menulis ulang histori.
+
 ## Request dan respons
 
 Body menggunakan `Content-Type: application/json`, maksimum 16 KiB pada tahap autentikasi. Field di luar schema ditolak; tipe angka tidak otomatis diubah menjadi string. Username bersifat case-sensitive sesuai unique constraint database. Login menerima username 1–50 karakter nonkosong dan password 1–128 karakter; bootstrap mewajibkan password 12–128 karakter.

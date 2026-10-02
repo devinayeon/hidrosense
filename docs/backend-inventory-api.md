@@ -67,6 +67,8 @@ Write menerima header opsional `Idempotency-Key: <UUID>`. Simpan dan gunakan key
 
 Create juga menerima header opsional `X-Client-Id: <UUID>`, dipetakan ke `public_id` stabil untuk resource tersebut. Gunakan UUID yang telah direservasi melalui B004 bila ada. UUID klien berbeda dari ID integer domain. Create dengan key baru tetapi UUID klien yang sudah terikat pada record menghasilkan `409 RESOURCE_ALREADY_EXISTS`; tidak membuat duplikat.
 
+UUID klien uppercase/lowercase/mixed case menunjuk identitas yang sama; input baru dinormalisasi lowercase. Mapping lama tetap dibaca tanpa mengubah receipt/histori. Collision mapping lama ke public UUID berbeda menghasilkan `409 CLIENT_ID_CONFLICT` sebelum mutasi. `Idempotency-Key` tetap teks exact; gunakan kembali ejaan key yang sama. Schema dan contoh reservasi tersedia pada [kontrak B004](backend-b004.md#kontrak-http-reservasi).
+
 Replay key dan payload sama mengembalikan `data` dan `operation` asli dengan `replayed: true`, walaupun resource telah berubah sejak operasi pertama. Key sama dengan tipe/payload berbeda menghasilkan `409 OPERATION_CONFLICT`. Kegagalan bisnis tidak menyimpan receipt sukses. Mutasi domain, mapping identitas, versi, dan receipt commit dalam transaksi yang sama; actor dan izin diperiksa ulang di transaksi tersebut.
 
 `operation.revision` adalah cursor receipt global, bukan versi resource. `operation.version` dan `data.version` sama untuk mutasi tersebut. Versi berubah hanya ketika mutasi baru berhasil, bukan saat replay atau reservasi ID. Update/deactivate yang diterima dengan key baru merupakan mutasi baru, termasuk ketika nilai yang dikirim sama dengan nilai tersimpan.
@@ -125,6 +127,7 @@ Semua error memakai envelope:
 | Semua: body/query/ID/header UUID tidak sesuai kontrak | 400 | `VALIDATION_ERROR` |
 | Semua write: key sama, operasi/payload berbeda | 409 | `OPERATION_CONFLICT` |
 | Semua create: UUID klien sudah terikat pada record | 409 | `RESOURCE_ALREADY_EXISTS` |
+| Semua create: mapping UUID klien lama beda casing bertentangan | 409 | `CLIENT_ID_CONFLICT` |
 | Jenis create/PATCH: nama sudah digunakan | 409 | `JENIS_NAME_TAKEN` |
 | Jenis detail/PATCH/deactivate: target tidak ada | 404 | `JENIS_NOT_FOUND` |
 | Obat detail/PATCH/deactivate: target tidak ada | 404 | `OBAT_NOT_FOUND` |
