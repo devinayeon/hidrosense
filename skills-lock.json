@@ -19,6 +19,12 @@
       "skillPath": "skills/backend-patterns/SKILL.md",
       "computedHash": "45bf0c6abd0549b56142690f49437bc59c7b4f55b62dc7717ef295ec6ed6617f"
     },
+    "bmad-readiness-check": {
+      "source": "aj-geddes/claude-code-bmad-skills",
+      "sourceType": "github",
+      "skillPath": "bmad-planning-orchestrator/skills/bmad-readiness-check/SKILL.md",
+      "computedHash": "11c65be796889e2ec4f5d5b41b6ff7b89c1de81dbcf80eddbb7d3d6e9d455f6f"
+    },
     "cavecrew": {
       "source": "JuliusBrussee/caveman",
       "sourceType": "github",
@@ -103,11 +109,23 @@
       "skillPath": "skills/caveman-stats/SKILL.md",
       "computedHash": "f59785c3571b4016fda470fef975adf48af2b29cac0df0ad43c8c8a8d1bd8f88"
     },
+    "code-review": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/code-review/SKILL.md",
+      "computedHash": "b4f17857c85ca60af1df7d0b623dd03c2a48419f6123e714f3d9748ca744a1bf"
+    },
     "crud-development": {
       "source": "juaniquillo/resume",
       "sourceType": "github",
       "skillPath": ".agents/skills/crud-development/SKILL.md",
       "computedHash": "558f1d64ffe1a40bed5876a222c0b02f2b4308c2ae6d9c659225f82990a7064e"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
     },
     "investigate-first": {
       "source": "JuliusBrussee/caveman",

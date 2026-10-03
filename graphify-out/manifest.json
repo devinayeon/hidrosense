@@ -336,9 +336,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "skills-lock.json": {
-    "mtime": 1790872204.1513486,
-    "seen": 1790872798.6112506,
-    "ast_hash": "3a2ee819a5a83118e1acb7d772254aa3",
+    "mtime": 1790962641.3433676,
+    "seen": 1790993909.7179253,
+    "ast_hash": "00ba7f9a6288786c3cf43b8570d39139",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1248,9 +1248,9 @@
     "semantic_hash": ""
   },
   "apps/backend/README.md": {
-    "mtime": 1790845421.7921422,
-    "seen": 1790845457.6166296,
-    "ast_hash": "6978cceb7c976e2d7add05e5dc8dc677",
+    "mtime": 1790993549.852537,
+    "seen": 1790993909.801059,
+    "ast_hash": "5d2bf3a949b1939b3bd04587fe9a8bf7",
     "semantic_hash": ""
   },
   "docs/rencana-backend.md": {
@@ -1266,9 +1266,9 @@
     "semantic_hash": ""
   },
   "apps/backend/src/app.ts": {
-    "mtime": 1790904778.270137,
-    "seen": 1790904887.682217,
-    "ast_hash": "cad3948ab75bbb7ebf1634189d07c231",
+    "mtime": 1790992031.5990982,
+    "seen": 1790993909.6677961,
+    "ast_hash": "717f86b79fbda852ee06ce4487e035f8",
     "semantic_hash": ""
   },
   "apps/backend/src/common/authorization.ts": {
@@ -1278,9 +1278,9 @@
     "semantic_hash": ""
   },
   "apps/backend/src/common/errors.ts": {
-    "mtime": 1790904591.520725,
-    "seen": 1790904887.6826034,
-    "ast_hash": "23b19ff75fcdb41dd50c248fb2200d0c",
+    "mtime": 1790992031.6001148,
+    "seen": 1790993909.6683645,
+    "ast_hash": "e852c377222ebffb1a3c486bd00a15df",
     "semantic_hash": ""
   },
   "apps/backend/src/common/passwords.ts": {
@@ -1386,9 +1386,9 @@
     "semantic_hash": ""
   },
   "docs/backend-api.md": {
-    "mtime": 1790904500.5630252,
-    "seen": 1790904887.7220738,
-    "ast_hash": "f0db1a94da0d94566cd8881211a423af",
+    "mtime": 1790993549.8485172,
+    "seen": 1790993909.806992,
+    "ast_hash": "c028e8eae0cb17749f8d09f985089c66",
     "semantic_hash": ""
   },
   "docs/backend-b001-b002.md": {
@@ -1542,9 +1542,9 @@
     "semantic_hash": ""
   },
   "apps/backend/src/common/sync.ts": {
-    "mtime": 1790904154.175809,
-    "seen": 1790904887.6833637,
-    "ast_hash": "51691058fe02028213fda7d33fc7ddf2",
+    "mtime": 1790993012.2022913,
+    "seen": 1790993909.6705215,
+    "ast_hash": "f08faa6384dd24d45f9ea6a17eebf56b",
     "semantic_hash": ""
   },
   "apps/backend/src/features/sync/operations.ts": {
@@ -1650,15 +1650,15 @@
     "semantic_hash": ""
   },
   "apps/backend/src/features/inventory/contracts.ts": {
-    "mtime": 1790901699.795223,
-    "seen": 1790902869.974925,
-    "ast_hash": "4ef08007ce7a9879b9e5745b1edb6da0",
+    "mtime": 1790992245.6256402,
+    "seen": 1790993909.6810076,
+    "ast_hash": "bcce53dee24373d25e28ece9342cfc0f",
     "semantic_hash": ""
   },
   "apps/backend/src/features/inventory/inventaris.ts": {
-    "mtime": 1790872549.4749029,
-    "seen": 1790872798.6058762,
-    "ast_hash": "224b6beaa38f15865cf1f076dfdb58ec",
+    "mtime": 1790992096.940976,
+    "seen": 1790993909.681647,
+    "ast_hash": "01dd5162d2c8b8d85c9fd267fe8f3d0e",
     "semantic_hash": ""
   },
   "apps/backend/src/features/inventory/jenis-inventaris.ts": {
@@ -1674,9 +1674,9 @@
     "semantic_hash": ""
   },
   "apps/backend/src/features/inventory/store.ts": {
-    "mtime": 1790904685.163459,
-    "seen": 1790904887.6871185,
-    "ast_hash": "6cb0a7eff9a89b6284703da7133c1b6f",
+    "mtime": 1790992096.9429877,
+    "seen": 1790993909.6828446,
+    "ast_hash": "53eb24059171adb1b74542b853e95936",
     "semantic_hash": ""
   },
   "apps/backend/src/features/inventory/write.ts": {
@@ -1878,15 +1878,15 @@
     "semantic_hash": ""
   },
   "apps/backend/src/common/authenticated-write.ts": {
-    "mtime": 1790876963.7105536,
-    "seen": 1790877352.4923358,
-    "ast_hash": "0ebc596ae30664d1eadf0c90ea5774ee",
+    "mtime": 1790993392.4897077,
+    "seen": 1790993909.667803,
+    "ast_hash": "515e7e6617e704d48dc80ab4e0f8dbc2",
     "semantic_hash": ""
   },
   "apps/backend/src/common/validation.ts": {
-    "mtime": 1790904154.1662436,
-    "seen": 1790904887.6833656,
-    "ast_hash": "fa6375ffaa3f27fd4a57909ef6ef618f",
+    "mtime": 1790992245.6276438,
+    "seen": 1790993909.6705282,
+    "ast_hash": "a98140b3221e14be8e988ab24b8670aa",
     "semantic_hash": ""
   },
   "apps/backend/src/features/accounts/index.ts": {
@@ -1920,9 +1920,9 @@
     "semantic_hash": ""
   },
   "apps/backend/test/sync-migration.test.js": {
-    "mtime": 1790877163.7628908,
-    "seen": 1790877352.4952524,
-    "ast_hash": "61aa60120f98932e1b737f0450e51cdb",
+    "mtime": 1790992380.668574,
+    "seen": 1790993909.6953042,
+    "ast_hash": "46a360abd59609c72537e239c1ea7028",
     "semantic_hash": ""
   },
   "docs/review-backend-b000-b005.md": {
@@ -2037,6 +2037,198 @@
     "mtime": 1790961819.6247296,
     "seen": 1790961842.1835546,
     "ast_hash": "231cecce02915b53e9048e461d9af870",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_172402_d781e19d_migration_database_backup_transaction.md": {
+    "mtime": 1790961842.590169,
+    "seen": 1790962222.8904133,
+    "ast_hash": "32767dd8a932b3f6fd831cc70d049eab",
+    "semantic_hash": ""
+  },
+  ".agents/skills/bmad-readiness-check/scripts/readiness-check.sh": {
+    "mtime": 1790962640.4548168,
+    "seen": 1790993909.6507967,
+    "ast_hash": "20915f78d6535618f195745099f4951c",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/common/quantities.ts": {
+    "mtime": 1790992096.9399655,
+    "seen": 1790993909.669417,
+    "ast_hash": "86475408a0ec1556215d298e7611f9ba",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/contracts.ts": {
+    "mtime": 1790992028.9764414,
+    "seen": 1790993909.6834037,
+    "ast_hash": "ad6f9eeefee9a87aeefca9481f85cc56",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/errors.ts": {
+    "mtime": 1790993012.1992962,
+    "seen": 1790993909.68341,
+    "ast_hash": "9aff1545c1a2fb38fcb337e23c774bd6",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/index.ts": {
+    "mtime": 1790992031.595576,
+    "seen": 1790993909.6834154,
+    "ast_hash": "581cd1e93718bf516bb9e1997d4b9669",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/reconcile.ts": {
+    "mtime": 1790992827.6998098,
+    "seen": 1790993909.68342,
+    "ast_hash": "e33c8ac200b3e2c7476143d5f43cc3d7",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/service.ts": {
+    "mtime": 1790993012.205527,
+    "seen": 1790993909.6834247,
+    "ast_hash": "4ad60815da66af1b16fd4c09e8debb0e",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/store.ts": {
+    "mtime": 1790992429.0872915,
+    "seen": 1790993909.6834304,
+    "ast_hash": "61e3889e48939be44b5bb0fa09189be4",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/features/stock/write.ts": {
+    "mtime": 1790992031.5915747,
+    "seen": 1790993909.6834352,
+    "ast_hash": "1ba891e2aacf0209ec24a7be35b281c3",
+    "semantic_hash": ""
+  },
+  "apps/backend/test-support/stock-fixture.js": {
+    "mtime": 1790992270.7752836,
+    "seen": 1790993909.6857355,
+    "ast_hash": "2e6af49f8402c3ef38b38b9c0cb9e51a",
+    "semantic_hash": ""
+  },
+  "apps/backend/test-support/stock-worker.js": {
+    "mtime": 1790993732.2091944,
+    "seen": 1790993909.6857924,
+    "ast_hash": "cb6846cb6e19f6a419348a1ca15e0679",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-concurrency.test.js": {
+    "mtime": 1790993785.7586837,
+    "seen": 1790993909.6945689,
+    "ast_hash": "38aa352d5667b9b6401d1776a2f8cd08",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-contracts.test.js": {
+    "mtime": 1790992096.941986,
+    "seen": 1790993909.694576,
+    "ast_hash": "6c6d296686c3c2c82531c21108ab3538",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-failures.test.js": {
+    "mtime": 1790993392.4927063,
+    "seen": 1790993909.694582,
+    "ast_hash": "a2abe65b0b8bc82cb4f70e569f7ff502",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-migration.test.js": {
+    "mtime": 1790992389.0785868,
+    "seen": 1790993909.6945872,
+    "ast_hash": "690a3a46f9d01d12eb870753bebf4310",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-reconcile.test.js": {
+    "mtime": 1790992827.702822,
+    "seen": 1790993909.694593,
+    "ast_hash": "f3f43362dcb3e81e44746f1e350d94ca",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock-sync.test.js": {
+    "mtime": 1790993012.2065256,
+    "seen": 1790993909.6945977,
+    "ast_hash": "aea0dc9c386f99739125f04f3267537a",
+    "semantic_hash": ""
+  },
+  "apps/backend/test/stock.test.js": {
+    "mtime": 1790992337.1921887,
+    "seen": 1790993909.6946025,
+    "ast_hash": "3a249c192386ab14d60db77ce8d34212",
+    "semantic_hash": ""
+  },
+  ".agents/skills/bmad-readiness-check/SKILL.md": {
+    "mtime": 1790962640.4538157,
+    "seen": 1790993909.7302208,
+    "ast_hash": "fa26b1298d826154615442bf79bcd6f2",
+    "semantic_hash": ""
+  },
+  ".agents/skills/bmad-readiness-check/templates/readiness-report.template.md": {
+    "mtime": 1790962640.4548168,
+    "seen": 1790993909.7302265,
+    "ast_hash": "beb9864386b2eae8d90924df524cefb2",
+    "semantic_hash": ""
+  },
+  ".agents/skills/code-review/SKILL.md": {
+    "mtime": 1790962578.9609253,
+    "seen": 1790993909.7457592,
+    "ast_hash": "791c0306a919df08eb0b66426cd2ce81",
+    "semantic_hash": ""
+  },
+  ".agents/skills/code-review/agents/openai.yaml": {
+    "mtime": 1790962578.9609253,
+    "seen": 1790993909.745766,
+    "ast_hash": "727988accc02936891b13cd4845000de",
+    "semantic_hash": ""
+  },
+  ".agents/skills/find-skills/SKILL.md": {
+    "mtime": 1790962490.5409715,
+    "seen": 1790993909.7494457,
+    "ast_hash": "62b297abdee9aea84c577ab2e04e1974",
+    "semantic_hash": ""
+  },
+  "docs/b006/architecture-stock-ledger.md": {
+    "mtime": 1790993769.6542954,
+    "seen": 1790993909.8061519,
+    "ast_hash": "a7f8c9517aefad39814475894334c6e6",
+    "semantic_hash": ""
+  },
+  "docs/b006/prd-stock-ledger.md": {
+    "mtime": 1790993769.6512797,
+    "seen": 1790993909.8061588,
+    "ast_hash": "65873493e35a0ba32a1ff312a8470a34",
+    "semantic_hash": ""
+  },
+  "docs/b006/readiness-report-b006-2026-10-03.md": {
+    "mtime": 1790993356.8519876,
+    "seen": 1790993909.806164,
+    "ast_hash": "2f83b8d861a827e518624c2c5110bac4",
+    "semantic_hash": ""
+  },
+  "docs/b006/tasks-stock-ledger.md": {
+    "mtime": 1790992737.3066545,
+    "seen": 1790993909.8061683,
+    "ast_hash": "7440311c72b74f4cf7aa512639ee4988",
+    "semantic_hash": ""
+  },
+  "docs/backend-b006.md": {
+    "mtime": 1790993549.837852,
+    "seen": 1790993909.8092718,
+    "ast_hash": "241ab9f1297734e022c792331276cb16",
+    "semantic_hash": ""
+  },
+  "docs/backend-stock-api.md": {
+    "mtime": 1790993769.6498303,
+    "seen": 1790993909.8100388,
+    "ast_hash": "a6b9f0725a7a212314861bcefaee8427",
+    "semantic_hash": ""
+  },
+  "docs/readiness-report-hidrosense-2026-10-03.md": {
+    "mtime": 1790962938.1537447,
+    "seen": 1790993909.8107364,
+    "ast_hash": "42040cde132c79e690ed600d281ed0ed",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_174300_586802f0_backend_backlog_sprint_bisnis_inventaris_panen_pen.md": {
+    "mtime": 1790962980.5159373,
+    "seen": 1790993909.815844,
+    "ast_hash": "8a6c9f74066689575081c25db6f15813",
     "semantic_hash": ""
   }
 }
