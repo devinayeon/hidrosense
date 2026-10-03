@@ -96,6 +96,16 @@ export function reserveClientId(tx: Transaction, actorId: string, operation: Ope
   return executeOperation(tx, actorId, operation, now, async (publicId) => ({ public_id: publicId }));
 }
 
+// A domain operation can create a secondary immutable stock movement in its own transaction.
+// Its primary receipt belongs to that domain; the stock header still needs a stable public identity.
+export async function initializeStockIdentity(tx: Transaction, domainId: string, now: number) {
+  const publicId = randomUUID();
+  await tx.execute({ sql: `INSERT INTO sync_resource_links(resource_type,domain_id,public_id) VALUES ('stok',?,?)`,
+    args: [domainId, publicId] });
+  const version = await nextResourceVersion(tx, 'stok', publicId, now);
+  return { public_id: publicId, version };
+}
+
 type DomainMutation<T extends Json> = {
   resourceType: string;
   domainId?: string;

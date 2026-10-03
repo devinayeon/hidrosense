@@ -11,6 +11,7 @@ import { registerAuth } from './features/auth/index.js';
 import { registerAccounts } from './features/accounts/index.js';
 import { registerSync } from './features/sync/index.js';
 import { registerInventory } from './features/inventory/index.js';
+import { registerStock } from './features/stock/index.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
 
@@ -88,5 +89,6 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   registerAccounts(app, db, clock);
   registerSync(app, db, clock);
   registerInventory(app, db, clock);
+  registerStock(app, db, clock);
   return app;
 }

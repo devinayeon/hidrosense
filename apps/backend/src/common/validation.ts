@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { ApiError } from './errors.js';
 
-export const integerIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$/)
+export const integerIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$(?![\s\S])/)
   .pipe(z.string().refine((value) => BigInt(value) <= 9223372036854775807n));
 export const uuidSchema = z.string().uuid();
 export const clientUuidSchema = uuidSchema.transform((value) => value.toLowerCase());
 export const idParamSchema = z.strictObject({ id: integerIdSchema });
 export const activeListQuerySchema = z.strictObject({
-  page: z.string().regex(/^[1-9][0-9]{0,5}$/).default('1').transform(Number),
-  limit: z.string().regex(/^[1-9][0-9]{0,2}$/).default('20').transform(Number)
+  page: z.string().regex(/^[1-9][0-9]{0,5}$(?![\s\S])/).default('1').transform(Number),
+  limit: z.string().regex(/^[1-9][0-9]{0,2}$(?![\s\S])/).default('20').transform(Number)
     .refine((value) => value <= 100),
   status_aktif: z.enum(['0', '1']).optional(),
 });

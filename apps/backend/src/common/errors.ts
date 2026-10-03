@@ -22,6 +22,7 @@ export function sendError(error: FastifyError, request: FastifyRequest, reply: F
   // Never log raw errors: database errors may contain SQL, credentials or input.
   if (status >= 500) request.log.error({ code, requestId: request.id }, 'Request failed');
   if (status === 401) reply.header('www-authenticate', 'Bearer');
+  if (code === 'STOCK_WRITE_UNAVAILABLE') reply.header('retry-after', '1');
   return reply.header('x-request-id', request.id).header('cache-control', 'no-store')
     .code(status).send({ error: { code, message, request_id: request.id } });
 }

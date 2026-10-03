@@ -20,7 +20,8 @@ export async function authenticatedWrite<T>(
     await tx.commit();
     return result;
   } catch (error) {
-    if (!tx.closed) await tx.rollback();
+    try { if (!tx.closed) await tx.rollback(); }
+    catch { /* Preserve the primary failure when a lost connection also prevents rollback. */ }
     throw error;
   } finally { tx.close(); }
 }
