@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidrosense_mobile/views/pages/add_form_inventaris_page.dart';
 import '../components/header.dart';
 import '../widgets/item_image_placeholder.dart';
 import '../widgets/capsule_badge.dart';
@@ -164,7 +165,23 @@ class InfoItemInventarisPage extends StatelessWidget {
                     textColor: const Color.fromRGBO(57, 198, 195, 1),
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(57, 198, 195, 1),
-                    onPressed: onEditPressed,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddFormInventarisPage(
+                            initialData: {
+                              'name': itemName,
+                              'category': category,
+                              'stockValue': stockValue,
+                              'stockUnit': stockUnit,
+                              'imageUrl': imageUrl,
+                              // sertakan harga/catatan jika ada
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
