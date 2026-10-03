@@ -7,6 +7,7 @@ import '../widgets/stock_status_badge.dart';
 import '../widgets/item_info_details.dart';
 import '../widgets/row_button.dart';
 import '../pages/info_item_inventaris_page.dart';
+import '../pages/add_form_inventaris_page.dart'; // Import page baru
 
 class InventarisBody extends StatefulWidget {
   const InventarisBody({super.key});
@@ -73,6 +74,13 @@ class _InventarisBodyState extends State<InventarisBody> {
     );
   }
 
+  void _navigateToAddForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddFormInventarisPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -86,9 +94,7 @@ class _InventarisBodyState extends State<InventarisBody> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Baris Pertama: Search Bar
-            const CustomSearchBar(
-              placeholder: 'Cari nama barang...',
-            ),
+            const CustomSearchBar(placeholder: 'Cari nama barang...'),
 
             const SizedBox(height: 16),
 
@@ -157,12 +163,7 @@ class _InventarisBodyState extends State<InventarisBody> {
             const SizedBox(height: 8),
 
             // Tombol Tambah Barang
-            RowButton(
-              label: '+ Tambah Barang Baru',
-              onTap: () {
-                // Aksi saat tombol diklik
-              },
-            ),
+            RowButton(label: '+ Tambah Barang Baru', onTap: _navigateToAddForm),
 
             const SizedBox(height: 16),
           ],

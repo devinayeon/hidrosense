@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 class ItemImagePlaceholder extends StatelessWidget {
   final String? imageUrl;
   final double height;
+  final String placeholderText;
 
-  const ItemImagePlaceholder({super.key, this.imageUrl, this.height = 160.0});
+  const ItemImagePlaceholder({
+    super.key,
+    this.imageUrl,
+    this.height = 140.0,
+    this.placeholderText = 'FOTO BARANG / KEMASAN',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,17 +55,17 @@ class ItemImagePlaceholder extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withOpacity(0.7),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.image_outlined, color: primaryColor, size: 26),
+            child: Icon(Icons.image_outlined, color: primaryColor, size: 24),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
-            'FOTO BARANG / KEMASAN',
+            placeholderText,
             style: TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.w700,
