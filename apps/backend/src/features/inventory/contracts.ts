@@ -1,16 +1,7 @@
 import { z } from 'zod';
 import { integerIdSchema as intId } from '../../common/validation.js';
+import { positiveDecimalSchema as positiveDecimal } from '../../common/quantities.js';
 export { idParamSchema, activeListQuerySchema as listQuerySchema, parseInput } from '../../common/validation.js';
-
-const positiveDecimal = z.string()
-  .regex(/^\d{1,10}(\.\d{1,2})?$/)
-  .refine((value) => /[1-9]/.test(value))
-  .transform((value) => {
-    const [whole, fraction] = value.split('.');
-    const normalizedWhole = BigInt(whole).toString();
-    const normalizedFraction = fraction?.replace(/0+$/, '');
-    return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
-  });
 
 export const createJenisSchema = z.strictObject({
   nama_jenis: z.string().trim().min(1).max(50),

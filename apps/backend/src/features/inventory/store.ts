@@ -1,6 +1,7 @@
 import type { Row } from '@libsql/client';
 import type { Client } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { fromMinor } from '../../common/quantities.js';
 
 type Executor = Pick<Client, 'execute'>;
 
@@ -67,7 +68,7 @@ export async function getObat(db: Executor, id: string) {
 
 const inventarisColumns = `CAST(i.id_inventaris AS TEXT) AS id_inventaris,
   CAST(i.id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,CAST(i.id_obat AS TEXT) AS id_obat,
-  i.nama_barang,i.satuan,CAST(i.stok_minimum AS TEXT) AS stok_minimum,i.status_aktif,
+  i.nama_barang,i.satuan,CAST(i.stok_minimum_minor AS TEXT) AS stok_minimum,i.status_aktif,
   j.nama_jenis,o.nama_obat,${syncColumns('inventaris', 'i.id_inventaris')}`;
 
 export function inventarisResponse(row: Row) {
@@ -78,7 +79,7 @@ export function inventarisResponse(row: Row) {
     id_obat: row.id_obat === null ? null : String(row.id_obat),
     nama_barang: String(row.nama_barang),
     satuan: String(row.satuan),
-    stok_minimum: row.stok_minimum === null ? null : String(row.stok_minimum),
+    stok_minimum: row.stok_minimum === null ? null : fromMinor(String(row.stok_minimum)),
     status_aktif: Number(row.status_aktif),
     nama_jenis: String(row.nama_jenis),
     nama_obat: row.nama_obat === null ? null : String(row.nama_obat),

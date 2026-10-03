@@ -4,6 +4,8 @@ import { requirePermission } from '../../common/authorization.js';
 import { createInventarisSchema, updateInventarisSchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
 import { assertJenisExists, assertObatExists, getInventaris, inventarisResponse, inventarisColumns } from './store.js';
 import { inventoryWrite } from './write.js';
+import { ApiError } from '../../common/errors.js';
+import { toMinor } from '../../common/quantities.js';
 
 export function registerInventaris(app: FastifyInstance, db: Client, clock: () => number) {
   const readGuard = requirePermission(db, 'inventaris:read', clock);
@@ -15,9 +17,10 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       await assertJenisExists(tx, input.id_jenis_inventaris);
       if (input.id_obat != null) await assertObatExists(tx, input.id_obat);
       const inserted = await tx.execute({
-        sql: `INSERT INTO inventaris (id_jenis_inventaris,id_obat,nama_barang,satuan,stok_minimum)
-          VALUES (?,?,?,?,?) RETURNING CAST(id_inventaris AS TEXT) AS id_inventaris`,
-        args: [input.id_jenis_inventaris, input.id_obat ?? null, input.nama_barang, input.satuan, input.stok_minimum ?? null],
+        sql: `INSERT INTO inventaris (id_jenis_inventaris,id_obat,nama_barang,satuan,stok_minimum,stok_minimum_minor)
+          VALUES (?,?,?,?,?,?) RETURNING CAST(id_inventaris AS TEXT) AS id_inventaris`,
+        args: [input.id_jenis_inventaris, input.id_obat ?? null, input.nama_barang, input.satuan,
+          input.stok_minimum ?? null, input.stok_minimum == null ? null : toMinor(input.stok_minimum)],
       });
       return getInventaris(tx, String(inserted.rows[0].id_inventaris));
     });
@@ -48,13 +51,21 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     const { id } = parseInput(idParamSchema, request.params);
     const input = parseInput(updateInventarisSchema, request.body);
     return inventoryWrite(db, request, clock, 'inventaris.update', { id, input }, async (tx) => {
-      await getInventaris(tx, id);
+      const current = await getInventaris(tx, id);
+      if (input.satuan !== undefined && input.satuan !== current.satuan) {
+        const history = await tx.execute({ sql: 'SELECT 1 FROM detail_stok WHERE id_inventaris=? LIMIT 1', args: [id] });
+        if (history.rows.length) throw new ApiError(409, 'UNIT_LOCKED', 'Satuan barang sudah digunakan dalam histori stok.');
+      }
       if (input.id_jenis_inventaris !== undefined) await assertJenisExists(tx, input.id_jenis_inventaris);
       if (input.id_obat != null) await assertObatExists(tx, input.id_obat);
       const assignments: string[] = [];
       const args: InValue[] = [];
       for (const field of ['id_jenis_inventaris', 'id_obat', 'nama_barang', 'satuan', 'stok_minimum'] as const) {
         if (field in input) { assignments.push(`${field}=?`); args.push(input[field] ?? null); }
+      }
+      if ('stok_minimum' in input) {
+        assignments.push('stok_minimum_minor=?');
+        args.push(input.stok_minimum == null ? null : toMinor(input.stok_minimum));
       }
       args.push(id);
       await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
