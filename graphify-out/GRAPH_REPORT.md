@@ -1,17 +1,17 @@
 # Graph Report - hidrosense  (2026-10-03)
 
 ## Corpus Check
-- 324 files · ~202,004 words
+- 326 files · ~203,563 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 56 file(s) not represented in the graph (top: (none) 13, .xcconfig 8, .xml 7)
 
 ## Summary
-- 2092 nodes · 3127 edges · 193 communities (139 shown, 54 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 42 edges (avg confidence: 0.89)
+- 2102 nodes · 3145 edges · 192 communities (137 shown, 55 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 49 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `35db8c0d`
+- Built from commit: `57fd7e99`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -25,7 +25,7 @@
 - utils.cpp
 - .codex/skills/caveman-compress/scripts/cli.py
 - Review dan perbaikan B003
-- verify-turso-live.mjs
+- migrate.js
 - _compress_file_locked
 - What You Must Do When Invoked
 - dashboard_page.dart
@@ -174,23 +174,23 @@
 - Q: Execute remediation steps in the following strict priority order
 - ref_node_assert
 - Q: migration database backup transaction
-- ref_node_fs
+- stock-concurrency.test.js
 - BMAD Readiness Report
 - Laporan progres dan kesiapan backend HidroSense
 - Workflow
 - B006 Stock Ledger PRD
 - Find Skills
 - ref_node_crypto
-- migrations.test.js
+- verify-turso-live.mjs
 - Laporan progres dan kesiapan backend HidroSense
 - B006 Planning Readiness Report
 - Process
+- prd-stock-ledger.md
 - B006 Stock Ledger Architecture and Refinement Decisions
 - Implementasi Backend B006 — Stock Ledger
 - B006 Structured Task Plan
 - Deployment migrasi Turso 0002–0005
 - Kontrak API Stock Ledger B006
-- BaseController Pattern
 - readiness-check.sh
 
 ## God Nodes (most connected - your core abstractions)
@@ -223,7 +223,7 @@
 ## Hyperedges (group relationships)
 - **Hidroponik Cultivation Lifecycle** — srs_nursery_management, srs_table_capacity_management, srs_growth_monitoring, srs_harvest_sales_tracking [INFERRED 0.95]
 
-## Communities (193 total, 54 thin omitted)
+## Communities (192 total, 55 thin omitted)
 
 ### Community 0 - ".agents/skills/caveman-compress/scripts/cli.py"
 Cohesion: 0.16
@@ -261,9 +261,9 @@ Nodes (6): main(), detect_file_type(), _is_code_line(), _is_json_content(), _is_
 Cohesion: 0.40
 Nodes (4): Penerapan guideline, Review dan perbaikan B003, Temuan yang telah diperbaiki, Validasi
 
-### Community 9 - "verify-turso-live.mjs"
-Cohesion: 0.10
-Nodes (18): backupPath, report, report, environmentSchema, readConfig(), [command, ...args], backendRoot, backupDatabase() (+10 more)
+### Community 9 - "migrate.js"
+Cohesion: 0.13
+Nodes (19): backupPath, report, [command, ...args], backendRoot, backupDatabase(), openDatabase(), appliedMigrations(), defaultDirectory (+11 more)
 
 ### Community 10 - "_compress_file_locked"
 Cohesion: 0.08
@@ -586,8 +586,8 @@ Cohesion: 0.08
 Nodes (25): Architecture Overview - Backend Services, Complete Flow Example, Config Directory, Controllers Directory, Directory Structure Rationale, Email Service (Mature Pattern ✅), Example: User Creation, Feature-Based Organization (+17 more)
 
 ### Community 134 - "Routing and Controllers - Best Practices"
-Cohesion: 0.10
-Nodes (21): Anti-Pattern 1: Business Logic in Routes (Bad ❌), Anti-Patterns, Clean Route Pattern, Controller Error Handling, Custom Error Status Codes, Error Handling, Example 1: Email Notification Routes (Excellent ✅), Example 2: Proxy Routes with Validation (Good ✅) (+13 more)
+Cohesion: 0.08
+Nodes (25): Anti-Pattern 1: Business Logic in Routes (Bad ❌), Anti-Patterns, BaseController Pattern, BaseController Pattern (Template), Clean Route Pattern, Controller Error Handling, Custom Error Status Codes, Error Handling (+17 more)
 
 ### Community 135 - "Services and Repositories - Business Logic Layer"
 Cohesion: 0.08
@@ -598,7 +598,7 @@ Cohesion: 0.10
 Nodes (19): config.ini Structure, Configuration Management - UnifiedConfig Pattern, Configuration Structure, DO NOT Commit Secrets, Environment Overrides, Environment-Specific Configs, Find All process.env Usage, Implementation Pattern (+11 more)
 
 ### Community 137 - "Database Patterns - Prisma Best Practices"
-Cohesion: 0.10
+Cohesion: 0.11
 Nodes (19): Basic Pattern, Check Availability, Database Patterns - Prisma Best Practices, Error Handling, Interactive Transaction, N+1 Query Prevention, Prisma Error Types, PrismaService Usage (+11 more)
 
 ### Community 138 - "Async Patterns and Error Handling"
@@ -694,8 +694,8 @@ Cohesion: 0.13
 Nodes (4): call_claude(), split_frontmatter(), strip_llm_wrapper(), _unlock()
 
 ### Community 168 - "stock/store.ts"
-Cohesion: 0.14
-Nodes (29): fromMinor(), MAX_QUANTITY_MINOR, positiveDecimalSchema, toMinor(), createStockSchema, directionSchema, emptyQuerySchema, historyQuerySchema (+21 more)
+Cohesion: 0.11
+Nodes (35): fromMinor(), MAX_QUANTITY_MINOR, positiveDecimalSchema, toMinor(), createStockSchema, directionSchema, emptyQuerySchema, historyQuerySchema (+27 more)
 
 ### Community 169 - "Verifikasi Turso live — B000–B005"
 Cohesion: 0.29
@@ -706,16 +706,16 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Execute remediation steps in the following strict priority order, Source Nodes
 
 ### Community 172 - "ref_node_assert"
-Cohesion: 0.22
-Nodes (10): preflight, jenisPayload, obatPayload, pegawaiHeaders(), petaniHeaders(), bearer(), fixture(), password (+2 more)
+Cohesion: 0.20
+Nodes (11): readConfig(), preflight, jenisPayload, obatPayload, pegawaiHeaders(), petaniHeaders(), bearer(), fixture() (+3 more)
 
 ### Community 173 - "Q: migration database backup transaction"
 Cohesion: 0.50
 Nodes (3): Answer, Outcome, Q: migration database backup transaction
 
-### Community 174 - "ref_node_fs"
-Cohesion: 0.12
-Nodes (9): md, skillFile, skill, extensions, largest, root, md, skillFile (+1 more)
+### Community 174 - "stock-concurrency.test.js"
+Cohesion: 0.10
+Nodes (14): md, skillFile, skill, extensions, largest, root, competingRequests(), fileFixture() (+6 more)
 
 ### Community 175 - "BMAD Readiness Report"
 Cohesion: 0.10
@@ -738,12 +738,8 @@ Cohesion: 0.14
 Nodes (13): Common Skill Categories, Find Skills, How to Help Users Find Skills, Step 1: Understand What They Need, Step 2: Check the Leaderboard First, Step 3: Search for Skills, Step 4: Verify Quality Before Recommending, Step 5: Present Options to the User (+5 more)
 
 ### Community 180 - "ref_node_crypto"
-Cohesion: 0.30
-Nodes (6): reconcileStock(), get(), unavailable(), expectError(), stockFixture(), stockState()
-
-### Community 181 - "migrations.test.js"
-Cohesion: 0.19
-Nodes (9): database(), migrations, refs, tables, competingRequests(), fileFixture(), inspect(), now (+1 more)
+Cohesion: 0.36
+Nodes (5): get(), unavailable(), expectError(), stockFixture(), stockState()
 
 ### Community 182 - "Laporan progres dan kesiapan backend HidroSense"
 Cohesion: 0.15
@@ -766,8 +762,8 @@ Cohesion: 0.29
 Nodes (7): Bukti verifikasi lokal, Deployment yang belum dilakukan, Implementasi Backend B006 — Stock Ledger, Migrasi 0006 dan recovery, Perilaku dan lokasi perubahan, Ringkasan review empat artifak, Skills dan pelaksanaan
 
 ### Community 188 - "B006 Structured Task Plan"
-Cohesion: 0.33
-Nodes (6): B006 Structured Task Plan, Completed refinement activities, Implementation epic and stories, Implementation todo — 3 October 2026, Required regression proofs, Sequential handoff and stop conditions
+Cohesion: 0.29
+Nodes (7): B006 Structured Task Plan, Completed refinement activities, Deployment obligations — not executed, Implementation epic and stories, Implementation todo — 3 October 2026, Required regression proofs, Sequential handoff and stop conditions
 
 ### Community 189 - "Deployment migrasi Turso 0002–0005"
 Cohesion: 0.33
@@ -777,26 +773,22 @@ Nodes (6): Backup dan preservasi, Bukti dan perintah, Deployment migrasi Turso 0
 Cohesion: 0.40
 Nodes (5): Endpoint, Error bisnis, Kontrak API Stock Ledger B006, Read, Write dan retry
 
-### Community 191 - "BaseController Pattern"
-Cohesion: 0.50
-Nodes (4): BaseController Pattern, BaseController Pattern (Template), Using BaseController, Why BaseController?
-
 ## Knowledge Gaps
-- **1003 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+998 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1256 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **54 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1007 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+1002 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1260 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **55 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `authenticatedWrite()` connect `ApiError` to `B006 Stock Ledger PRD`, `B006 Stock Ledger Architecture and Refinement Decisions`, `ref_node_assert`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `B006 Stock Ledger PRD` connect `B006 Stock Ledger PRD` to `prd-stock-ledger.md`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `Baseline review: B000–B005` connect `B006 Stock Ledger PRD` to `ApiError`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **What connects `name`, `version`, `license` to the rest of the system?**
-  _1003 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1007 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.07058823529411765 - nodes in this community are weakly interconnected._
 - **Should `Path` be split into smaller, more focused modules?**

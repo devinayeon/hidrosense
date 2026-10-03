@@ -72,6 +72,8 @@ Pemeriksaan tautan/whitespace enam dokumen B006 dan scoped diff lulus. `graphify
 
 ## Deployment yang belum dilakukan
 
+Follow-up [review/refaktor arsitektur](b006/architecture-refinement-2026-10-03.md) pada HEAD aktual `57fd7e9` selesai: guard inventaris/reversal menjadi private di append; hanya dua file runtime berubah. Fresh check **153/153 PASS** sekitar **61,5 detik**, typecheck/line limit/build dan review independen lulus. Semua 12 file migration tetap identik; graph AST terbaru **2102 nodes, 3145 edges, 192 communities**. Angka durasi/graph pada bagian bukti sebelumnya adalah hasil historis sebelum follow-up ini. Handoff fase lanjutan dan keterbatasan pembukaan laporan visual dicatat pada review tersebut.
+
 Remote migrations 0001–0005 telah applied menurut [bukti sebelumnya](deployment-turso-migrations.md). **Migrasi 0006 belum diterapkan ke remote dalam run ini.** Tidak ada kredensial production diakses atau operasi live stock dijalankan.
 
 Deployment memerlukan disposable staging Turso: populated preflight, snapshot/restore proof, apply0006, reconciliation, independent writers/response-loss, workload measurement, health/schema evidence. Ikuti deployment/recovery sequence pada arsitektur, hentikan stock writer lama dan deploy B005 companion writer bersama B006. Jangan menjalankan down pada ledger populated atau mengaktifkan mixed old/new writers.

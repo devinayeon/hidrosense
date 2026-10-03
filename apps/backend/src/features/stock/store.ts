@@ -73,7 +73,7 @@ export async function getBalance(db: Executor, id: string) {
     di_bawah_minimum: row.minimum != null && BigInt(String(row.saldo_minor)) < BigInt(String(row.minimum)) };
 }
 
-export async function assertItemsAvailable(tx: Transaction, details: StockLine[], reversal = false) {
+async function assertItemsAvailable(tx: Transaction, details: StockLine[], reversal: boolean) {
   const rows = (await tx.execute({ sql: `SELECT CAST(id_inventaris AS TEXT) AS id_inventaris,satuan,status_aktif
     FROM inventaris WHERE id_inventaris IN (${details.map(() => '?').join(',')})`,
     args: details.map((line) => line.id_inventaris) })).rows;
@@ -86,7 +86,7 @@ export async function assertItemsAvailable(tx: Transaction, details: StockLine[]
   }
 }
 
-export async function isReversed(tx: Transaction, id: string) {
+async function isReversed(tx: Transaction, id: string) {
   return (await tx.execute({ sql: 'SELECT 1 FROM stok WHERE reversal_of=?', args: [id] })).rows.length > 0;
 }
 
@@ -96,6 +96,11 @@ export type StockOrigin = Origin;
 export async function appendMovement(tx: Transaction, actorId: string, now: number,
   input: { jenis_stok: 'masuk' | 'keluar'; details: StockLine[]; keterangan: string | null },
   reversalOf: string | null = null, origin?: Origin) {
+  // Keep persistence prerequisites inside append, before any ledger or balance write.
+  if (reversalOf !== null && await isReversed(tx, reversalOf)) {
+    throw new ApiError(409, 'STOK_ALREADY_REVERSED', 'Transaksi sudah dibalik.');
+  }
+  await assertItemsAvailable(tx, input.details, reversalOf !== null);
   const header = await tx.execute({ sql: `INSERT INTO stok
     (id_user,id_penyemaian,id_perawatan,tanggal_stok,jenis_stok,keterangan,reversal_of,sealed)
     VALUES (?,?,?,?,?,?,?,0) RETURNING CAST(id_stok AS TEXT) AS id_stok`,

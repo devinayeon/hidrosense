@@ -2082,15 +2082,15 @@
     "semantic_hash": ""
   },
   "apps/backend/src/features/stock/service.ts": {
-    "mtime": 1790993012.205527,
-    "seen": 1790993909.6834247,
-    "ast_hash": "4ad60815da66af1b16fd4c09e8debb0e",
+    "mtime": 1790996324.0378952,
+    "seen": 1790996408.0478091,
+    "ast_hash": "a20344be3c6769c35444c522b83b3876",
     "semantic_hash": ""
   },
   "apps/backend/src/features/stock/store.ts": {
-    "mtime": 1790992429.0872915,
-    "seen": 1790993909.6834304,
-    "ast_hash": "61e3889e48939be44b5bb0fa09189be4",
+    "mtime": 1790996324.035504,
+    "seen": 1790996408.0478196,
+    "ast_hash": "63ab1b0b5c2d23650a9beca319983817",
     "semantic_hash": ""
   },
   "apps/backend/src/features/stock/write.ts": {
@@ -2184,9 +2184,9 @@
     "semantic_hash": ""
   },
   "docs/b006/architecture-stock-ledger.md": {
-    "mtime": 1790993769.6542954,
-    "seen": 1790993909.8061519,
-    "ast_hash": "a7f8c9517aefad39814475894334c6e6",
+    "mtime": 1790996324.0409746,
+    "seen": 1790996408.1840665,
+    "ast_hash": "e76e97975f5d9f38343c17035201bf0c",
     "semantic_hash": ""
   },
   "docs/b006/prd-stock-ledger.md": {
@@ -2196,21 +2196,21 @@
     "semantic_hash": ""
   },
   "docs/b006/readiness-report-b006-2026-10-03.md": {
-    "mtime": 1790993356.8519876,
-    "seen": 1790993909.806164,
-    "ast_hash": "2f83b8d861a827e518624c2c5110bac4",
+    "mtime": 1790993999.0748148,
+    "seen": 1790996408.1849265,
+    "ast_hash": "85682b575faf2c7a2e1efa3853bf7de3",
     "semantic_hash": ""
   },
   "docs/b006/tasks-stock-ledger.md": {
-    "mtime": 1790992737.3066545,
-    "seen": 1790993909.8061683,
-    "ast_hash": "7440311c72b74f4cf7aa512639ee4988",
+    "mtime": 1790996071.2538922,
+    "seen": 1790996408.1849337,
+    "ast_hash": "50a669750756f3bed6dd2dbf64039a5a",
     "semantic_hash": ""
   },
   "docs/backend-b006.md": {
-    "mtime": 1790993549.837852,
-    "seen": 1790993909.8092718,
-    "ast_hash": "241ab9f1297734e022c792331276cb16",
+    "mtime": 1790993999.0708168,
+    "seen": 1790996408.1895487,
+    "ast_hash": "25a79c9e0db40f7fa957e86043cd28f2",
     "semantic_hash": ""
   },
   "docs/backend-stock-api.md": {
@@ -2229,6 +2229,18 @@
     "mtime": 1790962980.5159373,
     "seen": 1790993909.815844,
     "ast_hash": "8a6c9f74066689575081c25db6f15813",
+    "semantic_hash": ""
+  },
+  "GLOSSARY.md": {
+    "mtime": 1790996071.2458918,
+    "seen": 1790996408.1735597,
+    "ast_hash": "ba9575a505b426cea2a7f60c652f45c2",
+    "semantic_hash": ""
+  },
+  "docs/b006/architecture-refinement-2026-10-03.md": {
+    "mtime": 1790996324.0429926,
+    "seen": 1790996408.184057,
+    "ast_hash": "3b9620c5a330c399c6fee0fe8e1cb24c",
     "semantic_hash": ""
   }
 }

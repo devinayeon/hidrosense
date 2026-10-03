@@ -115,3 +115,7 @@ All four artifacts were re-read before code development. FR-001–FR-012 and NFR
 **Local implementation verification: PASS.** Final check passed 153 tests, typecheck and the code-line limit; build passed. Independent runtime/document reviews completed with findings resolved. This closes I-01–I-08 locally, including the relevant local P-01–P-15 proofs. Remote variants and operational deployment obligations remain open as D-01–D-04.
 
 The planning PASS is not a remote deployment approval. Migration 0006, remote contention/response-loss checks, operational snapshot/restore and staging performance remain separate deployment obligations. Existing remote 0001–0005 evidence stays valid as historical baseline evidence.
+
+## Architecture refinement follow-up
+
+At actual HEAD `57fd7e9`, the [architecture refinement review](architecture-refinement-2026-10-03.md) consolidated private guard ownership inside append while preserving public behavior and transactions. Independent review passed without findings. Fresh `npm run check` passed 153/153 tests (about 61.5 seconds), typecheck and line limits; build passed. All 12 migration SQL files remain byte-identical. This is a local verification PASS; D-01–D-04 and downstream PRDs remain pending as documented in the handoff. Automatic opening of the visual HTML report was unavailable; the file is provided separately with that limitation recorded.

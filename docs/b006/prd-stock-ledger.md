@@ -3,6 +3,8 @@
 Date: 3 October 2026, Asia/Jakarta. Baseline: HEAD `35db8c0`.
 Status: refinement complete; B006 implementation authorized by the subsequent user request on 3 October 2026. Local implementation and verification are tracked in [the task plan](tasks-stock-ledger.md) and [implementation evidence](../backend-b006.md). The earlier run selected **refinement and PRD only**.
 
+The subsequent [architecture refinement](architecture-refinement-2026-10-03.md) preserves all FR/NFR and public contracts. It consolidates private persistence prerequisites inside append and records a fresh local regression run; deployment obligations remain separate.
+
 ## Purpose and authority
 
 Complete the PB-02 stock contract before implementation. Employees record stock receipts and usage; farmers and employees read balances and history. A committed stock movement must have one durable audit record, exact quantities, and a nonnegative resulting balance, including retries and concurrent writers.

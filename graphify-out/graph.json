@@ -1434,6 +1434,18 @@
       "source_location": "L10"
     },
     {
+      "id": "apps_backend_src_features_stock_reconcile_reconcilestock",
+      "label": "reconcileStock()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "code",
+      "norm_label": "reconcilestock()",
+      "source_file": "apps/backend/src/features/stock/reconcile.ts",
+      "source_location": "L5"
+    },
+    {
       "id": "apps_backend_src_features_stock_service_recordmovement",
       "label": "recordMovement()",
       "_callable": true,
@@ -1455,7 +1467,7 @@
       "file_type": "code",
       "norm_label": "reversemovement()",
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L22"
+      "source_location": "L21"
     },
     {
       "id": "apps_backend_src_features_stock_store_appendmovement",
@@ -1638,6 +1650,30 @@
       "source_location": "L44"
     },
     {
+      "id": "apps_backend_src_config_readconfig",
+      "label": "readConfig()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 172,
+      "community_name": "ref_node_assert",
+      "file_type": "code",
+      "norm_label": "readconfig()",
+      "source_file": "apps/backend/src/config.ts",
+      "source_location": "L13"
+    },
+    {
+      "id": "apps_backend_test_auth_infrastructure_test_header",
+      "label": "header()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 172,
+      "community_name": "ref_node_assert",
+      "file_type": "code",
+      "norm_label": "header()",
+      "source_file": "apps/backend/test/auth-infrastructure.test.js",
+      "source_location": "L88"
+    },
+    {
       "id": "apps_backend_test_http_boundaries_test_assertenvelope",
       "label": "assertEnvelope()",
       "_callable": true,
@@ -1727,7 +1763,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "frontmatter()",
       "source_file": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -1739,11 +1775,59 @@
       "_callable": true,
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "scan()",
       "source_file": "apps/backend/scripts/check-lines.mjs",
       "source_location": "L7"
+    },
+    {
+      "id": "apps_backend_test_stock_concurrency_test_competingrequests",
+      "label": "competingRequests()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "competingrequests()",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L62"
+    },
+    {
+      "id": "apps_backend_test_stock_concurrency_test_filefixture",
+      "label": "fileFixture()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "filefixture()",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L12"
+    },
+    {
+      "id": "apps_backend_test_stock_concurrency_test_inspect",
+      "label": "inspect()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "inspect()",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L63"
+    },
+    {
+      "id": "apps_backend_test_stock_concurrency_test_runwriters",
+      "label": "runWriters()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "runwriters()",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L23"
     },
     {
       "id": "codex_skills_caveman_explore_tests_skill_file_test_frontmatter",
@@ -1751,23 +1835,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "frontmatter()",
       "source_file": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
       "source_location": "L10"
-    },
-    {
-      "id": "apps_backend_src_features_stock_reconcile_reconcilestock",
-      "label": "reconcileStock()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 180,
-      "community_name": "ref_node_crypto",
-      "file_type": "code",
-      "norm_label": "reconcilestock()",
-      "source_file": "apps/backend/src/features/stock/reconcile.ts",
-      "source_location": "L5"
     },
     {
       "id": "apps_backend_test_stock_failures_test_get",
@@ -1830,64 +1902,52 @@
       "source_location": "L39"
     },
     {
-      "id": "apps_backend_test_migrations_test_database",
-      "label": "database()",
+      "id": "apps_backend_scripts_verify_turso_live_normalize",
+      "label": "normalize()",
       "_callable": true,
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "database()",
-      "source_file": "apps/backend/test/migrations.test.js",
-      "source_location": "L15"
+      "norm_label": "normalize()",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
+      "source_location": "L26"
     },
     {
-      "id": "apps_backend_test_stock_concurrency_test_competingrequests",
-      "label": "competingRequests()",
+      "id": "apps_backend_scripts_verify_turso_live_pass",
+      "label": "pass()",
       "_callable": true,
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "competingrequests()",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
-      "source_location": "L62"
+      "norm_label": "pass()",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
+      "source_location": "L20"
     },
     {
-      "id": "apps_backend_test_stock_concurrency_test_filefixture",
-      "label": "fileFixture()",
+      "id": "apps_backend_scripts_verify_turso_live_safeerror",
+      "label": "safeError()",
       "_callable": true,
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "filefixture()",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
-      "source_location": "L12"
+      "norm_label": "safeerror()",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
+      "source_location": "L21"
     },
     {
-      "id": "apps_backend_test_stock_concurrency_test_inspect",
-      "label": "inspect()",
+      "id": "apps_backend_scripts_verify_turso_live_schema",
+      "label": "schema()",
       "_callable": true,
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "inspect()",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
-      "source_location": "L63"
-    },
-    {
-      "id": "apps_backend_test_stock_concurrency_test_runwriters",
-      "label": "runWriters()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 181,
-      "community_name": "migrations.test.js",
-      "file_type": "code",
-      "norm_label": "runwriters()",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
-      "source_location": "L23"
+      "norm_label": "schema()",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
+      "source_location": "L22"
     },
     {
       "id": "apps_mobile_ios_runner_appdelegate_appdelegate_application",
@@ -3331,7 +3391,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "digest()",
       "source_file": "apps/backend/scripts/deploy-turso-migrations.mjs",
@@ -3343,71 +3403,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "quote()",
       "source_file": "apps/backend/scripts/deploy-turso-migrations.mjs",
       "source_location": "L12"
-    },
-    {
-      "id": "apps_backend_scripts_verify_turso_live_normalize",
-      "label": "normalize()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "normalize()",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L26"
-    },
-    {
-      "id": "apps_backend_scripts_verify_turso_live_pass",
-      "label": "pass()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "pass()",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L20"
-    },
-    {
-      "id": "apps_backend_scripts_verify_turso_live_safeerror",
-      "label": "safeError()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "safeerror()",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L21"
-    },
-    {
-      "id": "apps_backend_scripts_verify_turso_live_schema",
-      "label": "schema()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "schema()",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L22"
-    },
-    {
-      "id": "apps_backend_src_config_readconfig",
-      "label": "readConfig()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "readconfig()",
-      "source_file": "apps/backend/src/config.ts",
-      "source_location": "L13"
     },
     {
       "id": "apps_backend_src_db_client_backupdatabase",
@@ -3415,7 +3415,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "backupdatabase()",
       "source_file": "apps/backend/src/db/client.js",
@@ -3427,7 +3427,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "opendatabase()",
       "source_file": "apps/backend/src/db/client.js",
@@ -3439,7 +3439,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "appliedmigrations()",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -3451,7 +3451,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "loadmigrations()",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -3463,7 +3463,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "migrate()",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -3475,7 +3475,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "migrationstatus()",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -3487,23 +3487,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "validatehistory()",
       "source_file": "apps/backend/src/db/migrate.js",
       "source_location": "L35"
     },
     {
-      "id": "apps_backend_test_auth_infrastructure_test_header",
-      "label": "header()",
+      "id": "apps_backend_test_migrations_test_database",
+      "label": "database()",
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
-      "norm_label": "header()",
-      "source_file": "apps/backend/test/auth-infrastructure.test.js",
-      "source_location": "L88"
+      "norm_label": "database()",
+      "source_file": "apps/backend/test/migrations.test.js",
+      "source_location": "L15"
     },
     {
       "id": "apps_backend_test_stock_migration_test_fingerprint",
@@ -3511,7 +3511,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "fingerprint()",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -3523,7 +3523,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "legacy()",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -3535,7 +3535,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "movement()",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -3547,7 +3547,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "schema()",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -8430,6 +8430,30 @@
       "source_location": "L384"
     },
     {
+      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_basecontroller_pattern",
+      "label": "BaseController Pattern",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Routing and Controllers - Best Practices",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "basecontroller pattern",
+      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
+      "source_location": "L75"
+    },
+    {
+      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_basecontroller_pattern_template",
+      "label": "BaseController Pattern (Template)",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Routing and Controllers - Best Practices",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "basecontroller pattern (template)",
+      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
+      "source_location": "L87"
+    },
+    {
       "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_clean_route_pattern",
       "label": "Clean Route Pattern",
       "_origin": "ast",
@@ -8646,6 +8670,18 @@
       "source_location": "L632"
     },
     {
+      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_using_basecontroller",
+      "label": "Using BaseController",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Routing and Controllers - Best Practices",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "using basecontroller",
+      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
+      "source_location": "L228"
+    },
+    {
       "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_validation_errors",
       "label": "Validation Errors",
       "_origin": "ast",
@@ -8656,6 +8692,18 @@
       "norm_label": "validation errors",
       "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
       "source_location": "L595"
+    },
+    {
+      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_why_basecontroller",
+      "label": "Why BaseController?",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Routing and Controllers - Best Practices",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "why basecontroller?",
+      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
+      "source_location": "L77"
     },
     {
       "id": "agents_skills_backend_dev_guidelines_resources_services_and_repositories_1_in_memory_caching",
@@ -9184,18 +9232,6 @@
       "norm_label": "why unifiedconfig?",
       "source_file": ".agents/skills/backend-dev-guidelines/resources/configuration.md",
       "source_location": "L18"
-    },
-    {
-      "id": "agents_skills_backend_dev_guidelines_resources_database_patterns",
-      "label": "database-patterns.md",
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "Database Patterns - Prisma Best Practices",
-      "file_type": "document",
-      "node_kind": "page",
-      "norm_label": "database-patterns.md",
-      "source_file": ".agents/skills/backend-dev-guidelines/resources/database-patterns.md",
-      "source_location": "L1"
     },
     {
       "id": "agents_skills_backend_dev_guidelines_resources_database_patterns_basic_pattern",
@@ -10528,6 +10564,18 @@
       "node_kind": "page",
       "norm_label": "complete-examples.md",
       "source_file": ".agents/skills/backend-dev-guidelines/resources/complete-examples.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "agents_skills_backend_dev_guidelines_resources_database_patterns",
+      "label": "database-patterns.md",
+      "_origin": "ast",
+      "community": 143,
+      "community_name": "routing-and-controllers.md",
+      "file_type": "document",
+      "node_kind": "page",
+      "norm_label": "database-patterns.md",
+      "source_file": ".agents/skills/backend-dev-guidelines/resources/database-patterns.md",
       "source_location": "L1"
     },
     {
@@ -12994,6 +13042,77 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_backend_test_stock_reconcile_test",
+      "label": "stock-reconcile.test.js",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "code",
+      "norm_label": "stock-reconcile.test.js",
+      "source_file": "apps/backend/test/stock-reconcile.test.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "docs_b006_architecture_refinement_2026_10_03_aktivitas_skill_dan_kandidat",
+      "label": "Aktivitas skill dan kandidat",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "aktivitas skill dan kandidat",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L23"
+    },
+    {
+      "id": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "label": "B006 \u2014 Review dan Refaktor Arsitektur",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "b006 \u2014 review dan refaktor arsitektur",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "docs_b006_architecture_refinement_2026_10_03_handoff_dan_pending_operations",
+      "label": "Handoff dan pending operations",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "handoff dan pending operations",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L55"
+    },
+    {
+      "id": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "label": "PRD refinement dan penerimaan",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "prd refinement dan penerimaan",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L5"
+    },
+    {
+      "id": "docs_b006_architecture_refinement_2026_10_03_todo_dan_hasil",
+      "label": "Todo dan hasil",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "stock/store.ts",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "todo dan hasil",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L43"
+    },
+    {
       "id": "docs_verification_turso_live",
       "label": "verification-turso-live.md",
       "_origin": "ast",
@@ -13597,6 +13716,17 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_backend_test_auth_infrastructure_test",
+      "label": "auth-infrastructure.test.js",
+      "_origin": "ast",
+      "community": 172,
+      "community_name": "ref_node_assert",
+      "file_type": "code",
+      "norm_label": "auth-infrastructure.test.js",
+      "source_file": "apps/backend/test/auth-infrastructure.test.js",
+      "source_location": "L1"
+    },
+    {
       "id": "apps_backend_test_auth_test",
       "label": "auth.test.js",
       "_origin": "ast",
@@ -13843,7 +13973,7 @@
       "label": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
       "source_file": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13854,7 +13984,7 @@
       "label": "md",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "md",
       "source_file": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13865,7 +13995,7 @@
       "label": "skillFile",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "skillfile",
       "source_file": ".agents/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13876,7 +14006,7 @@
       "label": ".agents/skills/caveman-learn/tests/index.js",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".agents/skills/caveman-learn/tests/index.js",
       "source_file": ".agents/skills/caveman-learn/tests/index.js",
@@ -13887,7 +14017,7 @@
       "label": ".agents/skills/caveman-learn/tests/skill-file.test.mjs",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".agents/skills/caveman-learn/tests/skill-file.test.mjs",
       "source_file": ".agents/skills/caveman-learn/tests/skill-file.test.mjs",
@@ -13898,7 +14028,7 @@
       "label": "skill",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "skill",
       "source_file": ".agents/skills/caveman-learn/tests/skill-file.test.mjs",
@@ -13909,7 +14039,7 @@
       "label": "check-lines.mjs",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "check-lines.mjs",
       "source_file": "apps/backend/scripts/check-lines.mjs",
@@ -13920,7 +14050,7 @@
       "label": "extensions",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "extensions",
       "source_file": "apps/backend/scripts/check-lines.mjs",
@@ -13931,7 +14061,7 @@
       "label": "largest",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "largest",
       "source_file": "apps/backend/scripts/check-lines.mjs",
@@ -13942,18 +14072,40 @@
       "label": "root",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "root",
       "source_file": "apps/backend/scripts/check-lines.mjs",
       "source_location": "L4"
     },
     {
+      "id": "apps_backend_test_stock_concurrency_test",
+      "label": "stock-concurrency.test.js",
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "stock-concurrency.test.js",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_backend_test_stock_concurrency_test_now",
+      "label": "now",
+      "_origin": "ast",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "file_type": "code",
+      "norm_label": "now",
+      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "source_location": "L9"
+    },
+    {
       "id": "codex_skills_caveman_explore_tests_skill_file_test",
       "label": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
       "source_file": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13964,7 +14116,7 @@
       "label": "md",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "md",
       "source_file": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13975,7 +14127,7 @@
       "label": "skillFile",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "skillfile",
       "source_file": ".codex/skills/caveman-explore/tests/skill-file.test.mjs",
@@ -13986,7 +14138,7 @@
       "label": ".codex/skills/caveman-learn/tests/index.js",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".codex/skills/caveman-learn/tests/index.js",
       "source_file": ".codex/skills/caveman-learn/tests/index.js",
@@ -13997,7 +14149,7 @@
       "label": ".codex/skills/caveman-learn/tests/skill-file.test.mjs",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": ".codex/skills/caveman-learn/tests/skill-file.test.mjs",
       "source_file": ".codex/skills/caveman-learn/tests/skill-file.test.mjs",
@@ -14008,7 +14160,7 @@
       "label": "skill",
       "_origin": "ast",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "file_type": "code",
       "norm_label": "skill",
       "source_file": ".codex/skills/caveman-learn/tests/skill-file.test.mjs",
@@ -15136,17 +15288,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_backend_test_stock_reconcile_test",
-      "label": "stock-reconcile.test.js",
-      "_origin": "ast",
-      "community": 180,
-      "community_name": "ref_node_crypto",
-      "file_type": "code",
-      "norm_label": "stock-reconcile.test.js",
-      "source_file": "apps/backend/test/stock-reconcile.test.js",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_backend_test_stock_sync_test",
       "label": "stock-sync.test.js",
       "_origin": "ast",
@@ -15180,70 +15321,48 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_backend_test_migrations_test",
-      "label": "migrations.test.js",
+      "id": "apps_backend_scripts_verify_turso_live",
+      "label": "verify-turso-live.mjs",
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "migrations.test.js",
-      "source_file": "apps/backend/test/migrations.test.js",
+      "norm_label": "verify-turso-live.mjs",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
       "source_location": "L1"
     },
     {
-      "id": "apps_backend_test_migrations_test_migrations",
-      "label": "migrations",
+      "id": "apps_backend_scripts_verify_turso_live_report",
+      "label": "report",
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "migrations",
-      "source_file": "apps/backend/test/migrations.test.js",
-      "source_location": "L10"
+      "norm_label": "report",
+      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
+      "source_location": "L18"
     },
     {
-      "id": "apps_backend_test_migrations_test_refs",
-      "label": "refs",
+      "id": "apps_backend_src_config",
+      "label": "config.ts",
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "refs",
-      "source_file": "apps/backend/test/migrations.test.js",
-      "source_location": "L13"
-    },
-    {
-      "id": "apps_backend_test_migrations_test_tables",
-      "label": "tables",
-      "_origin": "ast",
-      "community": 181,
-      "community_name": "migrations.test.js",
-      "file_type": "code",
-      "norm_label": "tables",
-      "source_file": "apps/backend/test/migrations.test.js",
-      "source_location": "L12"
-    },
-    {
-      "id": "apps_backend_test_stock_concurrency_test",
-      "label": "stock-concurrency.test.js",
-      "_origin": "ast",
-      "community": 181,
-      "community_name": "migrations.test.js",
-      "file_type": "code",
-      "norm_label": "stock-concurrency.test.js",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
+      "norm_label": "config.ts",
+      "source_file": "apps/backend/src/config.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_backend_test_stock_concurrency_test_now",
-      "label": "now",
+      "id": "apps_backend_src_config_environmentschema",
+      "label": "environmentSchema",
       "_origin": "ast",
       "community": 181,
-      "community_name": "migrations.test.js",
+      "community_name": "verify-turso-live.mjs",
       "file_type": "code",
-      "norm_label": "now",
-      "source_file": "apps/backend/test/stock-concurrency.test.js",
-      "source_location": "L9"
+      "norm_label": "environmentschema",
+      "source_file": "apps/backend/src/config.ts",
+      "source_location": "L4"
     },
     {
       "id": "docs_readiness_report_hidrosense_2026_10_03_acuan_dan_metode",
@@ -15622,6 +15741,18 @@
       "source_location": "L80"
     },
     {
+      "id": "docs_b006_architecture_refinement_2026_10_03",
+      "label": "architecture-refinement-2026-10-03.md",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "prd-stock-ledger.md",
+      "file_type": "document",
+      "node_kind": "page",
+      "norm_label": "architecture-refinement-2026-10-03.md",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L1"
+    },
+    {
       "id": "docs_b006_architecture_stock_ledger",
       "label": "architecture-stock-ledger.md",
       "_origin": "ast",
@@ -15706,6 +15837,42 @@
       "source_location": "L1"
     },
     {
+      "id": "glossary",
+      "label": "GLOSSARY.md",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "prd-stock-ledger.md",
+      "file_type": "document",
+      "node_kind": "page",
+      "norm_label": "glossary.md",
+      "source_file": "GLOSSARY.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "glossary_bahasa_domain",
+      "label": "Bahasa domain",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "prd-stock-ledger.md",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "bahasa domain",
+      "source_file": "GLOSSARY.md",
+      "source_location": "L5"
+    },
+    {
+      "id": "glossary_hidrosense_persediaan",
+      "label": "HidroSense \u2014 Persediaan",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "prd-stock-ledger.md",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "hidrosense \u2014 persediaan",
+      "source_file": "GLOSSARY.md",
+      "source_location": "L1"
+    },
+    {
       "id": "docs_b006_architecture_stock_ledger_b006_stock_ledger_architecture_and_refinement_decisions",
       "label": "B006 Stock Ledger Architecture and Refinement Decisions",
       "_origin": "ast",
@@ -15727,7 +15894,7 @@
       "node_kind": "heading",
       "norm_label": "discovery and review evidence",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L130"
+      "source_location": "L132"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_legacy_migration_and_compatibility_strategy",
@@ -15739,7 +15906,7 @@
       "node_kind": "heading",
       "norm_label": "legacy migration and compatibility strategy",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L97"
+      "source_location": "L99"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_persistence_model",
@@ -15751,7 +15918,7 @@
       "node_kind": "heading",
       "norm_label": "persistence model",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L38"
+      "source_location": "L40"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_requirement_ownership",
@@ -15763,7 +15930,7 @@
       "node_kind": "heading",
       "norm_label": "requirement ownership",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L15"
+      "source_location": "L17"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_retry_and_conflict_sequence",
@@ -15775,7 +15942,7 @@
       "node_kind": "heading",
       "norm_label": "retry and conflict sequence",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L86"
+      "source_location": "L88"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_trade_offs_and_later_inputs",
@@ -15787,7 +15954,7 @@
       "node_kind": "heading",
       "norm_label": "trade-offs and later inputs",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L121"
+      "source_location": "L123"
     },
     {
       "id": "docs_backend_b006_bukti_verifikasi_lokal",
@@ -15811,7 +15978,7 @@
       "node_kind": "heading",
       "norm_label": "deployment yang belum dilakukan",
       "source_file": "docs/backend-b006.md",
-      "source_location": "L61"
+      "source_location": "L73"
     },
     {
       "id": "docs_backend_b006_implementasi_backend_b006_stock_ledger",
@@ -15871,7 +16038,7 @@
       "node_kind": "heading",
       "norm_label": "skills dan pelaksanaan",
       "source_file": "docs/backend-b006.md",
-      "source_location": "L67"
+      "source_location": "L79"
     },
     {
       "id": "docs_b006_tasks_stock_ledger_b006_structured_task_plan",
@@ -15896,6 +16063,18 @@
       "norm_label": "completed refinement activities",
       "source_file": "docs/b006/tasks-stock-ledger.md",
       "source_location": "L5"
+    },
+    {
+      "id": "docs_b006_tasks_stock_ledger_deployment_obligations_not_executed",
+      "label": "Deployment obligations \u2014 not executed",
+      "_origin": "ast",
+      "community": 188,
+      "community_name": "B006 Structured Task Plan",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "deployment obligations \u2014 not executed",
+      "source_file": "docs/b006/tasks-stock-ledger.md",
+      "source_location": "L46"
     },
     {
       "id": "docs_b006_tasks_stock_ledger_implementation_epic_and_stories",
@@ -15931,7 +16110,7 @@
       "node_kind": "heading",
       "norm_label": "required regression proofs",
       "source_file": "docs/b006/tasks-stock-ledger.md",
-      "source_location": "L46"
+      "source_location": "L57"
     },
     {
       "id": "docs_b006_tasks_stock_ledger_sequential_handoff_and_stop_conditions",
@@ -15943,7 +16122,7 @@
       "node_kind": "heading",
       "norm_label": "sequential handoff and stop conditions",
       "source_file": "docs/b006/tasks-stock-ledger.md",
-      "source_location": "L70"
+      "source_location": "L81"
     },
     {
       "id": "docs_deployment_turso_migrations_backup_dan_preservasi",
@@ -16186,54 +16365,6 @@
       "norm_label": "write dan retry",
       "source_file": "docs/backend-stock-api.md",
       "source_location": "L17"
-    },
-    {
-      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_basecontroller_pattern",
-      "label": "BaseController Pattern",
-      "_origin": "ast",
-      "community": 191,
-      "community_name": "BaseController Pattern",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "basecontroller pattern",
-      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
-      "source_location": "L75"
-    },
-    {
-      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_basecontroller_pattern_template",
-      "label": "BaseController Pattern (Template)",
-      "_origin": "ast",
-      "community": 191,
-      "community_name": "BaseController Pattern",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "basecontroller pattern (template)",
-      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
-      "source_location": "L87"
-    },
-    {
-      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_using_basecontroller",
-      "label": "Using BaseController",
-      "_origin": "ast",
-      "community": 191,
-      "community_name": "BaseController Pattern",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "using basecontroller",
-      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
-      "source_location": "L228"
-    },
-    {
-      "id": "agents_skills_backend_dev_guidelines_resources_routing_and_controllers_why_basecontroller",
-      "label": "Why BaseController?",
-      "_origin": "ast",
-      "community": 191,
-      "community_name": "BaseController Pattern",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "why basecontroller?",
-      "source_file": ".agents/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
-      "source_location": "L77"
     },
     {
       "id": "agents_skills_bmad_readiness_check_scripts_readiness_check",
@@ -23150,7 +23281,7 @@
       "node_kind": "heading",
       "norm_label": "atomic write sequence",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L56"
+      "source_location": "L58"
     },
     {
       "id": "docs_b006_architecture_stock_ledger_existing_seams_and_architectural_fit",
@@ -23752,7 +23883,7 @@
       "label": "deploy-turso-migrations.mjs",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "deploy-turso-migrations.mjs",
       "source_file": "apps/backend/scripts/deploy-turso-migrations.mjs",
@@ -23763,7 +23894,7 @@
       "label": "backupPath",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "backuppath",
       "source_file": "apps/backend/scripts/deploy-turso-migrations.mjs",
@@ -23774,62 +23905,18 @@
       "label": "report",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "report",
       "source_file": "apps/backend/scripts/deploy-turso-migrations.mjs",
       "source_location": "L20"
     },
     {
-      "id": "apps_backend_scripts_verify_turso_live",
-      "label": "verify-turso-live.mjs",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "verify-turso-live.mjs",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_backend_scripts_verify_turso_live_report",
-      "label": "report",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "report",
-      "source_file": "apps/backend/scripts/verify-turso-live.mjs",
-      "source_location": "L18"
-    },
-    {
-      "id": "apps_backend_src_config",
-      "label": "config.ts",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "config.ts",
-      "source_file": "apps/backend/src/config.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_backend_src_config_environmentschema",
-      "label": "environmentSchema",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "file_type": "code",
-      "norm_label": "environmentschema",
-      "source_file": "apps/backend/src/config.ts",
-      "source_location": "L4"
-    },
-    {
       "id": "apps_backend_src_db_cli",
       "label": "cli.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "cli.js",
       "source_file": "apps/backend/src/db/cli.js",
@@ -23840,7 +23927,7 @@
       "label": "[command, ...args]",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "[command, ...args]",
       "source_file": "apps/backend/src/db/cli.js",
@@ -23851,7 +23938,7 @@
       "label": "client.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "client.js",
       "source_file": "apps/backend/src/db/client.js",
@@ -23862,7 +23949,7 @@
       "label": "backendRoot",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "backendroot",
       "source_file": "apps/backend/src/db/client.js",
@@ -23873,7 +23960,7 @@
       "label": "migrate.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "migrate.js",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -23884,7 +23971,7 @@
       "label": "defaultDirectory",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "defaultdirectory",
       "source_file": "apps/backend/src/db/migrate.js",
@@ -23895,7 +23982,7 @@
       "label": "bootstrap-cli.ts",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "bootstrap-cli.ts",
       "source_file": "apps/backend/src/features/auth/bootstrap-cli.ts",
@@ -23906,29 +23993,62 @@
       "label": "server.ts",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "server.ts",
       "source_file": "apps/backend/src/server.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_backend_test_auth_infrastructure_test",
-      "label": "auth-infrastructure.test.js",
+      "id": "apps_backend_test_migrations_test",
+      "label": "migrations.test.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
-      "norm_label": "auth-infrastructure.test.js",
-      "source_file": "apps/backend/test/auth-infrastructure.test.js",
+      "norm_label": "migrations.test.js",
+      "source_file": "apps/backend/test/migrations.test.js",
       "source_location": "L1"
+    },
+    {
+      "id": "apps_backend_test_migrations_test_migrations",
+      "label": "migrations",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "migrate.js",
+      "file_type": "code",
+      "norm_label": "migrations",
+      "source_file": "apps/backend/test/migrations.test.js",
+      "source_location": "L10"
+    },
+    {
+      "id": "apps_backend_test_migrations_test_refs",
+      "label": "refs",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "migrate.js",
+      "file_type": "code",
+      "norm_label": "refs",
+      "source_file": "apps/backend/test/migrations.test.js",
+      "source_location": "L13"
+    },
+    {
+      "id": "apps_backend_test_migrations_test_tables",
+      "label": "tables",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "migrate.js",
+      "file_type": "code",
+      "norm_label": "tables",
+      "source_file": "apps/backend/test/migrations.test.js",
+      "source_location": "L12"
     },
     {
       "id": "apps_backend_test_stock_migration_test",
       "label": "stock-migration.test.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "stock-migration.test.js",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -23939,7 +24059,7 @@
       "label": "invalidLegacy",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "invalidlegacy",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -23950,7 +24070,7 @@
       "label": "migrations",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "migrations",
       "source_file": "apps/backend/test/stock-migration.test.js",
@@ -23961,7 +24081,7 @@
       "label": "stock-worker.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "stock-worker.js",
       "source_file": "apps/backend/test-support/stock-worker.js",
@@ -23972,7 +24092,7 @@
       "label": "sync-migration.test.js",
       "_origin": "ast",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "file_type": "code",
       "norm_label": "sync-migration.test.js",
       "source_file": "apps/backend/test/sync-migration.test.js",
@@ -24755,11 +24875,23 @@
       "type": "external"
     },
     {
+      "id": "ref_node_child_process",
+      "label": "ref_node_child_process",
+      "_origin": "semantic",
+      "community": 174,
+      "community_name": "stock-concurrency.test.js",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_child_process",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_node_fs",
       "label": "ref_node_fs",
       "_origin": "semantic",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_fs",
@@ -24771,7 +24903,7 @@
       "label": "ref_node_path",
       "_origin": "semantic",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_path",
@@ -24783,7 +24915,7 @@
       "label": "ref_node_url",
       "_origin": "semantic",
       "community": 174,
-      "community_name": "ref_node_fs",
+      "community_name": "stock-concurrency.test.js",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_url",
@@ -24803,14 +24935,62 @@
       "type": "external"
     },
     {
-      "id": "ref_node_os",
-      "label": "ref_node_os",
+      "id": "ref_node_events",
+      "label": "ref_node_events",
       "_origin": "semantic",
-      "community": 181,
-      "community_name": "migrations.test.js",
+      "community": 180,
+      "community_name": "ref_node_crypto",
       "external": true,
       "file_type": "concept",
-      "norm_label": "ref_node_os",
+      "norm_label": "ref_node_events",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_http",
+      "label": "ref_node_http",
+      "_origin": "semantic",
+      "community": 180,
+      "community_name": "ref_node_crypto",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_http",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "apps_backend_src_features_inventory_store_inventariscolumns",
+      "label": "apps_backend_src_features_inventory_store_inventariscolumns",
+      "_origin": "semantic",
+      "community": 181,
+      "community_name": "verify-turso-live.mjs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "apps_backend_src_features_inventory_store_inventariscolumns",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_net",
+      "label": "ref_node_net",
+      "_origin": "semantic",
+      "community": 181,
+      "community_name": "verify-turso-live.mjs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_net",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_perf_hooks",
+      "label": "ref_node_perf_hooks",
+      "_origin": "semantic",
+      "community": 181,
+      "community_name": "verify-turso-live.mjs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_perf_hooks",
       "source_file": "",
       "type": "external"
     },
@@ -24959,71 +25139,14 @@
       "type": "external"
     },
     {
-      "id": "apps_backend_src_features_inventory_store_inventariscolumns",
-      "label": "apps_backend_src_features_inventory_store_inventariscolumns",
+      "id": "ref_node_os",
+      "label": "ref_node_os",
       "_origin": "semantic",
       "community": 9,
-      "community_name": "verify-turso-live.mjs",
+      "community_name": "migrate.js",
       "external": true,
       "file_type": "concept",
-      "norm_label": "apps_backend_src_features_inventory_store_inventariscolumns",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_net",
-      "label": "ref_node_net",
-      "_origin": "semantic",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_net",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_perf_hooks",
-      "label": "ref_node_perf_hooks",
-      "_origin": "semantic",
-      "community": 9,
-      "community_name": "verify-turso-live.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_perf_hooks",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_events",
-      "label": "ref_node_events",
-      "community": 180,
-      "community_name": "ref_node_crypto",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_events",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_http",
-      "label": "ref_node_http",
-      "community": 180,
-      "community_name": "ref_node_crypto",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_http",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_child_process",
-      "label": "ref_node_child_process",
-      "community": 181,
-      "community_name": "migrations.test.js",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_child_process",
+      "norm_label": "ref_node_os",
       "source_file": "",
       "type": "external"
     }
@@ -27551,7 +27674,7 @@
     },
     {
       "source": "apps_backend_src_features_stock_service_recordmovement",
-      "target": "apps_backend_src_features_stock_store_assertitemsavailable",
+      "target": "apps_backend_src_features_stock_store_appendmovement",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -27563,18 +27686,6 @@
     },
     {
       "source": "apps_backend_src_features_stock_service_recordmovement",
-      "target": "apps_backend_src_features_stock_store_appendmovement",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L15",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_service_recordmovement",
       "target": "apps_backend_src_common_sync_initializestockidentity",
       "relation": "calls",
       "_origin": "ast",
@@ -27582,7 +27693,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L18",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -27594,7 +27705,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L24",
+      "source_location": "L23",
       "weight": 1.0
     },
     {
@@ -27606,31 +27717,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L26",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_service_reversemovement",
-      "target": "apps_backend_src_features_stock_store_isreversed",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L28",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_service_reversemovement",
-      "target": "apps_backend_src_features_stock_store_assertitemsavailable",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L30",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -27642,7 +27729,43 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L31",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_backend_src_features_stock_store_appendmovement",
+      "target": "apps_backend_src_features_stock_store_isreversed",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/backend/src/features/stock/store.ts",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_backend_src_features_stock_store_appendmovement",
+      "target": "apps_backend_src_common_errors_apierror",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/backend/src/features/stock/store.ts",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_backend_src_features_stock_store_appendmovement",
+      "target": "apps_backend_src_features_stock_store_assertitemsavailable",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/backend/src/features/stock/store.ts",
+      "source_location": "L103",
       "weight": 1.0
     },
     {
@@ -27654,19 +27777,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/store.ts",
-      "source_location": "L106",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_store_appendmovement",
-      "target": "apps_backend_src_common_errors_apierror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/backend/src/features/stock/store.ts",
-      "source_location": "L114",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -27678,7 +27789,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/backend/src/features/stock/store.ts",
-      "source_location": "L121",
+      "source_location": "L126",
       "weight": 1.0
     },
     {
@@ -32630,31 +32741,7 @@
     },
     {
       "source": "apps_backend_src_features_stock_service",
-      "target": "apps_backend_src_features_stock_store_assertitemsavailable",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L5",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_service",
       "target": "apps_backend_src_features_stock_store_getmovement",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L5",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_backend_src_features_stock_service",
-      "target": "apps_backend_src_features_stock_store_isreversed",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -50486,7 +50573,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/backend/src/features/stock/service.ts",
-      "source_location": "L22",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -55418,6 +55505,61 @@
       "weight": 1.0
     },
     {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "target": "docs_b006_architecture_refinement_2026_10_03_aktivitas_skill_dan_kandidat",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "target": "docs_b006_architecture_refinement_2026_10_03_todo_dan_hasil",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "target": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_b006_review_dan_refaktor_arsitektur",
+      "target": "docs_b006_architecture_refinement_2026_10_03_handoff_dan_pending_operations",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
       "source": "docs_b006_architecture_stock_ledger",
       "target": "docs_b006_architecture_stock_ledger_b006_stock_ledger_architecture_and_refinement_decisions",
       "relation": "contains",
@@ -55436,7 +55578,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L121",
+      "source_location": "L123",
       "weight": 1.0
     },
     {
@@ -55447,7 +55589,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L130",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -55458,7 +55600,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L15",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -55469,7 +55611,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L38",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -55491,7 +55633,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L56",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -55502,7 +55644,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L86",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -55513,7 +55655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L97",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -55826,7 +55968,7 @@
     },
     {
       "source": "docs_b006_tasks_stock_ledger_b006_structured_task_plan",
-      "target": "docs_b006_tasks_stock_ledger_required_regression_proofs",
+      "target": "docs_b006_tasks_stock_ledger_deployment_obligations_not_executed",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -55848,13 +55990,24 @@
     },
     {
       "source": "docs_b006_tasks_stock_ledger_b006_structured_task_plan",
+      "target": "docs_b006_tasks_stock_ledger_required_regression_proofs",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/tasks-stock-ledger.md",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_tasks_stock_ledger_b006_structured_task_plan",
       "target": "docs_b006_tasks_stock_ledger_sequential_handoff_and_stop_conditions",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/tasks-stock-ledger.md",
-      "source_location": "L70",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -56316,7 +56469,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/backend-b006.md",
-      "source_location": "L61",
+      "source_location": "L73",
       "weight": 1.0
     },
     {
@@ -56327,7 +56480,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/backend-b006.md",
-      "source_location": "L67",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -57164,6 +57317,28 @@
       "confidence_score": 1.0,
       "source_file": "docs/verification-turso-live.md",
       "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "glossary",
+      "target": "glossary_hidrosense_persediaan",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "GLOSSARY.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "glossary_hidrosense_persediaan",
+      "target": "glossary_bahasa_domain",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "GLOSSARY.md",
+      "source_location": "L5",
       "weight": 1.0
     },
     {
@@ -59862,6 +60037,61 @@
       "weight": 1.0
     },
     {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "glossary",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "docs_b006_architecture_stock_ledger",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "docs_b006_prd_stock_ledger",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "docs_b006_readiness_report_b006_2026_10_03",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03",
+      "target": "docs_b006_tasks_stock_ledger",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
       "source": "docs_b006_architecture_stock_ledger",
       "target": "agents_skills_nodejs_backend_patterns_skill",
       "relation": "references",
@@ -59869,7 +60099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L134",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -60038,6 +60268,28 @@
       "weight": 1.0
     },
     {
+      "source": "docs_b006_tasks_stock_ledger",
+      "target": "docs_backend_b006",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/tasks-stock-ledger.md",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_tasks_stock_ledger",
+      "target": "docs_backend_stock_api",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/b006/tasks-stock-ledger.md",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
       "source": "docs_backend_accounts_api",
       "target": "docs_backend_api",
       "relation": "references",
@@ -60138,17 +60390,6 @@
     },
     {
       "source": "docs_backend_b006",
-      "target": "docs_b006_tasks_stock_ledger",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/backend-b006.md",
-      "source_location": "L11",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_backend_b006",
       "target": "docs_backend_stock_api",
       "relation": "references",
       "_origin": "ast",
@@ -60166,7 +60407,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/backend-b006.md",
-      "source_location": "L63",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -60611,6 +60852,42 @@
       "weight": 1.0
     },
     {
+      "source": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "target": "apps_backend_src_features_stock_store_appendmovement",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "appendMovement",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_stock_ledger_existing_seams_and_architectural_fit",
+      "target": "apps_backend_src_features_stock_store_appendmovement",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "appendMovement",
+      "source_file": "docs/b006/architecture-stock-ledger.md",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "target": "apps_backend_src_features_stock_store_assertitemsavailable",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "assertItemsAvailable",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
       "source": "docs_review_backend_b001_b002_perubahan_untuk_b003",
       "target": "apps_backend_src_common_sessions_authenticate",
       "relation": "references",
@@ -60631,7 +60908,7 @@
       "confidence_score": 0.95,
       "context": "authenticatedWrite",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L59",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
@@ -60655,7 +60932,7 @@
       "confidence_score": 0.95,
       "context": "authenticatedWrite",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0
     },
     {
@@ -60703,7 +60980,7 @@
       "confidence_score": 0.95,
       "context": "executeDomainMutation",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L64",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -60727,7 +61004,55 @@
       "confidence_score": 0.95,
       "context": "initializeStockIdentity",
       "source_file": "docs/b006/architecture-stock-ledger.md",
-      "source_location": "L64",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "target": "apps_backend_src_features_stock_store_isreversed",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "isReversed",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_handoff_dan_pending_operations",
+      "target": "apps_backend_src_features_stock_service_recordmovement",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "recordMovement",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "target": "apps_backend_src_features_stock_service_recordmovement",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "recordMovement",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_b006_architecture_refinement_2026_10_03_prd_refinement_dan_penerimaan",
+      "target": "apps_backend_src_features_stock_service_reversemovement",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "reverseMovement",
+      "source_file": "docs/b006/architecture-refinement-2026-10-03.md",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -60879,5 +61204,5 @@
       "source_file": "docs/A9_PPL IF_WEEK5.docx.md"
     }
   ],
-  "built_at_commit": "35db8c0d69fa043fe96854bf36f29dc0accf3a53"
+  "built_at_commit": "57fd7e99919faef30d2d49ff6b6ddb99c65c8184"
 }
