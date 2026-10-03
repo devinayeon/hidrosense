@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
-  const DashboardHeader({super.key});
+class Header extends StatelessWidget implements PreferredSizeWidget {
+  const Header({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
