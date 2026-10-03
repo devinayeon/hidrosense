@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'capsule_badge.dart';
 
 class FilterButton extends StatelessWidget {
   final String label;
@@ -17,41 +18,23 @@ class FilterButton extends StatelessWidget {
     const activeColor = Color.fromRGBO(57, 198, 195, 1);
     const borderColor = Color.fromRGBO(229, 231, 235, 1);
 
-    return GestureDetector(
+    return CapsuleBadge(
+      label: label,
+      textColor: isSelected ? Colors.white : Colors.black87,
+      backgroundColor: isSelected ? activeColor : Colors.white,
+      borderColor: isSelected ? activeColor : borderColor,
+      size: CapsuleSize.large,
+      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : Colors.white,
-          borderRadius: BorderRadius.circular(100), // Capsule shape
-          border: Border.all(
-            color: isSelected ? activeColor : borderColor,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeColor.withOpacity(0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              fontSize: 13,
-              color: isSelected ? Colors.white : Colors.black87,
-              height: 1.0,
-            ),
-          ),
-        ),
-      ),
+      boxShadow: isSelected
+          ? [
+              BoxShadow(
+                color: activeColor.withOpacity(0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : null,
     );
   }
 }

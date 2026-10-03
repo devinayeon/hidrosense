@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'capsule_badge.dart';
 
 class ItemInfoDetails extends StatelessWidget {
   final String name;
@@ -22,7 +23,6 @@ class ItemInfoDetails extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Nama Barang
         Text(
           name,
           maxLines: 1,
@@ -36,29 +36,15 @@ class ItemInfoDetails extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        // Baris Kategori + Dot + Stok
         Row(
           children: [
-            // Capsule Kategori
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: categoryBgColor,
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 10,
-                  color: categoryColor,
-                  height: 1.0,
-                ),
-              ),
+            CapsuleBadge(
+              label: category,
+              textColor: categoryColor,
+              backgroundColor: categoryBgColor,
+              size: CapsuleSize.small,
             ),
             const SizedBox(width: 6),
-            // Titik pemisah (Dot)
             const SizedBox(
               width: 3,
               height: 3,
@@ -70,7 +56,6 @@ class ItemInfoDetails extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            // Teks Stok
             Expanded(
               child: Text(
                 'Stok: $stockText',

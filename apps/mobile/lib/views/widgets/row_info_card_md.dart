@@ -4,35 +4,44 @@ class RowInfoCardMd extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
   final Widget child;
-  final double? height; // Dibuat nullable (opsional)
-  final double? width;  // Dibuat nullable (opsional)
+  final double? height;
+  final double? width;
   final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap; // Tambahkan onTap opsional
 
   const RowInfoCardMd({
     super.key,
     required this.backgroundColor,
     required this.borderColor,
     required this.child,
-    this.height, // Jika null, tingginya akan otomatis menyesuaikan isinya
-    this.width = double.infinity, // Default menyesuaikan lebar layar/parent
+    this.height,
+    this.width = double.infinity,
     this.padding = const EdgeInsets.all(14),
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: backgroundColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: borderColor,
-          width: 1.5,
+        child: Container(
+          width: width,
+          height: height,
+          padding: padding,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: borderColor,
+              width: 1.5,
+            ),
+          ),
+          child: child,
         ),
       ),
-      child: child,
     );
   }
 }

@@ -7,6 +7,50 @@ import 'package:hidrosense_mobile/views/widgets/card_icon_box.dart';
 class DashboardBody extends StatelessWidget {
   const DashboardBody({super.key});
 
+  // Data List untuk RowInfoCardMd (Peringatan, Cuaca, dll)
+  final List<Map<String, dynamic>> _infoCardsData = const [
+    {
+      'title': 'Semaian Siap Pindah',
+      'subtitle': 'Batch #04 (Selada Grand Rapids) mencapai 14 HSS.',
+      'bgColor': Color.fromRGBO(255, 243, 236, 1),
+      'borderColor': Color.fromRGBO(255, 154, 85, 1),
+      'iconData': Icons.warning_amber_rounded,
+      'iconBgColor': Color.fromRGBO(255, 154, 85, 1),
+      'iconColor': Colors.white,
+    },
+    {
+      'title': 'Cuaca BMKG (Sore)',
+      'subtitle': 'Hujan Ringan, 28°C. Atur debit nutrisi meja NFT.',
+      'bgColor': Color.fromRGBO(240, 251, 251, 1),
+      'borderColor': Color.fromRGBO(57, 198, 195, 1),
+      'iconData': Icons.cloudy_snowing,
+      'iconBgColor': Color.fromRGBO(57, 198, 195, 1),
+      'iconColor': Colors.white,
+    },
+  ];
+
+  // Data List untuk Akses Cepat (Quick Access)
+  final List<Map<String, dynamic>> _quickAccessData = const [
+    {
+      'title': '+ Barang',
+      'iconData': Icons.add_circle_outline,
+      'iconBgColor': Color.fromRGBO(57, 198, 195, 0.15),
+      'iconColor': Color.fromRGBO(57, 198, 195, 1),
+    },
+    {
+      'title': '+ Semai',
+      'iconData': Icons.eco_outlined,
+      'iconBgColor': Color.fromRGBO(221, 244, 90, 0.35),
+      'iconColor': Colors.black87,
+    },
+    {
+      'title': 'Cek Stok',
+      'iconData': Icons.view_in_ar_outlined,
+      'iconBgColor': Color.fromRGBO(57, 198, 195, 0.15),
+      'iconColor': Color.fromRGBO(57, 198, 195, 1),
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -19,7 +63,7 @@ class DashboardBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris Pertama: Top Info Cards menggunakan BaseColCard
+            // Baris Pertama: Top Info Cards (Kapasitas NFT & Estimasi Panen)
             Row(
               children: const [
                 Expanded(
@@ -49,105 +93,60 @@ class DashboardBody extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // RowInfoCardMd 1: Icon Exclamation Mark Segitiga (Peringatan)
-            RowInfoCardMd(
-              backgroundColor: const Color.fromRGBO(255, 243, 236, 1),
-              borderColor: const Color.fromRGBO(255, 154, 85, 1),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: const [
-                  CardIconBox(
-                    iconData: Icons.warning_amber_rounded,
-                    backgroundColor: Color.fromRGBO(255, 154, 85, 1),
-                    iconColor: Colors.white,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Semaian Siap Pindah',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            height: 1.0,
-                            color: Colors.black,
-                          ),
+            // Loop untuk RowInfoCardMd (Informasi/Peringatan)
+            ..._infoCardsData.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: RowInfoCardMd(
+                  backgroundColor: item['bgColor'],
+                  borderColor: item['borderColor'],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CardIconBox(
+                        iconData: item['iconData'],
+                        backgroundColor: item['iconBgColor'],
+                        iconColor: item['iconColor'],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title'],
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                height: 1.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item['subtitle'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w400,
+                                fontSize: 11,
+                                height: 1.0,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Batch #04 (Selada Grand Rapids) mencapai 14 HSS.',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 11,
-                            height: 1.0,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            }),
 
-            const SizedBox(height: 12),
-
-            // RowInfoCardMd 2: Icon Awan Hujan (Cuaca)
-            RowInfoCardMd(
-              backgroundColor: const Color.fromRGBO(240, 251, 251, 1),
-              borderColor: const Color.fromRGBO(57, 198, 195, 1),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: const [
-                  CardIconBox(
-                    iconData: Icons.cloudy_snowing,
-                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
-                    iconColor: Colors.white,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cuaca BMKG (Sore)',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            height: 1.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Hujan Ringan, 28°C. Atur debit nutrisi meja NFT.',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 11,
-                            height: 1.0,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
 
             const Text(
               'AKSES CEPAT',
@@ -162,118 +161,48 @@ class DashboardBody extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Horizontal Scrollable Row untuk Quick Access menggunakan BaseColCard
+            // Horizontal Scrollable Row & Loop untuk Akses Cepat (Quick Access)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
-                children: [
-                  // Quick Access 1: + Barang
-                  BaseColCard(
-                    backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                    width: 102,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        CardIconBox(
-                          iconData: Icons.add_circle_outline,
-                          backgroundColor: Color.fromRGBO(57, 198, 195, 0.15),
-                          iconColor: Color.fromRGBO(57, 198, 195, 1),
-                          width: 40,
-                          height: 40,
-                          borderRadius: 14,
-                          iconSize: 22,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          '+ Barang',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                            height: 1.0,
-                            color: Colors.black,
+                children: _quickAccessData.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: BaseColCard(
+                      backgroundColor: Colors.white,
+                      borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                      width: 102,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          CardIconBox(
+                            iconData: item['iconData'],
+                            backgroundColor: item['iconBgColor'],
+                            iconColor: item['iconColor'],
+                            width: 40,
+                            height: 40,
+                            borderRadius: 14,
+                            iconSize: 22,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Quick Access 2: + Semai
-                  BaseColCard(
-                    backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                    width: 102,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        CardIconBox(
-                          iconData: Icons.eco_outlined,
-                          backgroundColor: Color.fromRGBO(221, 244, 90, 0.35),
-                          iconColor: Colors.black87,
-                          width: 40,
-                          height: 40,
-                          borderRadius: 14,
-                          iconSize: 22,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          '+ Semai',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                            height: 1.0,
-                            color: Colors.black,
+                          const SizedBox(height: 8),
+                          Text(
+                            item['title'],
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              height: 1.0,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Quick Access 3: Cek Stok
-                  BaseColCard(
-                    backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                    width: 102,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        CardIconBox(
-                          iconData: Icons.view_in_ar_outlined,
-                          backgroundColor: Color.fromRGBO(57, 198, 195, 0.15),
-                          iconColor: Color.fromRGBO(57, 198, 195, 1),
-                          width: 40,
-                          height: 40,
-                          borderRadius: 14,
-                          iconSize: 22,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Cek Stok',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                            height: 1.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
             ),
           ],
