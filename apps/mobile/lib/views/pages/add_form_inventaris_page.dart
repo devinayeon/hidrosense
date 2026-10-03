@@ -4,20 +4,25 @@ import '../widgets/item_image_placeholder.dart';
 import '../widgets/row_button.dart';
 
 class AddFormInventarisPage extends StatefulWidget {
-  const AddFormInventarisPage({super.key});
+  final Map<String, dynamic>? initialData;
+
+  const AddFormInventarisPage({super.key, this.initialData});
+
+  bool get isEditMode => initialData != null;
 
   @override
   State<AddFormInventarisPage> createState() => _AddFormInventarisPageState();
 }
 
 class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _stockController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _stockController;
+  late TextEditingController _priceController;
+  late TextEditingController _noteController;
 
   String? _selectedCategory;
   String? _selectedUnit;
+  String? _imageUrl;
 
   final List<String> _categories = [
     'Benih',
@@ -38,6 +43,28 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final data = widget.initialData;
+
+    // Inisialisasi controller & state berdasarkan mode (Edit / Tambah Baru)
+    _nameController = TextEditingController(text: data?['name'] ?? '');
+    _stockController = TextEditingController(text: data?['stockValue'] ?? '');
+    _priceController = TextEditingController(text: data?['price'] ?? '');
+    _noteController = TextEditingController(text: data?['note'] ?? '');
+
+    _imageUrl = data?['imageUrl'];
+
+    // Set nilai dropdown jika cocok dengan daftar opsi
+    if (data?['category'] != null && _categories.contains(data!['category'])) {
+      _selectedCategory = data['category'];
+    }
+    if (data?['stockUnit'] != null && _units.contains(data!['stockUnit'])) {
+      _selectedUnit = data['stockUnit'];
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _stockController.dispose();
@@ -49,8 +76,8 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const Header(
-        titleText: 'Tambah Barang Baru',
+      appBar: Header(
+        titleText: widget.isEditMode ? 'Edit Barang' : 'Tambah Barang Baru',
         showBackButton: true,
       ),
       backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
@@ -59,8 +86,9 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placeholder Foto Gambar (Opsional)
-            const ItemImagePlaceholder(
+            // Placeholder / Upload Foto Gambar
+            ItemImagePlaceholder(
+              imageUrl: _imageUrl,
               placeholderText: 'UNGGAH GAMBAR (OPSIONAL)',
               height: 120,
             ),
@@ -93,7 +121,7 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
 
             const SizedBox(height: 16),
 
-            // Field 3: Jumlah Awal & Satuan (Side-by-side Row)
+            // Field 3: Jumlah & Satuan
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -102,7 +130,9 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Jumlah Awal'),
+                      _buildLabel(
+                        widget.isEditMode ? 'Jumlah Stok' : 'Jumlah Awal',
+                      ),
                       const SizedBox(height: 6),
                       _buildTextField(
                         controller: _stockController,
@@ -160,15 +190,15 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
 
             const SizedBox(height: 28),
 
-            // Tombol Simpan Barang (menggunakan RowButton)
+            // Tombol Simpan
             RowButton(
-              label: 'Simpan Barang',
+              label: widget.isEditMode ? 'Simpan Perubahan' : 'Simpan Barang',
               backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
               textColor: Colors.white,
               borderRadius: 100.0,
               height: 52.0,
               onTap: () {
-                // Action Simpan Data Barang
+                // Action Simpan / Update Data
               },
             ),
 
@@ -179,7 +209,6 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
     );
   }
 
-  // Helper Widget untuk Label Form
   Widget _buildLabel(String text) {
     return Text(
       text,
@@ -192,7 +221,6 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
     );
   }
 
-  // Helper Widget untuk Input Text Field
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -234,7 +262,6 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
     );
   }
 
-  // Helper Widget untuk Dropdown Field
   Widget _buildDropdownField<T>({
     required T? value,
     required String hintText,
