@@ -6,7 +6,8 @@ import { loadMigrations, migrate } from '../src/db/migrate.js';
 test('sync identity upgrade preserves legacy records and rollback preserves domain history', async (t) => {
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());
-  const migrations = await loadMigrations();
+  // This test brackets 0005 specifically; later schema expansions have their own upgrade tests.
+  const migrations = (await loadMigrations()).slice(0, 5);
   await migrate(db, migrations.slice(0, 4));
   await db.execute("INSERT INTO jenis_inventaris (nama_jenis) VALUES ('Legacy')");
   await db.execute("INSERT INTO inventaris (id_jenis_inventaris,nama_barang,satuan) VALUES (1,'Legacy item','kg')");

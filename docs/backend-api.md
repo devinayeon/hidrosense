@@ -1,6 +1,8 @@
 # Kontrak API Backend HidroSense
 
-Versi B001–B005. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api/v1`. Production menggunakan HTTPS melalui reverse proxy dengan IP/CIDR tepercaya pada `TRUSTED_PROXIES`. HTTP API production ditolak dengan 426; health checks tetap dapat diakses dari jaringan internal.
+Versi B001–B006. Base URL lokal: `http://127.0.0.1:3000`. Prefix bisnis: `/api/v1`. Production menggunakan HTTPS melalui reverse proxy dengan IP/CIDR tepercaya pada `TRUSTED_PROXIES`. HTTP API production ditolak dengan 426; health checks tetap dapat diakses dari jaringan internal.
+
+B006 menambahkan create/history/detail stok, whole reversal dan saldo barang. Lihat [kontrak stock ledger](backend-stock-api.md) untuk mandatory operation key, exact quantity, izin, respons dan retry.
 
 ## Endpoint yang tersedia
 
