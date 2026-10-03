@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import '../components/dashboard_header.dart';
+import 'package:hidrosense_mobile/views/components/inventaris_body.dart';
+import '../components/header.dart';
 import '../components/dashboard_body.dart';
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
     DashboardBody(),
-    Center(child: Text("Halaman Inventaris")),
+    InventarisBody(),
     Center(child: Text("Halaman Semaian")),
   ];
 
@@ -30,7 +31,7 @@ class _DashboardPageState extends State<DashboardPage> {
     const inactiveColor = Colors.grey;
 
     return Scaffold(
-      appBar: const DashboardHeader(),
+      appBar: const Header(),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color.fromRGBO(255, 255, 255, 1),

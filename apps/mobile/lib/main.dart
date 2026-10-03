@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hidrosense_mobile/views/pages/dashboard_page.dart';
+import 'package:hidrosense_mobile/views/pages/main_page.dart';
 
 void main() {
   runApp(
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: DashboardPage()
+      home: MainPage()
     );
   }
 }

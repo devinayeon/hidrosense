@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
-import 'package:hidrosense_mobile/views/widgets/col_info_card_sm.dart';
-import '../widgets/info_card_md.dart';
+import 'package:hidrosense_mobile/views/widgets/base_col_card.dart';
+import 'package:hidrosense_mobile/views/widgets/top_info_content.dart';
+import 'package:hidrosense_mobile/views/widgets/card_icon_box.dart';
 
 class DashboardBody extends StatelessWidget {
   const DashboardBody({super.key});
@@ -18,22 +19,30 @@ class DashboardBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris Pertama: 2 InfoCardMd bersebelahan
+            // Baris Pertama: Top Info Cards menggunakan BaseColCard
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
-                InfoCardMd(
-                  backgroundColor: Color.fromRGBO(57, 198, 195, 1),
-                  topText: "Kapasitas NFT",
-                  middleText: "12 Meja",
-                  bottomText: "3000 Lubang",
-                  textColor: Colors.white,
+                Expanded(
+                  child: BaseColCard(
+                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
+                    child: TopInfoContent(
+                      topText: "Kapasitas NFT",
+                      middleText: "12 Meja",
+                      bottomText: "3000 Lubang",
+                      textColor: Colors.white,
+                    ),
+                  ),
                 ),
-                InfoCardMd(
-                  backgroundColor: Color.fromRGBO(221, 244, 90, 1),
-                  topText: "Estimasi Panen",
-                  middleText: "12 Des 2024",
-                  bottomText: "~250 Kg Selada",
+                SizedBox(width: 12),
+                Expanded(
+                  child: BaseColCard(
+                    backgroundColor: Color.fromRGBO(221, 244, 90, 1),
+                    child: TopInfoContent(
+                      topText: "Estimasi Panen",
+                      middleText: "12 Des 2024",
+                      bottomText: "~250 Kg Selada",
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -46,22 +55,14 @@ class DashboardBody extends StatelessWidget {
               borderColor: const Color.fromRGBO(255, 154, 85, 1),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Color.fromRGBO(255, 154, 85, 1),
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    child: const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                children: const [
+                  CardIconBox(
+                    iconData: Icons.warning_amber_rounded,
+                    backgroundColor: Color.fromRGBO(255, 154, 85, 1),
+                    iconColor: Colors.white,
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,22 +105,14 @@ class DashboardBody extends StatelessWidget {
               borderColor: const Color.fromRGBO(57, 198, 195, 1),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Color.fromRGBO(57, 198, 195, 1),
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    child: const Icon(
-                      Icons.cloudy_snowing,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                children: const [
+                  CardIconBox(
+                    iconData: Icons.cloudy_snowing,
+                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
+                    iconColor: Colors.white,
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,35 +162,32 @@ class DashboardBody extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Horizontal Scrollable Row untuk ColInfoCardSm
+            // Horizontal Scrollable Row untuk Quick Access menggunakan BaseColCard
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  // Card 1: + Barang
-                  ColInfoCardSm(
+                  // Quick Access 1: + Barang
+                  BaseColCard(
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                    width: 102,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
+                      children: const [
+                        CardIconBox(
+                          iconData: Icons.add_circle_outline,
+                          backgroundColor: Color.fromRGBO(57, 198, 195, 0.15),
+                          iconColor: Color.fromRGBO(57, 198, 195, 1),
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(57, 198, 195, 0.15),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.add_circle_outline, // Non-filled plus dengan lingkaran
-                            color: Color.fromRGBO(57, 198, 195, 1),
-                            size: 22,
-                          ),
+                          borderRadius: 14,
+                          iconSize: 22,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           '+ Barang',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -214,29 +204,26 @@ class DashboardBody extends StatelessWidget {
 
                   const SizedBox(width: 12),
 
-                  // Card 2: + Semai
-                  ColInfoCardSm(
+                  // Quick Access 2: + Semai
+                  BaseColCard(
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                    width: 102,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
+                      children: const [
+                        CardIconBox(
+                          iconData: Icons.eco_outlined,
+                          backgroundColor: Color.fromRGBO(221, 244, 90, 0.35),
+                          iconColor: Colors.black87,
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(221, 244, 90, 0.35),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.eco_outlined, // Non-filled icon daun
-                            color: Colors.black87,
-                            size: 22,
-                          ),
+                          borderRadius: 14,
+                          iconSize: 22,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           '+ Semai',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -253,29 +240,26 @@ class DashboardBody extends StatelessWidget {
 
                   const SizedBox(width: 12),
 
-                  // Card 3: Cek Stok
-                  ColInfoCardSm(
+                  // Quick Access 3: Cek Stok
+                  BaseColCard(
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                    width: 102,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
+                      children: const [
+                        CardIconBox(
+                          iconData: Icons.view_in_ar_outlined,
+                          backgroundColor: Color.fromRGBO(57, 198, 195, 0.15),
+                          iconColor: Color.fromRGBO(57, 198, 195, 1),
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(57, 198, 195, 0.15),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.view_in_ar_outlined, // Non-filled icon kubus 3D
-                            color: Color.fromRGBO(57, 198, 195, 1),
-                            size: 22,
-                          ),
+                          borderRadius: 14,
+                          iconSize: 22,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           'Cek Stok',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -292,8 +276,6 @@ class DashboardBody extends StatelessWidget {
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
           ],
         ),
       ),
