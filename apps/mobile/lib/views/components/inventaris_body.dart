@@ -73,9 +73,8 @@ class InventarisBody extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => InfoItemInventarisPage(
-                            item: item,
-                          ),
+                          builder: (context) =>
+                              InfoItemInventarisPage(item: item),
                         ),
                       );
                     },
