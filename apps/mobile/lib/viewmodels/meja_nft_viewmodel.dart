@@ -12,27 +12,40 @@ class MejaNftViewModel extends StateNotifier<List<MejaNft>> {
     state = const [
       MejaNft(
         id: '1',
-        name: 'Meja NFT #01',
+        name: 'Meja Utama NFT #01',
+        systemType: 'Sistem NFT',
+        location: 'Lokasi Green House Barat',
         status: MejaStatus.aktif,
         capacityUsed: 240,
         capacityTotal: 250,
+        healthyCount: 240,
+        failedCount: 10,
         batchName: 'Batch #03',
         variety: 'Selada Grand Rapids',
         hss: 28,
+        estimatedHarvestDate: '12 Des 2024 (± 10 hari lagi)',
+        notes: 'Pompa Shimizu 128W, Pipa Rucika 3 Inch',
       ),
       MejaNft(
         id: '2',
         name: 'Meja NFT #02',
+        systemType: 'Sistem NFT',
+        location: 'Lokasi Green House Barat',
         status: MejaStatus.aktif,
         capacityUsed: 180,
         capacityTotal: 250,
+        healthyCount: 175,
+        failedCount: 5,
         batchName: 'Batch #04',
         variety: 'Selada Lollo Bionda',
         hss: 15,
+        estimatedHarvestDate: '25 Des 2024 (± 23 hari lagi)',
       ),
       MejaNft(
         id: '3',
         name: 'Meja NFT #03',
+        systemType: 'Sistem NFT',
+        location: 'Lokasi Green House Timur',
         status: MejaStatus.perawatan,
         capacityTotal: 250,
         maintenanceNote: 'Pembersihan Lumut',
@@ -41,24 +54,28 @@ class MejaNftViewModel extends StateNotifier<List<MejaNft>> {
     ];
   }
 
+  // Aksi Tambah Meja Baru
   void addMeja(MejaNft newMeja) {
     state = [...state, newMeja];
   }
+
+  // Aksi Update / Edit Meja
+  void updateMeja(MejaNft updatedMeja) {
+    state = [
+      for (final item in state)
+        if (item.id == updatedMeja.id) updatedMeja else item,
+    ];
+  }
 }
 
-// 1. Data Provider Utama
 final mejaNftViewModelProvider =
     StateNotifierProvider<MejaNftViewModel, List<MejaNft>>((ref) {
       return MejaNftViewModel();
     });
 
-// 2. State Filter (Semua, Aktif, Perawatan)
 final mejaFilterCategoryProvider = StateProvider<MejaStatus?>((ref) => null);
-
-// 3. State Search Query
 final mejaSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// 4. Computed Filtered List
 final filteredMejaNftListProvider = Provider<List<MejaNft>>((ref) {
   final allList = ref.watch(mejaNftViewModelProvider);
   final filter = ref.watch(mejaFilterCategoryProvider);
@@ -76,7 +93,6 @@ final filteredMejaNftListProvider = Provider<List<MejaNft>>((ref) {
   }).toList();
 });
 
-// 5. Computed Count Provider untuk Tab Badge
 final mejaCountProvider = Provider<Map<String, int>>((ref) {
   final allList = ref.watch(mejaNftViewModelProvider);
   final total = allList.length;
