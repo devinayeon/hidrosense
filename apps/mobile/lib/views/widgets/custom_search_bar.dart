@@ -4,18 +4,20 @@ class CustomSearchBar extends StatelessWidget {
   final String placeholder;
   final ValueChanged<String>? onChanged;
   final TextEditingController? controller;
+  final double? width;
 
   const CustomSearchBar({
     super.key,
     this.placeholder = 'Cari nama barang...',
     this.onChanged,
     this.controller,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 328,
+      width: width ?? double.infinity,
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(

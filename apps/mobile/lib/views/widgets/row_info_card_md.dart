@@ -24,22 +24,18 @@ class RowInfoCardMd extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: width,
-          height: height,
-          padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: borderColor,
-              width: 1.5,
-            ),
-          ),
-          child: child,
+      child: Ink(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor, width: 1.5),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );

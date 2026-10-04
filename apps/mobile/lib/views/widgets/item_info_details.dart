@@ -38,11 +38,13 @@ class ItemInfoDetails extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            CapsuleBadge(
-              label: category,
-              textColor: categoryColor,
-              backgroundColor: categoryBgColor,
-              size: CapsuleSize.small,
+            Flexible(
+              child: CapsuleBadge(
+                label: category,
+                textColor: categoryColor,
+                backgroundColor: categoryBgColor,
+                size: CapsuleSize.small,
+              ),
             ),
             const SizedBox(width: 6),
             const SizedBox(
