@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/meja_nft_model.dart';
-import '../../viewmodels/meja_nft_viewmodel.dart'; // Hanya perlukan ini
+import '../../viewmodels/meja_nft_viewmodel.dart';
+import '../pages/form_meja_nft_page.dart';
+import '../pages/info_meja_page.dart'; // Import halaman InfoMejaPage
 import '../widgets/custom_search_bar.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/row_info_card_md.dart';
@@ -14,7 +16,6 @@ class MejaNftBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // FIX: Gunakan filteredMejaNftListProvider, bukan filteredSeedingListProvider
     final filteredList = ref.watch(filteredMejaNftListProvider);
     final counts = ref.watch(mejaCountProvider);
     final activeFilter = ref.watch(mejaFilterCategoryProvider);
@@ -98,7 +99,13 @@ class MejaNftBody extends ConsumerWidget {
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(229, 231, 235, 1),
                     onTap: () {
-                      // Detail meja / aksi tap
+                      // NAVIGASI KE InfoMejaPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InfoMejaPage(mejaItem: item),
+                        ),
+                      );
                     },
                     child: MejaNftCardContent(item: item),
                   ),
@@ -113,7 +120,13 @@ class MejaNftBody extends ConsumerWidget {
               backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
               textColor: const Color.fromRGBO(221, 244, 90, 1),
               onTap: () {
-                // Navigasi atau form tambah meja NFT
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const FormMejaNftPage(), // Mode Tambah Baru
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
