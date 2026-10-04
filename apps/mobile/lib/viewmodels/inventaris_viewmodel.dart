@@ -28,8 +28,10 @@ class InventarisState {
     );
   }
 
+  // Saring hanya item yang BELUM di-soft delete (!item.isDeleted)
   List<InventoryItem> get filteredItems {
     return items.where((item) {
+      if (item.isDeleted) return false;
       final matchesCategory =
           selectedCategory == 'Semua' || item.category == selectedCategory;
       final matchesQuery = item.name.toLowerCase().contains(
@@ -47,8 +49,7 @@ class InventarisViewModel extends StateNotifier<InventarisState> {
 
   Future<void> fetchInventory() async {
     state = state.copyWith(isLoading: true);
-    // Simulasi Delay Backend / API Call
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 300));
 
     final mockItems = [
       InventoryItem(
@@ -82,6 +83,30 @@ class InventarisViewModel extends StateNotifier<InventarisState> {
     ];
 
     state = state.copyWith(items: mockItems, isLoading: false);
+  }
+
+  // Method Tambah Barang Baru
+  void addItem(InventoryItem newItem) {
+    state = state.copyWith(items: [...state.items, newItem]);
+  }
+
+  // Method Edit Barang
+  void updateItem(InventoryItem updatedItem) {
+    final updatedList = state.items.map((item) {
+      return item.id == updatedItem.id ? updatedItem : item;
+    }).toList();
+    state = state.copyWith(items: updatedList);
+  }
+
+  // Method Soft Delete / Nonaktifkan Barang
+  void softDeleteItem(String itemId) {
+    final updatedList = state.items.map((item) {
+      if (item.id == itemId) {
+        return item.copyWith(isDeleted: true);
+      }
+      return item;
+    }).toList();
+    state = state.copyWith(items: updatedList);
   }
 
   void setCategory(String category) {

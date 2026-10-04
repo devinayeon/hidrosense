@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/inventory_item_model.dart';
+import '../../viewmodels/inventaris_viewmodel.dart';
 import '../components/header.dart';
 import '../widgets/item_image_placeholder.dart';
 import '../widgets/row_button.dart';
 
-class AddFormInventarisPage extends StatefulWidget {
-  final Map<String, dynamic>? initialData;
+class AddFormInventarisPage extends ConsumerStatefulWidget {
+  final InventoryItem? initialItem;
 
-  const AddFormInventarisPage({super.key, this.initialData});
+  const AddFormInventarisPage({super.key, this.initialItem});
 
-  bool get isEditMode => initialData != null;
+  bool get isEditMode => initialItem != null;
 
   @override
-  State<AddFormInventarisPage> createState() => _AddFormInventarisPageState();
+  ConsumerState<AddFormInventarisPage> createState() =>
+      _AddFormInventarisPageState();
 }
 
-class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
+class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
   late TextEditingController _nameController;
   late TextEditingController _stockController;
   late TextEditingController _priceController;
@@ -22,7 +26,6 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
 
   String? _selectedCategory;
   String? _selectedUnit;
-  String? _imageUrl;
 
   final List<String> _categories = [
     'Benih',
@@ -37,7 +40,7 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
     'Gram',
     'Liter',
     'Ml',
-    'Butir',
+    'btr',
     'Pcs',
     'Blok',
   ];
@@ -45,22 +48,22 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
   @override
   void initState() {
     super.initState();
-    final data = widget.initialData;
+    final item = widget.initialItem;
 
-    // Inisialisasi controller & state berdasarkan mode (Edit / Tambah Baru)
-    _nameController = TextEditingController(text: data?['name'] ?? '');
-    _stockController = TextEditingController(text: data?['stockValue'] ?? '');
-    _priceController = TextEditingController(text: data?['price'] ?? '');
-    _noteController = TextEditingController(text: data?['note'] ?? '');
+    _nameController = TextEditingController(text: item?.name ?? '');
+    _stockController = TextEditingController(
+      text: item != null ? item.stockValue.toInt().toString() : '',
+    );
+    _priceController = TextEditingController(
+      text: item != null && item.price > 0 ? item.price.toStringAsFixed(0) : '',
+    );
+    _noteController = TextEditingController(text: item?.note ?? '');
 
-    _imageUrl = data?['imageUrl'];
-
-    // Set nilai dropdown jika cocok dengan daftar opsi
-    if (data?['category'] != null && _categories.contains(data!['category'])) {
-      _selectedCategory = data['category'];
+    if (item?.category != null && _categories.contains(item!.category)) {
+      _selectedCategory = item.category;
     }
-    if (data?['stockUnit'] != null && _units.contains(data!['stockUnit'])) {
-      _selectedUnit = data['stockUnit'];
+    if (item?.stockUnit != null && _units.contains(item!.stockUnit)) {
+      _selectedUnit = item.stockUnit;
     }
   }
 
@@ -71,6 +74,56 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
     _priceController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _saveForm() {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama barang tidak boleh kosong')),
+      );
+      return;
+    }
+
+    final viewModel = ref.read(inventarisViewModelProvider.notifier);
+    final stockVal = double.tryParse(_stockController.text.trim()) ?? 0.0;
+    final priceVal = double.tryParse(_priceController.text.trim()) ?? 0.0;
+    final unitVal = _selectedUnit ?? 'Pcs';
+
+    StockStatus calcStatus = StockStatus.aman;
+    if (stockVal <= 0) {
+      calcStatus = StockStatus.habis;
+    } else if (stockVal < 20) {
+      calcStatus = StockStatus.menipis;
+    }
+
+    if (widget.isEditMode) {
+      final updatedItem = widget.initialItem!.copyWith(
+        name: _nameController.text.trim(),
+        category: _selectedCategory ?? 'Umum',
+        stockValue: stockVal,
+        stockUnit: unitVal,
+        mainUnit: '$unitVal ($unitVal)',
+        price: priceVal,
+        note: _noteController.text.trim(),
+        status: calcStatus,
+      );
+      viewModel.updateItem(updatedItem);
+    } else {
+      final newItem = InventoryItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nameController.text.trim(),
+        category: _selectedCategory ?? 'Umum',
+        stockValue: stockVal,
+        stockUnit: unitVal,
+        mainUnit: '$unitVal ($unitVal)',
+        price: priceVal,
+        note: _noteController.text.trim(),
+        status: calcStatus,
+      );
+      viewModel.addItem(newItem);
+    }
+
+    Navigator.pop(context);
   }
 
   @override
@@ -86,42 +139,28 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placeholder / Upload Foto Gambar
             ItemImagePlaceholder(
-              imageUrl: _imageUrl,
+              imageUrl: widget.initialItem?.imageUrl,
               placeholderText: 'UNGGAH GAMBAR (OPSIONAL)',
               height: 120,
             ),
-
             const SizedBox(height: 20),
-
-            // Field 1: Nama Barang
             _buildLabel('Nama Barang'),
             const SizedBox(height: 6),
             _buildTextField(
               controller: _nameController,
               hintText: 'Contoh: Pupuk AB Mix Selada',
             ),
-
             const SizedBox(height: 16),
-
-            // Field 2: Kategori (Dropdown)
             _buildLabel('Kategori'),
             const SizedBox(height: 6),
             _buildDropdownField<String>(
               value: _selectedCategory,
               hintText: 'Pilih kategori (Benih / Pupuk / Media)',
               items: _categories,
-              onChanged: (val) {
-                setState(() {
-                  _selectedCategory = val;
-                });
-              },
+              onChanged: (val) => setState(() => _selectedCategory = val),
             ),
-
             const SizedBox(height: 16),
-
-            // Field 3: Jumlah & Satuan
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -154,21 +193,14 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
                         value: _selectedUnit,
                         hintText: 'Kg / Butir / Pcs',
                         items: _units,
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedUnit = val;
-                          });
-                        },
+                        onChanged: (val) => setState(() => _selectedUnit = val),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            // Field 4: Harga Pembelian (Rp)
             _buildLabel('Harga Pembelian (Rp)'),
             const SizedBox(height: 6),
             _buildTextField(
@@ -176,10 +208,7 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
               hintText: 'Masukkan harga beli',
               keyboardType: TextInputType.number,
             ),
-
             const SizedBox(height: 16),
-
-            // Field 5: Catatan Tambahan
             _buildLabel('Catatan Tambahan'),
             const SizedBox(height: 6),
             _buildTextField(
@@ -187,21 +216,15 @@ class _AddFormInventarisPageState extends State<AddFormInventarisPage> {
               hintText: 'Tulis lokasi penyimpanan atau merek',
               maxLines: 2,
             ),
-
             const SizedBox(height: 28),
-
-            // Tombol Simpan
             RowButton(
               label: widget.isEditMode ? 'Simpan Perubahan' : 'Simpan Barang',
               backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
               textColor: Colors.white,
               borderRadius: 100.0,
               height: 52.0,
-              onTap: () {
-                // Action Simpan / Update Data
-              },
+              onTap: _saveForm,
             ),
-
             const SizedBox(height: 16),
           ],
         ),
