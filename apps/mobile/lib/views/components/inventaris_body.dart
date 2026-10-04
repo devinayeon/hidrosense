@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/inventaris_viewmodel.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/row_info_card_md.dart';
@@ -7,19 +9,12 @@ import '../widgets/stock_status_badge.dart';
 import '../widgets/item_info_details.dart';
 import '../widgets/row_button.dart';
 import '../pages/info_item_inventaris_page.dart';
-import '../pages/add_form_inventaris_page.dart'; // Import page baru
+import '../pages/add_form_inventaris_page.dart';
 
-class InventarisBody extends StatefulWidget {
+class InventarisBody extends ConsumerWidget {
   const InventarisBody({super.key});
 
-  @override
-  State<InventarisBody> createState() => _InventarisBodyState();
-}
-
-class _InventarisBodyState extends State<InventarisBody> {
-  int _selectedFilterIndex = 0;
-
-  final List<String> _categories = [
+  final List<String> _categories = const [
     'Semua',
     'Benih',
     'Pupuk',
@@ -28,61 +23,11 @@ class _InventarisBodyState extends State<InventarisBody> {
     'Media Tanam',
   ];
 
-  // Data List Item disimpan dalam bentuk List of Map
-  final List<Map<String, dynamic>> _inventoryItems = [
-    {
-      'name': 'Benih Selada Grand Rapids',
-      'category': 'Benih',
-      'stockText': '5.000 btr',
-      'categoryColor': const Color.fromRGBO(57, 198, 195, 1),
-      'categoryBgColor': const Color.fromRGBO(237, 249, 248, 1),
-      'iconBgColor': const Color.fromRGBO(237, 249, 248, 1),
-      'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-      'borderColor': const Color.fromRGBO(229, 231, 235, 1),
-      'status': StockStatus.aman,
-    },
-    {
-      'name': 'Pupuk AB Mix Selada',
-      'category': 'Pupuk',
-      'stockText': '45 Kg',
-      'categoryColor': const Color.fromRGBO(255, 154, 85, 1),
-      'categoryBgColor': const Color.fromRGBO(255, 243, 236, 1),
-      'iconBgColor': const Color.fromRGBO(255, 243, 236, 1),
-      'iconColor': const Color.fromRGBO(255, 154, 85, 1),
-      'borderColor': const Color.fromRGBO(255, 237, 224, 1),
-      'status': StockStatus.menipis,
-    },
-    {
-      'name': 'Rockwool Media Tanam',
-      'category': 'Media Tanam',
-      'stockText': '12 Blok',
-      'categoryColor': const Color.fromRGBO(120, 175, 20, 1),
-      'categoryBgColor': const Color.fromRGBO(245, 252, 210, 1),
-      'iconBgColor': const Color.fromRGBO(245, 252, 210, 1),
-      'iconColor': const Color.fromRGBO(140, 198, 35, 1),
-      'borderColor': const Color.fromRGBO(229, 231, 235, 1),
-      'status': StockStatus.aman,
-    },
-  ];
-
-  void _navigateToDetail(String name) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InfoItemInventarisPage(itemName: name),
-      ),
-    );
-  }
-
-  void _navigateToAddForm() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddFormInventarisPage()),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(inventarisViewModelProvider);
+    final viewModel = ref.read(inventarisViewModelProvider.notifier);
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -93,78 +38,100 @@ class _InventarisBodyState extends State<InventarisBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris Pertama: Search Bar
-            const CustomSearchBar(placeholder: 'Cari nama barang...'),
-
+            CustomSearchBar(
+              placeholder: 'Cari nama barang...',
+              onChanged: viewModel.setSearchQuery,
+            ),
             const SizedBox(height: 16),
-
-            // Baris Kedua: Horizontal Filter
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
-                children: List.generate(_categories.length, (index) {
+                children: _categories.map((cat) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 10.0),
                     child: FilterButton(
-                      label: _categories[index],
-                      isSelected: _selectedFilterIndex == index,
-                      onTap: () {
-                        setState(() {
-                          _selectedFilterIndex = index;
-                        });
-                      },
+                      label: cat,
+                      isSelected: state.selectedCategory == cat,
+                      onTap: () => viewModel.setCategory(cat),
                     ),
                   );
-                }),
+                }).toList(),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // Perulangan untuk Menampilkan List Item Inventaris
-            ..._inventoryItems.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: RowInfoCardMd(
-                  backgroundColor: Colors.white,
-                  borderColor: item['borderColor'],
-                  onTap: () => _navigateToDetail(item['name']),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      CardIconBox(
-                        iconData: Icons.inventory_2_outlined,
-                        backgroundColor: item['iconBgColor'],
-                        iconColor: item['iconColor'],
-                        width: 44,
-                        height: 44,
-                        borderRadius: 14,
-                        iconSize: 22,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ItemInfoDetails(
-                          name: item['name'],
-                          category: item['category'],
-                          stockText: item['stockText'],
-                          categoryColor: item['categoryColor'],
-                          categoryBgColor: item['categoryBgColor'],
+            if (state.isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              ...state.filteredItems.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: RowInfoCardMd(
+                    backgroundColor: Colors.white,
+                    borderColor: const Color.fromRGBO(229, 231, 235, 1),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InfoItemInventarisPage(
+                            itemName: item.name,
+                            category: item.category,
+                            stockValue: item.formattedStock,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      StockStatusBadge(status: item['status']),
-                    ],
+                      );
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const CardIconBox(
+                          iconData: Icons.inventory_2_outlined,
+                          backgroundColor: Color.fromRGBO(237, 249, 248, 1),
+                          iconColor: Color.fromRGBO(57, 198, 195, 1),
+                          width: 44,
+                          height: 44,
+                          borderRadius: 14,
+                          iconSize: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ItemInfoDetails(
+                            name: item.name,
+                            category: item.category,
+                            stockText: item.formattedStock,
+                            categoryColor: const Color.fromRGBO(
+                              57,
+                              198,
+                              195,
+                              1,
+                            ),
+                            categoryBgColor: const Color.fromRGBO(
+                              237,
+                              249,
+                              248,
+                              1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        StockStatusBadge(status: item.status),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }),
-
+                );
+              }),
             const SizedBox(height: 8),
-
-            // Tombol Tambah Barang
-            RowButton(label: '+ Tambah Barang Baru', onTap: _navigateToAddForm),
-
+            RowButton(
+              label: '+ Tambah Barang Baru',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddFormInventarisPage(),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 16),
           ],
         ),
