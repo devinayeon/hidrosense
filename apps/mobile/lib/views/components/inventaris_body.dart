@@ -74,9 +74,7 @@ class InventarisBody extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => InfoItemInventarisPage(
-                            itemName: item.name,
-                            category: item.category,
-                            stockValue: item.formattedStock,
+                            item: item,
                           ),
                         ),
                       );

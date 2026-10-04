@@ -13,6 +13,7 @@ class InventoryItem {
   final String note;
   final String? imageUrl;
   final StockStatus status;
+  final bool isDeleted; // Soft delete flag
 
   InventoryItem({
     required this.id,
@@ -25,9 +26,38 @@ class InventoryItem {
     this.note = '',
     this.imageUrl,
     required this.status,
+    this.isDeleted = false,
   });
 
   String get formattedStock => '${stockValue.toInt()} $stockUnit';
+
+  InventoryItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    double? stockValue,
+    String? stockUnit,
+    String? mainUnit,
+    double? price,
+    String? note,
+    String? imageUrl,
+    StockStatus? status,
+    bool? isDeleted,
+  }) {
+    return InventoryItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      stockValue: stockValue ?? this.stockValue,
+      stockUnit: stockUnit ?? this.stockUnit,
+      mainUnit: mainUnit ?? this.mainUnit,
+      price: price ?? this.price,
+      note: note ?? this.note,
+      imageUrl: imageUrl ?? this.imageUrl,
+      status: status ?? this.status,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(
@@ -44,6 +74,7 @@ class InventoryItem {
         (e) => e.name == json['status'],
         orElse: () => StockStatus.aman,
       ),
+      isDeleted: json['isDeleted'] ?? false,
     );
   }
 }
