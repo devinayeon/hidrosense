@@ -194,3 +194,7 @@ Definition of Done untuk setiap slice backend:
 6. Status dicatat terpisah antara backend siap, integrasi mobile belum/selesai, dan validasi perangkat/mitra. Kesiapan backend tidak otomatis menutup keseluruhan PB-05/PB-07 produk.
 
 Pekerjaan konkret berikutnya: **B006/B06**, setelah B005 tersedia. Implementasi BMKG baru dibuka di **B19**.
+
+## Status pelaksanaan 4 Oktober 2026
+
+B006 dan B007 sudah tersedia sesuai laporan masing-masing. B008 selesai secara lokal: [laporan B008](backend-b008.md), [kontrak meja tanam](backend-tables-api.md), dan [checklist serta bukti](b008/tasks-meja-tanam.md). Tahap berikutnya adalah B009; tetapkan keputusan estimasi usia panen pada kontraknya sebelum implementasi. Status ini memperbarui antrean lama pada pembukaan dokumen tanpa mengubah urutan sekuensial.
