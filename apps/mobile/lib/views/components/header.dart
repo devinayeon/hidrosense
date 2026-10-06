@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import '../pages/account_page.dart';
 import '../widgets/custom_back_button.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
   final String titleText;
   final bool showBackButton;
+  final bool showUserIcon;
   final VoidCallback? onBackPressed;
 
   const Header({
     super.key,
     this.titleText = 'HidroSense',
     this.showBackButton = false,
+    this.showUserIcon = true,
     this.onBackPressed,
   });
 
@@ -28,7 +31,11 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
       leading: showBackButton
           ? Padding(
               padding: const EdgeInsets.only(left: 16.0),
-              child: Center(child: CustomBackButton(onTap: onBackPressed)),
+              child: Center(
+                child: CustomBackButton(
+                  onTap: onBackPressed ?? () => Navigator.maybePop(context),
+                ),
+              ),
             )
           : null,
       title: Text(
@@ -42,23 +49,29 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: Color.fromRGBO(221, 244, 90, 1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.person_outline, color: Colors.black),
-              onPressed: () {
-                // Action profile
-              },
+        if (showUserIcon)
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Color.fromRGBO(221, 244, 90, 1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.person_outline, color: Colors.black),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountPage(),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
       ],
     );
   }
