@@ -4,6 +4,7 @@ import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
 import 'package:hidrosense_mobile/views/widgets/base_col_card.dart';
 import 'package:hidrosense_mobile/views/widgets/top_info_content.dart';
 import 'package:hidrosense_mobile/views/widgets/card_icon_box.dart';
+import '../pages/cuaca_page.dart';
 import '../pages/meja_nft_page.dart';
 import '../pages/panen_page.dart';
 import '../pages/penjualan_page.dart'; // Import halaman baru
@@ -53,6 +54,18 @@ class DashboardBody extends StatelessWidget {
         'iconColor': Colors.black87,
         'onTap': () {
           // Action untuk + Semai
+        },
+      },
+      {
+        'title': 'Cuaca',
+        'iconData': Icons.cloud_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CuacaPage()),
+          );
         },
       },
       {
