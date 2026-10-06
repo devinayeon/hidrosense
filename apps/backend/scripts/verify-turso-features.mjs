@@ -34,7 +34,7 @@ async function rollbackProbe(effect) {
       SELECT 1 FROM jenis_inventaris WHERE nama_jenis=? UNION ALL
       SELECT 1 FROM inventaris WHERE nama_barang=?`, args: [username, username, username],
   });
-  assert.equal(leftovers.rows.length, 0);
+  assert.equal(leftovers.rows.length, 0); 
 }
 function pass(name) { report.checks.push({ name, status: 'passed' }); }
 try {

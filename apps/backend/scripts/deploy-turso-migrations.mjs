@@ -6,8 +6,11 @@ import { createClient } from '@libsql/client';
 import { openDatabase } from '../src/db/client.js';
 import { loadMigrations, migrate, migrationStatus } from '../src/db/migrate.js';
 
-if (process.env.TURSO_MIGRATION_DEPLOY !== '1' || !/^(libsql|https):/.test(process.env.DATABASE_URL ?? '')) {
-  throw new Error('Requires TURSO_MIGRATION_DEPLOY=1 and a remote DATABASE_URL.');
+const snapshotOnly = process.env.TURSO_MIGRATION_SNAPSHOT_ONLY === '1';
+if ((snapshotOnly && process.env.TURSO_MIGRATION_DEPLOY === '1') ||
+    (!snapshotOnly && process.env.TURSO_MIGRATION_DEPLOY !== '1') ||
+    !/^(libsql|https):/.test(process.env.DATABASE_URL ?? '')) {
+  throw new Error('Requires one of TURSO_MIGRATION_SNAPSHOT_ONLY=1 or TURSO_MIGRATION_DEPLOY=1 and a remote DATABASE_URL.');
 }
 const quote = name => `"${name.replaceAll('"', '""')}"`;
 function digest(rows) {
@@ -16,13 +19,19 @@ function digest(rows) {
       ? { blob: Buffer.from(value).toString('hex') } : value)).sort();
   return createHash('sha256').update(JSON.stringify(encoded)).digest('hex');
 }
-const backupPath = resolve('backups', `turso-before-0002-0005-${randomUUID()}.sqlite`);
-const report = { startedAt: new Date().toISOString(), backupPath, applied: [] };
+const report = { startedAt: new Date().toISOString(), applied: [] };
 let remote, reader, backup;
 try {
   remote = await openDatabase();
   const migrations = await loadMigrations();
   report.before = await migrationStatus(remote, migrations);
+  const pending = report.before.filter(item => item.status === 'pending').map(item => item.id);
+  if (process.env.TURSO_MIGRATION_EXPECTED_PENDING) {
+    assert.deepEqual(pending, process.env.TURSO_MIGRATION_EXPECTED_PENDING.split(',').map(id => id.trim()),
+      'Pending migrations differ from the expected target.');
+  }
+  const backupPath = resolve('backups', `turso-before-${pending[0] ?? 'no-pending'}-${randomUUID()}.sqlite`);
+  report.backupPath = backupPath;
   reader = createClient({ url: process.env.DATABASE_URL, authToken: process.env.DATABASE_AUTH_TOKEN, intMode: 'bigint', concurrency: 1 });
   const read = await reader.transaction('read');
   const snapshot = [];
@@ -67,18 +76,22 @@ try {
   for (const table of snapshot) assert.equal(digest((await backup.execute(`SELECT * FROM ${quote(table.name)}`)).rows), table.hash);
   report.backupVerified = true;
   report.snapshotTables = snapshot.length;
-  report.applied = await migrate(remote, migrations);
-  report.after = await migrationStatus(remote, migrations);
-  assert.ok(report.after.every(item => item.status === 'applied'));
-  for (const table of snapshot.filter(item => !['_schema_migrations', 'sqlite_sequence'].includes(item.name))) {
-    const rows = (await reader.execute(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)}`)).rows;
-    assert.equal(digest(rows), table.hash, `Domain preservation failed: ${table.name}`);
+  if (snapshotOnly) {
+    report.status = 'snapshot-verified';
+  } else {
+    report.applied = await migrate(remote, migrations);
+    report.after = await migrationStatus(remote, migrations);
+    assert.ok(report.after.every(item => item.status === 'applied'));
+    for (const table of snapshot.filter(item => !['_schema_migrations', 'sqlite_sequence'].includes(item.name))) {
+      const rows = (await reader.execute(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)}`)).rows;
+      assert.equal(digest(rows), table.hash, `Domain preservation failed: ${table.name}`);
+    }
+    assert.equal((await remote.execute('PRAGMA foreign_key_check')).rows.length, 0);
+    assert.deepEqual(await migrate(remote, migrations), []);
+    report.domainDataPreserved = true;
+    report.idempotentRerun = true;
+    report.status = 'passed';
   }
-  assert.equal((await remote.execute('PRAGMA foreign_key_check')).rows.length, 0);
-  assert.deepEqual(await migrate(remote, migrations), []);
-  report.domainDataPreserved = true;
-  report.idempotentRerun = true;
-  report.status = 'passed';
 } catch (error) {
   report.status = 'failed';
   report.error = { name: error.name, code: error.code ?? null };
