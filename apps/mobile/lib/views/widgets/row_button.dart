@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class RowButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color backgroundColor;
   final Color textColor;
   final double borderRadius;

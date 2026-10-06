@@ -1,8 +1,13 @@
+// lib/views/components/dashboard_body.dart
 import 'package:flutter/material.dart';
 import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
 import 'package:hidrosense_mobile/views/widgets/base_col_card.dart';
 import 'package:hidrosense_mobile/views/widgets/top_info_content.dart';
 import 'package:hidrosense_mobile/views/widgets/card_icon_box.dart';
+import '../pages/cuaca_page.dart';
+import '../pages/meja_nft_page.dart';
+import '../pages/panen_page.dart';
+import '../pages/penjualan_page.dart'; // Import halaman baru
 
 class DashboardBody extends StatelessWidget {
   const DashboardBody({super.key});
@@ -29,30 +34,87 @@ class DashboardBody extends StatelessWidget {
     },
   ];
 
-  // Data List untuk Akses Cepat (Quick Access)
-  final List<Map<String, dynamic>> _quickAccessData = const [
-    {
-      'title': '+ Barang',
-      'iconData': Icons.add_circle_outline,
-      'iconBgColor': Color.fromRGBO(57, 198, 195, 0.15),
-      'iconColor': Color.fromRGBO(57, 198, 195, 1),
-    },
-    {
-      'title': '+ Semai',
-      'iconData': Icons.eco_outlined,
-      'iconBgColor': Color.fromRGBO(221, 244, 90, 0.35),
-      'iconColor': Colors.black87,
-    },
-    {
-      'title': 'Cek Stok',
-      'iconData': Icons.view_in_ar_outlined,
-      'iconBgColor': Color.fromRGBO(57, 198, 195, 0.15),
-      'iconColor': Color.fromRGBO(57, 198, 195, 1),
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // Data List Akses Cepat ditaruh di dalam build agar bisa mengakses context navigasi
+    final List<Map<String, dynamic>> quickAccessData = [
+      {
+        'title': '+ Barang',
+        'iconData': Icons.add_circle_outline,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          // Action untuk + Barang
+        },
+      },
+      {
+        'title': '+ Semai',
+        'iconData': Icons.eco_outlined,
+        'iconBgColor': const Color.fromRGBO(221, 244, 90, 0.35),
+        'iconColor': Colors.black87,
+        'onTap': () {
+          // Action untuk + Semai
+        },
+      },
+      {
+        'title': 'Cuaca',
+        'iconData': Icons.cloud_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CuacaPage()),
+          );
+        },
+      },
+      {
+        'title': 'Penjualan', // MENU BARU PENJUALAN
+        'iconData': Icons.point_of_sale_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PenjualanPage()),
+          );
+        },
+      },
+      {
+        'title': 'Panen', // MENU BARU PANEN
+        'iconData': Icons.agriculture_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PanenPage()),
+          );
+        },
+      },
+      {
+        'title': 'Meja NFT',
+        'iconData': Icons.table_restaurant_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MejaNftPage()),
+          );
+        },
+      },
+      {
+        'title': 'Cek Stok',
+        'iconData': Icons.view_in_ar_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () {
+          // Action untuk Cek Stok
+        },
+      },
+    ];
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -166,39 +228,43 @@ class DashboardBody extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
-                children: _quickAccessData.map((item) {
+                children: quickAccessData.map((item) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 12.0),
-                    child: BaseColCard(
-                      backgroundColor: Colors.white,
-                      borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                      width: 102,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          CardIconBox(
-                            iconData: item['iconData'],
-                            backgroundColor: item['iconBgColor'],
-                            iconColor: item['iconColor'],
-                            width: 40,
-                            height: 40,
-                            borderRadius: 14,
-                            iconSize: 22,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            item['title'],
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
-                              height: 1.0,
-                              color: Colors.black,
+                    child: InkWell(
+                      onTap: item['onTap'],
+                      borderRadius: BorderRadius.circular(16),
+                      child: BaseColCard(
+                        backgroundColor: Colors.white,
+                        borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                        width: 102,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            CardIconBox(
+                              iconData: item['iconData'],
+                              backgroundColor: item['iconBgColor'],
+                              iconColor: item['iconColor'],
+                              width: 40,
+                              height: 40,
+                              borderRadius: 14,
+                              iconSize: 22,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(
+                              item['title'],
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                height: 1.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
