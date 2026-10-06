@@ -45,7 +45,9 @@ All I-01–I-08 are **complete for the authorized local implementation**. Final 
 
 ## Deployment obligations — not executed
 
-Follow-up architecture refinement at current HEAD `57fd7e9` is complete and tracked in [the refinement PRD/review](architecture-refinement-2026-10-03.md): A-01–A-05 completed, fresh 153/153 check and build passed, independent review passed. It preserves the completed B006 contracts and does not close any deployment obligation. The report records the separate automatic-open limitation for its visual artifact.
+Follow-up architecture refinement began at historical HEAD `57fd7e9` and is tracked in [the refinement PRD/review](architecture-refinement-2026-10-03.md): A-01–A-05 completed, fresh 153/153 check and build passed, independent review passed. It preserves the completed B006 contracts and does not close any deployment obligation. The report records the separate automatic-open limitation for its visual artifact.
+
+The [staging migration plan](staging-deployment-0006.md) defines D-01–D-04 gates and commands. Its local preparation does not close these deployment items.
 
 - [ ] D-01: Verify consistent staging snapshot/restore and populated preflight against actual remote data.
 - [ ] D-02: Apply migration 0006 to disposable staging Turso, reconcile and inspect schema/health evidence.

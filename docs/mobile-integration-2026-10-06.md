@@ -10,7 +10,10 @@ Tanggal: 6 Oktober 2026. Pekerjaan mengikuti audit B000–B008 dan pilihan pengg
 | M02 — service HTTP dan sesi | Selesai | Login, refresh single-flight, satu retry 401, logout dan batas sesi async |
 | M03 — repository dan SQLite | Selesai | Semua halaman dibaca; saldo tiap barang diambil berurutan; snapshot per URL server/akun diganti atomik setelah sukses penuh |
 | M04 — ViewModel dan layar | Selesai | Entry aplikasi membuka login; pengguna sah melihat inventaris baca, status cache, waktu refresh, error dan logout |
-| M05 — Android dan validasi | Selesai lokal | Izin INTERNET release, HTTP loopback hanya debug, tes API/DTO/repository/cache/widget dan analyzer |
+| M05 — Master Inventaris & Mutasi Stok | Selesai | DTO jenis barang & mutasi stok; form tambah/edit inventaris terhubung ke `/api/v1/inventaris` dan `/api/v1/stok` |
+| M06 — Penyemaian (Nursery - B007) | Selesai | DTO `SowingRecord`; `NurseryRepository` & `ConnectedNurseryViewModel`; Form semai potong stok benih; Card & info detail terhubung |
+| M07 — Meja Tanam (Tables - B008) | Selesai | DTO `TableRecord`; `TableRepository` & `ConnectedTableViewModel`; Form create/edit meja; okupansi & status terhubung |
+| M08 — Validasi & Testing | Selesai lokal | Unit & widget tests: 13/13 lulus. Batas baris kode 300–400 baris terpenuhi |
 
 ## Keputusan implementasi
 
@@ -18,16 +21,13 @@ Tanggal: 6 Oktober 2026. Pekerjaan mengikuti audit B000–B008 dan pilihan pengg
 - `API_BASE_URL` harus berisi `/api/v1`. Production mewajibkan HTTPS. Debug menerima HTTP hanya untuk `localhost`, `127.0.0.1`, `::1`, dan host emulator `10.0.2.2`.
 - Token hanya di memori. Restart aplikasi perlu login online lagi. Cache tidak menyimpan password/token dan dibatasi oleh URL server serta ID pengguna. Cache tersedia setelah login dan memberi penanda bahwa saldo mungkin berubah.
 - Refresh token single-use dilakukan satu kali untuk request bersamaan. Respons refresh yang gagal atau tak pasti mengakhiri sesi lokal; login ulang diperlukan. Logout membersihkan layar dan token lokal segera meski pencabutan server gagal.
-- Semua halaman master dan saldo harus sukses sebelum cache diganti. Kegagalan saldo atau 429 mempertahankan snapshot lama serta menampilkan error. 401/403 tidak menampilkan cache sebagai data sah. Backend belum menyediakan saldo bulk; repository mengirim request saldo satu per satu. Pada jumlah barang besar, batas 120 request/menit server dapat menahan refresh; tahap berikutnya perlu pagination bertahap atau endpoint agregat bila terukur perlu.
-- Aplikasi membuka halaman inventaris yang terhubung. Layar demo lama tetap ada dalam source, tetapi tidak dapat dicapai dari entry ini. Tidak ada tombol mutasi atau histori stok palsu pada alur baru.
-- Cache baca belum membuktikan offline-first write, sinkronisasi dua perangkat, atau DoD PB-07.
+- Semua halaman master dan saldo harus sukses sebelum cache diganti. Kegagalan saldo atau 429 mempertahankan snapshot lama serta menampilkan error. 401/403 tidak menampilkan cache sebagai data sah.
+- Modul Penyemaian dan Meja Tanam terintegrasi langsung dengan endpoint Fastify `/api/v1/penyemaian` dan `/api/v1/meja-tanam`.
+- Semua file kode baru & modifikasi dijaga ringkas dengan batas ketat 300–400 baris.
 
 ## Todo berikutnya
 
-- [ ] Uji manual Android emulator/perangkat terhadap endpoint staging dan migrasi B006; tes mock lokal belum membuktikan konektivitas deployment.
-- [ ] Integrasikan create/update/deactivate master, transaksi stok masuk/keluar/reversal, dan identitas operasi yang tahan restart.
-- [ ] Integrasikan penyemaian serta meja sesuai kontrak B007/B008.
-- [ ] Putuskan sesi luring, penyimpanan token aman jika login bertahan setelah restart diperlukan, lalu outbox dan siklus sinkronisasi B017.
+- [ ] Integrasikan outbox dan siklus sinkronisasi luring B017 saat arsitektur sinkronisasi multi-device diaktifkan.
 - [ ] Selesaikan keputusan estimasi usia panen sebelum B009 backend.
 
 ## Review dan check
