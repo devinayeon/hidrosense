@@ -1,5 +1,7 @@
 # Urutan Pengerjaan Backend HidroSense
 
+> Status terverifikasi 6 Oktober 2026: B000–B008 tersedia pada backend lokal; gate 177/177 tes lulus. Berikutnya B009, setelah keputusan estimasi usia panen. Integrasi mobile pertama mencakup login dan inventaris baca; fitur lain masih perlu dihubungkan. Staging B006–B008 belum dinyatakan selesai. Lihat [audit](reviews/backend-mobile-b000-b008-2026-10-06.md) dan [hasil integrasi mobile](mobile-integration-2026-10-06.md). Catatan bertanggal sebelumnya di bawah adalah riwayat dan tidak menggantikan status ini.
+
 Status: acuan urutan kerja aktif berdasarkan arahan pengguna pada 30 September 2026. Dokumen ini menetapkan pekerjaan berikutnya; daftar fitur di bawah belum berarti sudah diimplementasikan.
 
 Pembaruan 1 Oktober 2026: B001/B002 sudah ditinjau ulang. B003 akun pegawai/profil, B004 fondasi sinkronisasi, dan B005 inventaris sudah diimplementasikan; lihat [breakdown B003](./backend-b003.md), [B004](./backend-b004.md), dan [B005](./backend-b005.md). [Kontrak API utama](./backend-api.md) tetap menjadi acuan. Hak akses mengikuti System Request: pegawai dapat mengelola panen dan tidak dapat mengakses penjualan. Tahap berikutnya B006/B06.

@@ -1,5 +1,7 @@
 # Acuan Pengembangan HidroSense
 
+> Audit aktual 6 Oktober 2026: [status backend B000–B008 dan gap mobile/PPL](reviews/backend-mobile-b000-b008-2026-10-06.md). Backend lokal lulus 177/177 tes; penyelesaian integrasi mobile, staging, dan DoD produk dinilai terpisah. Timeline dan inventaris kondisi awal di bawah tetap merupakan baseline historis.
+
 > Pembaruan prioritas backend, 30 September 2026: gunakan [urutan pengerjaan backend](./rencana-backend.md) sebagai acuan eksekusi aktif. Fokus pada backend; `apps/mobile` tidak diubah. Seluruh implementasi terkait BMKG menjadi fitur terakhir setelah revisi tim perancangan tersedia. Tanggal dan target sprint di bawah dipertahankan sebagai baseline dari dokumen awal, bukan penetapan ulang urutan backend.
 
 > Keputusan hak akses terbaru: System Request menjadi acuan. Pegawai dapat mengelola panen, tetapi tidak boleh mengakses penjualan. B001/B002 tersedia; lihat [breakdown implementasi](./backend-b001-b002.md).
