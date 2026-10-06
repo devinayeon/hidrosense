@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ColButton extends StatelessWidget {
+class ColButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
   final Color textColor;
@@ -25,27 +25,46 @@ class ColButton extends StatelessWidget {
   });
 
   @override
+  State<ColButton> createState() => _ColButtonState();
+}
+
+class _ColButtonState extends State<ColButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          side: BorderSide(color: borderColor, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          elevation: 0,
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: textColor,
+    return AnimatedScale(
+      scale: _pressed ? 0.975 : 1.0,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOutCubic,
+      child: SizedBox(
+        height: widget.height,
+        child: Material(
+          color: widget.backgroundColor,
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          child: InkWell(
+            onTap: widget.onPressed,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            splashColor: widget.textColor.withOpacity(0.08),
+            highlightColor: Colors.transparent,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(widget.borderRadius),
+                border: Border.all(color: widget.borderColor, width: 1.5),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.text,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: widget.fontSize,
+                  fontWeight: widget.fontWeight,
+                  color: widget.textColor,
+                ),
+              ),
+            ),
           ),
         ),
       ),

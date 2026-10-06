@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class RowInfoCardMd extends StatelessWidget {
+class RowInfoCardMd extends StatefulWidget {
   final Color backgroundColor;
   final Color borderColor;
   final Widget child;
   final double? height;
   final double? width;
   final EdgeInsetsGeometry padding;
-  final VoidCallback? onTap; // Tambahkan onTap opsional
+  final VoidCallback? onTap;
 
   const RowInfoCardMd({
     super.key,
@@ -21,23 +21,46 @@ class RowInfoCardMd extends StatelessWidget {
   });
 
   @override
+  State<RowInfoCardMd> createState() => _RowInfoCardMdState();
+}
+
+class _RowInfoCardMdState extends State<RowInfoCardMd> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
+    final isClickable = widget.onTap != null;
+
+    final card = Material(
       color: Colors.transparent,
       child: Ink(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: widget.backgroundColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: 1.5),
+          border: Border.all(color: widget.borderColor, width: 1.5),
         ),
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
+          onHighlightChanged: isClickable
+              ? (value) => setState(() => _pressed = value)
+              : null,
           borderRadius: BorderRadius.circular(20),
-          child: Padding(padding: padding, child: child),
+          splashColor: Colors.black.withOpacity(0.04),
+          highlightColor: Colors.black.withOpacity(0.02),
+          child: Padding(padding: widget.padding, child: widget.child),
         ),
       ),
+    );
+
+    if (!isClickable) return card;
+
+    return AnimatedScale(
+      scale: _pressed ? 0.985 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOutCubic,
+      child: card,
     );
   }
 }

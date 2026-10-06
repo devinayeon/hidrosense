@@ -89,12 +89,17 @@ class InfoMejaBody extends StatelessWidget {
                   const SizedBox(height: 12),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: ratio,
-                      minHeight: 10,
-                      backgroundColor: const Color.fromRGBO(243, 244, 246, 1),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color.fromRGBO(57, 198, 195, 1),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: ratio),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, animatedValue, _) => LinearProgressIndicator(
+                        value: animatedValue,
+                        minHeight: 10,
+                        backgroundColor: const Color.fromRGBO(243, 244, 246, 1),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color.fromRGBO(57, 198, 195, 1),
+                        ),
                       ),
                     ),
                   ),
