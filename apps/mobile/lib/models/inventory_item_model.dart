@@ -65,7 +65,7 @@ class InventoryItem {
       name: json['name'] ?? '',
       category: json['category'] ?? 'Umum',
       stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
-      stockUnit: json['stockUnit'] ?? '',
+      stockUnit: json['stockUnit'] ?? '', 
       mainUnit: json['mainUnit'] ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       note: json['note'] ?? '',

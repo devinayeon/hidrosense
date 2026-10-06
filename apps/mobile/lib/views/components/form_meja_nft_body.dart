@@ -1,86 +1,110 @@
-// lib/views/components/form_meja_nft_body.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
-import '../../viewmodels/meja_nft_viewmodel.dart';
+import '../../viewmodels/connected_table_viewmodel.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/row_button.dart';
 
 class FormMejaNftBody extends ConsumerStatefulWidget {
-  final MejaNft? mejaItem; // null = Mode Tambah, not null = Mode Edit
+  final TableRecord? tableRecord;
+  final MejaNft? mejaItem;
 
-  const FormMejaNftBody({super.key, this.mejaItem});
+  const FormMejaNftBody({
+    super.key,
+    this.tableRecord,
+    this.mejaItem,
+  });
 
   @override
   ConsumerState<FormMejaNftBody> createState() => _FormMejaNftBodyState();
 }
 
 class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
-  late TextEditingController _nameController;
+  late TextEditingController _codeController;
   late TextEditingController _capacityController;
-  late TextEditingController _locationController;
   late TextEditingController _notesController;
-  MejaStatus _selectedStatus = MejaStatus.aktif;
+  String _selectedStatus = 'tersedia';
+  bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
+    final rec = widget.tableRecord;
     final item = widget.mejaItem;
-    _nameController = TextEditingController(text: item?.name ?? '');
+    _codeController = TextEditingController(text: rec?.code ?? item?.name ?? '');
     _capacityController = TextEditingController(
-      text: item != null ? item.capacityTotal.toString() : '250',
+      text: (rec?.holeCount ?? item?.capacityTotal ?? 250).toString(),
     );
-    _locationController = TextEditingController(text: item?.location ?? '');
-    _notesController = TextEditingController(text: item?.notes ?? '');
-    _selectedStatus = item?.status ?? MejaStatus.aktif;
+    _notesController = TextEditingController(text: rec?.notes ?? item?.notes ?? '');
+    _selectedStatus = rec?.status ??
+        (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia');
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _codeController.dispose();
     _capacityController.dispose();
-    _locationController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  void _saveForm() {
-    final name = _nameController.text.trim();
-    final capacity = int.tryParse(_capacityController.text.trim()) ?? 250;
-    final location = _locationController.text.trim();
+  Future<void> _saveForm() async {
+    final code = _codeController.text.trim();
+    final capacity = int.tryParse(_capacityController.text.trim()) ?? 0;
     final notes = _notesController.text.trim();
 
-    if (name.isEmpty) {
+    if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kode / Nama Meja tidak boleh kosong')),
       );
       return;
     }
-
-    if (widget.mejaItem == null) {
-      // Mode Tambah
-      final newMeja = MejaNft(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        location: location.isNotEmpty ? location : 'Lokasi Green House Barat',
-        capacityTotal: capacity,
-        status: _selectedStatus,
-        notes: notes,
+    if (capacity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kapasitas lubang harus lebih dari 0')),
       );
-      ref.read(mejaNftViewModelProvider.notifier).addMeja(newMeja);
-    } else {
-      // Mode Edit
-      final updatedMeja = widget.mejaItem!.copyWith(
-        name: name,
-        location: location.isNotEmpty ? location : widget.mejaItem!.location,
-        capacityTotal: capacity,
-        status: _selectedStatus,
-        notes: notes,
-      );
-      ref.read(mejaNftViewModelProvider.notifier).updateMeja(updatedMeja);
+      return;
     }
 
-    Navigator.pop(context);
+    setState(() => _submitting = true);
+    try {
+      final rec = widget.tableRecord;
+      if (rec == null) {
+        await ref.read(connectedTableProvider.notifier).createTable(
+              code: code,
+              holeCount: capacity,
+              status: _selectedStatus,
+              notes: notes.isNotEmpty ? notes : null,
+            );
+      } else {
+        await ref.read(connectedTableProvider.notifier).updateTable(
+              rec.id,
+              code: code,
+              holeCount: capacity,
+              status: _selectedStatus,
+              notes: notes.isNotEmpty ? notes : null,
+            );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              rec == null ? 'Meja tanam berhasil ditambahkan' : 'Meja tanam berhasil diperbarui',
+            ),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan meja: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -95,15 +119,12 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Kode / Nama Meja
             CustomInputField(
               label: 'Kode / Nama Meja',
-              hintText: 'Contoh: Meja NFT #05',
-              controller: _nameController,
+              hintText: 'Contoh: M-01 atau Meja NFT #01',
+              controller: _codeController,
             ),
             const SizedBox(height: 16),
-
-            // 2. Kapasitas Lubang Default
             CustomInputField(
               label: 'Kapasitas Lubang Default',
               hintText: '250',
@@ -111,16 +132,6 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-
-            // 3. Lokasi Meja
-            CustomInputField(
-              label: 'Lokasi Meja',
-              hintText: 'Contoh: Green House Timur, Baris 2',
-              controller: _locationController,
-            ),
-            const SizedBox(height: 16),
-
-            // 4. Status Meja Utama (Dropdown)
             const Text(
               'Status Meja Utama',
               style: TextStyle(
@@ -142,59 +153,40 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                 ),
               ),
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<MejaStatus>(
+                child: DropdownButton<String>(
                   value: _selectedStatus,
                   isExpanded: true,
-                  icon: const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color.fromRGBO(156, 163, 175, 1),
-                  ),
+                  icon: const Icon(Icons.arrow_drop_down, color: Color.fromRGBO(156, 163, 175, 1)),
                   items: const [
-                    DropdownMenuItem(
-                      value: MejaStatus.aktif,
-                      child: Text(
-                        'Aktif',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 14),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: MejaStatus.perawatan,
-                      child: Text(
-                        'Perawatan',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 14),
-                      ),
-                    ),
+                    DropdownMenuItem(value: 'tersedia', child: Text('Tersedia / Aktif')),
+                    DropdownMenuItem(value: 'pemeliharaan', child: Text('Perawatan')),
+                    DropdownMenuItem(value: 'penuh', child: Text('Penuh')),
+                    DropdownMenuItem(value: 'nonaktif', child: Text('Nonaktif')),
                   ],
                   onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedStatus = value;
-                      });
-                    }
+                    if (value != null) setState(() => _selectedStatus = value);
                   },
                 ),
               ),
             ),
             const SizedBox(height: 16),
-
-            // 5. Catatan / Spesifikasi
             CustomInputField(
               label: 'Catatan / Spesifikasi',
               hintText: 'Merek pompa, debit air, tipe pipa PVC',
               controller: _notesController,
             ),
             const SizedBox(height: 24),
-
-            // 6. Tombol Simpan Meja
             RowButton(
-              label: widget.mejaItem == null
-                  ? 'Simpan Meja'
-                  : 'Perbarui Pengaturan Meja',
+              label: _submitting
+                  ? 'Menyimpan...'
+                  : widget.tableRecord == null
+                      ? 'Simpan Meja'
+                      : 'Perbarui Pengaturan Meja',
               backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
               textColor: const Color.fromRGBO(221, 244, 90, 1),
               borderRadius: 24,
               height: 52,
-              onTap: _saveForm,
+              onTap: _submitting ? () {} : _saveForm,
             ),
             const SizedBox(height: 16),
           ],

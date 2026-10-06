@@ -195,8 +195,10 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> get(
+  Future<Map<String, dynamic>> _authRequest(
+    String method,
     String path, {
+    Map<String, dynamic>? body,
     Map<String, String>? query,
   }) async {
     final generation = _generation;
@@ -209,7 +211,13 @@ class ApiClient {
       );
     }
     try {
-      final response = await _request('GET', path, token: access, query: query);
+      final response = await _request(
+        method,
+        path,
+        token: access,
+        body: body,
+        query: query,
+      );
       if (generation != _generation) {
         throw const ApiException(401, 'SESSION_CHANGED', 'Sesi telah berubah.');
       }
@@ -228,9 +236,10 @@ class ApiClient {
       if (generation != _generation || _access == null) rethrow;
       try {
         final response = await _request(
-          'GET',
+          method,
           path,
           token: _access,
+          body: body,
           query: query,
         );
         if (generation != _generation) {
@@ -251,10 +260,38 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, String>? query,
+  }) => _authRequest('GET', path, query: query);
+
+  Future<Map<String, dynamic>> post(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? query,
+  }) => _authRequest('POST', path, body: body, query: query);
+
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? query,
+  }) => _authRequest('PATCH', path, body: body, query: query);
+
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? query,
+  }) => _authRequest('DELETE', path, body: body, query: query);
+
   Future<void> logout() async {
     final token = _access;
     clearSession();
     if (token != null) await _request('POST', 'auth/logout', token: token);
+  }
+
+  void setTokens({required String accessToken, required String refreshToken}) {
+    _access = accessToken;
+    _refresh = refreshToken;
   }
 
   void clearSession() {

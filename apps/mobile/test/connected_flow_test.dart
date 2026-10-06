@@ -83,16 +83,36 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'secret');
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
+
+    // Pastikan masuk ke MainPage (Beranda aktif)
+    expect(find.text('HidroSense'), findsOneWidget);
+    expect(find.text('Inventaris'), findsOneWidget);
+
+    // Navigasi ke tab Inventaris
+    await tester.tap(find.text('Inventaris'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Pupuk Uji'), findsOneWidget);
     expect(find.textContaining('0.25 kg'), findsOneWidget);
-    expect(find.text('Penjualan'), findsNothing);
 
+    // Buka detail item dialog
     await tester.tap(find.text('Pupuk Uji'));
     await tester.pumpAndSettle();
     expect(find.text('Stok minimum: 1 kg'), findsOneWidget);
     await tester.tap(find.text('Tutup'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Keluar'));
+
+    // Buka halaman Akun melalui Header icon
+    await tester.tap(find.byIcon(Icons.person_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('Pengguna'), findsOneWidget);
+    expect(find.text('Mitra'), findsOneWidget);
+    expect(find.text('Petani'), findsOneWidget);
+
+    // Logout dari halaman akun
+    await tester.ensureVisible(find.text('Keluar Dari Akun'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keluar Dari Akun'));
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNWidgets(2));
     expect(find.text('Pupuk Uji'), findsNothing);

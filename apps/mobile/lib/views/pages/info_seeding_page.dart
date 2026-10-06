@@ -1,18 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/nursery_record.dart';
 import '../../models/seeding_batch_model.dart';
 import '../components/header.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/col_button.dart';
-import 'seeding_form_page.dart';
 
 class InfoSeedingPage extends ConsumerWidget {
-  final SeedingBatch seedingItem;
+  final SeedingBatch? seedingItem;
+  final SowingRecord? sowingRecord;
 
-  const InfoSeedingPage({super.key, required this.seedingItem});
+  const InfoSeedingPage({
+    super.key,
+    this.seedingItem,
+    this.sowingRecord,
+  }) : assert(seedingItem != null || sowingRecord != null);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final title = sowingRecord != null
+        ? sowingRecord!.batchName
+        : 'Batch Penyemaian #${seedingItem!.batchNumber}';
+    final variety = sowingRecord != null ? 'Varietas Selada' : seedingItem!.variety;
+    final hssDays = sowingRecord != null ? (sowingRecord!.ageDays ?? 0) : seedingItem!.hss;
+    const totalHss = 14;
+    final progress = (hssDays / totalHss).clamp(0.0, 1.0);
+    final count = sowingRecord != null ? sowingRecord!.seedCount : seedingItem!.healthyCount;
+    final damagedCount = seedingItem?.damagedCount ?? 0;
+    final materials = sowingRecord != null
+        ? sowingRecord!.materials
+            .map((m) => '${m.inventoryId}: ${m.amount} ${m.unit}')
+            .toList()
+        : (seedingItem?.materials ?? const <String>[]);
+
     return Scaffold(
       appBar: const Header(
         titleText: 'Detail Penyemaian',
@@ -25,9 +45,8 @@ class InfoSeedingPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER INFO BATCH ---
             Text(
-              'Batch Penyemaian #${seedingItem.batchNumber}',
+              title,
               style: const TextStyle(
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w800,
@@ -37,7 +56,7 @@ class InfoSeedingPage extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Varietas: ${seedingItem.variety}',
+              'Varietas: $variety',
               style: const TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 15,
@@ -46,8 +65,6 @@ class InfoSeedingPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // --- PROGRES USIA SEMAI CARD ---
             BaseColCard(
               backgroundColor: Colors.white,
               borderColor: const Color.fromRGBO(243, 244, 246, 1),
@@ -69,7 +86,7 @@ class InfoSeedingPage extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '${seedingItem.hss} dari ${seedingItem.totalHss} Hari',
+                        '$hssDays dari $totalHss Hari',
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 14,
@@ -83,7 +100,7 @@ class InfoSeedingPage extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
-                      value: seedingItem.progressRatio,
+                      value: progress,
                       minHeight: 10,
                       backgroundColor: const Color.fromRGBO(229, 231, 235, 1),
                       valueColor: const AlwaysStoppedAnimation<Color>(
@@ -93,7 +110,7 @@ class InfoSeedingPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Rencana pindah tanam: Besok (HSS ${seedingItem.totalHss})',
+                    'Rencana pindah tanam: HSS $totalHss',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 13,
@@ -104,8 +121,6 @@ class InfoSeedingPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // --- SUMMARY CARDS (BIBIT SEHAT & RUSAK) ---
             Row(
               children: [
                 Expanded(
@@ -127,21 +142,12 @@ class InfoSeedingPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${seedingItem.healthyCount} Bibit',
+                          '$count Bibit',
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Color.fromRGBO(23, 34, 49, 1),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          seedingItem.healthyPhase,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: Color.fromRGBO(156, 163, 175, 1),
                           ),
                         ),
                       ],
@@ -168,21 +174,12 @@ class InfoSeedingPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${seedingItem.damagedCount} Bibit',
+                          '$damagedCount Bibit',
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Color.fromRGBO(23, 34, 49, 1),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          seedingItem.damagedNote,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: Color.fromRGBO(156, 163, 175, 1),
                           ),
                         ),
                       ],
@@ -192,9 +189,7 @@ class InfoSeedingPage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-
-            // --- BAHAN YANG DIGUNAKAN SECTION ---
-            if (seedingItem.materials.isNotEmpty) ...[
+            if (materials.isNotEmpty) ...[
               const Text(
                 'BAHAN YANG DIGUNAKAN',
                 style: TextStyle(
@@ -210,33 +205,21 @@ class InfoSeedingPage extends ConsumerWidget {
                 backgroundColor: Colors.white,
                 borderColor: const Color.fromRGBO(243, 244, 246, 1),
                 borderRadius: 20,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: seedingItem.materials.map((item) {
+                  children: materials.map((item) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '• ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromRGBO(23, 34, 49, 1),
-                            ),
-                          ),
+                          const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
                           Expanded(
                             child: Text(
                               item,
                               style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 14,
-                                fontWeight: FontWeight.w500,
                                 color: Color.fromRGBO(23, 34, 49, 1),
                               ),
                             ),
@@ -249,34 +232,23 @@ class InfoSeedingPage extends ConsumerWidget {
               ),
               const SizedBox(height: 28),
             ],
-
-            // --- ACTION BUTTONS ---
             Row(
               children: [
                 Expanded(
                   child: ColButton(
-                    text: 'Edit Semai',
+                    text: 'Kembali',
                     textColor: const Color.fromRGBO(57, 198, 195, 1),
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(57, 198, 195, 1),
                     height: 52,
                     borderRadius: 25,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SeedingFormPage(
-                            seedingItem: seedingItem,
-                          ), // Edit Mode
-                        ),
-                      );
-                    },
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ColButton(
-                    text: 'Pindahkan ke Meja NFT',
+                    text: 'Pindahkan ke Meja',
                     textColor: Colors.white,
                     backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
                     borderColor: const Color.fromRGBO(23, 34, 49, 1),
@@ -284,13 +256,12 @@ class InfoSeedingPage extends ConsumerWidget {
                     borderRadius: 25,
                     fontSize: 13.5,
                     onPressed: () {
-                      // Action pindahkan ke Meja NFT
+                      Navigator.pop(context);
                     },
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),

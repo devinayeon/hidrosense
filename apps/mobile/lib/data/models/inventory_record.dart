@@ -31,6 +31,8 @@ final class InventoryRecord {
   BigInt get balanceMinor => _minor(balance);
   BigInt? get minimumMinor => minimum == null ? null : _minor(minimum!);
   bool get isLow => minimumMinor != null && balanceMinor < minimumMinor!;
+  bool get isOutOfStock => RegExp(r'^0(?:\.0+)?$').hasMatch(balance);
+  String get formattedStock => '$balance $unit';
 
   factory InventoryRecord.fromApi(
     Map<String, dynamic> master,

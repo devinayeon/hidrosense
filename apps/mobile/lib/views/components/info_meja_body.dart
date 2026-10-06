@@ -1,19 +1,30 @@
-// lib/views/components/info_meja_body.dart
 import 'package:flutter/material.dart';
+import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
-import '../pages/detail_tanaman_meja_page.dart';
 import '../pages/form_meja_nft_page.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/row_button.dart';
 
 class InfoMejaBody extends StatelessWidget {
-  final MejaNft mejaItem;
+  final TableRecord? tableRecord;
+  final MejaNft? mejaItem;
 
-  const InfoMejaBody({super.key, required this.mejaItem});
+  const InfoMejaBody({
+    super.key,
+    this.tableRecord,
+    this.mejaItem,
+  }) : assert(tableRecord != null || mejaItem != null);
 
   @override
   Widget build(BuildContext context) {
-    final occupancyPercent = (mejaItem.occupancyPercentage * 100).toInt();
+    final title = tableRecord?.displayName ?? mejaItem!.name;
+    final totalCapacity = tableRecord?.holeCount ?? mejaItem!.capacityTotal;
+    final activePlants = tableRecord?.activePlants ?? mejaItem!.capacityUsed;
+    final ratio = tableRecord?.occupancyRatio ?? mejaItem!.occupancyPercentage;
+    final percent = (ratio * 100).toInt();
+    final isMaintenance = tableRecord?.isMaintenance ?? (mejaItem!.status == MejaStatus.perawatan);
+    final statusLabel = tableRecord?.statusLabel ?? (isMaintenance ? 'Perawatan' : 'Aktif');
+    final notes = tableRecord?.notes ?? mejaItem?.notes ?? 'Tidak ada catatan spesifikasi khusus.';
 
     return Container(
       width: double.infinity,
@@ -25,9 +36,8 @@ class InfoMejaBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Title & Subtitle Header
             Text(
-              mejaItem.name,
+              title,
               style: const TextStyle(
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w800,
@@ -37,7 +47,7 @@ class InfoMejaBody extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '${mejaItem.systemType} • ${mejaItem.location}',
+              'Sistem NFT • Status: $statusLabel',
               style: const TextStyle(
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
@@ -46,8 +56,6 @@ class InfoMejaBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // 2. Card Okupansi Lubang
             RowInfoCardMd(
               backgroundColor: Colors.white,
               borderColor: const Color.fromRGBO(240, 240, 235, 1),
@@ -68,7 +76,7 @@ class InfoMejaBody extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${mejaItem.capacityUsed} / ${mejaItem.capacityTotal} Terisi ($occupancyPercent%)',
+                        '$activePlants / $totalCapacity Terisi ($percent%)',
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
@@ -79,12 +87,10 @@ class InfoMejaBody extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Progress Bar Okupansi
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
-                      value: mejaItem.occupancyPercentage,
+                      value: ratio,
                       minHeight: 10,
                       backgroundColor: const Color.fromRGBO(243, 244, 246, 1),
                       valueColor: const AlwaysStoppedAnimation<Color>(
@@ -92,211 +98,50 @@ class InfoMejaBody extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // Detail Tanaman Sehat & Kosong/Gagal
-                  Row(
-                    children: [
-                      Text(
-                        '• ${mejaItem.healthyCount} Tanaman Sehat',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: Color.fromRGBO(107, 114, 128, 1),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '• ${mejaItem.failedCount} Kosong / Gagal',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Color.fromRGBO(249, 115, 22, 1),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-
-            // 3. Card Batch Aktif Saat Ini
-            if (mejaItem.status == MejaStatus.aktif)
-              RowInfoCardMd(
-                backgroundColor: Colors.white,
-                borderColor: const Color.fromRGBO(240, 240, 235, 1),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'BATCH AKTIF SAAT INI',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        letterSpacing: 0.3,
-                        color: Color.fromRGBO(107, 114, 128, 1),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${mejaItem.batchName ?? "-"} - ${mejaItem.variety ?? "-"}',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Usia Tanaman:',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Color.fromRGBO(107, 114, 128, 1),
-                          ),
-                        ),
-                        Text(
-                          '${mejaItem.hss ?? 0} HSS (Hari Setelah Semai)',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Estimasi Panen:',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Color.fromRGBO(107, 114, 128, 1),
-                          ),
-                        ),
-                        Text(
-                          mejaItem.estimatedHarvestDate ?? '-',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              )
-            else
-              // Tampilan saat Perawatan
-              RowInfoCardMd(
-                backgroundColor: Colors.white,
-                borderColor: const Color.fromRGBO(240, 240, 235, 1),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'STATUS PERAWATAN',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: Color.fromRGBO(217, 119, 6, 1),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      mejaItem.maintenanceNote ?? 'Dalam Perawatan',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Colors.black,
-                      ),
-                    ),
-                    if (mejaItem.maintenanceEta != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        mejaItem.maintenanceEta!,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          color: Color.fromRGBO(107, 114, 128, 1),
-                        ),
-                      ),
-                    ],
-                  ],
+            const SizedBox(height: 16),
+            const Text(
+              'CATATAN & SPESIFIKASI',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: Color.fromRGBO(107, 114, 128, 1),
+              ),
+            ),
+            const SizedBox(height: 8),
+            RowInfoCardMd(
+              backgroundColor: Colors.white,
+              borderColor: const Color.fromRGBO(240, 240, 235, 1),
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                notes,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: Color.fromRGBO(55, 65, 81, 1),
                 ),
               ),
-
-            const SizedBox(height: 20),
-
-            // 4. Tombol Utama (Lihat Tanaman pada Meja)
+            ),
+            const SizedBox(height: 24),
             RowButton(
-              label: 'Lihat Tanaman pada Meja',
-              backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
-              textColor: Colors.white,
-              borderRadius: 24,
+              label: 'Edit Pengaturan Meja',
+              backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
+              textColor: const Color.fromRGBO(221, 244, 90, 1),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        DetailTanamanMejaPage(mejaItem: mejaItem),
+                    builder: (context) => FormMejaNftPage(
+                      tableRecord: tableRecord,
+                      mejaItem: mejaItem,
+                    ),
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 12),
-
-            // 5. Tombol Sekunder (Edit Pengaturan Meja)
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(
-                    color: Color.fromRGBO(57, 198, 195, 1),
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  backgroundColor: Colors.transparent,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          FormMejaNftPage(mejaItem: mejaItem), // Mode Edit
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Edit Pengaturan Meja',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Color.fromRGBO(57, 198, 195, 1),
-                  ),
-                ),
-              ),
             ),
             const SizedBox(height: 16),
           ],

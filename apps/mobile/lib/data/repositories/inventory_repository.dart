@@ -1,4 +1,6 @@
 import '../models/inventory_record.dart';
+import '../models/jenis_inventaris_record.dart';
+import '../models/stock_movement_record.dart';
 import '../services/api_client.dart';
 import '../services/inventory_cache.dart';
 
@@ -10,6 +12,117 @@ class InventoryRepository {
 
   Future<InventorySnapshot?> cached() async =>
       (await _cache).read(serverOrigin: _api.serverOrigin, userId: userId);
+
+  Future<List<JenisInventarisRecord>> fetchCategories() async {
+    final response = await _api.get('jenis-inventaris', query: {'limit': '100', 'status_aktif': '1'});
+    final data = response['data'];
+    if (data is! List) throw const FormatException('Kategori tidak valid.');
+    return data.map((json) => JenisInventarisRecord.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  Future<InventoryRecord> createItem({
+    required String categoryId,
+    String? medicineId,
+    required String name,
+    required String unit,
+    String? minimum,
+  }) async {
+    final response = await _api.post(
+      'inventaris',
+      body: {
+        'id_jenis_inventaris': categoryId,
+        if (medicineId != null) 'id_obat': medicineId,
+        'nama_barang': name,
+        'satuan': unit,
+        if (minimum != null && minimum.isNotEmpty) 'stok_minimum': minimum,
+      },
+    );
+    final data = response['data'];
+    if (data is! Map<String, dynamic> || data['id_inventaris'] is! String) {
+      throw const FormatException('Gagal membuat barang inventaris.');
+    }
+    final id = data['id_inventaris'] as String;
+    final balanceRes = await _api.get('inventaris/$id/saldo');
+    if (balanceRes['data'] is! Map<String, dynamic>) {
+      throw const FormatException('Gagal membaca saldo inventaris baru.');
+    }
+    await refresh();
+    return InventoryRecord.fromApi(data, balanceRes['data'] as Map<String, dynamic>);
+  }
+
+  Future<InventoryRecord> updateItem(
+    String id, {
+    String? categoryId,
+    String? medicineId,
+    String? name,
+    String? unit,
+    String? minimum,
+  }) async {
+    final body = <String, dynamic>{};
+    if (categoryId != null) body['id_jenis_inventaris'] = categoryId;
+    if (medicineId != null) body['id_obat'] = medicineId;
+    if (name != null) body['nama_barang'] = name;
+    if (unit != null) body['satuan'] = unit;
+    if (minimum != null) body['stok_minimum'] = minimum.isEmpty ? null : minimum;
+
+    final response = await _api.patch('inventaris/$id', body: body);
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Gagal memperbarui barang inventaris.');
+    }
+    final balanceRes = await _api.get('inventaris/$id/saldo');
+    if (balanceRes['data'] is! Map<String, dynamic>) {
+      throw const FormatException('Gagal membaca saldo inventaris.');
+    }
+    await refresh();
+    return InventoryRecord.fromApi(data, balanceRes['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> deactivateItem(String id) async {
+    await _api.post('inventaris/$id/deactivate');
+    await refresh();
+  }
+
+  Future<StockMovementRecord> recordStockMovement({
+    required String direction,
+    required List<Map<String, String>> details,
+    String? note,
+  }) async {
+    final response = await _api.post(
+      'stok',
+      body: {
+        'jenis_stok': direction,
+        'details': details,
+        if (note != null && note.isNotEmpty) 'keterangan': note,
+      },
+    );
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Gagal mencatat mutasi stok.');
+    }
+    await refresh();
+    return StockMovementRecord.fromJson(data);
+  }
+
+  Future<List<StockMovementRecord>> fetchStockHistory({
+    String? inventoryId,
+    String? direction,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _api.get(
+      'stok',
+      query: {
+        'page': '$page',
+        'limit': '$limit',
+        if (inventoryId != null) 'id_inventaris': inventoryId,
+        if (direction != null) 'jenis_stok': direction,
+      },
+    );
+    final data = response['data'];
+    if (data is! List) throw const FormatException('Riwayat stok tidak valid.');
+    return data.map((json) => StockMovementRecord.fromJson(json as Map<String, dynamic>)).toList();
+  }
 
   Future<InventorySnapshot> refresh() async {
     final sessionGeneration = _api.sessionGeneration;
