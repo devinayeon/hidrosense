@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../viewmodels/session_viewmodel.dart';
+import '../widgets/row_button.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -36,100 +36,113 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAF7),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.eco_outlined,
-                      size: 56,
-                      color: Color(0xFF168681),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'HidroSense',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Masuk untuk melihat inventaris dan saldo stok.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _username,
-                      enabled: !session.busy,
-                      autocorrect: false,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.username],
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Masukkan username.'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _password,
-                      enabled: !session.busy,
-                      obscureText: _hidePassword,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          tooltip: _hidePassword
-                              ? 'Tampilkan password'
-                              : 'Sembunyikan password',
-                          onPressed: session.busy
-                              ? null
-                              : () => setState(
-                                  () => _hidePassword = !_hidePassword,
-                                ),
-                          icon: Icon(
-                            _hidePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                    Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: const Color.fromRGBO(57, 198, 195, 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color.fromRGBO(57, 198, 195, 0.4),
+                            width: 1.5,
                           ),
                         ),
+                        child: const Icon(
+                          Icons.spa_rounded,
+                          size: 38,
+                          color: Color.fromRGBO(22, 134, 129, 1),
+                        ),
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? 'Masukkan password.'
-                          : null,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'HidroSense',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 26,
+                        letterSpacing: -0.5,
+                        color: Color.fromRGBO(23, 34, 49, 1),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Monitoring & Manajemen Budidaya Hidroponik',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: Color.fromRGBO(107, 114, 128, 1),
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    _inputField(
+                      controller: _username,
+                      label: 'Nama Pengguna',
+                      hintText: 'Masukkan username',
+                      icon: Icons.person_outline_rounded,
+                      enabled: !session.busy,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Username tidak boleh kosong' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _inputField(
+                      controller: _password,
+                      label: 'Kata Sandi',
+                      hintText: 'Masukkan kata sandi',
+                      icon: Icons.lock_outline_rounded,
+                      isPassword: true,
+                      enabled: !session.busy,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Kata sandi tidak boleh kosong' : null,
                     ),
                     if (session.error != null) ...[
                       const SizedBox(height: 16),
-                      Semantics(
-                        liveRegion: true,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color.fromRGBO(254, 242, 242, 1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color.fromRGBO(252, 165, 165, 1),
+                          ),
+                        ),
                         child: Text(
                           session.error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color.fromRGBO(220, 38, 38, 1),
                           ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: session.busy ? null : _submit,
-                      child: Text(session.busy ? 'Memproses...' : 'Masuk'),
+                    const SizedBox(height: 28),
+                    RowButton(
+                      label: session.busy ? 'Memproses...' : 'Masuk',
+                      height: 52,
+                      borderRadius: 26,
+                      backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
+                      textColor: const Color.fromRGBO(221, 244, 90, 1),
+                      onTap: session.busy ? () {} : _submit,
                     ),
                   ],
                 ),
@@ -138,6 +151,63 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    bool isPassword = false,
+    bool enabled = true,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            color: Color.fromRGBO(55, 65, 81, 1),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1), width: 1.2),
+          ),
+          child: TextFormField(
+            controller: controller,
+            enabled: enabled,
+            obscureText: isPassword && _hidePassword,
+            validator: validator,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: Colors.black),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, size: 20, color: const Color.fromRGBO(156, 163, 175, 1)),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        _hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        size: 20,
+                        color: const Color.fromRGBO(156, 163, 175, 1),
+                      ),
+                      onPressed: () => setState(() => _hidePassword = !_hidePassword),
+                    )
+                  : null,
+              hintText: hintText,
+              hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color.fromRGBO(156, 163, 175, 1)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

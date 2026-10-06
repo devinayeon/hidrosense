@@ -1,18 +1,19 @@
-// lib/views/components/dashboard_body.dart
 import 'package:flutter/material.dart';
-import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
-import 'package:hidrosense_mobile/views/widgets/base_col_card.dart';
-import 'package:hidrosense_mobile/views/widgets/top_info_content.dart';
-import 'package:hidrosense_mobile/views/widgets/card_icon_box.dart';
+import '../widgets/row_info_card_md.dart';
+import '../widgets/base_col_card.dart';
+import '../widgets/top_info_content.dart';
+import '../widgets/card_icon_box.dart';
+import '../pages/add_form_inventaris_page.dart';
+import '../pages/seeding_form_page.dart';
+import '../pages/connected_inventory_page.dart';
 import '../pages/cuaca_page.dart';
 import '../pages/meja_nft_page.dart';
 import '../pages/panen_page.dart';
-import '../pages/penjualan_page.dart'; // Import halaman baru
+import '../pages/penjualan_page.dart';
 
 class DashboardBody extends StatelessWidget {
   const DashboardBody({super.key});
 
-  // Data List untuk RowInfoCardMd (Peringatan, Cuaca, dll)
   final List<Map<String, dynamic>> _infoCardsData = const [
     {
       'title': 'Semaian Siap Pindah',
@@ -36,82 +37,76 @@ class DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Data List Akses Cepat ditaruh di dalam build agar bisa mengakses context navigasi
     final List<Map<String, dynamic>> quickAccessData = [
       {
         'title': '+ Barang',
         'iconData': Icons.add_circle_outline,
         'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
         'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          // Action untuk + Barang
-        },
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddFormInventarisPage()),
+        ),
       },
       {
         'title': '+ Semai',
         'iconData': Icons.eco_outlined,
         'iconBgColor': const Color.fromRGBO(221, 244, 90, 0.35),
         'iconColor': Colors.black87,
-        'onTap': () {
-          // Action untuk + Semai
-        },
-      },
-      {
-        'title': 'Cuaca',
-        'iconData': Icons.cloud_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CuacaPage()),
-          );
-        },
-      },
-      {
-        'title': 'Penjualan', // MENU BARU PENJUALAN
-        'iconData': Icons.point_of_sale_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PenjualanPage()),
-          );
-        },
-      },
-      {
-        'title': 'Panen', // MENU BARU PANEN
-        'iconData': Icons.agriculture_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PanenPage()),
-          );
-        },
-      },
-      {
-        'title': 'Meja NFT',
-        'iconData': Icons.table_restaurant_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MejaNftPage()),
-          );
-        },
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SeedingFormPage()),
+        ),
       },
       {
         'title': 'Cek Stok',
         'iconData': Icons.view_in_ar_outlined,
         'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
         'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () {
-          // Action untuk Cek Stok
-        },
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ConnectedInventoryPage()),
+        ),
+      },
+      {
+        'title': 'Meja NFT',
+        'iconData': Icons.table_restaurant_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MejaNftPage()),
+        ),
+      },
+      {
+        'title': 'Cuaca',
+        'iconData': Icons.cloud_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CuacaPage()),
+        ),
+      },
+      {
+        'title': 'Panen',
+        'iconData': Icons.agriculture_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PanenPage()),
+        ),
+      },
+      {
+        'title': 'Penjualan',
+        'iconData': Icons.point_of_sale_outlined,
+        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
+        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PenjualanPage()),
+        ),
       },
     ];
 
@@ -125,7 +120,6 @@ class DashboardBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris Pertama: Top Info Cards (Kapasitas NFT & Estimasi Panen)
             Row(
               children: const [
                 Expanded(
@@ -152,10 +146,7 @@ class DashboardBody extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            // Loop untuk RowInfoCardMd (Informasi/Peringatan)
             ..._infoCardsData.map((item) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -163,7 +154,6 @@ class DashboardBody extends StatelessWidget {
                   backgroundColor: item['bgColor'],
                   borderColor: item['borderColor'],
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CardIconBox(
                         iconData: item['iconData'],
@@ -173,7 +163,6 @@ class DashboardBody extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -182,7 +171,6 @@ class DashboardBody extends StatelessWidget {
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
-                                height: 1.0,
                                 color: Colors.black,
                               ),
                             ),
@@ -193,9 +181,7 @@ class DashboardBody extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'Inter',
-                                fontWeight: FontWeight.w400,
                                 fontSize: 11,
-                                height: 1.0,
                                 color: Colors.black87,
                               ),
                             ),
@@ -207,23 +193,18 @@ class DashboardBody extends StatelessWidget {
                 ),
               );
             }),
-
-            const SizedBox(height: 4),
-
+            const SizedBox(height: 8),
             const Text(
               'AKSES CEPAT',
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                height: 1.0,
                 color: Colors.black87,
+                letterSpacing: 0.3,
               ),
             ),
-
             const SizedBox(height: 12),
-
-            // Horizontal Scrollable Row & Loop untuk Akses Cepat (Quick Access)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -231,39 +212,40 @@ class DashboardBody extends StatelessWidget {
                 children: quickAccessData.map((item) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 12.0),
-                    child: InkWell(
-                      onTap: item['onTap'],
-                      borderRadius: BorderRadius.circular(16),
-                      child: BaseColCard(
-                        backgroundColor: Colors.white,
-                        borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                        width: 102,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CardIconBox(
-                              iconData: item['iconData'],
-                              backgroundColor: item['iconBgColor'],
-                              iconColor: item['iconColor'],
-                              width: 40,
-                              height: 40,
-                              borderRadius: 14,
-                              iconSize: 22,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              item['title'],
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                                height: 1.0,
-                                color: Colors.black,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: item['onTap'],
+                        borderRadius: BorderRadius.circular(16),
+                        child: BaseColCard(
+                          backgroundColor: Colors.white,
+                          borderColor: const Color.fromRGBO(230, 230, 225, 1),
+                          width: 104,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CardIconBox(
+                                iconData: item['iconData'],
+                                backgroundColor: item['iconBgColor'],
+                                iconColor: item['iconColor'],
+                                width: 40,
+                                height: 40,
+                                borderRadius: 14,
+                                iconSize: 22,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                item['title'],
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -271,6 +253,7 @@ class DashboardBody extends StatelessWidget {
                 }).toList(),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

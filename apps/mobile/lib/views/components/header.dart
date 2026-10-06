@@ -52,27 +52,59 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         if (showUserIcon)
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: Color.fromRGBO(221, 244, 90, 1),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.person_outline, color: Colors.black),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AccountPage(),
-                    ),
-                  );
-                },
-              ),
+            child: _HeaderAvatarButton(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AccountPage()),
+                );
+              },
             ),
           ),
       ],
+    );
+  }
+}
+
+class _HeaderAvatarButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _HeaderAvatarButton({required this.onTap});
+
+  @override
+  State<_HeaderAvatarButton> createState() => _HeaderAvatarButtonState();
+}
+
+class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _pressed ? 0.92 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.easeOutCubic,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(221, 244, 90, 1),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color.fromRGBO(23, 34, 49, 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.person_outline, color: Colors.black, size: 22),
+        ),
+      ),
     );
   }
 }
