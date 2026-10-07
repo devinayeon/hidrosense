@@ -13,6 +13,45 @@ http.Response jsonResponse(int status, Object body) => http.Response(
 );
 
 void main() {
+  test('POST auth retry preserves extension headers and exact body', () async {
+    const key = '46375a8e-4687-4ff2-9ba0-28b51872bd10';
+    final requests = <http.Request>[];
+    final api = ApiClient(
+      MockClient((request) async {
+        if (request.url.path.endsWith('/auth/refresh')) {
+          expect(request.headers['Idempotency-Key'], isNull);
+          return jsonResponse(200, {
+            'data': {'access_token': 'new', 'refresh_token': 'refresh-2'},
+          });
+        }
+        requests.add(request);
+        if (requests.length == 1) {
+          return jsonResponse(401, {
+            'error': {'message': 'expired'},
+          });
+        }
+        return jsonResponse(201, {'data': {}});
+      }),
+      baseUri: Uri.parse('https://example.test/api/v1'),
+    )..setTokens(accessToken: 'old', refreshToken: 'refresh-1');
+    await api.post(
+      'pemindahan',
+      headers: {'Idempotency-Key': key},
+      body: {'id_penyemaian': 'sem-01', 'jumlah_tanaman': 10},
+    );
+    expect(requests, hasLength(2));
+    expect(requests.map((request) => request.headers['Idempotency-Key']), [
+      key,
+      key,
+    ]);
+    expect(requests[1].body, requests[0].body);
+    expect(requests.map((request) => request.headers['Authorization']), [
+      'Bearer old',
+      'Bearer new',
+    ]);
+    api.close();
+  });
+
   test('parallel expired reads rotate once and retry with new token', () async {
     var refreshes = 0;
     final api = ApiClient(

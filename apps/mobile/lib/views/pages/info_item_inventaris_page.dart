@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/inventory_item_model.dart';
+import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/inventaris_viewmodel.dart';
 import 'add_form_inventaris_page.dart';
 import '../components/header.dart';
@@ -45,11 +47,15 @@ class InfoItemInventarisPage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              Navigator.pop(ctx);
+            },
             child: const Text('Batal'),
           ),
           TextButton(
             onPressed: () {
+              HapticFeedback.heavyImpact();
               ref
                   .read(inventarisViewModelProvider.notifier)
                   .softDeleteItem(item.id);
@@ -169,11 +175,26 @@ class InfoItemInventarisPage extends ConsumerWidget {
                     backgroundColor: Colors.white,
                     borderColor: const Color.fromRGBO(57, 198, 195, 1),
                     onPressed: () {
+                      final matchingRecords = ref
+                          .read(connectedInventoryProvider)
+                          .records
+                          .where((record) => record.id == currentItem.id);
+                      if (matchingRecords.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Data inventaris belum tersedia untuk diedit.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              AddFormInventarisPage(initialItem: currentItem),
+                          builder: (context) => AddFormInventarisPage(
+                            initialRecord: matchingRecords.first,
+                          ),
                         ),
                       );
                     },

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../pages/account_page.dart';
 import '../widgets/custom_back_button.dart';
+import '../theme/app_theme.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
   final String titleText;
   final bool showBackButton;
   final bool showUserIcon;
   final VoidCallback? onBackPressed;
+  final bool largeTitle;
 
   const Header({
     super.key,
@@ -14,14 +16,16 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = false,
     this.showUserIcon = true,
     this.onBackPressed,
+    this.largeTitle = false,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(largeTitle ? 88 : kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      toolbarHeight: preferredSize.height,
       backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -40,13 +44,17 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
           : null,
       title: Text(
         titleText,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w800,
-          fontSize: 20,
-          height: 1.0,
-          color: Colors.black,
-        ),
+        maxLines: largeTitle ? 1 : null,
+        overflow: largeTitle ? TextOverflow.ellipsis : null,
+        style: largeTitle
+            ? AppTypography.largeTitle
+            : const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                height: 1.0,
+                color: Colors.black,
+              ),
       ),
       actions: [
         if (showUserIcon)
@@ -102,7 +110,11 @@ class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
               ),
             ],
           ),
-          child: const Icon(Icons.person_outline, color: Colors.black, size: 22),
+          child: const Icon(
+            Icons.person_outline,
+            color: Colors.black,
+            size: 22,
+          ),
         ),
       ),
     );

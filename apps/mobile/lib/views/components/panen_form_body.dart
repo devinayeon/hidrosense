@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/panen_model.dart';
@@ -124,6 +125,7 @@ class _PanenFormBodyState extends ConsumerState<PanenFormBody> {
       ref.read(panenViewModelProvider.notifier).addPanen(newItem);
     }
 
+    HapticFeedback.mediumImpact();
     Navigator.pop(context);
   }
 

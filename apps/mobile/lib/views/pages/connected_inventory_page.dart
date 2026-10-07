@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/inventory_record.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
+import '../theme/app_theme.dart';
 
 class ConnectedInventoryPage extends ConsumerStatefulWidget {
   const ConnectedInventoryPage({super.key});
@@ -32,7 +33,7 @@ class _ConnectedInventoryPageState
             children: [
               Text('Jenis: ${item.category}'),
               const SizedBox(height: 12),
-              Text('Saldo: ${item.balance} ${item.unit}'),
+              _InventoryBalance(item: item, showLabel: true),
               const SizedBox(height: 12),
               Text(
                 item.minimum == null
@@ -40,7 +41,7 @@ class _ConnectedInventoryPageState
                     : 'Stok minimum: ${item.minimum} ${item.unit}',
               ),
               const SizedBox(height: 12),
-              Text(_stockLabel(item)),
+              _StockStatus(item: item),
             ],
           ),
         ),
@@ -52,12 +53,6 @@ class _ConnectedInventoryPageState
         ],
       ),
     );
-  }
-
-  String _stockLabel(InventoryRecord item) {
-    if (RegExp(r'^0(?:\.0+)?$').hasMatch(item.balance)) return 'Stok habis';
-    if (item.isLow) return 'Di bawah stok minimum';
-    return item.minimum == null ? 'Stok tersedia' : 'Stok mencukupi';
   }
 
   @override
@@ -75,10 +70,10 @@ class _ConnectedInventoryPageState
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAF7),
+      backgroundColor: AppColors.canvasWarm,
       appBar: AppBar(
         title: const Text('Inventaris'),
-        backgroundColor: const Color(0xFFFAFAF7),
+        backgroundColor: AppColors.canvasWarm,
         actions: [
           IconButton(
             tooltip: 'Perbarui inventaris',
@@ -181,19 +176,77 @@ class _ConnectedInventoryPageState
                   contentPadding: const EdgeInsets.all(16),
                   leading: const Icon(
                     Icons.inventory_2_outlined,
-                    color: Color(0xFF168681),
+                    color: AppColors.primaryDarkTeal,
                   ),
                   title: Text(item.name),
-                  subtitle: Text(
-                    '${item.category}\n${item.balance} ${item.unit}\n'
-                    '${_stockLabel(item)}',
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(item.category, style: AppTypography.subheadline),
+                      const SizedBox(height: AppSpacing.xxs),
+                      _InventoryBalance(item: item),
+                      const SizedBox(height: AppSpacing.xs),
+                      _StockStatus(item: item),
+                    ],
                   ),
-                  isThreeLine: true,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showDetail(item),
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InventoryBalance extends StatelessWidget {
+  const _InventoryBalance({required this.item, this.showLabel = false});
+
+  final InventoryRecord item;
+  final bool showLabel;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    '${showLabel ? 'Saldo: ' : ''}${item.balance} ${item.unit}',
+    style: AppTypography.tabular(AppTypography.headline),
+  );
+}
+
+class _StockStatus extends StatelessWidget {
+  const _StockStatus({required this.item});
+
+  final InventoryRecord item;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.isOutOfStock) {
+      return const Text('Stok habis', style: AppTypography.footnote);
+    }
+    if (!item.isLow) {
+      return Text(
+        item.minimum == null ? 'Stok tersedia' : 'Stok mencukupi',
+        style: AppTypography.footnote,
+      );
+    }
+    return Semantics(
+      container: true,
+      label: 'Stok Menipis',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xxs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.warningBg,
+          border: Border.all(color: AppColors.warningOrange),
+          borderRadius: BorderRadius.circular(AppRadius.badge),
+        ),
+        child: Text(
+          'Stok Menipis',
+          style: AppTypography.caption1.copyWith(color: AppColors.textPrimary),
         ),
       ),
     );

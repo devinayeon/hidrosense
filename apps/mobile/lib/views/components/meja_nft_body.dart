@@ -9,6 +9,7 @@ import '../widgets/filter_button.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/row_button.dart';
 import '../widgets/capsule_badge.dart';
+import '../widgets/fluid_capacity_meter.dart';
 
 class MejaNftBody extends ConsumerWidget {
   const MejaNftBody({super.key});
@@ -168,8 +169,16 @@ class _ConnectedTableCardContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         if (!isMaintenance) ...[
+          FluidCapacityMeter(
+            activePlants: item.activePlants,
+            totalCapacity: item.holeCount,
+            height: 6.0,
+            showLabel: false,
+            compact: true,
+          ),
+          const SizedBox(height: 6),
           Text(
             'Kapasitas: ${item.activePlants} / ${item.holeCount} Lubang Terisi (${item.occupancyPercentage}%)',
             style: const TextStyle(

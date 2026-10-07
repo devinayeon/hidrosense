@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/inventory_record.dart';
 import '../../data/repositories/inventory_repository.dart';
@@ -14,7 +15,8 @@ class AddFormInventarisPage extends ConsumerStatefulWidget {
   bool get isEditMode => initialRecord != null;
 
   @override
-  ConsumerState<AddFormInventarisPage> createState() => _AddFormInventarisPageState();
+  ConsumerState<AddFormInventarisPage> createState() =>
+      _AddFormInventarisPageState();
 }
 
 class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
@@ -34,7 +36,15 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
     'Media Tanam': '5',
   };
 
-  final List<String> _units = ['Kg', 'Gram', 'Liter', 'Ml', 'btr', 'Pcs', 'Blok'];
+  final List<String> _units = [
+    'Kg',
+    'Gram',
+    'Liter',
+    'Ml',
+    'btr',
+    'Pcs',
+    'Blok',
+  ];
 
   @override
   void initState() {
@@ -109,7 +119,11 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
           await repo.recordStockMovement(
             direction: 'masuk',
             details: [
-              {'id_inventaris': created.id, 'jumlah': initialStock, 'satuan': unit},
+              {
+                'id_inventaris': created.id,
+                'jumlah': initialStock,
+                'satuan': unit,
+              },
             ],
             note: 'Saldo awal registrasi barang',
           );
@@ -117,7 +131,10 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
       }
 
       await ref.read(connectedInventoryProvider.notifier).refresh();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -194,7 +211,11 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
             const SizedBox(height: 16),
             _label('Stok Minimum (Peringatan)'),
             const SizedBox(height: 6),
-            _textField(_minimumController, 'Contoh: 5 (Opsional)', keyboardType: TextInputType.number),
+            _textField(
+              _minimumController,
+              'Contoh: 5 (Opsional)',
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 28),
             RowButton(
               label: _saving
@@ -204,7 +225,7 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
               textColor: Colors.white,
               borderRadius: 100.0,
               height: 52.0,
-              onTap: _saving ? () {} : _saveForm,
+              onTap: _saving ? null : _saveForm,
             ),
             const SizedBox(height: 16),
           ],
@@ -214,66 +235,81 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
   }
 
   Widget _label(String text) => Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-      );
+    text,
+    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+  );
 
   Widget _textField(
     TextEditingController controller,
     String hint, {
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
-  }) =>
-      Container(
-        decoration: BoxDecoration(
-          color: readOnly ? const Color.fromRGBO(245, 245, 242, 1) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1)),
+  }) => Container(
+    decoration: BoxDecoration(
+      color: readOnly ? const Color.fromRGBO(245, 245, 242, 1) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1)),
+    ),
+    child: TextField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 14, color: Colors.black),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          fontSize: 14,
+          color: Color.fromRGBO(156, 163, 175, 1),
         ),
-        child: TextField(
-          controller: controller,
-          readOnly: readOnly,
-          keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 14, color: Colors.black),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(fontSize: 14, color: Color.fromRGBO(156, 163, 175, 1)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: InputBorder.none,
-          ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
-      );
+        border: InputBorder.none,
+      ),
+    ),
+  );
 
   Widget _dropdown<T>({
     required T? value,
     required String hintText,
     required List<T> items,
     required ValueChanged<T?> onChanged,
-  }) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1)),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            value: value,
-            hint: Text(
-              hintText,
-              style: const TextStyle(fontSize: 13, color: Color.fromRGBO(156, 163, 175, 1)),
-            ),
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color.fromRGBO(156, 163, 175, 1)),
-            items: items
-                .map((T item) => DropdownMenuItem<T>(
-                      value: item,
-                      child: Text(item.toString(), style: const TextStyle(fontSize: 14)),
-                    ))
-                .toList(),
-            onChanged: onChanged,
+  }) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1)),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<T>(
+        value: value,
+        hint: Text(
+          hintText,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color.fromRGBO(156, 163, 175, 1),
           ),
         ),
-      );
+        isExpanded: true,
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color.fromRGBO(156, 163, 175, 1),
+        ),
+        items: items
+            .map(
+              (T item) => DropdownMenuItem<T>(
+                value: item,
+                child: Text(
+                  item.toString(),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
+    ),
+  );
 }

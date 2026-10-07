@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 class RowInfoCardMd extends StatefulWidget {
   final Color backgroundColor;
-  final Color borderColor;
+  final Color? borderColor;
   final Widget child;
   final double? height;
   final double? width;
@@ -12,7 +14,7 @@ class RowInfoCardMd extends StatefulWidget {
   const RowInfoCardMd({
     super.key,
     required this.backgroundColor,
-    required this.borderColor,
+    this.borderColor,
     required this.child,
     this.height,
     this.width = double.infinity,
@@ -38,17 +40,26 @@ class _RowInfoCardMdState extends State<RowInfoCardMd> {
         height: widget.height,
         decoration: BoxDecoration(
           color: widget.backgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: widget.borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: widget.borderColor ?? AppColors.borderLight,
+            width: 1,
+          ),
+          boxShadow: AppShadows.subtle,
         ),
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: widget.onTap == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  widget.onTap!();
+                },
           onHighlightChanged: isClickable
               ? (value) => setState(() => _pressed = value)
               : null,
-          borderRadius: BorderRadius.circular(20),
-          splashColor: Colors.black.withOpacity(0.04),
-          highlightColor: Colors.black.withOpacity(0.02),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          splashColor: Colors.black.withValues(alpha: 0.04),
+          highlightColor: Colors.black.withValues(alpha: 0.02),
           child: Padding(padding: widget.padding, child: widget.child),
         ),
       ),

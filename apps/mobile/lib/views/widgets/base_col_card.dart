@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class BaseColCard extends StatelessWidget {
   final Color backgroundColor;
@@ -6,7 +7,7 @@ class BaseColCard extends StatelessWidget {
   final double borderWidth;
   final double borderRadius;
   final EdgeInsetsGeometry padding;
-  final double? width;  // Nullable: Jika null, mengikuti isi/parent
+  final double? width; // Nullable: Jika null, mengikuti isi/parent
   final double? height; // Nullable: Jika null, dinamis mengikuti isi konten
   final Widget child;
 
@@ -15,7 +16,7 @@ class BaseColCard extends StatelessWidget {
     required this.backgroundColor,
     this.borderColor,
     this.borderWidth = 1.0,
-    this.borderRadius = 20.0,
+    this.borderRadius = AppRadius.card,
     this.padding = const EdgeInsets.all(14.0),
     this.width,
     this.height,
@@ -31,12 +32,11 @@ class BaseColCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: borderColor != null
-            ? Border.all(
-                color: borderColor!,
-                width: borderWidth,
-              )
-            : null,
+        border: Border.all(
+          color: borderColor ?? AppColors.borderSubtle,
+          width: borderColor == null ? 1 : borderWidth,
+        ),
+        boxShadow: AppShadows.subtle,
       ),
       child: child,
     );

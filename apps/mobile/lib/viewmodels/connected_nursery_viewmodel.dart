@@ -21,8 +21,10 @@ class ConnectedNurseryState {
   List<SowingRecord> get filteredRecords {
     return records.where((item) {
       final matchStatus = filterStatus == null || item.status == filterStatus;
-      final matchQuery = item.batchName.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          (item.note != null && item.note!.toLowerCase().contains(searchQuery.toLowerCase()));
+      final matchQuery =
+          item.batchName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          (item.note != null &&
+              item.note!.toLowerCase().contains(searchQuery.toLowerCase()));
       return matchStatus && matchQuery;
     }).toList();
   }
@@ -46,11 +48,27 @@ class ConnectedNurseryState {
 
 class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
   ConnectedNurseryViewModel(this._repository, {bool autoLoad = true})
-      : super(const ConnectedNurseryState()) {
+    : super(const ConnectedNurseryState()) {
     if (autoLoad) refresh();
   }
 
   final NurseryRepository _repository;
+
+  Future<void> transferSowing({
+    required String idempotencyKey,
+    required String sowingId,
+    required String tableId,
+    required String transferDate,
+    required int plantCount,
+    String? note,
+  }) => _repository.transferSowing(
+    idempotencyKey: idempotencyKey,
+    sowingId: sowingId,
+    tableId: tableId,
+    transferDate: transferDate,
+    plantCount: plantCount,
+    note: note,
+  );
 
   Future<void> refresh() async {
     if (state.loading) return;
@@ -102,8 +120,11 @@ final nurseryRepositoryProvider = Provider<NurseryRepository>((ref) {
 });
 
 final connectedNurseryProvider =
-    StateNotifierProvider.autoDispose<ConnectedNurseryViewModel, ConnectedNurseryState>((ref) {
-  final user = ref.watch(sessionProvider.select((state) => state.user));
-  if (user == null) throw StateError('Penyemaian memerlukan sesi.');
-  return ConnectedNurseryViewModel(ref.watch(nurseryRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<
+      ConnectedNurseryViewModel,
+      ConnectedNurseryState
+    >((ref) {
+      final user = ref.watch(sessionProvider.select((state) => state.user));
+      if (user == null) throw StateError('Penyemaian memerlukan sesi.');
+      return ConnectedNurseryViewModel(ref.watch(nurseryRepositoryProvider));
+    });

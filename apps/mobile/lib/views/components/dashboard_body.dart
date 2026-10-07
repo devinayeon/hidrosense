@@ -1,259 +1,260 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/connected_nursery_viewmodel.dart';
+import '../theme/app_theme.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/top_info_content.dart';
 import '../widgets/card_icon_box.dart';
 import '../pages/add_form_inventaris_page.dart';
 import '../pages/seeding_form_page.dart';
-import '../pages/connected_inventory_page.dart';
-import '../pages/cuaca_page.dart';
+import '../pages/main_page.dart';
+import '../pages/info_seeding_page.dart';
 import '../pages/meja_nft_page.dart';
-import '../pages/panen_page.dart';
-import '../pages/penjualan_page.dart';
 
-class DashboardBody extends StatelessWidget {
+class DashboardBody extends ConsumerWidget {
   const DashboardBody({super.key});
 
-  final List<Map<String, dynamic>> _infoCardsData = const [
-    {
-      'title': 'Semaian Siap Pindah',
-      'subtitle': 'Batch #04 (Selada Grand Rapids) mencapai 14 HSS.',
-      'bgColor': Color.fromRGBO(255, 243, 236, 1),
-      'borderColor': Color.fromRGBO(255, 154, 85, 1),
-      'iconData': Icons.warning_amber_rounded,
-      'iconBgColor': Color.fromRGBO(255, 154, 85, 1),
-      'iconColor': Colors.white,
-    },
-    {
-      'title': 'Cuaca BMKG (Sore)',
-      'subtitle': 'Hujan Ringan, 28°C. Atur debit nutrisi meja NFT.',
-      'bgColor': Color.fromRGBO(240, 251, 251, 1),
-      'borderColor': Color.fromRGBO(57, 198, 195, 1),
-      'iconData': Icons.cloudy_snowing,
-      'iconBgColor': Color.fromRGBO(57, 198, 195, 1),
-      'iconColor': Colors.white,
-    },
-  ];
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nursery = ref.watch(connectedNurseryProvider);
+    final active = nursery.records.where((item) => item.status == 'aktif');
+    final ready = active.where((item) => item.isReadyToMove).toList();
+    final hasData = !nursery.loading && nursery.error == null;
+    final actions = <({String title, IconData icon, Widget page})>[
+      (
+        title: '+ Barang',
+        icon: Icons.add_circle_outline,
+        page: const AddFormInventarisPage(),
+      ),
+      (
+        title: '+ Semai',
+        icon: Icons.eco_outlined,
+        page: const SeedingFormPage(),
+      ),
+      (
+        title: 'Cek Stok',
+        icon: Icons.view_in_ar_outlined,
+        page: MainPage(initialIndex: 1),
+      ),
+      (
+        title: 'Meja NFT',
+        icon: Icons.table_restaurant_outlined,
+        page: const MejaNftPage(),
+      ),
+    ];
+
+    return ColoredBox(
+      color: AppColors.canvasWarm,
+      child: RefreshIndicator(
+        onRefresh: ref.read(connectedNurseryProvider.notifier).refresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (nursery.error != null)
+                _DashboardAlert(
+                  title: 'Data semaian belum dapat diperbarui',
+                  subtitle: nursery.error!,
+                  icon: Icons.error_outline,
+                  backgroundColor: AppColors.dangerBg,
+                  statusColor: AppColors.dangerRed,
+                )
+              else if (nursery.loading)
+                const _DashboardAlert(
+                  title: 'Memuat data semaian...',
+                  subtitle: 'Memeriksa kesiapan pindah dari layanan.',
+                  icon: Icons.sync,
+                  backgroundColor: AppColors.infoBg,
+                  statusColor: AppColors.infoBlue,
+                )
+              else if (ready.isEmpty)
+                const _DashboardAlert(
+                  title: 'Belum ada semaian siap pindah',
+                  subtitle: 'Kesiapan mengikuti data penyemaian yang dimuat.',
+                  icon: Icons.eco_outlined,
+                  backgroundColor: AppColors.infoBg,
+                  statusColor: AppColors.infoBlue,
+                )
+              else
+                ...ready.map(
+                  (item) => _DashboardAlert(
+                    title: 'Semaian Siap Pindah',
+                    subtitle:
+                        '${item.batchName} • ${item.hssText}. Buka detail untuk pemindahan.',
+                    icon: Icons.warning_amber_rounded,
+                    backgroundColor: AppColors.warningBg,
+                    statusColor: AppColors.warningOrange,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InfoSeedingPage(sowingRecord: item),
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.xxs),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: BaseColCard(
+                      backgroundColor: AppColors.primaryMint,
+                      child: TopInfoContent(
+                        topText: 'Batch Semai Aktif',
+                        middleText: hasData ? '${active.length} Batch' : '—',
+                        bottomText: 'Pada daftar dimuat',
+                        textColor: AppColors.textOnDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: BaseColCard(
+                      backgroundColor: AppColors.accentLime,
+                      child: TopInfoContent(
+                        topText: 'Benih Disemai',
+                        middleText: hasData
+                            ? '${active.fold<int>(0, (count, item) => count + item.seedCount)} Butir'
+                            : '—',
+                        bottomText: 'Dari batch aktif dimuat',
+                        textColor: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'AKSES CEPAT',
+                style: AppTypography.footnote.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Wrap keeps the grid usable when text grows with accessibility settings.
+                  final columns = constraints.maxWidth >= 600
+                      ? 4
+                      : constraints.maxWidth >= 280
+                      ? 2
+                      : 1;
+                  final width =
+                      (constraints.maxWidth - AppSpacing.sm * (columns - 1)) /
+                      columns;
+                  return Wrap(
+                    key: const ValueKey('dashboard-quick-actions'),
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: actions
+                        .map(
+                          (action) => SizedBox(
+                            width: width,
+                            child: RowInfoCardMd(
+                              key: ValueKey('dashboard-action-${action.title}'),
+                              backgroundColor: AppColors.cardSurface,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => action.page),
+                              ),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: 48,
+                                ),
+                                child: Column(
+                                  children: [
+                                    CardIconBox(
+                                      iconData: action.icon,
+                                      backgroundColor: AppColors.primaryMint
+                                          .withValues(alpha: 0.15),
+                                      iconColor: AppColors.primaryDarkTeal,
+                                      width: 48,
+                                      height: 48,
+                                      borderRadius: AppRadius.input,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      action.title,
+                                      textAlign: TextAlign.center,
+                                      style: AppTypography.footnote.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardAlert extends StatelessWidget {
+  const _DashboardAlert({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.backgroundColor,
+    required this.statusColor,
+    this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color statusColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> quickAccessData = [
-      {
-        'title': '+ Barang',
-        'iconData': Icons.add_circle_outline,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddFormInventarisPage()),
-        ),
-      },
-      {
-        'title': '+ Semai',
-        'iconData': Icons.eco_outlined,
-        'iconBgColor': const Color.fromRGBO(221, 244, 90, 0.35),
-        'iconColor': Colors.black87,
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SeedingFormPage()),
-        ),
-      },
-      {
-        'title': 'Cek Stok',
-        'iconData': Icons.view_in_ar_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ConnectedInventoryPage()),
-        ),
-      },
-      {
-        'title': 'Meja NFT',
-        'iconData': Icons.table_restaurant_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MejaNftPage()),
-        ),
-      },
-      {
-        'title': 'Cuaca',
-        'iconData': Icons.cloud_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CuacaPage()),
-        ),
-      },
-      {
-        'title': 'Panen',
-        'iconData': Icons.agriculture_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PanenPage()),
-        ),
-      },
-      {
-        'title': 'Penjualan',
-        'iconData': Icons.point_of_sale_outlined,
-        'iconBgColor': const Color.fromRGBO(57, 198, 195, 0.15),
-        'iconColor': const Color.fromRGBO(57, 198, 195, 1),
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PenjualanPage()),
-        ),
-      },
-    ];
-
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: RowInfoCardMd(
+        backgroundColor: backgroundColor,
+        borderColor: statusColor,
+        onTap: onTap,
+        child: Row(
           children: [
-            Row(
-              children: const [
-                Expanded(
-                  child: BaseColCard(
-                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
-                    child: TopInfoContent(
-                      topText: "Kapasitas NFT",
-                      middleText: "12 Meja",
-                      bottomText: "3000 Lubang",
-                      textColor: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: BaseColCard(
-                    backgroundColor: Color.fromRGBO(221, 244, 90, 1),
-                    child: TopInfoContent(
-                      topText: "Estimasi Panen",
-                      middleText: "12 Des 2024",
-                      bottomText: "~250 Kg Selada",
-                    ),
-                  ),
-                ),
-              ],
+            CardIconBox(
+              iconData: icon,
+              backgroundColor: statusColor,
+              iconColor: AppColors.textOnDark,
             ),
-            const SizedBox(height: 16),
-            ..._infoCardsData.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: RowInfoCardMd(
-                  backgroundColor: item['bgColor'],
-                  borderColor: item['borderColor'],
-                  child: Row(
-                    children: [
-                      CardIconBox(
-                        iconData: item['iconData'],
-                        backgroundColor: item['iconBgColor'],
-                        iconColor: item['iconColor'],
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title'],
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['subtitle'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.footnote.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-              );
-            }),
-            const SizedBox(height: 8),
-            const Text(
-              'AKSES CEPAT',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: Colors.black87,
-                letterSpacing: 0.3,
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(subtitle, style: AppTypography.footnote),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: quickAccessData.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: item['onTap'],
-                        borderRadius: BorderRadius.circular(16),
-                        child: BaseColCard(
-                          backgroundColor: Colors.white,
-                          borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                          width: 104,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CardIconBox(
-                                iconData: item['iconData'],
-                                backgroundColor: item['iconBgColor'],
-                                iconColor: item['iconColor'],
-                                width: 40,
-                                height: 40,
-                                borderRadius: 14,
-                                iconSize: 22,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                item['title'],
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 11,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),

@@ -4,27 +4,29 @@ import '../../models/meja_nft_model.dart';
 import '../pages/form_meja_nft_page.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/row_button.dart';
+import '../widgets/fluid_capacity_meter.dart';
 
 class InfoMejaBody extends StatelessWidget {
   final TableRecord? tableRecord;
   final MejaNft? mejaItem;
 
-  const InfoMejaBody({
-    super.key,
-    this.tableRecord,
-    this.mejaItem,
-  }) : assert(tableRecord != null || mejaItem != null);
+  const InfoMejaBody({super.key, this.tableRecord, this.mejaItem})
+    : assert(tableRecord != null || mejaItem != null);
 
   @override
   Widget build(BuildContext context) {
     final title = tableRecord?.displayName ?? mejaItem!.name;
     final totalCapacity = tableRecord?.holeCount ?? mejaItem!.capacityTotal;
     final activePlants = tableRecord?.activePlants ?? mejaItem!.capacityUsed;
-    final ratio = tableRecord?.occupancyRatio ?? mejaItem!.occupancyPercentage;
-    final percent = (ratio * 100).toInt();
-    final isMaintenance = tableRecord?.isMaintenance ?? (mejaItem!.status == MejaStatus.perawatan);
-    final statusLabel = tableRecord?.statusLabel ?? (isMaintenance ? 'Perawatan' : 'Aktif');
-    final notes = tableRecord?.notes ?? mejaItem?.notes ?? 'Tidak ada catatan spesifikasi khusus.';
+    final isMaintenance =
+        tableRecord?.isMaintenance ??
+        (mejaItem!.status == MejaStatus.perawatan);
+    final statusLabel =
+        tableRecord?.statusLabel ?? (isMaintenance ? 'Perawatan' : 'Aktif');
+    final notes =
+        tableRecord?.notes ??
+        mejaItem?.notes ??
+        'Tidak ada catatan spesifikasi khusus.';
 
     return Container(
       width: double.infinity,
@@ -60,50 +62,11 @@ class InfoMejaBody extends StatelessWidget {
               backgroundColor: Colors.white,
               borderColor: const Color.fromRGBO(240, 240, 235, 1),
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Okupansi Lubang',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: Color.fromRGBO(107, 114, 128, 1),
-                        ),
-                      ),
-                      Text(
-                        '$activePlants / $totalCapacity Terisi ($percent%)',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween<double>(begin: 0.0, end: ratio),
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, animatedValue, _) => LinearProgressIndicator(
-                        value: animatedValue,
-                        minHeight: 10,
-                        backgroundColor: const Color.fromRGBO(243, 244, 246, 1),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color.fromRGBO(57, 198, 195, 1),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: FluidCapacityMeter(
+                activePlants: activePlants,
+                totalCapacity: totalCapacity,
+                height: 12.0,
+                showLabel: true,
               ),
             ),
             const SizedBox(height: 16),

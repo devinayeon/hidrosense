@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 class RowButton extends StatefulWidget {
   final String label;
@@ -15,9 +17,9 @@ class RowButton extends StatefulWidget {
     required this.onTap,
     this.backgroundColor = const Color.fromRGBO(23, 34, 49, 1),
     this.textColor = const Color.fromRGBO(221, 244, 90, 1),
-    this.borderRadius = 16.0,
+    this.borderRadius = AppRadius.card,
     this.width = double.infinity,
-    this.height = 48.0,
+    this.height = 52.0,
   });
 
   @override
@@ -40,21 +42,20 @@ class _RowButtonState extends State<RowButton> {
           color: widget.backgroundColor,
           borderRadius: BorderRadius.circular(widget.borderRadius),
           child: InkWell(
-            onTap: widget.onTap,
+            onTap: widget.onTap == null
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    widget.onTap!();
+                  },
             onHighlightChanged: (value) => setState(() => _pressed = value),
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            splashColor: widget.textColor.withOpacity(0.12),
+            splashColor: widget.textColor.withValues(alpha: 0.12),
             highlightColor: Colors.transparent,
             child: Center(
               child: Text(
                 widget.label,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: widget.textColor,
-                  height: 1.0,
-                ),
+                style: AppTypography.headline.copyWith(color: widget.textColor),
               ),
             ),
           ),

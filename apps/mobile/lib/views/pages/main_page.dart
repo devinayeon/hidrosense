@@ -51,7 +51,7 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Header(titleText: _headerTitle),
+      appBar: Header(titleText: _headerTitle, largeTitle: _selectedIndex == 0),
       body: _pages[_selectedIndex],
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
