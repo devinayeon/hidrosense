@@ -8,4 +8,5 @@ Sistem Manajemen Budidaya Selada Hidroponik NFT dengan Deteksi Hama dan Rekomend
 - `ml` — Training pipeline model deteksi hama
 - `docs` — Dokumen SRS, System Request, dan ERD
 
-Setup dan migrasi database SQLite/Turso: [panduan backend](apps/backend/README.md).
+Setup database SQLite/Turso dan panduan menjalankan migrasi, seeder, API, serta
+uji fitur: [panduan backend](docs/panduan-menjalankan-backend.md).

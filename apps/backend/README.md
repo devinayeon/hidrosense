@@ -2,6 +2,9 @@
 
 API B001–B006 sudah tersedia: fondasi HTTP, autentikasi/sesi, akun/profil, sync foundation, inventory master dan stock ledger. Lihat [kontrak API](../../docs/backend-api.md), [kontrak akun/profil](../../docs/backend-accounts-api.md), [kontrak stock ledger](../../docs/backend-stock-api.md), dan [bukti B006](../../docs/backend-b006.md). Pegawai memiliki akses panen dan tidak memiliki akses penjualan sesuai System Request.
 
+Untuk prosedur lengkap dari database kosong sampai pengujian fitur, lihat
+[Panduan Menjalankan Backend](../../docs/panduan-menjalankan-backend.md).
+
 Migrasi `0006_stock_ledger` harus diterapkan sebelum writer B006 dijalankan; populated ledger menghalangi down untuk menjaga audit/identity. Unit inventory terkunci setelah history, kuantitas/minimum memakai skala 100 tanpa rounding, dan write stok wajib membawa `Idempotency-Key`. Deployment remote 0006 belum dilakukan pada run implementasi ini.
 
 ## Menjalankan API dan autentikasi
