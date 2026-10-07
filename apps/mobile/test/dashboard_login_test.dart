@@ -10,8 +10,10 @@ import 'package:hidrosense_mobile/data/services/api_client.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/dashboard_body.dart';
+import 'package:hidrosense_mobile/views/components/header.dart';
 import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
 import 'package:hidrosense_mobile/views/pages/login_page.dart';
+import 'package:hidrosense_mobile/views/pages/main_page.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:hidrosense_mobile/views/widgets/row_button.dart';
 import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
@@ -71,6 +73,46 @@ Future<void> pumpDashboard(WidgetTester tester, TestNursery nursery) =>
     );
 
 void main() {
+  testWidgets(
+    'dashboard header uses Large Title and other headers retain size',
+    (tester) async {
+      final api = apiFor((_) async => response({'data': []}));
+      final nursery = TestNursery(api, const ConnectedNurseryState());
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [connectedNurseryProvider.overrideWith((ref) => nursery)],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const MainPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<Header>(find.byType(Header)).largeTitle, isTrue);
+      expect(
+        tester.widget<Text>(find.text('HidroSense')).style,
+        AppTypography.largeTitle,
+      );
+      expect(tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight, 88);
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(appBar: Header(titleText: 'Daftar Inventaris')),
+        ),
+      );
+      expect(tester.widget<Header>(find.byType(Header)).largeTitle, isFalse);
+      expect(
+        tester.widget<Text>(find.text('Daftar Inventaris')).style?.fontSize,
+        20,
+      );
+      expect(
+        tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight,
+        kToolbarHeight,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      api.close();
+    },
+  );
+
   testWidgets(
     'dashboard uses API readiness, puts alerts first, and opens the matching batch',
     (tester) async {

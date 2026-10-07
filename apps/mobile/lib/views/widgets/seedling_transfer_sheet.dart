@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,9 +7,31 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/nursery_record.dart';
 import '../../data/models/table_record.dart';
+import '../../data/services/api_client.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
+
+typedef _PendingTransfer = ({
+  String idempotencyKey,
+  String sowingId,
+  String tableId,
+  String transferDate,
+  int plantCount,
+  String note,
+});
+
+String _newIdempotencyKey() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+}
 
 class SeedlingTransferSheet extends ConsumerStatefulWidget {
   const SeedlingTransferSheet({
@@ -35,6 +59,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
   bool _submitting = false;
   bool _saved = false;
   bool _refreshing = false;
+  _PendingTransfer? _pendingTransfer;
 
   String _formatDate(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
 
@@ -82,12 +107,19 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
   }
 
   Future<void> _submit(TableRecord? table) async {
-    if (_submitting ||
-        _saved ||
-        !_formKey.currentState!.validate() ||
-        table == null) {
-      return;
+    if (_submitting || _saved) return;
+    if (_pendingTransfer == null) {
+      if (!_formKey.currentState!.validate() || table == null) return;
+      _pendingTransfer = (
+        idempotencyKey: _newIdempotencyKey(),
+        sowingId: widget.sowingRecord.id,
+        tableId: table.id,
+        transferDate: _formatDate(_date),
+        plantCount: int.parse(_quantity.text.trim()),
+        note: _note.text.trim(),
+      );
     }
+    final pending = _pendingTransfer!;
     setState(() {
       _submitting = true;
       _error = null;
@@ -96,17 +128,25 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
       await ref
           .read(connectedNurseryProvider.notifier)
           .transferSowing(
-            sowingId: widget.sowingRecord.id,
-            tableId: table.id,
-            transferDate: _formatDate(_date),
-            plantCount: int.parse(_quantity.text.trim()),
-            note: _note.text.trim(),
+            idempotencyKey: pending.idempotencyKey,
+            sowingId: pending.sowingId,
+            tableId: pending.tableId,
+            transferDate: pending.transferDate,
+            plantCount: pending.plantCount,
+            note: pending.note,
           );
     } catch (error) {
       if (mounted) {
         setState(() {
           _submitting = false;
           _error = serviceError(error);
+          // Only a definite rejection permits a new operation and edited body.
+          if (error is ApiException &&
+              error.status >= 400 &&
+              error.status < 500 &&
+              error.code != 'SESSION_CHANGED') {
+            _pendingTransfer = null;
+          }
         });
       }
       return;
@@ -130,9 +170,10 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
         .toList();
     final selected = tables.where((table) => table.id == _tableId).firstOrNull;
     final busy = _submitting || _refreshing;
+    final locked = _submitting || (_pendingTransfer != null && !_saved);
 
     return PopScope(
-      canPop: !_submitting,
+      canPop: !locked,
       child: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
@@ -211,7 +252,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                           ),
                         )
                         .toList(),
-                    onChanged: busy
+                    onChanged: locked
                         ? null
                         : (value) => setState(() => _tableId = value),
                     validator: (_) =>
@@ -220,7 +261,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _quantity,
-                    enabled: !busy,
+                    enabled: !locked,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
@@ -243,7 +284,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    onPressed: busy ? null : _chooseDate,
+                    onPressed: locked ? null : _chooseDate,
                     icon: const Icon(Icons.calendar_today_outlined),
                     label: Text('Tanggal pemindahan: ${_formatDate(_date)}'),
                   ),
@@ -254,7 +295,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _note,
-                    enabled: !busy,
+                    enabled: !locked,
                     decoration: const InputDecoration(
                       labelText: 'Catatan (opsional)',
                     ),
@@ -268,6 +309,11 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
+                    if (_pendingTransfer != null)
+                      const Text(
+                        'Hasil pemindahan belum pasti. Simpan kembali untuk '
+                        'mengulang permintaan yang sama dengan aman.',
+                      ),
                   ],
                   const SizedBox(height: 20),
                   FilledButton(
@@ -281,7 +327,9 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                 ],
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: busy ? null : () => Navigator.pop(context),
+                  onPressed: busy || locked
+                      ? null
+                      : () => Navigator.pop(context),
                   child: Text(_saved ? 'Selesai' : 'Batal'),
                 ),
               ],

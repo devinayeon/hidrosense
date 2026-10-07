@@ -55,12 +55,14 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
   final NurseryRepository _repository;
 
   Future<void> transferSowing({
+    required String idempotencyKey,
     required String sowingId,
     required String tableId,
     required String transferDate,
     required int plantCount,
     String? note,
   }) => _repository.transferSowing(
+    idempotencyKey: idempotencyKey,
     sowingId: sowingId,
     tableId: tableId,
     transferDate: transferDate,

@@ -6,6 +6,7 @@ class NurseryRepository {
   final ApiClient _api;
 
   Future<void> transferSowing({
+    required String idempotencyKey,
     required String sowingId,
     required String tableId,
     required String transferDate,
@@ -14,6 +15,7 @@ class NurseryRepository {
   }) async {
     await _api.post(
       'pemindahan',
+      headers: {'Idempotency-Key': idempotencyKey},
       body: {
         'id_penyemaian': sowingId,
         'id_meja': tableId,

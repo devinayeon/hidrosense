@@ -280,7 +280,9 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                     },
                   ),
                 ),
-                if (sowingRecord?.isReadyToMove == true && !_transferred) ...[
+                if (sowingRecord?.status == 'aktif' &&
+                    sowingRecord?.isReadyToMove == true &&
+                    !_transferred) ...[
                   const SizedBox(width: 12),
                   Expanded(
                     child: ColButton(
@@ -295,7 +297,7 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                         showModalBottomSheet<void>(
                           context: context,
                           isScrollControlled: true,
-                          isDismissible: true,
+                          isDismissible: false,
                           enableDrag: false,
                           builder: (_) => SeedlingTransferSheet(
                             sowingRecord: sowingRecord!,

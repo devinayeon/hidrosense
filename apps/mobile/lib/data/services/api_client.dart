@@ -97,11 +97,13 @@ class ApiClient {
     Map<String, dynamic>? body,
     String? token,
     Map<String, String>? query,
+    Map<String, String>? headers,
   }) async {
     _validateBase();
     final root = baseUri.path.replaceFirst(RegExp(r'/$'), '');
     final uri = baseUri.replace(path: '$root/$path', queryParameters: query);
     final request = http.Request(method, uri)..followRedirects = false;
+    if (headers != null) request.headers.addAll(headers);
     request.headers['Accept'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (body != null) {
@@ -205,6 +207,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     Map<String, String>? query,
+    Map<String, String>? headers,
   }) async {
     final generation = _generation;
     final access = _access;
@@ -222,6 +225,7 @@ class ApiClient {
         token: access,
         body: body,
         query: query,
+        headers: headers,
       );
       if (generation != _generation) {
         throw const ApiException(401, 'SESSION_CHANGED', 'Sesi telah berubah.');
@@ -246,6 +250,7 @@ class ApiClient {
           token: _access,
           body: body,
           query: query,
+          headers: headers,
         );
         if (generation != _generation) {
           throw const ApiException(
@@ -265,16 +270,15 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> get(
-    String path, {
-    Map<String, String>? query,
-  }) => _authRequest('GET', path, query: query);
+  Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) =>
+      _authRequest('GET', path, query: query);
 
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,
     Map<String, String>? query,
-  }) => _authRequest('POST', path, body: body, query: query);
+    Map<String, String>? headers,
+  }) => _authRequest('POST', path, body: body, query: query, headers: headers);
 
   Future<Map<String, dynamic>> patch(
     String path, {

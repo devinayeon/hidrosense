@@ -26,6 +26,11 @@ const readySowing = SowingRecord(
   isReadyToMove: true,
 );
 
+const testIdempotencyKey = '46375a8e-4687-4ff2-9ba0-28b51872bd10';
+final uuidV4 = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
+
 Map<String, dynamic> tableJson({
   String id = 'meja-01',
   int capacity = 12,
@@ -98,6 +103,7 @@ void main() {
         expect(request.method, 'POST');
         expect(request.url.path, '/api/v1/pemindahan');
         expect(request.headers['Authorization'], 'Bearer access');
+        expect(request.headers['Idempotency-Key'], testIdempotencyKey);
         expect(jsonDecode(request.body), {
           'id_penyemaian': 'sem-01',
           'id_meja': 'meja-01',
@@ -114,6 +120,7 @@ void main() {
       final repo = NurseryRepository(api);
       for (final note in ['Rak A', '']) {
         await repo.transferSowing(
+          idempotencyKey: testIdempotencyKey,
           sowingId: 'sem-01',
           tableId: 'meja-01',
           transferDate: '2026-10-07',
@@ -137,6 +144,7 @@ void main() {
     );
     await expectLater(
       NurseryRepository(api).transferSowing(
+        idempotencyKey: testIdempotencyKey,
         sowingId: 'sem-01',
         tableId: 'meja-01',
         transferDate: '2026-10-07',
@@ -248,15 +256,20 @@ void main() {
     tester,
   ) async {
     var posts = 0;
+    final keys = <String>[];
+    final bodies = <Map<String, dynamic>>[];
     final api = apiFor((request) async {
       if (request.method == 'POST') {
         posts++;
+        keys.add(request.headers['Idempotency-Key']!);
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        if (posts == 2) return response({'data': {}}, status: 201);
         return response({
           'error': {'code': 'CAPACITY', 'message': 'Meja sudah penuh.'},
         }, status: 409);
       }
       return response({
-        'data': [tableJson()],
+        'data': request.url.path.endsWith('/meja-tanam') ? [tableJson()] : [],
       });
     });
     await pumpTransfer(tester, api);
@@ -268,6 +281,126 @@ void main() {
     expect(find.text('Meja sudah penuh.'), findsOneWidget);
     expect(find.text('Simpan pemindahan'), findsOneWidget);
     expect(posts, 1);
+    expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isTrue);
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField).first).enabled,
+      isTrue,
+    );
+    await tester.enterText(find.byType(TextFormField).first, '8');
+    await submit(tester);
+    await tester.pumpAndSettle();
+    expect(posts, 2);
+    expect(keys.every(uuidV4.hasMatch), isTrue);
+    expect(keys[1], isNot(keys[0]));
+    expect(bodies[0]['jumlah_tanaman'], 10);
+    expect(bodies[1]['jumlah_tanaman'], 8);
+    expect(find.text('Pemindahan berhasil disimpan.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    api.close();
+  });
+
+  testWidgets('uncertain transfer locks modal and replays same UUID and body', (
+    tester,
+  ) async {
+    final keys = <String>[];
+    final bodies = <String>[];
+    final api = apiFor((request) async {
+      if (request.method == 'POST') {
+        keys.add(request.headers['Idempotency-Key']!);
+        bodies.add(request.body);
+        if (keys.length == 1) {
+          throw TimeoutException('Response lost after commit');
+        }
+        if (keys.length == 2) {
+          return response({
+            'error': {'message': 'Gateway unavailable.'},
+          }, status: 503);
+        }
+        return response({'data': {}}, status: 201);
+      }
+      return response({
+        'data': request.url.path.endsWith('/meja-tanam') ? [tableJson()] : [],
+      });
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          apiClientProvider.overrideWithValue(api),
+          connectedNurseryProvider.overrideWith(
+            (ref) => ConnectedNurseryViewModel(
+              NurseryRepository(api),
+              autoLoad: false,
+            ),
+          ),
+        ],
+        child: const MaterialApp(
+          home: InfoSeedingPage(sowingRecord: readySowing),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Pindahkan ke Meja'));
+    await tester.tap(find.text('Pindahkan ke Meja'));
+    await tester.pumpAndSettle();
+    await chooseTable(tester, 'meja-01');
+    await tester.enterText(find.byType(TextFormField).first, '10');
+    await tester.enterText(find.byType(TextFormField).last, 'Rak A');
+    await submit(tester);
+    await tester.pumpAndSettle();
+    expect(keys.single, matches(uuidV4));
+    expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isFalse);
+    expect(
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byType(DropdownButtonFormField<String>),
+          )
+          .onChanged,
+      isNull,
+    );
+    for (final input in tester.widgetList<TextFormField>(
+      find.byType(TextFormField),
+    )) {
+      expect(input.enabled, isFalse);
+    }
+    expect(
+      tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'Batal'))
+          .onPressed,
+      isNull,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.byType(SeedlingTransferSheet), findsOneWidget);
+    // Even if local controllers drift, replay uses the captured request.
+    tester
+            .widget<TextFormField>(find.byType(TextFormField).first)
+            .controller!
+            .text =
+        '7';
+    tester
+            .widget<TextFormField>(find.byType(TextFormField).last)
+            .controller!
+            .text =
+        'Changed locally';
+    await submit(tester);
+    await tester.pumpAndSettle();
+    expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isFalse);
+    await submit(tester);
+    await tester.pumpAndSettle();
+    expect(keys, hasLength(3));
+    expect(keys.toSet(), {keys.first});
+    expect(bodies.toSet(), {bodies.first});
+    expect(jsonDecode(bodies.last)['jumlah_tanaman'], 10);
+    expect(jsonDecode(bodies.last)['keterangan'], 'Rak A');
+    expect(find.text('Pemindahan berhasil disimpan.'), findsOneWidget);
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SeedlingTransferSheet), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     api.close();
   });
@@ -426,7 +559,15 @@ void main() {
       status: 'aktif',
       isReadyToMove: false,
     );
-    for (final record in [notReady, readySowing]) {
+    const completedReady = SowingRecord(
+      id: 'sem-03',
+      userId: 'usr-01',
+      sowingDate: '2026-09-01',
+      seedCount: 100,
+      status: 'selesai',
+      isReadyToMove: true,
+    );
+    for (final record in [notReady, completedReady, readySowing]) {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(home: InfoSeedingPage(sowingRecord: record)),
@@ -435,7 +576,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text('Pindahkan ke Meja'),
-        record.isReadyToMove ? findsOneWidget : findsNothing,
+        record.status == 'aktif' && record.isReadyToMove
+            ? findsOneWidget
+            : findsNothing,
       );
       await tester.pumpWidget(const SizedBox.shrink());
     }
