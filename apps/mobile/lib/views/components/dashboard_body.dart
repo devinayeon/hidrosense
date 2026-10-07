@@ -8,7 +8,7 @@ import '../widgets/top_info_content.dart';
 import '../widgets/card_icon_box.dart';
 import '../pages/add_form_inventaris_page.dart';
 import '../pages/seeding_form_page.dart';
-import '../pages/connected_inventory_page.dart';
+import '../pages/main_page.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/meja_nft_page.dart';
 
@@ -35,7 +35,7 @@ class DashboardBody extends ConsumerWidget {
       (
         title: 'Cek Stok',
         icon: Icons.view_in_ar_outlined,
-        page: const ConnectedInventoryPage(),
+        page: MainPage(initialIndex: 1),
       ),
       (
         title: 'Meja NFT',
