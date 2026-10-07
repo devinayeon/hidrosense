@@ -17,6 +17,7 @@
     "db:status": "node --env-file-if-exists=.env src/db/cli.js status",
     "db:rollback": "node --env-file-if-exists=.env src/db/cli.js down",
     "db:backup": "node --env-file-if-exists=.env src/db/cli.js backup",
+    "db:seed": "node --env-file-if-exists=.env --import tsx src/db/seed-cli.ts",
     "test": "node --import tsx --test",
     "check": "npm run typecheck && npm run check:lines && npm test"
   },
