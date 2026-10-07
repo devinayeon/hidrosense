@@ -65,13 +65,18 @@ class ApiClient {
   void Function()? onSessionExpired;
   String get serverOrigin => baseUri.toString();
 
+  static bool isLocalOrPrivateHost(String host) {
+    if (['localhost', '127.0.0.1', '10.0.2.2', '::1'].contains(host)) {
+      return true;
+    }
+    final privateIp = RegExp(
+      r'^(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})$',
+    );
+    return privateIp.hasMatch(host);
+  }
+
   void _validateBase() {
-    final local = [
-      'localhost',
-      '127.0.0.1',
-      '10.0.2.2',
-      '::1',
-    ].contains(baseUri.host);
+    final local = isLocalOrPrivateHost(baseUri.host);
     if (baseUri.host.isEmpty ||
         baseUri.userInfo.isNotEmpty ||
         baseUri.hasQuery ||

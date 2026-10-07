@@ -5,11 +5,41 @@ import '../data/services/api_client.dart';
 
 export '../data/services/api_client.dart' show SessionUser;
 
+Uri resolveApiBaseUri([String? customAddress]) {
+  final raw = (customAddress ?? const String.fromEnvironment('API_BASE_URL')).trim();
+  if (raw.isNotEmpty) {
+    var uri = Uri.tryParse(raw) ?? Uri();
+    if (uri.hasScheme && uri.hasAuthority) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        // USB debugging uses `adb reverse`, which exposes the host service at
+        // 127.0.0.1 on a physical device. Keep 10.0.2.2 for emulator runs.
+        // An explicit API_BASE_URL is authoritative and must not be rewritten.
+      }
+      final pathWithoutSlash = uri.path.replaceAll(RegExp(r'/+$'), '');
+      if (!pathWithoutSlash.endsWith('/api/v1')) {
+        uri = uri.replace(
+          path: pathWithoutSlash.isEmpty ? '/api/v1' : '$pathWithoutSlash/api/v1',
+        );
+      }
+      return uri;
+    }
+  }
+
+  if (kDebugMode) {
+    return Uri.parse('http://127.0.0.1:3000/api/v1');
+  }
+
+  return Uri();
+}
+
 final apiClientProvider = Provider<ApiClient>((ref) {
-  const address = String.fromEnvironment('API_BASE_URL');
+  final baseUri = resolveApiBaseUri();
+  if (kDebugMode) {
+    debugPrint('[ApiClient] Initialized baseUri: $baseUri');
+  }
   final api = ApiClient(
     http.Client(),
-    baseUri: Uri.tryParse(address) ?? Uri(),
+    baseUri: baseUri,
     allowInsecureLocalhost: kDebugMode,
   );
   ref.onDispose(api.close);
@@ -23,11 +53,16 @@ class SessionState {
   final String? error;
 }
 
-String serviceError(Object error) => error is ApiException
-    ? error.message
-    : error is FormatException
-    ? 'Data layanan tidak sesuai. Coba lagi.'
-    : 'Tidak dapat menghubungi layanan. Periksa koneksi lalu coba lagi.';
+String serviceError(Object error) {
+  if (kDebugMode) {
+    debugPrint('[SessionViewModel] Request error: $error');
+  }
+  return error is ApiException
+      ? error.message
+      : error is FormatException
+      ? 'Data layanan tidak sesuai. Coba lagi.'
+      : 'Tidak dapat menghubungi layanan. Periksa koneksi lalu coba lagi.';
+}
 
 class SessionViewModel extends StateNotifier<SessionState> {
   SessionViewModel(this._api, {SessionState? initialState})
