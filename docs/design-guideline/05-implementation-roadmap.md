@@ -62,20 +62,20 @@ graph LR
 ---
 
 ### Fase 3: Rekonstruksi Halaman & Alur Pengguna (Pages & Sheets)
-- [ ] **Layar Login (`login_page.dart`):**
+- [x] **Layar Login (`login_page.dart`):**
   - Rapikan padding responsive max-width $400\text{ pt}$.
   - Tambahkan transisi fokus otomatis saat menekan "Enter / Next" pada keyboard.
-- [ ] **Dashboard (`dashboard_body.dart`):**
+- [x] **Dashboard (`dashboard_body.dart`):**
   - Header adaptif dengan Large Title *"HidroSense"*.
-  - Kartu peringatan darurat (*Semaian Siap Pindah* & *Cuaca BMKG*) diletakkan di section teratas.
+  - Alert *Semaian Siap Pindah* berbasis readiness API diletakkan di section teratas; alert cuaca ditampilkan hanya bila tersedia sumber data live.
   - Quick action buttons (4 tombol pintas) diselaraskan dalam grid seimbang dengan target sentuh $\ge 48\text{ pt}$.
-- [ ] **Inventaris & Saldo Stok (`connected_inventory_page.dart`):**
+- [x] **Inventaris & Saldo Stok (`connected_inventory_page.dart`):**
   - Saldo stok menggunakan `AppTypography.headline` dengan fitur `tabularFigures`.
   - Tambahkan badge status otomatis: *"Stok Menipis"* (oranye) jika di bawah threshold.
-- [ ] **Semaian & Nursery (`penyemaian_body.dart` & `info_seeding_page.dart`):**
+- [x] **Semaian & Nursery (`penyemaian_body.dart` & `info_seeding_page.dart`):**
   - Tampilkan usia semai HSS (Hari Setelah Semai) secara mencolok.
   - Jika $\ge 15$ hari, munculkan tombol *"Pindah ke Meja"* dengan warna Lime kontras.
-- [ ] **Pemindahan Bibit ke Meja NFT (B009):**
+- [x] **Pemindahan Bibit ke Meja NFT (B009):**
   - Buat form pemindahan bibit sebagai *Modal Bottom Sheet* yang memvalidasi sisa lubang meja dan menghitung otomatis estimasi panen 45 hari.
 
 ---

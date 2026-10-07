@@ -15,7 +15,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
-  testWidgets('login menampilkan saldo; logout menghapus inventaris', (tester) async {
+  testWidgets('login menampilkan saldo; logout menghapus inventaris', (
+    tester,
+  ) async {
     final record = InventoryRecord.fromApi(
       {
         'id_inventaris': '1',
@@ -54,6 +56,9 @@ void main() {
               },
             },
           });
+        }
+        if (request.url.path.endsWith('/penyemaian')) {
+          return respond({'data': []});
         }
         return respond({'data': {}});
       }),

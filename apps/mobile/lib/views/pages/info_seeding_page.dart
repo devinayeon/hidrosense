@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/nursery_record.dart';
 import '../../models/seeding_batch_model.dart';
 import '../components/header.dart';
+import '../theme/app_theme.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/col_button.dart';
 import '../widgets/seedling_transfer_sheet.dart';
@@ -284,9 +285,9 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                   Expanded(
                     child: ColButton(
                       text: 'Pindahkan ke Meja',
-                      textColor: Colors.white,
-                      backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-                      borderColor: const Color.fromRGBO(23, 34, 49, 1),
+                      textColor: AppColors.darkNavy,
+                      backgroundColor: AppColors.accentLime,
+                      borderColor: AppColors.accentLime,
                       height: 52,
                       borderRadius: 25,
                       fontSize: 13.5,

@@ -30,18 +30,15 @@ class NurseryRepository {
     String? status,
     bool? readyOnly,
   }) async {
-    final response = await _api.get(
-      'penyemaian',
-      query: {
-        'page': '$page',
-        'limit': '$limit',
-        if (status != null) 'status_penyemaian': status,
-        if (readyOnly == true) 'siap_pindah': '1',
-      },
-    );
+    final query = <String, String>{'page': '$page', 'limit': '$limit'};
+    if (status != null) query['status_penyemaian'] = status;
+    if (readyOnly == true) query['siap_pindah'] = '1';
+
+    final response = await _api.get('penyemaian', query: query);
     final data = response['data'];
-    if (data is! List)
+    if (data is! List) {
       throw const FormatException('Daftar penyemaian tidak valid.');
+    }
     return data
         .map((item) => SowingRecord.fromJson(item as Map<String, dynamic>))
         .toList();
