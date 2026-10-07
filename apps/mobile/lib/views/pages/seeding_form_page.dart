@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/nursery_record.dart';
 import '../../models/seeding_batch_model.dart';
@@ -13,11 +14,7 @@ class SeedingFormPage extends ConsumerStatefulWidget {
   final SowingRecord? sowingRecord;
   final SeedingBatch? seedingItem;
 
-  const SeedingFormPage({
-    super.key,
-    this.sowingRecord,
-    this.seedingItem,
-  });
+  const SeedingFormPage({super.key, this.sowingRecord, this.seedingItem});
 
   bool get isEditMode => sowingRecord != null || seedingItem != null;
 
@@ -78,13 +75,14 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
     setState(() => _submitting = true);
     try {
       if (widget.sowingRecord != null) {
-        await ref.read(connectedNurseryProvider.notifier).updateStatus(
-              widget.sowingRecord!.id,
-              'aktif',
-            );
+        await ref
+            .read(connectedNurseryProvider.notifier)
+            .updateStatus(widget.sowingRecord!.id, 'aktif');
       } else {
         final invId = _selectedInventoryId ?? '1';
-        await ref.read(connectedNurseryProvider.notifier).createSowing(
+        await ref
+            .read(connectedNurseryProvider.notifier)
+            .createSowing(
               sowingDate: dateText,
               seedCount: seedCount,
               note: note.isEmpty ? null : note,
@@ -97,11 +95,16 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
               ],
             );
       }
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan penyemaian: ${serviceError(e)}')),
+          SnackBar(
+            content: Text('Gagal menyimpan penyemaian: ${serviceError(e)}'),
+          ),
         );
       }
     } finally {
@@ -168,7 +171,9 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color.fromRGBO(229, 231, 235, 1)),
+                    border: Border.all(
+                      color: const Color.fromRGBO(229, 231, 235, 1),
+                    ),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -180,7 +185,8 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                           child: Text('${item.name} (${item.formattedStock})'),
                         );
                       }).toList(),
-                      onChanged: (val) => setState(() => _selectedInventoryId = val),
+                      onChanged: (val) =>
+                          setState(() => _selectedInventoryId = val),
                     ),
                   ),
                 ),
@@ -207,7 +213,7 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                 textColor: const Color.fromRGBO(221, 244, 90, 1),
                 height: 52,
                 borderRadius: 20,
-                onTap: _submitting ? () {} : _submitForm,
+                onTap: _submitting ? null : _submitForm,
               ),
               const SizedBox(height: 16),
             ],

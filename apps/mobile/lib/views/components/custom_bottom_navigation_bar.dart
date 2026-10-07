@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -18,7 +19,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
     return BottomNavigationBar(
       backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
       currentIndex: currentIndex,
-      onTap: onTap,
+      onTap: (index) {
+        if (index != currentIndex) HapticFeedback.selectionClick();
+        onTap(index);
+      },
       selectedItemColor: activeColor,
       unselectedItemColor: inactiveColor,
       selectedLabelStyle: const TextStyle(

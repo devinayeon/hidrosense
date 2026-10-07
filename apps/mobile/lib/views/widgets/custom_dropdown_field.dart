@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class CustomDropdownField extends StatelessWidget {
   final String label;
@@ -6,6 +7,7 @@ class CustomDropdownField extends StatelessWidget {
   final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
+  final String? errorText;
 
   const CustomDropdownField({
     super.key,
@@ -14,6 +16,7 @@ class CustomDropdownField extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.errorText,
   });
 
   @override
@@ -21,49 +24,51 @@ class CustomDropdownField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-            color: Color.fromRGBO(23, 34, 49, 1),
-          ),
-        ),
-        const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: items.contains(value) ? value : null,
+          initialValue: items.contains(value) ? value : null,
           isExpanded: true,
           hint: Text(
             hintText,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              color: Color.fromRGBO(156, 163, 175, 1),
-            ),
+            style: AppTypography.body.copyWith(color: AppColors.textTertiary),
           ),
           icon: const Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Color.fromRGBO(156, 163, 175, 1),
+            color: AppColors.textTertiary,
           ),
           decoration: InputDecoration(
+            labelText: label,
+            labelStyle: AppTypography.subheadline,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
             filled: true,
             fillColor: Colors.white,
+            errorText: errorText,
+            errorMaxLines: 2,
+            errorStyle: AppTypography.footnote.copyWith(
+              color: AppColors.dangerRed,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: Color.fromRGBO(229, 231, 235, 1),
-                width: 1.2,
-              ),
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(
-                color: Color.fromRGBO(57, 198, 195, 1),
+                color: AppColors.primaryMint,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              borderSide: const BorderSide(color: AppColors.dangerRed),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              borderSide: const BorderSide(
+                color: AppColors.dangerRed,
                 width: 1.5,
               ),
             ),
@@ -74,12 +79,7 @@ class CustomDropdownField extends StatelessWidget {
               child: Text(
                 item,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color.fromRGBO(23, 34, 49, 1),
-                ),
+                style: AppTypography.body,
               ),
             );
           }).toList(),

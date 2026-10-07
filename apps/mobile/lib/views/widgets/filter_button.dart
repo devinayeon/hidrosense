@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'capsule_badge.dart';
 
 class FilterButton extends StatefulWidget {
@@ -40,7 +41,10 @@ class _FilterButtonState extends State<FilterButton> {
           borderColor: widget.isSelected ? activeColor : borderColor,
           size: CapsuleSize.large,
           fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w600,
-          onTap: widget.onTap,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            widget.onTap();
+          },
           boxShadow: widget.isSelected
               ? [
                   BoxShadow(

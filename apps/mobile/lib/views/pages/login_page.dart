@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../widgets/row_button.dart';
@@ -24,9 +25,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _submit() async {
-    if (ref.read(sessionProvider).busy || !_formKey.currentState!.validate()) {
+    if (ref.read(sessionProvider).busy) {
       return;
     }
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.heavyImpact();
+      return;
+    }
+    HapticFeedback.mediumImpact();
     FocusScope.of(context).unfocus();
     await ref
         .read(sessionProvider.notifier)

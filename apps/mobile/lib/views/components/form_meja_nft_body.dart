@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
@@ -10,11 +11,7 @@ class FormMejaNftBody extends ConsumerStatefulWidget {
   final TableRecord? tableRecord;
   final MejaNft? mejaItem;
 
-  const FormMejaNftBody({
-    super.key,
-    this.tableRecord,
-    this.mejaItem,
-  });
+  const FormMejaNftBody({super.key, this.tableRecord, this.mejaItem});
 
   @override
   ConsumerState<FormMejaNftBody> createState() => _FormMejaNftBodyState();
@@ -32,12 +29,17 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     super.initState();
     final rec = widget.tableRecord;
     final item = widget.mejaItem;
-    _codeController = TextEditingController(text: rec?.code ?? item?.name ?? '');
+    _codeController = TextEditingController(
+      text: rec?.code ?? item?.name ?? '',
+    );
     _capacityController = TextEditingController(
       text: (rec?.holeCount ?? item?.capacityTotal ?? 250).toString(),
     );
-    _notesController = TextEditingController(text: rec?.notes ?? item?.notes ?? '');
-    _selectedStatus = rec?.status ??
+    _notesController = TextEditingController(
+      text: rec?.notes ?? item?.notes ?? '',
+    );
+    _selectedStatus =
+        rec?.status ??
         (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia');
   }
 
@@ -71,14 +73,18 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     try {
       final rec = widget.tableRecord;
       if (rec == null) {
-        await ref.read(connectedTableProvider.notifier).createTable(
+        await ref
+            .read(connectedTableProvider.notifier)
+            .createTable(
               code: code,
               holeCount: capacity,
               status: _selectedStatus,
               notes: notes.isNotEmpty ? notes : null,
             );
       } else {
-        await ref.read(connectedTableProvider.notifier).updateTable(
+        await ref
+            .read(connectedTableProvider.notifier)
+            .updateTable(
               rec.id,
               code: code,
               holeCount: capacity,
@@ -87,10 +93,13 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
             );
       }
       if (mounted) {
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              rec == null ? 'Meja tanam berhasil ditambahkan' : 'Meja tanam berhasil diperbarui',
+              rec == null
+                  ? 'Meja tanam berhasil ditambahkan'
+                  : 'Meja tanam berhasil diperbarui',
             ),
           ),
         );
@@ -98,9 +107,9 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan meja: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan meja: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -156,12 +165,24 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                 child: DropdownButton<String>(
                   value: _selectedStatus,
                   isExpanded: true,
-                  icon: const Icon(Icons.arrow_drop_down, color: Color.fromRGBO(156, 163, 175, 1)),
+                  icon: const Icon(
+                    Icons.arrow_drop_down,
+                    color: Color.fromRGBO(156, 163, 175, 1),
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'tersedia', child: Text('Tersedia / Aktif')),
-                    DropdownMenuItem(value: 'pemeliharaan', child: Text('Perawatan')),
+                    DropdownMenuItem(
+                      value: 'tersedia',
+                      child: Text('Tersedia / Aktif'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'pemeliharaan',
+                      child: Text('Perawatan'),
+                    ),
                     DropdownMenuItem(value: 'penuh', child: Text('Penuh')),
-                    DropdownMenuItem(value: 'nonaktif', child: Text('Nonaktif')),
+                    DropdownMenuItem(
+                      value: 'nonaktif',
+                      child: Text('Nonaktif'),
+                    ),
                   ],
                   onChanged: (value) {
                     if (value != null) setState(() => _selectedStatus = value);
@@ -180,13 +201,13 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
               label: _submitting
                   ? 'Menyimpan...'
                   : widget.tableRecord == null
-                      ? 'Simpan Meja'
-                      : 'Perbarui Pengaturan Meja',
+                  ? 'Simpan Meja'
+                  : 'Perbarui Pengaturan Meja',
               backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
               textColor: const Color.fromRGBO(221, 244, 90, 1),
               borderRadius: 24,
               height: 52,
-              onTap: _submitting ? () {} : _saveForm,
+              onTap: _submitting ? null : _saveForm,
             ),
             const SizedBox(height: 16),
           ],

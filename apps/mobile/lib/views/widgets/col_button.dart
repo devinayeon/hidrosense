@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 class ColButton extends StatefulWidget {
   final String text;
@@ -18,8 +20,8 @@ class ColButton extends StatefulWidget {
     this.textColor = const Color.fromRGBO(57, 198, 195, 1),
     this.backgroundColor = Colors.white,
     this.borderColor = const Color.fromRGBO(57, 198, 195, 1),
-    this.height = 48.0,
-    this.borderRadius = 16.0,
+    this.height = 52.0,
+    this.borderRadius = AppRadius.card,
     this.fontSize = 15.0,
     this.fontWeight = FontWeight.w700,
   });
@@ -43,10 +45,15 @@ class _ColButtonState extends State<ColButton> {
           color: widget.backgroundColor,
           borderRadius: BorderRadius.circular(widget.borderRadius),
           child: InkWell(
-            onTap: widget.onPressed,
+            onTap: widget.onPressed == null
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    widget.onPressed!();
+                  },
             onHighlightChanged: (value) => setState(() => _pressed = value),
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            splashColor: widget.textColor.withOpacity(0.08),
+            splashColor: widget.textColor.withValues(alpha: 0.08),
             highlightColor: Colors.transparent,
             child: Container(
               alignment: Alignment.center,

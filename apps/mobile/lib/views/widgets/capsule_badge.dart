@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 enum CapsuleSize { small, medium, large }
 
@@ -33,18 +34,18 @@ class CapsuleBadge extends StatelessWidget {
 
     switch (size) {
       case CapsuleSize.small:
-        fontSize = 10;
-        padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 3);
+        fontSize = 12;
+        padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 5);
         defaultBorderWidth = 1.0;
         break;
       case CapsuleSize.medium:
-        fontSize = 11;
+        fontSize = 12;
         padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
         defaultBorderWidth = 1.0;
         break;
       case CapsuleSize.large:
-        fontSize = 13;
-        padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+        fontSize = 12;
+        padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 6);
         defaultBorderWidth = 1.5;
         break;
     }
@@ -54,7 +55,7 @@ class CapsuleBadge extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: borderColor != null
             ? Border.all(color: borderColor!, width: defaultBorderWidth)
             : null,
@@ -62,12 +63,11 @@ class CapsuleBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontFamily: 'Inter',
+        style: AppTypography.caption1.copyWith(
           fontWeight: fontWeight ?? FontWeight.w600,
           fontSize: fontSize,
           color: textColor,
-          height: 1.0,
+          height: 1.2,
         ),
       ),
     );

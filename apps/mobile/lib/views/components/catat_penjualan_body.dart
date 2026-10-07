@@ -94,6 +94,7 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     if (!mounted) return;
 
     if (success) {
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Penjualan berhasil dicatat!'),

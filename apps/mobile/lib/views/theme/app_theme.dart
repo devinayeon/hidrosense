@@ -56,6 +56,39 @@ class AppRadius {
   static const double pill = 999.0;
 }
 
+/// Token bayangan difusi lembut Apple HIG (Soft Diffusion Elevation).
+class AppShadows {
+  /// Level 1: Permukaan kartu kontainer standar
+  static const List<BoxShadow> subtle = [
+    BoxShadow(
+      color: Color(0x0A111827),
+      blurRadius: 8.0,
+      offset: Offset(0, 2),
+      spreadRadius: 0.0,
+    ),
+  ];
+
+  /// Level 2: Elemen melayang, dropdown, popover
+  static const List<BoxShadow> floating = [
+    BoxShadow(
+      color: Color(0x14111827),
+      blurRadius: 16.0,
+      offset: Offset(0, 4),
+      spreadRadius: 0.0,
+    ),
+  ];
+
+  /// Level 3: Modal bottom sheet, floating action menu
+  static const List<BoxShadow> modal = [
+    BoxShadow(
+      color: Color(0x1F111827),
+      blurRadius: 24.0,
+      offset: Offset(0, -4),
+      spreadRadius: 0.0,
+    ),
+  ];
+}
+
 /// Skala Tipografi Apple HIG (Type Ramp) berbasis font Inter.
 class AppTypography {
   static const String fontFamily = 'Inter';
@@ -235,6 +268,64 @@ class AppTheme {
         ),
         elevation: 8,
         type: BottomNavigationBarType.fixed,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryDarkTeal,
+          foregroundColor: AppColors.textOnDark,
+          minimumSize: const Size.fromHeight(50.0),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.input),
+          ),
+          textStyle: AppTypography.headline.copyWith(
+            color: AppColors.textOnDark,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size.fromHeight(50.0),
+          side: const BorderSide(color: AppColors.borderLight, width: 1.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.input),
+          ),
+          textStyle: AppTypography.headline,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primaryDarkTeal,
+          textStyle: AppTypography.subheadline.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.cardSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.modal),
+          ),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.borderSubtle,
+        thickness: 1.0,
+        space: 1.0,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.cardSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        titleTextStyle: AppTypography.title3,
+        contentTextStyle: AppTypography.body,
       ),
     );
   }

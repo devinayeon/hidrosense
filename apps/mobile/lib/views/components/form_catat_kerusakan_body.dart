@@ -1,5 +1,6 @@
 // lib/views/components/form_catat_kerusakan_body.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/baris_tanam_model.dart';
@@ -259,6 +260,7 @@ class _FormCatatKerusakanBodyState
         .read(barisTanamViewModelProvider.notifier)
         .submitLaporanKerusakan(laporan);
 
+    HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Laporan kerusakan berhasil disimpan'),

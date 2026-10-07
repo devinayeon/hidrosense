@@ -38,21 +38,24 @@ graph LR
   - Menyusun token `AppColors` (mempertahankan 100% palet eksisting: Mint `#39C6C5`, Teal `#168681`, Lime `#DDF45A`, Navy `#172231`, Warm Canvas `#FAFAF7`, Orange `#FF9A55`).
   - Menyusun token `AppTypography` dengan font Inter, letter spacing rapat, dan dukungan `tabularFigures` untuk angka data.
   - Menyusun token `AppSpacing` (kelipatan 4pt & 8pt) dan `AppRadius` (*continuous squircle radii*).
-- [ ] Daftarkan `AppTheme.lightTheme` ke dalam `MaterialApp` di [main.dart](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/main.dart).
+  - Menyusun token `AppShadows` (Soft Diffusion Elevation Level 1 subtle, Level 2 floating, Level 3 modal sheet).
+  - Menyusun tema komponen HIG lengkap (`elevatedButtonTheme` dengan minimum height 50pt / target sentuh HIG, `outlinedButtonTheme`, `textButtonTheme`, `bottomSheetTheme`, `dividerTheme`, `dialogTheme`).
+- [x] Daftarkan `AppTheme.lightTheme` ke dalam `MaterialApp` di [main.dart](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/main.dart).
+- [x] Validasi integritas token dan tema via unit test otomatis [apps/mobile/test/app_theme_test.dart](file:///d:/Dev/Projects/hidrosense/apps/mobile/test/app_theme_test.dart).
 
 ---
 
 ### Fase 2: Standarisasi Widget Inti (Core Widgets Refactor)
-- [ ] **Tombol Aksi (`RowButton` & `ColButton`):**
+- [x] **Tombol Aksi (`RowButton` & `ColButton`):**
   - Standarisasi tinggi tombol minimal $52\text{ pt}$ (nyaman untuk ibu jari).
   - Terapkan micro-scale `0.975` dengan kurva `easeOutCubic`.
   - Integrasikan umpan balik haptik `HapticFeedback.lightImpact()` pada setiap ketukan.
-- [ ] **Kartu Interaktif (`RowInfoCardMd` & `BaseColCard`):**
+- [x] **Kartu Interaktif (`RowInfoCardMd` & `BaseColCard`):**
   - Gunakan `AppRadius.card` ($16\text{ pt}$) dengan garis tepi halus `AppColors.borderLight`.
   - Berikan efek bayangan difusi lembut (*soft diffusion shadow* Level 1).
-- [ ] **Badge Status (`CapsuleBadge` & `StockStatusBadge`):**
+- [x] **Badge Status (`CapsuleBadge` & `StockStatusBadge`):**
   - Standarisasi bentuk pill $999\text{ pt}$ dengan padding horizontal $10\text{ pt}$ dan teks `Caption 1` SemiBold.
-- [ ] **Form Input Field (`CustomInputField` & `CustomDropdownField`):**
+- [x] **Form Input Field (`CustomInputField` & `CustomDropdownField`):**
   - Desain ulang border fokus dengan warna `AppColors.primaryMint` (1.5pt).
   - Pinned label di atas kolom dan pesan error sejajar di bawah kolom.
 
@@ -78,17 +81,17 @@ graph LR
 ---
 
 ### Fase 4: Integrasi Motion, Ergonomi Haptik & Verification Gate
-- [ ] Tambahkan `HapticFeedback` pada seluruh event:
-  - `selectionClick()` saat berpindah tab.
-  - `mediumImpact()` saat form berhasil disimpan.
-  - `heavyImpact()` saat aksi pembatalan / hapus.
-- [ ] Tambahkan animasi pengisian fluida (*fluid filling*) pada meter kapasitas lubang meja tanam NFT.
-- [ ] Eksekusi verifikasi menyeluruh:
+- [x] Tambahkan `HapticFeedback` pada seluruh event:
+  - `selectionClick()` saat berpindah tab ([CustomBottomNavigationBar](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/components/custom_bottom_navigation_bar.dart)) dan filter button ([FilterButton](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/widgets/filter_button.dart)).
+  - `mediumImpact()` saat form inventaris, semaian, meja NFT, penjualan, panen, dan laporan kerusakan berhasil disimpan.
+  - `heavyImpact()` saat pembatalan/nonaktifkan barang dan logout ([AccountBody](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/components/account_body.dart), [InfoItemInventarisPage](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/pages/info_item_inventaris_page.dart), [InfoSeedingPage](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/pages/info_seeding_page.dart)).
+- [x] Tambahkan animasi pengisian fluida (*fluid filling*) pada meter kapasitas lubang meja tanam NFT ([FluidCapacityMeter](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/widgets/fluid_capacity_meter.dart), terintegrasi ke [InfoMejaBody](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/components/info_meja_body.dart) dan [MejaNftBody](file:///d:/Dev/Projects/hidrosense/apps/mobile/lib/views/components/meja_nft_body.dart)).
+- [x] Eksekusi verifikasi menyeluruh:
   ```bash
   cd apps/mobile
   flutter test
   ```
-  *(Memastikan seluruh 13+ tes otomatis lulus 100% tanpa regresi).*
+  *(27/27 unit & widget tests lulus 100% tanpa regresi).*
 
 ---
 

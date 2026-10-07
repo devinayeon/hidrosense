@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../widgets/base_col_card.dart';
@@ -130,6 +131,7 @@ class AccountBody extends ConsumerWidget {
                 onPressed: session.busy
                     ? null
                     : () {
+                        HapticFeedback.heavyImpact();
                         ref.read(sessionProvider.notifier).logout();
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'capsule_badge.dart';
 import '../../models/inventory_item_model.dart'; // Sesuaikan relative path jika berbeda
+import '../theme/app_theme.dart';
 
 // enum StockStatus { aman, menipis, habis }
 
@@ -23,18 +24,18 @@ class StockStatusBadge extends StatelessWidget {
 
     switch (status) {
       case StockStatus.aman:
-        statusColor = const Color.fromRGBO(57, 198, 195, 1);
-        bgColor = const Color.fromRGBO(237, 249, 248, 1);
+        statusColor = AppColors.primaryDarkTeal;
+        bgColor = const Color(0xFFEAF7F6);
         label = 'Stok Aman';
         break;
       case StockStatus.menipis:
-        statusColor = const Color.fromRGBO(255, 154, 85, 1);
-        bgColor = const Color.fromRGBO(255, 248, 243, 1);
+        statusColor = AppColors.warningOrange;
+        bgColor = AppColors.warningBg;
         label = 'Stok Menipis';
         break;
       case StockStatus.habis:
-        statusColor = const Color.fromRGBO(239, 68, 68, 1);
-        bgColor = const Color.fromRGBO(254, 242, 242, 1);
+        statusColor = AppColors.dangerRed;
+        bgColor = AppColors.dangerBg;
         label = 'Stok Habis';
         break;
     }
