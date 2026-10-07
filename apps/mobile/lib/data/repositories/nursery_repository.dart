@@ -5,6 +5,25 @@ class NurseryRepository {
   NurseryRepository(this._api);
   final ApiClient _api;
 
+  Future<void> transferSowing({
+    required String sowingId,
+    required String tableId,
+    required String transferDate,
+    required int plantCount,
+    String? note,
+  }) async {
+    await _api.post(
+      'pemindahan',
+      body: {
+        'id_penyemaian': sowingId,
+        'id_meja': tableId,
+        'tanggal_pemindahan': transferDate,
+        'jumlah_tanaman': plantCount,
+        if (note != null && note.isNotEmpty) 'keterangan': note,
+      },
+    );
+  }
+
   Future<List<SowingRecord>> listSowings({
     int page = 1,
     int limit = 50,
@@ -21,8 +40,11 @@ class NurseryRepository {
       },
     );
     final data = response['data'];
-    if (data is! List) throw const FormatException('Daftar penyemaian tidak valid.');
-    return data.map((item) => SowingRecord.fromJson(item as Map<String, dynamic>)).toList();
+    if (data is! List)
+      throw const FormatException('Daftar penyemaian tidak valid.');
+    return data
+        .map((item) => SowingRecord.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<SowingRecord> getSowing(String id) async {

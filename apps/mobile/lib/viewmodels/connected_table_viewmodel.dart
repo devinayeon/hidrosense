@@ -66,7 +66,9 @@ class TableState {
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
       searchQuery: searchQuery ?? this.searchQuery,
-      statusFilter: clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
+      statusFilter: clearStatusFilter
+          ? null
+          : (statusFilter ?? this.statusFilter),
     );
   }
 }
@@ -82,9 +84,11 @@ class ConnectedTableNotifier extends StateNotifier<TableState> {
     state = state.copyWith(loading: true, clearError: true);
     try {
       final list = await _repo.fetchTables();
-      state = state.copyWith(records: list, loading: false);
+      if (mounted) state = state.copyWith(records: list, loading: false);
     } catch (e) {
-      state = state.copyWith(loading: false, error: e.toString());
+      if (mounted) {
+        state = state.copyWith(loading: false, error: serviceError(e));
+      }
     }
   }
 
@@ -139,6 +143,6 @@ class ConnectedTableNotifier extends StateNotifier<TableState> {
 
 final connectedTableProvider =
     StateNotifierProvider<ConnectedTableNotifier, TableState>((ref) {
-  final repo = ref.watch(tableRepositoryProvider);
-  return ConnectedTableNotifier(repo);
-});
+      final repo = ref.watch(tableRepositoryProvider);
+      return ConnectedTableNotifier(repo);
+    });

@@ -6,8 +6,9 @@ import '../../models/seeding_batch_model.dart';
 import '../components/header.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/col_button.dart';
+import '../widgets/seedling_transfer_sheet.dart';
 
-class InfoSeedingPage extends ConsumerWidget {
+class InfoSeedingPage extends ConsumerStatefulWidget {
   final SeedingBatch? seedingItem;
   final SowingRecord? sowingRecord;
 
@@ -15,24 +16,33 @@ class InfoSeedingPage extends ConsumerWidget {
     : assert(seedingItem != null || sowingRecord != null);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InfoSeedingPage> createState() => _InfoSeedingPageState();
+}
+
+class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
+  bool _transferred = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sowingRecord = widget.sowingRecord;
+    final seedingItem = widget.seedingItem;
     final title = sowingRecord != null
-        ? sowingRecord!.batchName
+        ? sowingRecord.batchName
         : 'Batch Penyemaian #${seedingItem!.batchNumber}';
     final variety = sowingRecord != null
         ? 'Varietas Selada'
         : seedingItem!.variety;
     final hssDays = sowingRecord != null
-        ? (sowingRecord!.ageDays ?? 0)
+        ? (sowingRecord.ageDays ?? 0)
         : seedingItem!.hss;
     final totalHss = sowingRecord == null ? seedingItem!.totalHss : 15;
     final progress = (hssDays / totalHss).clamp(0.0, 1.0);
     final count = sowingRecord != null
-        ? sowingRecord!.seedCount
+        ? sowingRecord.seedCount
         : seedingItem!.healthyCount;
     final damagedCount = seedingItem?.damagedCount ?? 0;
     final materials = sowingRecord != null
-        ? sowingRecord!.materials
+        ? sowingRecord.materials
               .map((m) => '${m.inventoryId}: ${m.amount} ${m.unit}')
               .toList()
         : (seedingItem?.materials ?? const <String>[]);
@@ -269,21 +279,34 @@ class InfoSeedingPage extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ColButton(
-                    text: 'Pindahkan ke Meja',
-                    textColor: Colors.white,
-                    backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-                    borderColor: const Color.fromRGBO(23, 34, 49, 1),
-                    height: 52,
-                    borderRadius: 25,
-                    fontSize: 13.5,
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                if (sowingRecord?.isReadyToMove == true && !_transferred) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ColButton(
+                      text: 'Pindahkan ke Meja',
+                      textColor: Colors.white,
+                      backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
+                      borderColor: const Color.fromRGBO(23, 34, 49, 1),
+                      height: 52,
+                      borderRadius: 25,
+                      fontSize: 13.5,
+                      onPressed: () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          isDismissible: true,
+                          enableDrag: false,
+                          builder: (_) => SeedlingTransferSheet(
+                            sowingRecord: sowingRecord!,
+                            onTransferred: () {
+                              if (mounted) setState(() => _transferred = true);
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ],
