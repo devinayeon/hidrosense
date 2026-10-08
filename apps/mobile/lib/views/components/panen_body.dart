@@ -1,10 +1,12 @@
 // lib/views/components/panen_body.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../viewmodels/panen_viewmodel.dart';
 import '../pages/laporan_panen_page.dart';
 import '../pages/panen_form_page.dart';
+import '../theme/app_theme.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/panen_card.dart';
 import '../widgets/row_button.dart';
@@ -27,13 +29,13 @@ class PanenBody extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -47,30 +49,33 @@ class PanenBody extends ConsumerWidget {
                           label: 'Semua Data',
                           isSelected: activeFilter == PanenFilterCategory.all,
                           onTap: () {
+                            HapticFeedback.selectionClick();
                             ref
                                     .read(panenFilterCategoryProvider.notifier)
                                     .state =
                                 PanenFilterCategory.all;
                           },
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.xs),
                         FilterButton(
                           label: 'Mendatang ($upcomingCount)',
                           isSelected:
                               activeFilter == PanenFilterCategory.upcoming,
                           onTap: () {
+                            HapticFeedback.selectionClick();
                             ref
                                     .read(panenFilterCategoryProvider.notifier)
                                     .state =
                                 PanenFilterCategory.upcoming;
                           },
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.xs),
                         FilterButton(
                           label: 'Selesai ($completedCount)',
                           isSelected:
                               activeFilter == PanenFilterCategory.completed,
                           onTap: () {
+                            HapticFeedback.selectionClick();
                             ref
                                     .read(panenFilterCategoryProvider.notifier)
                                     .state =
@@ -80,18 +85,17 @@ class PanenBody extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
 
                   // 2. Daftar Panen Cards
                   if (panenList.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
                       child: Center(
                         child: Text(
                           'Tidak ada data panen.',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            color: Color.fromRGBO(156, 163, 175, 1),
+                          style: AppTypography.subheadline.copyWith(
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ),
@@ -102,12 +106,13 @@ class PanenBody extends ConsumerWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: panenList.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (context, index) {
                         final panenItem = panenList[index];
                         return PanenCard(
                           item: panenItem,
                           onTap: () {
+                            HapticFeedback.lightImpact();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -124,18 +129,22 @@ class PanenBody extends ConsumerWidget {
             ),
           ),
 
-          // 3. Bottom Button: + Catat Hasil Panen Baru
+          // 3. Bottom Button: + Catat Hasil Panen Baru (Apple HIG 52pt pill button)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: const Color.fromRGBO(250, 250, 247, 1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            color: AppColors.canvasWarm,
             child: SafeArea(
               child: RowButton(
                 label: '+ Catat Hasil Panen Baru',
-                backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-                textColor: const Color.fromRGBO(221, 244, 90, 1),
-                borderRadius: 16,
+                backgroundColor: AppColors.darkNavy,
+                textColor: AppColors.accentLime,
+                borderRadius: AppRadius.pill,
                 height: 52,
                 onTap: () {
+                  HapticFeedback.mediumImpact();
                   Navigator.push(
                     context,
                     MaterialPageRoute(

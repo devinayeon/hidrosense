@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class ItemImagePlaceholder extends StatelessWidget {
   final String? imageUrl;
@@ -14,18 +15,18 @@ class ItemImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color.fromRGBO(57, 198, 195, 1);
-    const bgColor = Color.fromRGBO(240, 251, 251, 1);
+    const primaryColor = AppColors.primaryMint;
+    const bgColor = AppColors.accentMintSoft;
 
     return Container(
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? Image.network(
                 imageUrl!,
@@ -41,7 +42,7 @@ class ItemImagePlaceholder extends StatelessWidget {
                   strokeWidth: 1.5,
                   dashWidth: 6,
                   dashSpace: 4,
-                  borderRadius: 16,
+                  borderRadius: AppRadius.card,
                 ),
                 child: _buildPlaceholderContent(primaryColor),
               ),
@@ -59,17 +60,15 @@ class ItemImagePlaceholder extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
             ),
             child: Icon(Icons.image_outlined, color: primaryColor, size: 24),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             placeholderText,
-            style: TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.caption1.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 12,
               letterSpacing: 0.5,
               color: primaryColor,
             ),

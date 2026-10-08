@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final String placeholder;
@@ -19,13 +20,13 @@ class CustomSearchBar extends StatelessWidget {
     return Container(
       width: width ?? double.infinity,
       height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(255, 255, 255, 1),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(
-          color: const Color.fromRGBO(229, 231, 235, 1),
-          width: 1.5,
+          color: AppColors.borderLight,
+          width: 1.0,
         ),
       ),
       child: Row(
@@ -33,26 +34,22 @@ class CustomSearchBar extends StatelessWidget {
         children: [
           const Icon(
             Icons.search,
-            color: Color.fromRGBO(156, 163, 175, 1),
+            color: AppColors.textTertiary,
             size: 20,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                color: Colors.black,
+              style: AppTypography.body.copyWith(
+                color: AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: placeholder,
-                hintStyle: const TextStyle(
-                  fontFamily: 'Inter',
+                hintStyle: AppTypography.callout.copyWith(
                   fontWeight: FontWeight.w400,
-                  fontSize: 13,
-                  color: Color.fromRGBO(156, 163, 175, 1),
+                  color: AppColors.textTertiary,
                 ),
                 border: InputBorder.none,
                 isCollapsed: true,

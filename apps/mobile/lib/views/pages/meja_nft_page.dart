@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../components/header.dart';
 import '../components/meja_nft_body.dart';
+import '../theme/app_theme.dart';
 
 class MejaNftPage extends StatelessWidget {
   const MejaNftPage({super.key});
@@ -10,7 +11,7 @@ class MejaNftPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       appBar: Header(titleText: 'Manajemen Meja NFT', showBackButton: true),
-      backgroundColor: Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: MejaNftBody(),
     );
   }

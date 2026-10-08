@@ -3,6 +3,7 @@ import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../components/header.dart';
 import '../components/form_meja_nft_body.dart';
+import '../theme/app_theme.dart';
 
 class FormMejaNftPage extends StatelessWidget {
   final TableRecord? tableRecord;
@@ -22,7 +23,7 @@ class FormMejaNftPage extends StatelessWidget {
 
     return Scaffold(
       appBar: Header(titleText: title, showBackButton: true),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: FormMejaNftBody(
         tableRecord: tableRecord,
         mejaItem: mejaItem,

@@ -7,6 +7,7 @@ import '../../models/baris_tanam_model.dart';
 import '../../models/laporan_kerusakan_model.dart';
 import '../../models/meja_nft_model.dart';
 import '../../viewmodels/baris_tanam_viewmodel.dart';
+import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/item_image_placeholder.dart';
 import '../widgets/row_button.dart';
@@ -14,12 +15,32 @@ import '../widgets/row_button.dart';
 class FormCatatKerusakanBody extends ConsumerStatefulWidget {
   final MejaNft mejaItem;
   final BarisTanam? initialBaris;
+  final bool isModal;
 
   const FormCatatKerusakanBody({
     super.key,
     required this.mejaItem,
     this.initialBaris,
+    this.isModal = false,
   });
+
+  /// Static helper untuk menampilkan form dalam Apple HIG Modal Bottom Sheet
+  static Future<bool?> show(
+    BuildContext context, {
+    required MejaNft mejaItem,
+    BarisTanam? initialBaris,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FormCatatKerusakanBody(
+        mejaItem: mejaItem,
+        initialBaris: initialBaris,
+        isModal: true,
+      ),
+    );
+  }
 
   @override
   ConsumerState<FormCatatKerusakanBody> createState() =>
@@ -104,36 +125,82 @@ class _FormCatatKerusakanBodyState
   void _selectBarisDialog(List<BarisTanam> allBaris) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.modal),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            top: 8,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Pilih Baris / Rentang Lubang',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: Color.fromRGBO(23, 34, 49, 1),
+              // Grabber Handle Apple HIG
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              ...allBaris.map((baris) {
-                return ListTile(
-                  title: Text(
-                    '${baris.name} (${baris.holesRange})',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pilih Baris / Rentang Lubang',
+                    style: AppTypography.title3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ...allBaris.map((baris) {
+                final isSelected = _selectedBaris?.id == baris.id;
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                  ),
+                  title: Text(
+                    '${baris.name} (${baris.holesRange})',
+                    style: AppTypography.body.copyWith(
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primaryMint,
+                        )
+                      : null,
                   onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
                       _selectedBaris = baris;
                       _barisController.text =
@@ -153,36 +220,82 @@ class _FormCatatKerusakanBodyState
   void _selectKategoriDialog() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.modal),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            top: 8,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Pilih Kategori Kegagalan',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: Color.fromRGBO(23, 34, 49, 1),
+              // Grabber Handle Apple HIG
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              ..._kategoriOptions.map((kat) {
-                return ListTile(
-                  title: Text(
-                    kat,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pilih Kategori Kegagalan',
+                    style: AppTypography.title3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ..._kategoriOptions.map((kat) {
+                final isSelected = _kategoriController.text == kat;
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                  ),
+                  title: Text(
+                    kat,
+                    style: AppTypography.body.copyWith(
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primaryMint,
+                        )
+                      : null,
                   onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
                       _kategoriController.text = kat;
                     });
@@ -207,7 +320,7 @@ class _FormCatatKerusakanBodyState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color.fromRGBO(57, 198, 195, 1),
+              primary: AppColors.primaryMint,
             ),
           ),
           child: child!,
@@ -225,7 +338,10 @@ class _FormCatatKerusakanBodyState
   void _handleSubmit() {
     if (_selectedBaris == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih baris terlebih dahulu')),
+        const SnackBar(
+          content: Text('Silakan pilih baris terlebih dahulu'),
+          backgroundColor: AppColors.dangerRed,
+        ),
       );
       return;
     }
@@ -235,7 +351,10 @@ class _FormCatatKerusakanBodyState
 
     if (jumlah == null || jumlah <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan jumlah rusak yang valid')),
+        const SnackBar(
+          content: Text('Masukkan jumlah rusak yang valid'),
+          backgroundColor: AppColors.dangerRed,
+        ),
       );
       return;
     }
@@ -264,11 +383,11 @@ class _FormCatatKerusakanBodyState
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Laporan kerusakan berhasil disimpan'),
-        backgroundColor: Color.fromRGBO(57, 198, 195, 1),
+        backgroundColor: AppColors.primaryMint,
       ),
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override
@@ -276,120 +395,182 @@ class _FormCatatKerusakanBodyState
     final allBaris = ref.watch(barisTanamViewModelProvider);
 
     return Container(
-      color: const Color.fromRGBO(250, 250, 247, 1),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Pilih Meja / Lokasi (Read Only)
-              CustomInputField(
-                label: 'Pilih Meja / Lokasi',
-                hintText: 'Meja NFT #01',
-                controller: _mejaController,
-                readOnly: true,
-              ),
-              const SizedBox(height: 16),
-
-              // 2. Pilih Baris / Rentang Lubang
-              CustomInputField(
-                label: 'Pilih Baris / Rentang Lubang',
-                hintText: 'Pilih Baris',
-                controller: _barisController,
-                readOnly: true,
-                suffixIcon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color.fromRGBO(156, 163, 175, 1),
-                ),
-                onTap: () => _selectBarisDialog(allBaris),
-              ),
-              const SizedBox(height: 16),
-
-              // 3. Jumlah Rusak (Lubang)
-              CustomInputField(
-                label: 'Jumlah Rusak (Lubang)',
-                hintText: 'Masukkan jumlah bibit rusak (misal: 4)',
-                controller: _jumlahRusakController,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-
-              // 4. Kategori Kegagalan
-              CustomInputField(
-                label: 'Kategori Kegagalan',
-                hintText: 'Pilih Kategori',
-                controller: _kategoriController,
-                readOnly: true,
-                suffixIcon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color.fromRGBO(156, 163, 175, 1),
-                ),
-                onTap: _selectKategoriDialog,
-              ),
-              const SizedBox(height: 16),
-
-              // 5. Tanggal Ditemukan
-              CustomInputField(
-                label: 'Tanggal Ditemukan',
-                hintText: 'Pilih Tanggal',
-                controller: _tanggalController,
-                readOnly: true,
-                suffixIcon: const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                  color: Color.fromRGBO(156, 163, 175, 1),
-                ),
-                onTap: _pickDate,
-              ),
-              const SizedBox(height: 16),
-
-              // 6. Penyebab Utama (Estimasi)
-              CustomInputField(
-                label: 'Penyebab Utama (Estimasi)',
-                hintText: 'Sumbatan air nutrisi / Hama ulat',
-                controller: _penyebabController,
-              ),
-              const SizedBox(height: 16),
-
-              // 7. Bukti Foto (Opsional)
-              const Text(
-                'Bukti Foto (Opsional)',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: Color.fromRGBO(23, 34, 49, 1),
+      width: double.infinity,
+      height: widget.isModal ? null : double.infinity,
+      constraints: widget.isModal
+          ? BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            )
+          : null,
+      decoration: BoxDecoration(
+        color: AppColors.canvasWarm,
+        borderRadius: widget.isModal
+            ? const BorderRadius.vertical(top: Radius.circular(AppRadius.modal))
+            : null,
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: widget.isModal ? MainAxisSize.min : MainAxisSize.max,
+        children: [
+          // Apple HIG Grabber Handle & Modal Header
+          if (widget.isModal) ...[
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () {
-                  // Action upload foto
-                },
-                child: ItemImagePlaceholder(
-                  imageUrl: _uploadedPhotoPath,
-                  height: 100,
-                  placeholderText: 'UNGGAH FOTO DAUN/AKAR YANG RUSAK',
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xxs,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Catat Kerusakan',
+                    style: AppTypography.title3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.borderSubtle),
+          ],
+
+          Expanded(
+            flex: widget.isModal ? 0 : 1,
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Pilih Meja / Lokasi (Read Only)
+                    CustomInputField(
+                      label: 'Pilih Meja / Lokasi',
+                      hintText: 'Meja NFT #01',
+                      controller: _mejaController,
+                      readOnly: true,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 2. Pilih Baris / Rentang Lubang
+                    CustomInputField(
+                      label: 'Pilih Baris / Rentang Lubang',
+                      hintText: 'Pilih Baris',
+                      controller: _barisController,
+                      readOnly: true,
+                      suffixIcon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.textTertiary,
+                      ),
+                      onTap: () => _selectBarisDialog(allBaris),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 3. Jumlah Rusak (Lubang)
+                    CustomInputField(
+                      label: 'Jumlah Rusak (Lubang)',
+                      hintText: 'Masukkan jumlah bibit rusak (misal: 4)',
+                      controller: _jumlahRusakController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 4. Kategori Kegagalan
+                    CustomInputField(
+                      label: 'Kategori Kegagalan',
+                      hintText: 'Pilih Kategori',
+                      controller: _kategoriController,
+                      readOnly: true,
+                      suffixIcon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.textTertiary,
+                      ),
+                      onTap: _selectKategoriDialog,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 5. Tanggal Ditemukan
+                    CustomInputField(
+                      label: 'Tanggal Ditemukan',
+                      hintText: 'Pilih Tanggal',
+                      controller: _tanggalController,
+                      readOnly: true,
+                      suffixIcon: const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: AppColors.textTertiary,
+                      ),
+                      onTap: _pickDate,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 6. Penyebab Utama (Estimasi)
+                    CustomInputField(
+                      label: 'Penyebab Utama (Estimasi)',
+                      hintText: 'Sumbatan air nutrisi / Hama ulat',
+                      controller: _penyebabController,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 7. Bukti Foto (Opsional)
+                    Text(
+                      'Bukti Foto (Opsional)',
+                      style: AppTypography.subheadline.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    GestureDetector(
+                      onTap: () {
+                        // Action upload foto
+                      },
+                      child: ItemImagePlaceholder(
+                        imageUrl: _uploadedPhotoPath,
+                        height: 100,
+                        placeholderText: 'UNGGAH FOTO DAUN/AKAR YANG RUSAK',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // 8. Tombol Simpan Laporan Kerusakan (Apple HIG 52pt pill button)
+                    RowButton(
+                      label: 'Simpan Laporan Kerusakan',
+                      backgroundColor: AppColors.primaryMint,
+                      textColor: Colors.white,
+                      borderRadius: AppRadius.pill,
+                      height: 52,
+                      onTap: _handleSubmit,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // 8. Tombol Simpan Laporan Kerusakan
-              RowButton(
-                label: 'Simpan Laporan Kerusakan',
-                backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
-                textColor: Colors.white,
-                borderRadius: 24,
-                height: 50,
-                onTap: _handleSubmit,
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

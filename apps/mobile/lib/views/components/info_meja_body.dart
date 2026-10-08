@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../pages/form_meja_nft_page.dart';
+import '../theme/app_theme.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/row_button.dart';
 import '../widgets/fluid_capacity_meter.dart';
@@ -31,37 +32,32 @@ class InfoMejaBody extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: Color.fromRGBO(23, 34, 49, 1),
+              style: AppTypography.title2.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               'Sistem NFT • Status: $statusLabel',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-                color: Color.fromRGBO(156, 163, 175, 1),
+              style: AppTypography.subheadline.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             RowInfoCardMd(
-              backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(240, 240, 235, 1),
-              padding: const EdgeInsets.all(16),
+              backgroundColor: AppColors.cardSurface,
+              borderColor: AppColors.borderSubtle,
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: FluidCapacityMeter(
                 activePlants: activePlants,
                 totalCapacity: totalCapacity,
@@ -69,36 +65,32 @@ class InfoMejaBody extends StatelessWidget {
                 showLabel: true,
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: AppSpacing.md),
+            Text(
               'CATATAN & SPESIFIKASI',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
+              style: AppTypography.caption1.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
-                color: Color.fromRGBO(107, 114, 128, 1),
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             RowInfoCardMd(
-              backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(240, 240, 235, 1),
-              padding: const EdgeInsets.all(16),
+              backgroundColor: AppColors.cardSurface,
+              borderColor: AppColors.borderSubtle,
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
                 notes,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  color: Color.fromRGBO(55, 65, 81, 1),
+                style: AppTypography.subheadline.copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             RowButton(
               label: 'Edit Pengaturan Meja',
-              backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-              textColor: const Color.fromRGBO(221, 244, 90, 1),
+              backgroundColor: AppColors.darkNavy,
+              textColor: AppColors.accentLime,
               onTap: () {
                 Navigator.push(
                   context,
@@ -111,7 +103,7 @@ class InfoMejaBody extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

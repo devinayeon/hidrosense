@@ -4,6 +4,7 @@ import '../../data/models/table_record.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
 import '../pages/form_meja_nft_page.dart';
 import '../pages/info_meja_page.dart';
+import '../theme/app_theme.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/row_info_card_md.dart';
@@ -24,14 +25,14 @@ class MejaNftBody extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: RefreshIndicator(
         onRefresh: () => notifier.refresh(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,7 +40,7 @@ class MejaNftBody extends ConsumerWidget {
                 placeholder: 'Cari meja tanam...',
                 onChanged: (value) => notifier.setSearchQuery(value),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.sm),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -50,13 +51,13 @@ class MejaNftBody extends ConsumerWidget {
                       isSelected: state.statusFilter == null,
                       onTap: () => notifier.setStatusFilter(null),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs),
                     FilterButton(
                       label: 'Aktif (${counts['aktif']})',
                       isSelected: state.statusFilter == 'tersedia',
                       onTap: () => notifier.setStatusFilter('tersedia'),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs),
                     FilterButton(
                       label: 'Perawatan (${counts['perawatan']})',
                       isSelected: state.statusFilter == 'pemeliharaan',
@@ -65,13 +66,13 @@ class MejaNftBody extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               if (state.loading)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 24.0),
                     child: CircularProgressIndicator(
-                      color: Color.fromRGBO(57, 198, 195, 1),
+                      color: AppColors.primaryMint,
                     ),
                   ),
                 )
@@ -85,10 +86,8 @@ class MejaNftBody extends ConsumerWidget {
                           : state.records.isEmpty
                               ? 'Belum ada meja tanam terdaftar.'
                               : 'Meja tanam tidak ditemukan.',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        color: Color.fromRGBO(156, 163, 175, 1),
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ),
@@ -96,10 +95,10 @@ class MejaNftBody extends ConsumerWidget {
               else
                 ...filteredList.map((item) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: RowInfoCardMd(
                       backgroundColor: Colors.white,
-                      borderColor: const Color.fromRGBO(229, 231, 235, 1),
+                      borderColor: AppColors.borderLight,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -112,11 +111,11 @@ class MejaNftBody extends ConsumerWidget {
                     ),
                   );
                 }),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               RowButton(
                 label: '+ Tambah Meja NFT Baru',
-                backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-                textColor: const Color.fromRGBO(221, 244, 90, 1),
+                backgroundColor: AppColors.darkNavy,
+                textColor: AppColors.accentLime,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -126,7 +125,7 @@ class MejaNftBody extends ConsumerWidget {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -150,26 +149,25 @@ class _ConnectedTableCardContent extends StatelessWidget {
           children: [
             Text(
               item.displayName,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
+              style: AppTypography.headline.copyWith(
                 fontSize: 15,
-                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
             CapsuleBadge(
               label: item.statusLabel,
               textColor: isMaintenance
-                  ? const Color.fromRGBO(217, 119, 6, 1)
-                  : const Color.fromRGBO(2, 132, 199, 1),
+                  ? AppColors.warningOrange
+                  : AppColors.primaryDarkTeal,
               backgroundColor: isMaintenance
-                  ? const Color.fromRGBO(254, 243, 199, 1)
-                  : const Color.fromRGBO(224, 242, 254, 1),
+                  ? AppColors.warningBg
+                  : AppColors.accentMintSoft,
               size: CapsuleSize.small,
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (!isMaintenance) ...[
           FluidCapacityMeter(
             activePlants: item.activePlants,
@@ -181,30 +179,26 @@ class _ConnectedTableCardContent extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Kapasitas: ${item.activePlants} / ${item.holeCount} Lubang Terisi (${item.occupancyPercentage}%)',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+            style: AppTypography.caption1.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           if (item.notes != null && item.notes!.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               item.notes!,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                color: Color.fromRGBO(156, 163, 175, 1),
+              style: AppTypography.caption1.copyWith(
+                fontSize: 11,
+                color: AppColors.textTertiary,
               ),
             ),
           ],
         ] else ...[
           Text(
             'Dalam Perawatan / Pemeliharaan',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+            style: AppTypography.caption1.copyWith(
+              color: AppColors.warningOrange,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

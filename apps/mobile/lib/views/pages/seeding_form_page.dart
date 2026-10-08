@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/inventory_record.dart';
 import '../../data/models/nursery_record.dart';
 import '../../models/seeding_batch_model.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../components/header.dart';
+import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/row_button.dart';
 
@@ -112,6 +114,140 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
     }
   }
 
+  void _openSeedPickerSheet(List<InventoryRecord> seedItems) {
+    HapticFeedback.lightImpact();
+    final currentId =
+        _selectedInventoryId ?? (seedItems.isNotEmpty ? seedItems.first.id : null);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.modal),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.sm,
+                    AppSpacing.xs,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Pilih Benih dari Inventaris',
+                        style: AppTypography.headline.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: AppColors.textSecondary),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: AppColors.borderLight),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                    itemCount: seedItems.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      indent: AppSpacing.md,
+                      color: AppColors.borderSubtle,
+                    ),
+                    itemBuilder: (_, index) {
+                      final item = seedItems[index];
+                      final isSelected = item.id == currentId;
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primaryMint.withOpacity(0.18)
+                                : AppColors.secondarySurface,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.input),
+                          ),
+                          child: Icon(
+                            Icons.eco_rounded,
+                            size: 20,
+                            color: isSelected
+                                ? AppColors.primaryDarkTeal
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                        title: Text(
+                          item.name,
+                          style: AppTypography.body.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? AppColors.primaryDarkTeal
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Stok: ${item.formattedStock}',
+                          style: AppTypography.caption1.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.primaryDarkTeal,
+                                size: 22,
+                              )
+                            : null,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedInventoryId = item.id);
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.isEditMode;
@@ -125,10 +261,10 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
         titleText: isEdit ? 'Edit Penyemaian' : 'Penyemaian Baru',
         showBackButton: true,
       ),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Form(
           key: _formKey,
           child: Column(
@@ -154,69 +290,118 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                   }
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               if (!isEdit && seedItems.isNotEmpty) ...[
-                const Text(
-                  'Pilih Benih dari Inventaris',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
+                Text(
+                  'PILIH BENIH DARI INVENTARIS',
+                  style: AppTypography.caption1.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Color.fromRGBO(24, 29, 39, 1),
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color.fromRGBO(229, 231, 235, 1),
+                const SizedBox(height: AppSpacing.xs),
+                InkWell(
+                  onTap: () => _openSeedPickerSheet(seedItems),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm + 2,
                     ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedInventoryId ?? seedItems.first.id,
-                      isExpanded: true,
-                      items: seedItems.map((item) {
-                        return DropdownMenuItem<String>(
-                          value: item.id,
-                          child: Text('${item.name} (${item.formattedStock})'),
-                        );
-                      }).toList(),
-                      onChanged: (val) =>
-                          setState(() => _selectedInventoryId = val),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryMint.withOpacity(0.15),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.input),
+                          ),
+                          child: const Icon(
+                            Icons.eco_rounded,
+                            size: 18,
+                            color: AppColors.primaryDarkTeal,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                seedItems
+                                    .firstWhere(
+                                      (i) =>
+                                          i.id ==
+                                          (_selectedInventoryId ??
+                                              seedItems.first.id),
+                                      orElse: () => seedItems.first,
+                                    )
+                                    .name,
+                                style: AppTypography.body.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'Tersedia: ${seedItems.firstWhere((i) => i.id == (_selectedInventoryId ?? seedItems.first.id), orElse: () => seedItems.first).formattedStock}',
+                                style: AppTypography.caption1.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
               ],
               CustomInputField(
-                label: 'Jumlah Benih (Butir)',
+                label: 'JUMLAH BENIH (BUTIR)',
                 hintText: 'Contoh: 500',
                 controller: _seedCountController,
                 keyboardType: TextInputType.number,
+                suffixText: 'Butir',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               CustomInputField(
-                label: 'Catatan Penyemaian',
+                label: 'CATATAN PENYEMAIAN',
                 hintText: 'Lokasi rak semai atau catatan batch',
                 controller: _noteController,
               ),
-              const SizedBox(height: 28),
-              RowButton(
-                label: _submitting
-                    ? 'Menyimpan...'
-                    : (isEdit ? 'Simpan Perubahan' : 'Mulai Semaian & Simpan'),
-                backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-                textColor: const Color.fromRGBO(221, 244, 90, 1),
-                height: 52,
-                borderRadius: 20,
-                onTap: _submitting ? null : _submitForm,
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: AppColors.borderLight)),
+        ),
+        child: SafeArea(
+          child: RowButton(
+            label: _submitting
+                ? 'Menyimpan...'
+                : (isEdit ? 'Simpan Perubahan' : 'Mulai Semaian & Simpan'),
+            backgroundColor: AppColors.primaryDarkTeal,
+            textColor: Colors.white,
+            height: 52,
+            borderRadius: AppRadius.pill,
+            onTap: _submitting ? null : _submitForm,
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class SeedingCardContent extends StatelessWidget {
@@ -38,20 +39,17 @@ class SeedingCardContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              // Tambahkan Expanded
               child: Text(
                 batchName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: Colors.black,
+                style: AppTypography.headline.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
-            const SizedBox(width: 8), // Berikan jarak aman
+            const SizedBox(width: AppSpacing.xs),
             CapsuleBadge(
               label: statusLabel,
               textColor: statusTextColor,
@@ -62,36 +60,32 @@ class SeedingCardContent extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
 
         // Subtitle Varietas
         Text(
           'Varietas: $variety',
-          style: const TextStyle(
-            fontFamily: 'Inter',
+          style: AppTypography.subheadline.copyWith(
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
-            fontSize: 13,
-            color: Color.fromRGBO(107, 114, 128, 1),
           ),
         ),
 
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xxs),
 
         // Info Semaian & HSS (Tanggal + Jumlah Bibit • X HSS)
         RichText(
           text: TextSpan(
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: Color.fromRGBO(156, 163, 175, 1),
+            style: AppTypography.caption1.copyWith(
+              color: AppColors.textTertiary,
             ),
             children: [
               TextSpan(text: 'Semaian: $dateText '),
               TextSpan(
                 text: '$seedCountText • $hssText',
-                style: const TextStyle(
+                style: AppTypography.caption1.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Color.fromRGBO(31, 41, 55, 1),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -100,15 +94,18 @@ class SeedingCardContent extends StatelessWidget {
 
         // Box Catatan/Rekomendasi (Jika ada)
         if (note != null && note!.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(255, 248, 243, 1),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.warningBg,
+              borderRadius: BorderRadius.circular(AppRadius.input),
               border: Border.all(
-                color: const Color.fromRGBO(254, 215, 170, 1),
+                color: AppColors.warningOrange.withOpacity(0.3),
                 width: 1.0,
               ),
             ),
@@ -120,19 +117,17 @@ class SeedingCardContent extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
-                    color: Color.fromRGBO(249, 115, 22, 1),
+                    color: AppColors.warningOrange,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     note!,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
+                    style: AppTypography.caption1.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: Color.fromRGBO(194, 65, 12, 1),
+                      color: AppColors.warningOrange,
                       height: 1.3,
                     ),
                   ),

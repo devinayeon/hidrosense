@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 class RowInfoCardMd extends StatefulWidget {
   final Color backgroundColor;
   final Color? borderColor;
+  final double? borderRadius;
   final Widget child;
   final double? height;
   final double? width;
@@ -15,6 +16,7 @@ class RowInfoCardMd extends StatefulWidget {
     super.key,
     required this.backgroundColor,
     this.borderColor,
+    this.borderRadius,
     required this.child,
     this.height,
     this.width = double.infinity,
@@ -40,7 +42,7 @@ class _RowInfoCardMdState extends State<RowInfoCardMd> {
         height: widget.height,
         decoration: BoxDecoration(
           color: widget.backgroundColor,
-          borderRadius: BorderRadius.circular(AppRadius.card),
+          borderRadius: BorderRadius.circular(widget.borderRadius ?? AppRadius.card),
           border: Border.all(
             color: widget.borderColor ?? AppColors.borderLight,
             width: 1,
@@ -57,7 +59,7 @@ class _RowInfoCardMdState extends State<RowInfoCardMd> {
           onHighlightChanged: isClickable
               ? (value) => setState(() => _pressed = value)
               : null,
-          borderRadius: BorderRadius.circular(AppRadius.card),
+          borderRadius: BorderRadius.circular(widget.borderRadius ?? AppRadius.card),
           splashColor: Colors.black.withValues(alpha: 0.04),
           highlightColor: Colors.black.withValues(alpha: 0.02),
           child: Padding(padding: widget.padding, child: widget.child),

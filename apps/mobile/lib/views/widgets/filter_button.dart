@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class FilterButton extends StatefulWidget {
@@ -23,8 +24,8 @@ class _FilterButtonState extends State<FilterButton> {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color.fromRGBO(57, 198, 195, 1);
-    const borderColor = Color.fromRGBO(229, 231, 235, 1);
+    const activeColor = AppColors.primaryMint;
+    const borderColor = AppColors.borderLight;
 
     return AnimatedScale(
       scale: _pressed ? 0.94 : 1.0,
@@ -36,8 +37,8 @@ class _FilterButtonState extends State<FilterButton> {
         onTapCancel: () => setState(() => _pressed = false),
         child: CapsuleBadge(
           label: widget.label,
-          textColor: widget.isSelected ? Colors.white : Colors.black87,
-          backgroundColor: widget.isSelected ? activeColor : Colors.white,
+          textColor: widget.isSelected ? AppColors.textOnDark : AppColors.textPrimary,
+          backgroundColor: widget.isSelected ? activeColor : AppColors.cardSurface,
           borderColor: widget.isSelected ? activeColor : borderColor,
           size: CapsuleSize.large,
           fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w600,

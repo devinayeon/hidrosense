@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 class CustomBackButton extends StatefulWidget {
   final VoidCallback? onTap;
@@ -21,28 +23,29 @@ class _CustomBackButtonState extends State<CustomBackButton> {
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap ?? () => Navigator.maybePop(context),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          if (widget.onTap != null) {
+            widget.onTap!();
+          } else {
+            Navigator.maybePop(context);
+          }
+        },
         child: Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.input),
             border: Border.all(
-              color: const Color.fromRGBO(230, 230, 225, 1),
+              color: AppColors.borderLight,
               width: 1,
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 0.04),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppShadows.subtle,
           ),
           child: const Icon(
             Icons.arrow_back_rounded,
-            color: Colors.black,
+            color: AppColors.textPrimary,
             size: 20,
           ),
         ),

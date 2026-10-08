@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'capsule_badge.dart';
+import '../theme/app_theme.dart';
 
 class ItemInfoDetails extends StatelessWidget {
   final String name;
@@ -27,12 +28,11 @@ class ItemInfoDetails extends StatelessWidget {
           name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: 'Inter',
+          style: AppTypography.headline.copyWith(
+            fontSize: 14,
             fontWeight: FontWeight.w700,
-            fontSize: 13,
-            color: Colors.black,
-            height: 1.0,
+            color: AppColors.textPrimary,
+            height: 1.2,
           ),
         ),
         const SizedBox(height: 6),
@@ -52,7 +52,7 @@ class ItemInfoDetails extends StatelessWidget {
               height: 3,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.grey,
+                  color: AppColors.textTertiary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -63,12 +63,12 @@ class ItemInfoDetails extends StatelessWidget {
                 'Stok: $stockText',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                  color: Colors.black87,
-                  height: 1.0,
+                style: AppTypography.tabular(
+                  AppTypography.caption1.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ),

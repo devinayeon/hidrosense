@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum StockStatus { aman, menipis, habis }
 
 class InventoryItem {

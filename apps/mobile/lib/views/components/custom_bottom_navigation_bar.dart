@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -13,46 +14,59 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color.fromRGBO(57, 198, 195, 1);
-    const inactiveColor = Colors.grey;
+    const activeColor = AppColors.primaryMint;
+    const inactiveColor = AppColors.textTertiary;
 
-    return BottomNavigationBar(
-      backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
-      currentIndex: currentIndex,
-      onTap: (index) {
-        if (index != currentIndex) HapticFeedback.selectionClick();
-        onTap(index);
-      },
-      selectedItemColor: activeColor,
-      unselectedItemColor: inactiveColor,
-      selectedLabelStyle: const TextStyle(
-        fontFamily: 'Inter',
-        fontWeight: FontWeight.w600,
-        fontSize: 12,
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.cardSurface,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.borderSubtle,
+            width: 0.5,
+          ),
+        ),
       ),
-      unselectedLabelStyle: const TextStyle(
-        fontFamily: 'Inter',
-        fontWeight: FontWeight.w400,
-        fontSize: 12,
+      child: BottomNavigationBar(
+        elevation: 0,
+        backgroundColor: AppColors.cardSurface,
+        currentIndex: currentIndex,
+        onTap: (index) {
+          if (index != currentIndex) HapticFeedback.selectionClick();
+          onTap(index);
+        },
+        selectedItemColor: activeColor,
+        unselectedItemColor: inactiveColor,
+        selectedLabelStyle: AppTypography.caption2.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: AppTypography.caption2.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            activeIcon: Icon(Icons.inventory_2),
+            label: 'Inventaris',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco_outlined),
+            activeIcon: Icon(Icons.eco),
+            label: 'Semaian',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.point_of_sale_outlined),
+            activeIcon: Icon(Icons.point_of_sale),
+            label: 'Penjualan',
+          ),
+        ],
       ),
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Beranda',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_2_outlined),
-          activeIcon: Icon(Icons.inventory_2),
-          label: 'Inventaris',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.eco_outlined),
-          activeIcon: Icon(Icons.eco),
-          label: 'Semaian',
-        ),
-      ],
     );
   }
 }

@@ -1,7 +1,9 @@
 // lib/views/components/laporan_panen_body.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/panen_model.dart';
 import '../pages/panen_form_page.dart';
+import '../theme/app_theme.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/col_button.dart';
 import '../widgets/row_info_card_md.dart';
@@ -16,34 +18,30 @@ class LaporanPanenBody extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Title Header Laporan Panen
             Text(
               'Laporan Panen - ${item.batchName}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.title2.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: Color.fromRGBO(23, 34, 49, 1),
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               'Selesai diproses pada ${item.processedDate}',
-              style: const TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.subheadline.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Color.fromRGBO(107, 114, 128, 1),
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
 
             // 2. Row Info Cards (Total Berat Hasil & Rasio Layak/Reject)
             Row(
@@ -51,80 +49,76 @@ class LaporanPanenBody extends StatelessWidget {
                 Expanded(
                   child: BaseColCard(
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(240, 240, 235, 1),
-                    padding: const EdgeInsets.all(16),
+                    borderColor: AppColors.borderLight,
+                    borderRadius: AppRadius.card,
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Total Berat Hasil',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.caption1.copyWith(
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           item.totalWeight,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.title2.copyWith(
                             fontWeight: FontWeight.w800,
-                            fontSize: 24,
-                            color: Color.fromRGBO(23, 34, 49, 1),
+                            color: AppColors.textPrimary,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures(),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Target: ${item.targetWeight}',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.caption2.copyWith(
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: BaseColCard(
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(240, 240, 235, 1),
-                    padding: const EdgeInsets.all(16),
+                    borderColor: AppColors.borderLight,
+                    borderRadius: AppRadius.card,
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Rasio Layak/Reject',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.caption1.copyWith(
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           '${item.layakPercent} / ${item.rejectPercent}',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.title2.copyWith(
                             fontWeight: FontWeight.w800,
-                            fontSize: 24,
-                            color: Color.fromRGBO(34, 139, 34, 1),
+                            color: AppColors.successGreen,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures(),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Reject: ${item.rejectWeight}',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.caption2.copyWith(
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -133,55 +127,58 @@ class LaporanPanenBody extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
 
-            // 3. Section Informas Produksi & Penjualan
-            const Text(
+            // 3. Section Informasi Produksi & Penjualan
+            Text(
               'INFORMASI PRODUKSI & PENJUALAN',
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.caption1.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 12,
                 letterSpacing: 0.5,
-                color: Color.fromRGBO(107, 114, 128, 1),
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
 
             RowInfoCardMd(
               backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(240, 240, 235, 1),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              borderColor: AppColors.borderLight,
+              borderRadius: AppRadius.modal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
               child: Column(
                 children: [
                   _buildDetailRow('Asal Meja Tanam:', item.asalMejaTanam),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _buildDetailRow('Varietas Tanaman:', item.varietas),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _buildDetailRow('Lama Budidaya (HSS):', item.lamaBudidaya),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _buildDetailRow(
                     'Grade Kualitas Utama:',
                     item.gradeKualitas,
-                    valueColor: const Color.fromRGBO(34, 139, 34, 1),
+                    valueColor: AppColors.successGreen,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: AppSpacing.xl),
 
-            // 4. Action Buttons (Edit Laporan & Ekspor ke PDF)
+            // 4. Action Buttons (Edit Laporan & Ekspor ke PDF) Apple HIG 52pt
             Row(
               children: [
                 Expanded(
                   child: ColButton(
                     text: 'Edit Laporan',
-                    textColor: const Color.fromRGBO(57, 198, 195, 1),
-                    borderColor: const Color.fromRGBO(57, 198, 195, 1),
+                    textColor: AppColors.primaryMint,
+                    borderColor: AppColors.primaryMint,
                     backgroundColor: Colors.white,
-                    height: 48,
-                    borderRadius: 24,
+                    height: 52,
+                    borderRadius: AppRadius.pill,
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -191,16 +188,17 @@ class LaporanPanenBody extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: ColButton(
                     text: 'Ekspor ke PDF',
                     textColor: Colors.white,
-                    borderColor: const Color.fromRGBO(57, 198, 195, 1),
-                    backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
-                    height: 48,
-                    borderRadius: 24,
+                    borderColor: AppColors.primaryMint,
+                    backgroundColor: AppColors.primaryMint,
+                    height: 52,
+                    borderRadius: AppRadius.pill,
                     onPressed: () {
+                      HapticFeedback.mediumImpact();
                       // Action Ekspor ke PDF
                     },
                   ),
@@ -220,23 +218,19 @@ class LaporanPanenBody extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Inter',
+          style: AppTypography.subheadline.copyWith(
             fontWeight: FontWeight.w400,
-            fontSize: 13,
-            color: Color.fromRGBO(107, 114, 128, 1),
+            color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.subheadline.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: valueColor ?? const Color.fromRGBO(23, 34, 49, 1),
+              color: valueColor ?? AppColors.textPrimary,
             ),
           ),
         ),

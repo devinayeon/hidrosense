@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/meja_nft_model.dart';
 import '../../viewmodels/baris_tanam_viewmodel.dart';
 import '../pages/catat_kerusakan_page.dart';
+import '../theme/app_theme.dart';
 import '../widgets/baris_tanam_card.dart';
 import '../widgets/filter_button.dart';
-// import '../widgets/row_button.dart';
 
 class DetailTanamanMejaBody extends ConsumerWidget {
   final MejaNft mejaItem;
@@ -24,37 +24,32 @@ class DetailTanamanMejaBody extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Title & Subtitle Batch Info
                   Text(
                     batchTitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: Color.fromRGBO(23, 34, 49, 1),
+                    style: AppTypography.title3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
                     'Berikut adalah data detail per baris / lubang tanam',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                      color: Color.fromRGBO(156, 163, 175, 1),
+                    style: AppTypography.subheadline.copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
 
                   // 2. Bar Filter Kategori
                   SingleChildScrollView(
@@ -72,7 +67,7 @@ class DetailTanamanMejaBody extends ConsumerWidget {
                                 BarisFilterCategory.all;
                           },
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.xs),
                         FilterButton(
                           label: 'Kondisi Baik',
                           isSelected: activeFilter == BarisFilterCategory.good,
@@ -83,7 +78,7 @@ class DetailTanamanMejaBody extends ConsumerWidget {
                                 BarisFilterCategory.good;
                           },
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.xs),
                         FilterButton(
                           label: 'Kondisi Rusak',
                           isSelected:
@@ -98,18 +93,17 @@ class DetailTanamanMejaBody extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
 
                   // 3. List Cards Baris Tanam
                   if (barisList.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
                       child: Center(
                         child: Text(
                           'Tidak ada data baris tanam.',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            color: Color.fromRGBO(156, 163, 175, 1),
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ),
@@ -120,7 +114,7 @@ class DetailTanamanMejaBody extends ConsumerWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: barisList.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (context, index) {
                         return BarisTanamCard(item: barisList[index]);
                       },
@@ -132,22 +126,25 @@ class DetailTanamanMejaBody extends ConsumerWidget {
 
           // 4. Sticky Bottom Action Button
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             decoration: const BoxDecoration(
-              color: Color.fromRGBO(250, 250, 247, 1),
+              color: AppColors.canvasWarm,
             ),
             child: SafeArea(
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 52),
                   side: const BorderSide(
-                    color: Color.fromRGBO(57, 198, 195, 1),
+                    color: AppColors.primaryMint,
                     width: 1.5,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardSurface,
                 ),
                 onPressed: () {
                   Navigator.push(
@@ -158,13 +155,11 @@ class DetailTanamanMejaBody extends ConsumerWidget {
                     ),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Catat Tanaman Rusak / Gagal',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppTypography.headline.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color.fromRGBO(57, 198, 195, 1),
+                    color: AppColors.primaryMint,
                   ),
                 ),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../theme/app_theme.dart';
 
 class EstimasiTotalCard extends StatelessWidget {
   final double totalAmount;
@@ -16,34 +17,36 @@ class EstimasiTotalCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
-          color: const Color.fromRGBO(229, 231, 235, 1),
+          color: AppColors.borderLight,
           width: 1.2,
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Estimasi Total (Otomatis)',
-            style: TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.subheadline.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: Color.fromRGBO(23, 34, 49, 1),
+              color: AppColors.textPrimary,
             ),
           ),
           Text(
             currencyFormatter.format(totalAmount),
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.headline.copyWith(
               fontWeight: FontWeight.w800,
-              fontSize: 16,
-              color: Color.fromRGBO(23, 34, 49, 1),
+              color: AppColors.textPrimary,
+              fontFeatures: const [
+                FontFeature.tabularFigures(),
+              ],
             ),
           ),
         ],
