@@ -6,11 +6,19 @@ import type { CreateDamageInput, UpdateDamageInput } from './contracts.js';
 export async function createDamage(tx: Transaction, input: CreateDamageInput) {
   // 1. Fetch & validate transfer (pemindahan)
   const transferRow = (await tx.execute({
-    sql: 'SELECT id_pemindahan, jumlah_tanaman FROM pemindahan WHERE id_pemindahan = ?',
+    sql: 'SELECT id_pemindahan, tanggal_pemindahan, jumlah_tanaman FROM pemindahan WHERE id_pemindahan = ?',
     args: [input.id_pemindahan],
   })).rows[0];
   if (!transferRow) {
     throw new ApiError(404, 'TRANSFER_NOT_FOUND', 'Data pemindahan tidak ditemukan.');
+  }
+
+  if (input.tanggal_kejadian < String(transferRow.tanggal_pemindahan)) {
+    throw new ApiError(
+      400,
+      'INVALID_DAMAGE_DATE',
+      'Tanggal kerusakan tidak boleh mendahului tanggal pemindahan.',
+    );
   }
 
   // 2. Check total damage + new does not exceed transferred count
@@ -35,18 +43,27 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput) {
 }
 
 export async function updateDamage(tx: Transaction, id: string, input: UpdateDamageInput) {
-  if (input.jumlah_tanaman !== undefined) {
-    // Re-validate the count headroom after adjustment
-    const existing = (await tx.execute({
-      sql: `SELECT d.id_pemindahan, d.jumlah_tanaman,
-        p.jumlah_tanaman AS jumlah_pindah
-        FROM kerusakan_tanaman d
-        JOIN pemindahan p ON p.id_pemindahan = d.id_pemindahan
-        WHERE d.id_kerusakan = ?`,
-      args: [id],
-    })).rows[0];
-    if (!existing) throw new ApiError(404, 'DAMAGE_NOT_FOUND', 'Data kerusakan tanaman tidak ditemukan.');
+  const existing = (await tx.execute({
+    sql: `SELECT d.id_pemindahan, d.jumlah_tanaman, d.tanggal_kejadian,
+      p.tanggal_pemindahan, p.jumlah_tanaman AS jumlah_pindah
+      FROM kerusakan_tanaman d
+      JOIN pemindahan p ON p.id_pemindahan = d.id_pemindahan
+      WHERE d.id_kerusakan = ?`,
+    args: [id],
+  })).rows[0];
+  if (!existing) throw new ApiError(404, 'DAMAGE_NOT_FOUND', 'Data kerusakan tanaman tidak ditemukan.');
 
+  if (input.tanggal_kejadian !== undefined) {
+    if (input.tanggal_kejadian < String(existing.tanggal_pemindahan)) {
+      throw new ApiError(
+        400,
+        'INVALID_DAMAGE_DATE',
+        'Tanggal kerusakan tidak boleh mendahului tanggal pemindahan.',
+      );
+    }
+  }
+
+  if (input.jumlah_tanaman !== undefined) {
     const totalDamaged = await sumDamageForTransfer(tx, String(existing.id_pemindahan));
     const alreadyHarvested = Number((await tx.execute({
       sql: 'SELECT COALESCE(SUM(jumlah_tanaman), 0) AS total FROM detail_panen WHERE id_pemindahan = ?',
