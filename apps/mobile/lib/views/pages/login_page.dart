@@ -1,8 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../features/auth/presentation/widgets/login_header_hero.dart';
 import '../../viewmodels/session_viewmodel.dart';
-import '../widgets/row_button.dart';
 import '../theme/app_theme.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -12,15 +14,48 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage>
+    with SingleTickerProviderStateMixin {
+  static const _logoAsset = 'assets/logo/hidrosense-miaw.png';
+  static const _introDuration = Duration(milliseconds: 280);
+  static const _logoSize = 80.0;
+  static const _minimumWordmarkWidth = 160.0;
+  // The supplied PNG has a black margin around the rounded artwork.
+  static const _logoCropScale = 1.28;
+
   final _formKey = GlobalKey<FormState>();
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _passwordFocus = FocusNode();
+  late final AnimationController _intro;
+  late final Animation<double> _introFade;
+  late final Animation<double> _logoScale;
+  bool _introStarted = false;
   bool _hidePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _intro = AnimationController(vsync: this, duration: _introDuration);
+    _introFade = _intro.drive(CurveTween(curve: Curves.easeOutCubic));
+    _logoScale = _introFade.drive(Tween(begin: 0.96, end: 1.0));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _intro.value = 1;
+      _introStarted = true;
+    } else if (!_introStarted) {
+      _introStarted = true;
+      _intro.forward();
+    }
+  }
+
+  @override
   void dispose() {
+    _intro.dispose();
     _username.dispose();
     _password.dispose();
     _passwordFocus.dispose();
@@ -28,9 +63,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _submit() async {
-    if (ref.read(sessionProvider).busy) {
-      return;
-    }
+    if (ref.read(sessionProvider).busy) return;
     if (!_formKey.currentState!.validate()) {
       HapticFeedback.heavyImpact();
       return;
@@ -40,137 +73,264 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref
         .read(sessionProvider.notifier)
         .login(_username.text.trim(), _password.text);
+    if (mounted && ref.read(sessionProvider).user != null) {
+      TextInput.finishAutofillContext();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final canvas = isDark ? scheme.surface : AppColors.canvasWarm;
+    final ink = isDark ? scheme.onSurface : AppColors.darkNavy;
+    final secondary = isDark
+        ? scheme.onSurfaceVariant
+        : AppColors.textSecondary;
+    final accent = isDark ? AppColors.primaryMint : AppColors.primaryDarkTeal;
 
     return Scaffold(
-      backgroundColor: AppColors.canvasWarm,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xl,
-              vertical: AppSpacing.xxl,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryMint.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.borderAccent,
-                            width: 1.5,
+      backgroundColor: canvas,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+        ),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const LoginHeaderHero(),
+              SafeArea(
+                top: false,
+                minimum: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: AutofillGroup(
+                        onDisposeAction: AutofillContextAction.cancel,
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              FadeTransition(
+                                opacity: _introFade,
+                                child: _brand(ink, secondary, accent),
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  'Selamat datang\nkembali.',
+                                  style: AppTypography.title1.copyWith(
+                                    color: ink,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Masuk untuk memantau dan merawat kebun hidroponik Anda.',
+                                style: AppTypography.subheadline.copyWith(
+                                  color: secondary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                              _inputField(
+                                controller: _username,
+                                label: 'Nama Pengguna',
+                                hintText: 'Masukkan username',
+                                icon: CupertinoIcons.person,
+                                textInputAction: TextInputAction.next,
+                                onFieldSubmitted: (_) =>
+                                    _passwordFocus.requestFocus(),
+                                enabled: !session.busy,
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
+                                    ? 'Username tidak boleh kosong'
+                                    : null,
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              _inputField(
+                                controller: _password,
+                                label: 'Kata Sandi',
+                                hintText: 'Masukkan kata sandi',
+                                icon: CupertinoIcons.lock,
+                                focusNode: _passwordFocus,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) => _submit(),
+                                isPassword: true,
+                                enabled: !session.busy,
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Kata sandi tidak boleh kosong'
+                                    : null,
+                              ),
+                              if (session.error != null) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ExcludeSemantics(
+                                        child: Icon(
+                                          CupertinoIcons
+                                              .exclamationmark_circle_fill,
+                                          size: 20,
+                                          color: scheme.error,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Expanded(
+                                        child: Text(
+                                          session.error!,
+                                          style: AppTypography.footnote
+                                              .copyWith(color: scheme.error),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: AppSpacing.xl),
+                              FilledButton(
+                                onPressed: session.busy ? null : _submit,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.darkNavy,
+                                  foregroundColor: AppColors.accentLime,
+                                  disabledBackgroundColor: AppColors.darkNavy,
+                                  disabledForegroundColor: AppColors.accentLime,
+                                  minimumSize: const Size.fromHeight(56),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.xl,
+                                    vertical: AppSpacing.md,
+                                  ),
+                                  shape: RoundedSuperellipseBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.card,
+                                    ),
+                                  ),
+                                  textStyle: AppTypography.headline,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (session.busy) ...[
+                                      const SizedBox.square(
+                                        dimension: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.accentLime,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                    ],
+                                    Flexible(
+                                      child: Text(
+                                        session.busy ? 'Memproses...' : 'Masuk',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: const Icon(
-                          Icons.spa_rounded,
-                          size: 38,
-                          color: AppColors.primaryDarkTeal,
-                        ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'HidroSense',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 26,
-                        letterSpacing: -0.5,
-                        color: AppColors.darkNavy,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Monitoring & Manajemen Budidaya Hidroponik',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 36),
-                    _inputField(
-                      controller: _username,
-                      label: 'Nama Pengguna',
-                      hintText: 'Masukkan username',
-                      icon: Icons.person_outline_rounded,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
-                      enabled: !session.busy,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Username tidak boleh kosong'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    _inputField(
-                      controller: _password,
-                      label: 'Kata Sandi',
-                      hintText: 'Masukkan kata sandi',
-                      icon: Icons.lock_outline_rounded,
-                      focusNode: _passwordFocus,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      isPassword: true,
-                      enabled: !session.busy,
-                      validator: (v) => v == null || v.isEmpty
-                          ? 'Kata sandi tidak boleh kosong'
-                          : null,
-                    ),
-                    if (session.error != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.dangerBg,
-                          borderRadius: BorderRadius.circular(AppRadius.input),
-                          border: Border.all(color: AppColors.dangerRed),
-                        ),
-                        child: Text(
-                          session.error!,
-                          style: const TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.dangerRed,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 28),
-                    RowButton(
-                      label: session.busy ? 'Memproses...' : 'Masuk',
-                      height: 52,
-                      borderRadius: 26,
-                      backgroundColor: AppColors.darkNavy,
-                      textColor: AppColors.accentLime,
-                      onTap: session.busy ? null : _submit,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _brand(Color ink, Color secondary, Color accent) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wordmarkWidth =
+            constraints.maxWidth >=
+                MediaQuery.textScalerOf(context).scale(_minimumWordmarkWidth) +
+                    _logoSize +
+                    AppSpacing.md
+            ? constraints.maxWidth - _logoSize - AppSpacing.md
+            : constraints.maxWidth;
+        return Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.sm,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            ExcludeSemantics(
+              child: ScaleTransition(
+                scale: _logoScale,
+                child: ClipRSuperellipse(
+                  borderRadius: BorderRadius.circular(AppRadius.modal),
+                  child: SizedBox.square(
+                    dimension: _logoSize,
+                    child: Transform.scale(
+                      scale: _logoCropScale,
+                      child: Image.asset(
+                        _logoAsset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => ColoredBox(
+                          color: AppColors.accentMintSoft,
+                          child: Center(
+                            child: Text('H', style: AppTypography.title1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: wordmarkWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Hidro',
+                          style: TextStyle(color: ink),
+                        ),
+                        TextSpan(
+                          text: 'Sense',
+                          style: TextStyle(color: accent),
+                        ),
+                      ],
+                    ),
+                    semanticsLabel: 'HidroSense',
+                    style: AppTypography.title2.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    'Monitoring & Manajemen\nBudidaya Hidroponik',
+                    style: AppTypography.footnote.copyWith(color: secondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -186,48 +346,64 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     required ValueChanged<String> onFieldSubmitted,
     String? Function(String?)? validator,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final ink = isDark ? scheme.onSurface : AppColors.darkNavy;
+    final secondary = isDark
+        ? scheme.onSurfaceVariant
+        : AppColors.textSecondary;
+    final accent = isDark ? AppColors.primaryMint : AppColors.primaryDarkTeal;
+    final shape = BorderRadius.circular(AppRadius.input);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-            color: AppColors.textPrimary,
+        ExcludeSemantics(
+          child: Text(
+            label,
+            style: AppTypography.subheadline.copyWith(
+              color: ink,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.borderLight, width: 1.2),
-          ),
+        const SizedBox(height: AppSpacing.xs),
+        Semantics(
+          label: label,
           child: TextFormField(
             controller: controller,
             enabled: enabled,
             focusNode: focusNode,
             textInputAction: textInputAction,
             onFieldSubmitted: onFieldSubmitted,
+            autofillHints: [
+              isPassword ? AutofillHints.password : AutofillHints.username,
+            ],
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.none,
             obscureText: isPassword && _hidePassword,
             validator: validator,
-            style: const TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 14,
-              color: Colors.black,
-            ),
+            style: AppTypography.body.copyWith(color: ink),
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, size: 20, color: AppColors.textTertiary),
+              filled: true,
+              fillColor: isDark
+                  ? scheme.surfaceContainerHighest
+                  : AppColors.cardSurface,
+              prefixIcon: ExcludeSemantics(
+                child: Icon(icon, size: 20, color: secondary),
+              ),
               suffixIcon: isPassword
                   ? IconButton(
+                      tooltip: _hidePassword
+                          ? 'Tampilkan kata sandi'
+                          : 'Sembunyikan kata sandi',
                       icon: Icon(
                         _hidePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                            ? CupertinoIcons.eye
+                            : CupertinoIcons.eye_slash,
                         size: 20,
-                        color: AppColors.textTertiary,
+                        color: secondary,
                       ),
                       onPressed: enabled
                           ? () => setState(() => _hidePassword = !_hidePassword)
@@ -235,15 +411,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     )
                   : null,
               hintText: hintText,
-              hintStyle: const TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 13,
-                color: AppColors.textTertiary,
+              hintStyle: AppTypography.callout.copyWith(color: secondary),
+              errorStyle: AppTypography.footnote.copyWith(color: scheme.error),
+              errorMaxLines: 3,
+              border: OutlineInputBorder(borderRadius: shape),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: shape,
+                borderSide: BorderSide(color: scheme.outline),
               ),
-              border: InputBorder.none,
+              focusedBorder: OutlineInputBorder(
+                borderRadius: shape,
+                borderSide: BorderSide(color: accent, width: 2),
+              ),
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 14,
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
               ),
             ),
           ),
