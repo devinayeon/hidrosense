@@ -24,11 +24,11 @@ class _MainPageState extends State<MainPage> {
     _selectedIndex = widget.initialIndex;
   }
 
-  final List<Widget> _pages = const [
-    DashboardBody(),
-    InventarisBody(),
-    PenyemaianBody(),
-    PenjualanBody(),
+  late final List<Widget> _pages = [
+    DashboardBody(onInventoryTap: () => _onItemTapped(1)),
+    const InventarisBody(),
+    const PenyemaianBody(),
+    const PenjualanBody(),
   ];
 
   // Mengembalikan judul header berdasarkan index aktif

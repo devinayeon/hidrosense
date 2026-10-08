@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/data/models/nursery_record.dart';
+import 'package:hidrosense_mobile/data/repositories/inventory_repository.dart';
 import 'package:hidrosense_mobile/data/repositories/nursery_repository.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
+import 'package:hidrosense_mobile/data/services/inventory_cache.dart';
+import 'package:hidrosense_mobile/viewmodels/connected_inventory_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/dashboard_body.dart';
@@ -58,6 +61,18 @@ class TestNursery extends ConnectedNurseryViewModel {
   }
 
   void publish(ConnectedNurseryState value) => state = value;
+}
+
+class TestInventory extends ConnectedInventoryViewModel {
+  TestInventory(ApiClient api)
+    : super(
+        InventoryRepository(
+          api,
+          Completer<InventoryCache>().future,
+          userId: user.id,
+        ),
+        autoLoad: false,
+      );
 }
 
 Future<void> pumpDashboard(WidgetTester tester, TestNursery nursery) =>
@@ -173,6 +188,27 @@ void main() {
       api.close();
     },
   );
+
+  testWidgets('Cek Stok selects the existing inventory tab', (tester) async {
+    final api = apiFor((_) async => response({'data': []}));
+    final nursery = TestNursery(api, const ConnectedNurseryState());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          connectedNurseryProvider.overrideWith((ref) => nursery),
+          connectedInventoryProvider.overrideWith((ref) => TestInventory(api)),
+        ],
+        child: MaterialApp(theme: AppTheme.lightTheme, home: const MainPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MainPage), findsOneWidget);
+    await tester.tap(find.text('Cek Stok'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MainPage), findsOneWidget);
+    expect(find.text('Daftar Inventaris'), findsOneWidget);
+    api.close();
+  });
 
   testWidgets(
     'dashboard distinguishes loading, unavailable and no ready batches',

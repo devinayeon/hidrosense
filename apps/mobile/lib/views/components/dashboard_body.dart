@@ -8,7 +8,7 @@ import '../widgets/top_info_content.dart';
 import '../widgets/card_icon_box.dart';
 import '../pages/add_form_inventaris_page.dart';
 import '../pages/seeding_form_page.dart';
-import '../pages/main_page.dart';
+import '../pages/connected_inventory_page.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/meja_nft_page.dart';
 import '../pages/penjualan_page.dart';
@@ -16,7 +16,9 @@ import '../pages/panen_page.dart';
 import '../pages/cuaca_page.dart';
 
 class DashboardBody extends ConsumerWidget {
-  const DashboardBody({super.key});
+  const DashboardBody({super.key, this.onInventoryTap});
+
+  final VoidCallback? onInventoryTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,28 +26,33 @@ class DashboardBody extends ConsumerWidget {
     final active = nursery.records.where((item) => item.status == 'aktif');
     final ready = active.where((item) => item.isReadyToMove).toList();
     final hasData = !nursery.loading && nursery.error == null;
-    final actions = <({String title, IconData icon, Widget page})>[
-      (
-        title: '+ Barang',
-        icon: Icons.add_circle_outline,
-        page: const AddFormInventarisPage(),
-      ),
-      (
-        title: '+ Semai',
-        icon: Icons.eco_outlined,
-        page: const SeedingFormPage(),
-      ),
-      (
-        title: 'Cek Stok',
-        icon: Icons.view_in_ar_outlined,
-        page: MainPage(initialIndex: 1),
-      ),
-      (
-        title: 'Meja NFT',
-        icon: Icons.table_restaurant_outlined,
-        page: const MejaNftPage(),
-      ),
-    ];
+    final actions =
+        <({String title, IconData icon, Widget page, VoidCallback? onTap})>[
+          (
+            title: '+ Barang',
+            icon: Icons.add_circle_outline,
+            page: const AddFormInventarisPage(),
+            onTap: null,
+          ),
+          (
+            title: '+ Semai',
+            icon: Icons.eco_outlined,
+            page: const SeedingFormPage(),
+            onTap: null,
+          ),
+          (
+            title: 'Cek Stok',
+            icon: Icons.view_in_ar_outlined,
+            page: const ConnectedInventoryPage(),
+            onTap: onInventoryTap,
+          ),
+          (
+            title: 'Meja NFT',
+            icon: Icons.table_restaurant_outlined,
+            page: const MejaNftPage(),
+            onTap: null,
+          ),
+        ];
 
     return ColoredBox(
       color: AppColors.canvasWarm,
@@ -162,10 +169,14 @@ class DashboardBody extends ConsumerWidget {
                               key: ValueKey('dashboard-action-${action.title}'),
                               backgroundColor: AppColors.cardSurface,
                               padding: const EdgeInsets.all(AppSpacing.md),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => action.page),
-                              ),
+                              onTap:
+                                  action.onTap ??
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => action.page,
+                                    ),
+                                  ),
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(
                                   minHeight: 48,
