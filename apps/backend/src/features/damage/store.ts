@@ -88,7 +88,6 @@ export async function insertDamage(tx: Transaction, input: CreateDamageInput) {
 }
 
 export async function patchDamage(tx: Transaction, id: string, input: UpdateDamageInput) {
-  await getDamage(tx, id);
   const fields: string[] = [];
   const args: InValue[] = [];
 

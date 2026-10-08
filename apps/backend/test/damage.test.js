@@ -72,6 +72,14 @@ test('damage rejects invalid date and missing required fields', async (t) => {
   const badDate = await f.create({ tanggal_kejadian: '2026-02-30' });
   check(badDate, 400, 'VALIDATION_ERROR');
 
+  // Future date
+  const futureDate = await f.create({ tanggal_kejadian: '2099-01-01' });
+  check(futureDate, 400, 'VALIDATION_ERROR');
+
+  // Damage date predating transfer date (transfer is 2026-09-16)
+  const predateTransfer = await f.create({ tanggal_kejadian: '2026-09-10' });
+  check(predateTransfer, 400, 'INVALID_DAMAGE_DATE');
+
   // Missing jenis_kerusakan
   const noType = await f.app.inject({
     method: 'POST',
@@ -142,7 +150,7 @@ test('damage patch updates fields and increments version', async (t) => {
   assert.equal(d.version, '2');
 });
 
-test('damage patch rejects jumlah exceeding active plants', async (t) => {
+test('damage patch rejects jumlah exceeding active plants and invalid date', async (t) => {
   const f = await setup(t);
   // Record 190 damage
   await f.create({ jumlah_tanaman: 190 });
@@ -150,6 +158,10 @@ test('damage patch rejects jumlah exceeding active plants', async (t) => {
   // Try to update to 201 (exceeds 200 total on transfer)
   const exceed = await f.send('PATCH', '/1', { jumlah_tanaman: 201 });
   check(exceed, 409, 'DAMAGE_EXCEEDS_ACTIVE');
+
+  // Try to update date to predate transfer date
+  const predate = await f.send('PATCH', '/1', { tanggal_kejadian: '2026-09-10' });
+  check(predate, 400, 'INVALID_DAMAGE_DATE');
 });
 
 test('damage idempotency replay returns same result', async (t) => {

@@ -3,7 +3,9 @@ import { activeListQuerySchema, integerIdSchema } from '../../common/validation.
 
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
-/** YYYY-MM-DD validated as a real calendar date */
+const jakartaToday = () => new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+/** YYYY-MM-DD validated as a real calendar date, not in the future */
 const dateSchema = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((d) => {
@@ -11,7 +13,8 @@ const dateSchema = z.string()
     if (isNaN(ms)) return false;
     const back = new Date(ms).toISOString().slice(0, 10);
     return back === d;
-  }, { message: 'Tanggal tidak valid.' });
+  }, { message: 'Tanggal tidak valid.' })
+  .refine((d) => d <= jakartaToday(), { message: 'Tanggal kerusakan tidak boleh di masa depan.' });
 
 export const createDamageSchema = z.strictObject({
   id_pemindahan: integerIdSchema,
