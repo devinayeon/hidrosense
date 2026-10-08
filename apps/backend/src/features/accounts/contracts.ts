@@ -20,6 +20,8 @@ export const updateProfileSchema = z.strictObject({
   .refine((value) => (!value.username && !value.password) || Boolean(value.current_password));
 
 export const employeeIdSchema = idParamSchema;
-export const listEmployeesSchema = activeListQuerySchema;
+export const listEmployeesSchema = activeListQuerySchema.extend({
+  q: z.string().trim().max(100).optional(),
+});
 
 export type AccountChanges = z.infer<typeof updateEmployeeSchema>;

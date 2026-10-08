@@ -7,6 +7,7 @@ import '../widgets/base_col_card.dart';
 import '../widgets/capsule_badge.dart';
 import '../widgets/card_icon_box.dart';
 import '../widgets/row_info_card_md.dart';
+import '../../features/accounts/presentation/pages/employee_list_page.dart';
 
 class AccountBody extends ConsumerWidget {
   const AccountBody({super.key});
@@ -97,6 +98,10 @@ class AccountBody extends ConsumerWidget {
                 ],
               ),
             ),
+            if (user.role == 'petani') ...[
+              const SizedBox(height: AppSpacing.md),
+              _buildEmployeeManagementTile(context, ref),
+            ],
             const SizedBox(height: AppSpacing.md),
             RowInfoCardMd(
               backgroundColor: Colors.white,
@@ -211,6 +216,65 @@ class AccountBody extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  static Widget _buildEmployeeManagementTile(BuildContext context, WidgetRef ref) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const EmployeeListPage()),
+        );
+      },
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: BaseColCard(
+        backgroundColor: Colors.white,
+        borderColor: AppColors.borderLight,
+        borderRadius: AppRadius.card,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            const CardIconBox(
+              iconData: Icons.people_alt_outlined,
+              backgroundColor: AppColors.accentMintSoft,
+              iconColor: AppColors.primaryDarkTeal,
+              width: 44,
+              height: 44,
+              borderRadius: AppRadius.input,
+              iconSize: 22,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Kelola Akun Pegawai',
+                    style: AppTypography.headline.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tambah, pantau, dan atur akses pekerja',
+                    style: AppTypography.footnote.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

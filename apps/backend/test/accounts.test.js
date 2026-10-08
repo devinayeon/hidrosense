@@ -38,7 +38,8 @@ test('all account endpoints reject anonymous users and pegawai', async (t) => {
   const employeeHeaders = bearer((await login('pegawai')).json().data.access_token);
   const routes = [['POST', '/employees', { nama: 'x', username: 'x', password }],
     ['GET', '/employees'], ['GET', '/employees/2'], ['PATCH', '/employees/2', { nama: 'x' }],
-    ['POST', '/employees/2/deactivate'], ['GET', '/profile'], ['PATCH', '/profile', { nama: 'x' }]];
+    ['POST', '/employees/2/deactivate'], ['POST', '/employees/2/activate'],
+    ['GET', '/profile'], ['PATCH', '/profile', { nama: 'x' }]];
   for (const [method, path, payload] of routes) {
     for (const [headers, expected] of [[{}, 401], [employeeHeaders, 403]]) {
       const response = await app.inject({ method, url: `/api/v1${path}`, headers, payload });
@@ -71,7 +72,7 @@ test('employee routes cannot read, modify or deactivate petani or nonexistent ac
   const { app, db, login } = await fixture(t);
   const headers = bearer((await login()).json().data.access_token);
   for (const id of ['1', '999', '9223372036854775807']) {
-    for (const [method, suffix, payload] of [['GET', ''], ['PATCH', '', { nama: 'Attacker' }], ['POST', '/deactivate']]) {
+    for (const [method, suffix, payload] of [['GET', ''], ['PATCH', '', { nama: 'Attacker' }], ['POST', '/deactivate'], ['POST', '/activate']]) {
       assert.equal((await app.inject({ method, url: `/api/v1/employees/${id}${suffix}`, headers, payload })).statusCode, 404);
     }
   }
@@ -139,3 +140,60 @@ test('deactivation is repeatable, preserves referenced history, and revokes acce
   assert.equal((await app.inject({ url: '/api/v1/employees/2', headers })).statusCode, 200);
   assert.deepEqual((await db.execute('PRAGMA foreign_key_check')).rows, []);
 });
+
+test('employee reactivation sets status_aktif back to 1 and is repeatable', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  await app.inject({ method: 'POST', url: '/api/v1/employees/2/deactivate', headers });
+  assert.equal((await db.execute('SELECT status_aktif FROM users WHERE id_user=2')).rows[0].status_aktif, 0);
+
+  for (let i = 0; i < 2; i++) {
+    const response = await app.inject({ method: 'POST', url: '/api/v1/employees/2/activate', headers });
+    assert.equal(response.statusCode, 204, response.body);
+  }
+  assert.equal((await db.execute('SELECT status_aktif FROM users WHERE id_user=2')).rows[0].status_aktif, 1);
+  const detail = await app.inject({ url: '/api/v1/employees/2', headers });
+  assert.equal(detail.json().data.status_aktif, 1);
+});
+
+test('employee listing filters by search query q across nama and username', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  await app.inject({ method: 'POST', url: '/api/v1/employees', headers,
+    payload: { nama: 'Bambang Pamungkas', username: 'bambang', password } });
+  await app.inject({ method: 'POST', url: '/api/v1/employees', headers,
+    payload: { nama: 'Siti Aminah', username: 'aminah', password } });
+
+  const searchNama = await app.inject({ url: '/api/v1/employees?q=bambang', headers });
+  assert.equal(searchNama.statusCode, 200);
+  assert.equal(searchNama.json().meta.total, 1);
+  assert.equal(searchNama.json().data[0].username, 'bambang');
+
+  const searchCase = await app.inject({ url: '/api/v1/employees?q=SITI', headers });
+  assert.equal(searchCase.statusCode, 200);
+  assert.equal(searchCase.json().meta.total, 1);
+  assert.equal(searchCase.json().data[0].username, 'aminah');
+
+  const searchNone = await app.inject({ url: '/api/v1/employees?q=nonexistent', headers });
+  assert.equal(searchNone.statusCode, 200);
+  assert.equal(searchNone.json().meta.total, 0);
+  assert.equal(searchNone.json().data.length, 0);
+});
+
+test('updating a deactivated employee returns 409 ACCOUNT_DEACTIVATED until reactivated', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  await app.inject({ method: 'POST', url: '/api/v1/employees/2/deactivate', headers });
+
+  const updateAttempt = await app.inject({ method: 'PATCH', url: '/api/v1/employees/2', headers,
+    payload: { nama: 'Updated While Inactive' } });
+  assert.equal(updateAttempt.statusCode, 409);
+  assert.equal(updateAttempt.json().error.code, 'ACCOUNT_DEACTIVATED');
+
+  await app.inject({ method: 'POST', url: '/api/v1/employees/2/activate', headers });
+  const updateSuccess = await app.inject({ method: 'PATCH', url: '/api/v1/employees/2', headers,
+    payload: { nama: 'Updated After Active' } });
+  assert.equal(updateSuccess.statusCode, 200);
+  assert.equal(updateSuccess.json().data.nama, 'Updated After Active');
+});
+
