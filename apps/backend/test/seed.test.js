@@ -46,6 +46,8 @@ test('seed populates accounts and authenticates both petani and pegawai via /api
   assert.equal(petaniData.user.role, 'petani');
   assert.ok(petaniData.user.permissions.includes('pegawai:manage'));
   assert.ok(petaniData.user.permissions.includes('budidaya:read'));
+  assert.ok(petaniData.user.permissions.includes('inventaris:write'));
+  assert.ok(petaniData.user.permissions.includes('penyemaian:write'));
 
   // 2. Test Pegawai Login
   const pegawaiLogin = await app.inject({

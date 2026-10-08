@@ -98,12 +98,14 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
     required int seedCount,
     String? note,
     required List<Map<String, dynamic>> materials,
+    String? idempotencyKey,
   }) async {
     final record = await _repository.createSowing(
       sowingDate: sowingDate,
       seedCount: seedCount,
       note: note,
       materials: materials,
+      idempotencyKey: idempotencyKey,
     );
     await refresh();
     return record;

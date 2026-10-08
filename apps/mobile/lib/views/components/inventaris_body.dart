@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/inventory_record.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../pages/account_page.dart';
 import '../pages/add_form_inventaris_page.dart';
 import '../theme/app_theme.dart';
@@ -123,28 +124,28 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
             children: [
               InventoryIllustration(
                 asset: InventoryIllustration.forItem(item),
-                size: 96,
+                size: 72,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 item.name,
                 style: AppTypography.title2.copyWith(color: colors.ink),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 'Jenis: ${item.category}',
                 style: AppTypography.subheadline.copyWith(
                   color: colors.secondary,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               SelectableText(
                 'Saldo: ${item.formattedStock}',
                 style: AppTypography.tabular(
                   AppTypography.title3.copyWith(color: colors.ink),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 item.minimum == null
                     ? 'Stok minimum belum ditetapkan.'
@@ -153,24 +154,104 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
                   color: colors.secondary,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _StockLabel(item: item),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.teal,
-                    foregroundColor: colors.onTeal,
-                    minimumSize: const Size(0, 52),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.ink,
+                        side: BorderSide(color: colors.controlBorder),
+                        minimumSize: const Size(0, 48),
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => AddFormInventarisPage(
+                              initialRecord: item,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Ubah'),
+                    ),
                   ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Tutup'),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.warningOrange,
+                        side: const BorderSide(color: AppColors.warningOrange),
+                        minimumSize: const Size(0, 48),
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () => _confirmDeactivate(context, item),
+                      child: const Text('Arsipkan'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.teal,
+                        foregroundColor: colors.onTeal,
+                        minimumSize: const Size(0, 48),
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Tutup'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmDeactivate(BuildContext context, InventoryRecord item) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Arsipkan Barang'),
+        content: Text(
+          'Apakah Anda yakin ingin mengarsipkan "${item.name}"? Barang ini tidak akan muncul di daftar aktif.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.warningOrange),
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              Navigator.pop(context);
+              try {
+                await ref.read(connectedInventoryProvider.notifier).deactivateItem(item.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Barang "${item.name}" berhasil diarsipkan.')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal mengarsipkan: ${serviceError(e)}')),
+                  );
+                }
+              }
+            },
+            child: const Text('Arsipkan'),
+          ),
+        ],
       ),
     );
   }

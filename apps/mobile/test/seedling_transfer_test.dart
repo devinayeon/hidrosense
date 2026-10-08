@@ -56,6 +56,7 @@ Future<void> pumpTransfer(
   WidgetTester tester,
   ApiClient api, {
   VoidCallback? onTransferred,
+  SowingRecord sowingRecord = readySowing,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -71,7 +72,7 @@ Future<void> pumpTransfer(
       child: MaterialApp(
         home: Scaffold(
           body: SeedlingTransferSheet(
-            sowingRecord: readySowing,
+            sowingRecord: sowingRecord,
             onTransferred: onTransferred ?? () {},
           ),
         ),
@@ -95,6 +96,41 @@ Future<void> submit(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets(
+    'transfer validates remaining seedlings rather than original seed count',
+    (tester) async {
+      var posts = 0;
+      final api = apiFor((request) async {
+        if (request.method == 'POST') posts++;
+        return response({
+          'data': [tableJson()],
+        });
+      });
+      await pumpTransfer(
+        tester,
+        api,
+        sowingRecord: const SowingRecord(
+          id: 'sem-01',
+          userId: 'usr-01',
+          sowingDate: '2026-09-01',
+          seedCount: 100,
+          remainingSeedCount: 5,
+          status: 'aktif',
+          isReadyToMove: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await chooseTable(tester, 'meja-01');
+      await tester.enterText(find.byType(TextFormField).first, '6');
+      await submit(tester);
+      await tester.pumpAndSettle();
+      expect(find.text('Sisa bibit tersedia: 5.'), findsOneWidget);
+      expect(posts, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+      api.close();
+    },
+  );
+
   test(
     'transfer sends exactly the backend contract, including optional note',
     () async {

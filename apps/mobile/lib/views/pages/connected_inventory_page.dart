@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/inventory_record.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
+import '../pages/add_form_inventaris_page.dart';
 import '../theme/app_theme.dart';
 
 class ConnectedInventoryPage extends ConsumerStatefulWidget {
@@ -46,6 +47,18 @@ class _ConnectedInventoryPageState
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => AddFormInventarisPage(initialRecord: item),
+                ),
+              );
+            },
+            child: const Text('Ubah'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Tutup'),
@@ -196,6 +209,18 @@ class _ConnectedInventoryPageState
               ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const AddFormInventarisPage(),
+          ),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Barang'),
+        backgroundColor: AppColors.primaryDarkTeal,
+        foregroundColor: Colors.white,
       ),
     );
   }

@@ -69,16 +69,17 @@ test('jenis_inventaris deactivation preserves history and blocks new references'
   assert.equal(list.json().data[0].id_jenis_inventaris, jenis.id_jenis_inventaris);
 });
 
-test('jenis_inventaris routes reject anonymous, petani write, bad IDs and extra fields', async (t) => {
+test('jenis_inventaris routes reject anonymous, allow petani write, reject bad IDs and extra fields', async (t) => {
   const { app, login } = await fixture(t);
   const petaniHdr = await petaniHeaders(login);
   const pegawaiHdr = await pegawaiHeaders(login);
 
   // anonymous
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/jenis-inventaris' })).statusCode, 401);
-  // petani can read but not write
+  // petani can read and write
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/jenis-inventaris', headers: petaniHdr })).statusCode, 200);
-  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers: petaniHdr, payload: jenisPayload })).statusCode, 403);
+  const createdByPetani = await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers: petaniHdr, payload: jenisPayload });
+  assert.equal(createdByPetani.statusCode, 201, createdByPetani.body);
 
   // bad IDs
   for (const id of ['0', 'abc', '-1', '9223372036854775808']) {
@@ -140,14 +141,15 @@ test('obat list pagination and status_aktif filter work correctly', async (t) =>
   assert.ok(aktif.json().data.every((o) => o.status_aktif === 1));
 });
 
-test('obat routes reject anonymous, petani write, bad inputs', async (t) => {
+test('obat routes reject anonymous, allow petani write, reject bad inputs', async (t) => {
   const { app, login } = await fixture(t);
   const petaniHdr = await petaniHeaders(login);
   const pegawaiHdr = await pegawaiHeaders(login);
 
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/obat' })).statusCode, 401);
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/obat', headers: petaniHdr })).statusCode, 200);
-  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/obat', headers: petaniHdr, payload: { nama_obat: 'X' } })).statusCode, 403);
+  const createdByPetani = await app.inject({ method: 'POST', url: '/api/v1/obat', headers: petaniHdr, payload: obatPayload });
+  assert.equal(createdByPetani.statusCode, 201, createdByPetani.body);
   // not found
   assert.equal((await app.inject({ url: '/api/v1/obat/9999', headers: pegawaiHdr })).statusCode, 404);
   // bad payload
@@ -228,14 +230,18 @@ test('inventaris rejects invalid jenis and inactive obat references', async (t) 
   assert.equal(r2.statusCode, 422);
 });
 
-test('inventaris routes reject anonymous, petani write, bad inputs', async (t) => {
+test('inventaris routes reject anonymous, allow petani write, reject bad inputs', async (t) => {
   const { app, login } = await fixture(t);
   const petaniHdr = await petaniHeaders(login);
   const pegawaiHdr = await pegawaiHeaders(login);
 
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/inventaris' })).statusCode, 401);
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/inventaris', headers: petaniHdr })).statusCode, 200);
-  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers: petaniHdr, payload: { nama_barang: 'X', satuan: 'kg', id_jenis_inventaris: '1' } })).statusCode, 403);
+
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers: petaniHdr, payload: jenisPayload })).json().data;
+  const createdByPetani = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers: petaniHdr, payload: { nama_barang: 'X', satuan: 'kg', id_jenis_inventaris: jenis.id_jenis_inventaris } });
+  assert.equal(createdByPetani.statusCode, 201, createdByPetani.body);
+
   // not found
   assert.equal((await app.inject({ url: '/api/v1/inventaris/9999', headers: pegawaiHdr })).statusCode, 404);
   // empty update

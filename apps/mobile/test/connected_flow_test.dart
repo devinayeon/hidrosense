@@ -56,7 +56,7 @@ void main() {
                 'nama': 'Mitra',
                 'username': 'mitra',
                 'role': 'petani',
-                'permissions': ['inventaris:read'],
+                'permissions': ['inventaris:read', 'inventaris:write'],
               },
             },
           });

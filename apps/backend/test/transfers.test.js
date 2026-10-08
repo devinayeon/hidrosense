@@ -48,6 +48,34 @@ function check(response, status, code) {
   if (code) assert.equal(response.json().error.code, code);
 }
 
+test('transfer updates remaining seedlings and table holes on list and detail without double-counting replay', async (t) => {
+  const f = await setup(t);
+  const get = async (path) => {
+    const response = await f.app.inject({ method: 'GET', url: `/api/v1/${path}`, headers: f.headers });
+    check(response, 200);
+    return response.json().data;
+  };
+  assert.equal((await get('penyemaian/1')).sisa_benih, 500);
+  const key = randomUUID();
+  check(await f.create({}, { 'idempotency-key': key }), 201);
+  check(await f.create({}, { 'idempotency-key': key }), 200);
+  for (const sowing of [(await get('penyemaian'))[0], await get('penyemaian/1')]) {
+    assert.equal(sowing.jumlah_benih, 500);
+    assert.equal(sowing.sisa_benih, 350);
+  }
+  for (const table of [(await get('meja-tanam'))[0], await get('meja-tanam/1')]) {
+    assert.equal(table.tanaman_aktif, 150);
+    assert.equal(table.kapasitas_tersedia, 100);
+  }
+  check(await f.create({ jumlah_tanaman: 101 }), 409, 'TABLE_CAPACITY_EXCEEDED');
+  assert.equal((await get('penyemaian/1')).sisa_benih, 350);
+  await f.db.execute("INSERT INTO meja_tanam (kode_meja, jumlah_lubang, status_meja) VALUES ('M-03', 350, 'tersedia')");
+  check(await f.create({ id_meja: '3', jumlah_tanaman: 350 }), 201);
+  const completed = await get('penyemaian/1');
+  assert.equal(completed.sisa_benih, 0);
+  assert.equal(completed.status_penyemaian, 'selesai');
+});
+
 test('transfers create calculates harvest date based on 45-day baseline, umur_semai, and active plants', async (t) => {
   const f = await setup(t);
   const res = await f.create();

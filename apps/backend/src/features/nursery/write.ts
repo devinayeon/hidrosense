@@ -19,10 +19,7 @@ export async function nurseryWrite<T extends Json & Record<string, Json>>(
   payload: Json,
   effect: (tx: Transaction, actorId: string, now: number) => Promise<T>,
 ) {
-  const rawKey = request.headers['idempotency-key'];
-  const operationKey = operationType === 'penyemaian.create'
-    ? rawKey
-    : (rawKey ?? randomUUID());
+  const operationKey = request.headers['idempotency-key'] ?? randomUUID();
 
   if (!uuidSchema.safeParse(operationKey).success) {
     throw new ApiError(400, 'VALIDATION_ERROR', 'Header sinkronisasi tidak valid.');

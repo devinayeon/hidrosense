@@ -87,23 +87,25 @@ test('stock parser rejects malformed amounts, duplicate lines, forged fields and
   assert.deepEqual(await stockState(f.db), before);
 });
 
-test('stock authorization gives petani read only and blocks anonymous and revoked replay', async (t) => {
+test('stock authorization allows petani write and blocks anonymous and revoked replay', async (t) => {
   const f = await stockFixture(t);
   for (const url of ['/api/v1/stok', '/api/v1/stok/1', `/api/v1/inventaris/${f.items[0].id_inventaris}/saldo`]) {
     assert.equal((await f.app.inject({ url })).statusCode, 401);
   }
   const request = { method: 'POST', url: '/api/v1/stok',
-    headers: { ...f.headers, 'idempotency-key': randomUUID() }, payload: f.movement() };
-  expectError(await f.app.inject({ ...request, headers: { ...f.reader, 'idempotency-key': randomUUID() } }), 403, 'FORBIDDEN');
+    headers: { ...f.reader, 'idempotency-key': randomUUID() }, payload: f.movement() };
   const first = await f.app.inject(request);
   assert.equal(first.statusCode, 201, first.body);
   assert.equal((await f.app.inject({ url: first.headers.location, headers: f.reader })).statusCode, 200);
-  expectError(await f.app.inject({ method: 'POST', url: `${first.headers.location}/reverse`,
-    headers: { ...f.reader, 'idempotency-key': randomUUID() }, payload: { keterangan: 'Correction' } }), 403, 'FORBIDDEN');
+  const reverseRes = await f.app.inject({ method: 'POST', url: `${first.headers.location}/reverse`,
+    headers: { ...f.reader, 'idempotency-key': randomUUID() }, payload: { keterangan: 'Correction' } });
+  assert.equal(reverseRes.statusCode, 201, reverseRes.body);
   const logout = await f.app.inject({ method: 'POST', url: '/api/v1/auth/logout', headers: f.headers });
   assert.equal(logout.statusCode, 204, logout.body);
-  assert.equal((await f.app.inject(request)).statusCode, 401);
-  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, 1);
+  const pegawaiReq = { method: 'POST', url: '/api/v1/stok',
+    headers: { ...f.headers, 'idempotency-key': randomUUID() }, payload: f.movement() };
+  assert.equal((await f.app.inject(pegawaiReq)).statusCode, 401);
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, 2);
 });
 
 test('stock fractional arithmetic remains exact and balances cannot cross zero or maximum', async (t) => {

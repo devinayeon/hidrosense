@@ -224,30 +224,49 @@ test('N-09: Insufficient stock balance rolls back entire sowing creation', async
   assert.equal(saldoRes.json().data.saldo, '500');
 });
 
-test('N-10: Authorization matrix: pegawai has write, petani has read only', async (t) => {
+test('N-10: Authorization matrix: petani and pegawai have write, invalid header rejected', async (t) => {
   const f = await nurseryFixture(t);
 
-  // Petani tries to POST sowing -> 403 FORBIDDEN
+  // Petani creates sowing -> 201 OK
   const petaniPost = await f.app.inject({
     method: 'POST',
     url: '/api/v1/penyemaian',
     headers: { ...f.reader, 'idempotency-key': randomUUID() },
     payload: f.defaultPayload(),
   });
-  expectError(petaniPost, 403, 'FORBIDDEN');
+  assert.equal(petaniPost.statusCode, 201, petaniPost.body);
+  const id = petaniPost.json().data.id_penyemaian;
 
-  // Pegawai creates sowing -> 201
-  const created = await f.post(f.defaultPayload());
-  const id = created.json().data.id_penyemaian;
-
-  // Petani tries to PATCH sowing -> 403 FORBIDDEN
+  // Petani updates sowing -> 200 OK
   const petaniPatch = await f.app.inject({
     method: 'PATCH',
     url: `/api/v1/penyemaian/${id}`,
     headers: { ...f.reader, 'idempotency-key': randomUUID() },
     payload: { jumlah_benih: 150 },
   });
-  expectError(petaniPatch, 403, 'FORBIDDEN');
+  assert.equal(petaniPatch.statusCode, 200, petaniPatch.body);
+
+  // Pegawai creates sowing -> 201
+  const created = await f.post(f.defaultPayload());
+  assert.equal(created.statusCode, 201);
+
+  // Create without idempotency-key defaults to randomUUID -> 201 OK
+  const withoutKey = await f.app.inject({
+    method: 'POST',
+    url: '/api/v1/penyemaian',
+    headers: f.headers,
+    payload: f.defaultPayload(),
+  });
+  assert.equal(withoutKey.statusCode, 201, withoutKey.body);
+
+  // Invalid idempotency-key -> 400 VALIDATION_ERROR
+  const invalidKey = await f.app.inject({
+    method: 'POST',
+    url: '/api/v1/penyemaian',
+    headers: { ...f.headers, 'idempotency-key': 'not-a-uuid' },
+    payload: f.defaultPayload(),
+  });
+  expectError(invalidKey, 400, 'VALIDATION_ERROR');
 
   // Petani reads sowing -> 200 OK
   const petaniGet = await f.get(id);

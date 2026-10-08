@@ -81,7 +81,12 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
             .read(connectedNurseryProvider.notifier)
             .updateStatus(widget.sowingRecord!.id, 'aktif');
       } else {
-        final invId = _selectedInventoryId ?? '1';
+        final inventoryRecords = ref.read(connectedInventoryProvider).records;
+        final invId = _selectedInventoryId ??
+            (inventoryRecords.isNotEmpty ? inventoryRecords.first.id : '1');
+        final selectedItem =
+            inventoryRecords.where((item) => item.id == invId).firstOrNull;
+        final unit = selectedItem?.unit ?? 'btr';
         await ref
             .read(connectedNurseryProvider.notifier)
             .createSowing(
@@ -92,7 +97,7 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                 {
                   'id_inventaris': invId,
                   'jumlah': seedCount.toString(),
-                  'satuan': 'btr',
+                  'satuan': unit,
                 },
               ],
             );

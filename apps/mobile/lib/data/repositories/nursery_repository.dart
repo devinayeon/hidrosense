@@ -1,3 +1,4 @@
+import '../../core/uuid.dart';
 import '../models/nursery_record.dart';
 import '../services/api_client.dart';
 
@@ -60,9 +61,12 @@ class NurseryRepository {
     required int seedCount,
     String? note,
     required List<Map<String, dynamic>> materials,
+    String? idempotencyKey,
   }) async {
+    final key = idempotencyKey ?? generateUuidV4();
     final response = await _api.post(
       'penyemaian',
+      headers: {'Idempotency-Key': key},
       body: {
         'tanggal_semai': sowingDate,
         'jumlah_benih': seedCount,

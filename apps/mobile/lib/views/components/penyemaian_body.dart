@@ -88,7 +88,8 @@ class PenyemaianBody extends ConsumerWidget {
                       )
                     else
                       ...items.map((item) {
-                        final isReady = item.isReadyToMove;
+                        final isReady = item.status == 'aktif' &&
+                            item.isReadyToMove && item.remainingSeedCount > 0;
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: RowInfoCardMd(

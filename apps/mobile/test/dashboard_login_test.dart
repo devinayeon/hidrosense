@@ -14,6 +14,7 @@ import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/dashboard_body.dart';
 import 'package:hidrosense_mobile/views/components/header.dart';
+import 'package:hidrosense_mobile/views/components/inventaris_body.dart';
 import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
 import 'package:hidrosense_mobile/views/pages/login_page.dart';
 import 'package:hidrosense_mobile/views/pages/main_page.dart';
@@ -206,7 +207,8 @@ void main() {
     await tester.tap(find.text('Cek Stok'));
     await tester.pumpAndSettle();
     expect(find.byType(MainPage), findsOneWidget);
-    expect(find.text('Daftar Inventaris'), findsOneWidget);
+    expect(find.byType(InventoryHeader), findsOneWidget);
+    expect(find.byType(InventarisBody), findsOneWidget);
     api.close();
   });
 

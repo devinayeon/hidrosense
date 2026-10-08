@@ -91,6 +91,11 @@ class ConnectedInventoryViewModel
       );
     }
   }
+
+  Future<void> deactivateItem(String id) async {
+    await _repository.deactivateItem(id);
+    await refresh();
+  }
 }
 
 final connectedInventoryProvider =

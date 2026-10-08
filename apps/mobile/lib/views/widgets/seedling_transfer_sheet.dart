@@ -275,6 +275,9 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                       if (count == null || count <= 0) {
                         return 'Jumlah tanaman harus lebih dari 0.';
                       }
+                      if (count > widget.sowingRecord.remainingSeedCount) {
+                        return 'Sisa bibit tersedia: ${widget.sowingRecord.remainingSeedCount}.';
+                      }
                       if (selected != null &&
                           count > selected.availableCapacity) {
                         return 'Maksimal ${selected.availableCapacity} tanaman untuk meja ini.';

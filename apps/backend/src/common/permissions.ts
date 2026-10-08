@@ -1,8 +1,10 @@
-// System Request controls permissions; pegawai has panen access, never penjualan.
+// System Request controls permissions:
+// - Petani has full inventaris and penyemaian management (read & write), pegawai also has inventaris & penyemaian (read & write).
+// - Pegawai has panen access, never penjualan.
 const commonReads = ['inventaris:read', 'penyemaian:read', 'budidaya:read', 'panen:read'];
 export const rolePermissions: Readonly<Record<string, readonly string[]>> = Object.freeze({
   petani: Object.freeze([
-    ...commonReads, 'pegawai:manage', 'profil:read', 'profil:write',
+    ...commonReads, 'inventaris:write', 'penyemaian:write', 'pegawai:manage', 'profil:read', 'profil:write',
     'penjualan:read', 'penjualan:write', 'deteksi:read', 'deteksi:write',
     'rekomendasi:read', 'rekomendasi:decide', 'perawatan:read', 'perawatan:write',
     'cuaca:read',

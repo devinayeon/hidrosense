@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/nursery_record.dart';
 import '../../models/seeding_batch_model.dart';
+import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../components/header.dart';
 import '../theme/app_theme.dart';
 import '../widgets/base_col_card.dart';
@@ -25,7 +26,15 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sowingRecord = widget.sowingRecord;
+    final original = widget.sowingRecord;
+    final sowingRecord = _transferred && original != null
+        ? ref
+                  .watch(connectedNurseryProvider)
+                  .records
+                  .where((record) => record.id == original.id)
+                  .firstOrNull ??
+              original
+        : original;
     final seedingItem = widget.seedingItem;
     final title = sowingRecord != null
         ? sowingRecord.batchName
@@ -39,7 +48,7 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
     final totalHss = sowingRecord == null ? seedingItem!.totalHss : 15;
     final progress = (hssDays / totalHss).clamp(0.0, 1.0);
     final count = sowingRecord != null
-        ? sowingRecord.seedCount
+        ? sowingRecord.remainingSeedCount
         : seedingItem!.healthyCount;
     final damagedCount = seedingItem?.damagedCount ?? 0;
     final materials = sowingRecord != null

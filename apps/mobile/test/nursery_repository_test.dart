@@ -73,6 +73,10 @@ void main() {
     final mockClient = MockNurseryHttpClient((req) async {
       expect(req.method, 'POST');
       expect(req.url.path, '/api/v1/penyemaian');
+      expect(
+        req.headers['Idempotency-Key'] ?? req.headers['idempotency-key'],
+        matches(RegExp(r'^[0-9a-fA-F-]{36}$')),
+      );
       final body = jsonDecode(req.body);
       expect(body['tanggal_semai'], '2026-10-06');
       expect(body['jumlah_benih'], 150);

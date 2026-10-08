@@ -19,6 +19,7 @@ function sowingRow(row: Row, today: string) {
     id_user: String(row.id_user),
     tanggal_semai: String(row.tanggal_semai),
     jumlah_benih: Number(row.jumlah_benih),
+    sisa_benih: Math.max(0, Number(row.jumlah_benih) - Number(row.jumlah_dipindahkan)),
     status_penyemaian: row.status_penyemaian == null ? null : String(row.status_penyemaian),
     keterangan: row.keterangan == null ? null : String(row.keterangan),
     /** Age in calendar days from tanggal_semai to today (Asia/Jakarta: UTC+7). */
@@ -47,6 +48,8 @@ const columns = `
   CAST(p.id_user AS TEXT) AS id_user,
   p.tanggal_semai,
   p.jumlah_benih,
+  (SELECT COALESCE(SUM(pm.jumlah_tanaman), 0)
+    FROM pemindahan pm WHERE pm.id_penyemaian=p.id_penyemaian) AS jumlah_dipindahkan,
   p.status_penyemaian,
   p.keterangan
 `;

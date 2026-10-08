@@ -129,7 +129,7 @@ class DashboardBody extends ConsumerWidget {
                       child: TopInfoContent(
                         topText: 'Benih Disemai',
                         middleText: hasData
-                            ? '${active.fold<int>(0, (count, item) => count + item.seedCount)} Butir'
+                            ? '${active.fold<int>(0, (count, item) => count + item.remainingSeedCount)} Butir'
                             : '—',
                         bottomText: 'Dari batch aktif dimuat',
                         textColor: AppColors.textPrimary,

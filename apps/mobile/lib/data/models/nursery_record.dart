@@ -35,17 +35,19 @@ class SowingRecord {
     required this.userId,
     required this.sowingDate,
     required this.seedCount,
+    int? remainingSeedCount,
     required this.status,
     this.note,
     this.ageDays,
     required this.isReadyToMove,
     this.materials = const [],
-  });
+  }) : remainingSeedCount = remainingSeedCount ?? seedCount;
 
   final String id;
   final String userId;
   final String sowingDate;
   final int seedCount;
+  final int remainingSeedCount;
   final String status; // 'aktif' | 'selesai'
   final String? note;
   final int? ageDays;
@@ -53,9 +55,10 @@ class SowingRecord {
   final List<SowingMaterialLine> materials;
 
   String get batchName => 'Batch #$id';
-  String get statusLabel => isReadyToMove ? 'Siap Pindah ($hssText)' : 'Semai ($hssText)';
+  String get statusLabel =>
+      isReadyToMove ? 'Siap Pindah ($hssText)' : 'Semai ($hssText)';
   String get hssText => ageDays != null ? '$ageDays HSS' : '- HSS';
-  String get seedCountText => '$seedCount Butir';
+  String get seedCountText => '$remainingSeedCount Butir';
 
   factory SowingRecord.fromJson(Map<String, dynamic> json) {
     if (json['id_penyemaian'] is! String ||
@@ -68,8 +71,10 @@ class SowingRecord {
     final rawMaterials = json['consumed_materials'] ?? json['materials'];
     final matList = rawMaterials is List
         ? rawMaterials
-            .map((m) => SowingMaterialLine.fromJson(m as Map<String, dynamic>))
-            .toList()
+              .map(
+                (m) => SowingMaterialLine.fromJson(m as Map<String, dynamic>),
+              )
+              .toList()
         : const <SowingMaterialLine>[];
 
     final age = json['usia_hari'] as num?;
@@ -79,6 +84,7 @@ class SowingRecord {
       userId: json['id_user'] as String,
       sowingDate: json['tanggal_semai'] as String,
       seedCount: (json['jumlah_benih'] as num).toInt(),
+      remainingSeedCount: (json['sisa_benih'] as num?)?.toInt(),
       status: json['status_penyemaian'] as String? ?? 'aktif',
       note: json['keterangan'] as String?,
       ageDays: age?.toInt(),
