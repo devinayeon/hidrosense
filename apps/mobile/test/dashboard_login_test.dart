@@ -15,7 +15,6 @@ import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
 import 'package:hidrosense_mobile/views/pages/login_page.dart';
 import 'package:hidrosense_mobile/views/pages/main_page.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
-import 'package:hidrosense_mobile/views/widgets/row_button.dart';
 import 'package:hidrosense_mobile/views/widgets/row_info_card_md.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -335,7 +334,10 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
       expect(calls, 1);
-      expect(tester.widget<RowButton>(find.byType(RowButton)).onTap, isNull);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
       expect(tester.widget<TextFormField>(fields.first).enabled, isFalse);
       expect(tester.widget<TextFormField>(fields.last).enabled, isFalse);
       expect(
@@ -343,6 +345,7 @@ void main() {
         isNull,
       );
       done(' secret ');
+      await tester.ensureVisible(find.text('Memproses...'));
       await tester.tap(find.text('Memproses...'));
       await tester.pump();
       expect(calls, 1);
@@ -353,7 +356,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Kredensial salah'), findsOneWidget);
-      expect(tester.widget<RowButton>(find.byType(RowButton)).onTap, isNotNull);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNotNull,
+      );
       expect(tester.widget<TextFormField>(fields.first).enabled, isTrue);
       await tester.pumpWidget(const SizedBox.shrink());
       api.close();
@@ -377,6 +383,7 @@ void main() {
           ),
         ),
       );
+      await tester.ensureVisible(find.byType(TextFormField).last);
       await tester.tap(find.byType(TextFormField).last);
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
