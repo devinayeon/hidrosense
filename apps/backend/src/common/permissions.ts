@@ -4,7 +4,7 @@
 const commonReads = ['inventaris:read', 'penyemaian:read', 'budidaya:read', 'panen:read'];
 export const rolePermissions: Readonly<Record<string, readonly string[]>> = Object.freeze({
   petani: Object.freeze([
-    ...commonReads, 'inventaris:write', 'penyemaian:write', 'pegawai:manage', 'profil:read', 'profil:write',
+    ...commonReads, 'inventaris:write', 'penyemaian:write', 'budidaya:write', 'pegawai:manage', 'profil:read', 'profil:write',
     'penjualan:read', 'penjualan:write', 'deteksi:read', 'deteksi:write',
     'rekomendasi:read', 'rekomendasi:decide', 'perawatan:read', 'perawatan:write',
     'cuaca:read',

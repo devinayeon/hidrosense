@@ -184,7 +184,7 @@ test('damage idempotency replay returns same result', async (t) => {
   check(conflict, 409, 'OPERATION_CONFLICT');
 });
 
-test('damage permissions: petani can read but cannot create or patch', async (t) => {
+test('damage permissions: petani can read, create and patch', async (t) => {
   const f = await setup(t);
   await f.create();
 
@@ -198,22 +198,22 @@ test('damage permissions: petani can read but cannot create or patch', async (t)
   const readDetail = await f.app.inject({ method: 'GET', url: '/api/v1/kerusakan/1', headers: petaniHeaders });
   check(readDetail, 200);
 
-  // Petani forbidden from write
-  const createForbidden = await f.app.inject({
+  const created = await f.app.inject({
     method: 'POST',
     url: '/api/v1/kerusakan',
     headers: petaniHeaders,
     payload: { id_pemindahan: '1', tanggal_kejadian: '2026-09-20', jumlah_tanaman: 5, jenis_kerusakan: 'Test' },
   });
-  check(createForbidden, 403);
+  check(created, 201);
 
-  const patchForbidden = await f.app.inject({
+  const patched = await f.app.inject({
     method: 'PATCH',
     url: '/api/v1/kerusakan/1',
     headers: petaniHeaders,
-    payload: { keterangan: 'Hack' },
+    payload: { keterangan: 'Catatan petani' },
   });
-  check(patchForbidden, 403);
+  check(patched, 200);
+  assert.equal(patched.json().data.keterangan, 'Catatan petani');
 });
 
 test('damage tanaman_aktif reflected in transfer response after recording damage', async (t) => {

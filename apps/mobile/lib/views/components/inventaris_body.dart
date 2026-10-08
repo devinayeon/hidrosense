@@ -172,9 +172,8 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
                         Navigator.push(
                           context,
                           MaterialPageRoute<void>(
-                            builder: (_) => AddFormInventarisPage(
-                              initialRecord: item,
-                            ),
+                            builder: (_) =>
+                                AddFormInventarisPage(initialRecord: item),
                           ),
                         );
                       },
@@ -216,9 +215,11 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
     );
   }
 
-  void _confirmDeactivate(BuildContext context, InventoryRecord item) {
+  void _confirmDeactivate(BuildContext sheetContext, InventoryRecord item) {
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(connectedInventoryProvider.notifier);
     showDialog<void>(
-      context: context,
+      context: sheetContext,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Arsipkan Barang'),
         content: Text(
@@ -230,21 +231,29 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
             child: const Text('Batal'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.warningOrange),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.warningOrange,
+            ),
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              Navigator.pop(context);
+              Navigator.pop(sheetContext);
               try {
-                await ref.read(connectedInventoryProvider.notifier).deactivateItem(item.id);
+                await notifier.deactivateItem(item.id);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Barang "${item.name}" berhasil diarsipkan.')),
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Barang "${item.name}" berhasil diarsipkan.',
+                      ),
+                    ),
                   );
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal mengarsipkan: ${serviceError(e)}')),
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal mengarsipkan: ${serviceError(e)}'),
+                    ),
                   );
                 }
               }

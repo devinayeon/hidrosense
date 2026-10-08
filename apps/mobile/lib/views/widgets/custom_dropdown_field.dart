@@ -98,7 +98,7 @@ class CustomDropdownField extends StatelessWidget {
                           vertical: 14,
                         ),
                         color: isSelected
-                            ? AppColors.accentMintSoft.withOpacity(0.5)
+                            ? AppColors.accentMintSoft.withValues(alpha: 0.5)
                             : Colors.transparent,
                         child: Row(
                           children: [
@@ -193,9 +193,7 @@ class CustomDropdownField extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             errorText!,
-            style: AppTypography.footnote.copyWith(
-              color: AppColors.dangerRed,
-            ),
+            style: AppTypography.footnote.copyWith(color: AppColors.dangerRed),
           ),
         ],
       ],

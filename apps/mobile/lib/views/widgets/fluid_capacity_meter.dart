@@ -103,8 +103,8 @@ class FluidCapacityMeter extends StatelessWidget {
                           boxShadow: animatedRatio > 0.05
                               ? [
                                   BoxShadow(
-                                    color: fluidGradient.first.withOpacity(
-                                      0.35,
+                                    color: fluidGradient.first.withValues(
+                                      alpha: 0.35,
                                     ),
                                     blurRadius: 6,
                                     offset: const Offset(0, 1),
@@ -122,7 +122,7 @@ class FluidCapacityMeter extends StatelessWidget {
                           height: (height * 0.35).clamp(1.0, height),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.35),
+                              color: Colors.white.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.circular(
                                 AppRadius.pill,
                               ),

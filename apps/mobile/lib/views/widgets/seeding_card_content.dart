@@ -105,7 +105,7 @@ class SeedingCardContent extends StatelessWidget {
               color: AppColors.warningBg,
               borderRadius: BorderRadius.circular(AppRadius.input),
               border: Border.all(
-                color: AppColors.warningOrange.withOpacity(0.3),
+                color: AppColors.warningOrange.withValues(alpha: 0.3),
                 width: 1.0,
               ),
             ),

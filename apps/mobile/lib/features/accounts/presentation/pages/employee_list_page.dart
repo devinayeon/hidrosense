@@ -28,27 +28,30 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
     ref.read(employeeViewModelProvider.notifier).startOnboarding();
     EmployeeFormSheet.show(
       context,
-      onSubmit: ({
-        required String nama,
-        required String username,
-        String? password,
-        String? email,
-        String? noTelepon,
-        String? alamat,
-        required Duration duration,
-        int retryCount = 0,
-      }) {
-        return ref.read(employeeViewModelProvider.notifier).createEmployee(
-              nama: nama,
-              username: username,
-              password: password!,
-              email: email,
-              noTelepon: noTelepon,
-              alamat: alamat,
-              duration: duration,
-              retryCount: retryCount,
-            );
-      },
+      onSubmit:
+          ({
+            required String nama,
+            required String username,
+            String? password,
+            String? email,
+            String? noTelepon,
+            String? alamat,
+            required Duration duration,
+            int retryCount = 0,
+          }) {
+            return ref
+                .read(employeeViewModelProvider.notifier)
+                .createEmployee(
+                  nama: nama,
+                  username: username,
+                  password: password!,
+                  email: email,
+                  noTelepon: noTelepon,
+                  alamat: alamat,
+                  duration: duration,
+                  retryCount: retryCount,
+                );
+          },
     );
   }
 
@@ -56,40 +59,49 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
     EmployeeFormSheet.show(
       context,
       employee: employee,
-      onSubmit: ({
-        required String nama,
-        required String username,
-        String? password,
-        String? email,
-        String? noTelepon,
-        String? alamat,
-        required Duration duration,
-        int retryCount = 0,
-      }) {
-        return ref.read(employeeViewModelProvider.notifier).updateEmployee(
-              employee.id,
-              nama: nama,
-              username: username,
-              password: password,
-              email: email,
-              noTelepon: noTelepon,
-              alamat: alamat,
-            );
-      },
+      onSubmit:
+          ({
+            required String nama,
+            required String username,
+            String? password,
+            String? email,
+            String? noTelepon,
+            String? alamat,
+            required Duration duration,
+            int retryCount = 0,
+          }) {
+            return ref
+                .read(employeeViewModelProvider.notifier)
+                .updateEmployee(
+                  employee.id,
+                  nama: nama,
+                  username: username,
+                  password: password,
+                  email: email,
+                  noTelepon: noTelepon,
+                  alamat: alamat,
+                );
+          },
     );
   }
 
   Future<void> _handleToggleStatus(EmployeeModel employee) async {
     final notifier = ref.read(employeeViewModelProvider.notifier);
     if (employee.isActive) {
-      final confirmed = await EmployeeDialogs.confirmDeactivation(context, employee);
+      final confirmed = await EmployeeDialogs.confirmDeactivation(
+        context,
+        employee,
+      );
       if (confirmed) {
         await notifier.deactivateEmployee(employee.id, employee.nama);
       } else {
         notifier.cancelDeactivation(employee.id);
       }
     } else {
-      final confirmed = await EmployeeDialogs.confirmActivation(context, employee);
+      final confirmed = await EmployeeDialogs.confirmActivation(
+        context,
+        employee,
+      );
       if (confirmed) {
         await notifier.activateEmployee(employee.id, employee.nama);
       }
@@ -101,7 +113,8 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
     final state = ref.watch(employeeViewModelProvider);
 
     ref.listen<EmployeeListState>(employeeViewModelProvider, (prev, next) {
-      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -157,25 +170,39 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
                 TextField(
                   controller: _searchController,
                   onChanged: (val) {
-                    ref.read(employeeViewModelProvider.notifier).onSearchChanged(val);
+                    ref
+                        .read(employeeViewModelProvider.notifier)
+                        .onSearchChanged(val);
                   },
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau username pegawai...',
-                    hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textTertiary, size: 20),
+                    hintStyle: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () {
                               _searchController.clear();
-                              ref.read(employeeViewModelProvider.notifier).onSearchChanged('');
+                              ref
+                                  .read(employeeViewModelProvider.notifier)
+                                  .onSearchChanged('');
                             },
                           )
                         : null,
                     filled: true,
                     fillColor: AppColors.secondarySurface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 10,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                       borderSide: BorderSide.none,
@@ -189,21 +216,27 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
                     _filterChip(
                       label: 'Semua',
                       isSelected: state.filterStatus == null,
-                      onTap: () => ref.read(employeeViewModelProvider.notifier).setFilter(null),
+                      onTap: () => ref
+                          .read(employeeViewModelProvider.notifier)
+                          .setFilter(null),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     _filterChip(
                       label: 'Aktif',
                       count: state.totalActive,
                       isSelected: state.filterStatus == 1,
-                      onTap: () => ref.read(employeeViewModelProvider.notifier).setFilter(1),
+                      onTap: () => ref
+                          .read(employeeViewModelProvider.notifier)
+                          .setFilter(1),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     _filterChip(
                       label: 'Nonaktif',
                       count: state.totalInactive,
                       isSelected: state.filterStatus == 0,
-                      onTap: () => ref.read(employeeViewModelProvider.notifier).setFilter(0),
+                      onTap: () => ref
+                          .read(employeeViewModelProvider.notifier)
+                          .setFilter(0),
                     ),
                   ],
                 ),
@@ -213,34 +246,38 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primaryDarkTeal,
-              onRefresh: () => ref.read(employeeViewModelProvider.notifier).loadEmployees(),
+              onRefresh: () =>
+                  ref.read(employeeViewModelProvider.notifier).loadEmployees(),
               child: state.isLoading && state.employees.isEmpty
                   ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryDarkTeal),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryDarkTeal,
+                      ),
                     )
                   : state.employees.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
-                          ),
-                          padding: const EdgeInsets.only(
-                            left: AppSpacing.md,
-                            right: AppSpacing.md,
-                            top: AppSpacing.md,
-                            bottom: 80, // FAB clearance
-                          ),
-                          itemCount: state.employees.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                          itemBuilder: (context, index) {
-                            final emp = state.employees[index];
-                            return EmployeeTile(
-                              employee: emp,
-                              onEdit: () => _openEditSheet(emp),
-                              onToggleStatus: () => _handleToggleStatus(emp),
-                            );
-                          },
-                        ),
+                  ? _buildEmptyState()
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.only(
+                        left: AppSpacing.md,
+                        right: AppSpacing.md,
+                        top: AppSpacing.md,
+                        bottom: 80, // FAB clearance
+                      ),
+                      itemCount: state.employees.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final emp = state.employees[index];
+                        return EmployeeTile(
+                          employee: emp,
+                          onEdit: () => _openEditSheet(emp),
+                          onToggleStatus: () => _handleToggleStatus(emp),
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -321,11 +358,17 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
               label: const Text('Tambah Pegawai Pertama'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primaryDarkTeal,
-                side: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.2),
+                side: const BorderSide(
+                  color: AppColors.primaryDarkTeal,
+                  width: 1.2,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
               ),
             ),
           ],

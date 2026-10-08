@@ -16,9 +16,7 @@ class CuacaBody extends ConsumerWidget {
 
     if (weatherState.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryMint,
-        ),
+        child: CircularProgressIndicator(color: AppColors.primaryMint),
       );
     }
 
@@ -89,7 +87,7 @@ class CuacaBody extends ConsumerWidget {
                     data.sumber,
                     textAlign: TextAlign.center,
                     style: AppTypography.caption2.copyWith(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -211,8 +209,8 @@ class CuacaBody extends ConsumerWidget {
                                           : AppColors.textPrimary,
                                       backgroundColor:
                                           item.status.contains('Hujan')
-                                              ? AppColors.accentMintSoft
-                                              : AppColors.secondarySurface,
+                                          ? AppColors.accentMintSoft
+                                          : AppColors.secondarySurface,
                                       borderColor: item.status.contains('Hujan')
                                           ? AppColors.primaryMint
                                           : AppColors.borderLight,

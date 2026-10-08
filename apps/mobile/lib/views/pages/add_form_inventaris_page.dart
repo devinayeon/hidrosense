@@ -163,10 +163,7 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
         decoration: const BoxDecoration(
           color: AppColors.canvasWarm,
           border: Border(
-            top: BorderSide(
-              color: AppColors.borderSubtle,
-              width: 0.5,
-            ),
+            top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
           ),
         ),
         child: SafeArea(
@@ -202,7 +199,9 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
               iconBuilder: (cat) {
                 final c = cat.toLowerCase();
                 if (c.contains('benih')) return Icons.eco_rounded;
-                if (c.contains('pupuk') || c.contains('nutrisi')) return Icons.water_drop_rounded;
+                if (c.contains('pupuk') || c.contains('nutrisi')) {
+                  return Icons.water_drop_rounded;
+                }
                 if (c.contains('obat')) return Icons.shield_rounded;
                 if (c.contains('peralatan')) return Icons.handyman_rounded;
                 return Icons.grid_view_rounded;
@@ -288,9 +287,7 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
       style: AppTypography.body.copyWith(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AppTypography.body.copyWith(
-          color: AppColors.textTertiary,
-        ),
+        hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
@@ -430,7 +427,7 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
                           vertical: 14,
                         ),
                         color: isSelected
-                            ? AppColors.accentMintSoft.withOpacity(0.5)
+                            ? AppColors.accentMintSoft.withValues(alpha: 0.5)
                             : Colors.transparent,
                         child: Row(
                           children: [

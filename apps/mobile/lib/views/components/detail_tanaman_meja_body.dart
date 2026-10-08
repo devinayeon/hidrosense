@@ -1,170 +1,99 @@
-// lib/views/components/detail_tanaman_meja_body.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/meja_nft_model.dart';
-import '../../viewmodels/baris_tanam_viewmodel.dart';
+import '../../data/models/table_record.dart';
+import '../../viewmodels/damage_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../pages/catat_kerusakan_page.dart';
 import '../theme/app_theme.dart';
-import '../widgets/baris_tanam_card.dart';
-import '../widgets/filter_button.dart';
 
 class DetailTanamanMejaBody extends ConsumerWidget {
-  final MejaNft mejaItem;
-
-  const DetailTanamanMejaBody({super.key, required this.mejaItem});
+  const DetailTanamanMejaBody({super.key, required this.table});
+  final TableRecord table;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeFilter = ref.watch(barisFilterCategoryProvider);
-    final barisList = ref.watch(filteredBarisTanamListProvider);
-
-    final String batchTitle =
-        '${mejaItem.batchName ?? "Batch #03"} - ${mejaItem.variety ?? "Selada Grand Rapids"}';
-
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: AppColors.canvasWarm,
-      child: Column(
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('budidaya:read')) {
+      return const Center(child: Text('Akses batch tanaman tidak diizinkan.'));
+    }
+    final state = ref.watch(damageProvider(table.id));
+    final notifier = ref.read(damageProvider(table.id).notifier);
+    return RefreshIndicator(
+      onRefresh: notifier.refresh,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Title & Subtitle Batch Info
-                  Text(
-                    batchTitle,
-                    style: AppTypography.title3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+          if (state.loading) const LinearProgressIndicator(),
+          if (state.error != null) ...[
+            Text(
+              state.error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            TextButton(
+              onPressed: notifier.refresh,
+              child: const Text('Coba lagi'),
+            ),
+          ],
+          if (state.refreshWarning != null) Text(state.refreshWarning!),
+          if (!state.loading && state.transfers.isEmpty && state.error == null)
+            const Text('Belum ada batch pemindahan pada meja ini.'),
+          for (final transfer in state.transfers)
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      transfer.label,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    'Berikut adalah data detail per baris / lubang tanam',
-                    style: AppTypography.subheadline.copyWith(
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: 8),
+                    Text(
+                      '${transfer.activePlants} tanaman aktif / ${transfer.plantCount} dipindahkan',
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // 2. Bar Filter Kategori
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        FilterButton(
-                          label: 'Semua Baris',
-                          isSelected: activeFilter == BarisFilterCategory.all,
-                          onTap: () {
-                            ref
-                                    .read(barisFilterCategoryProvider.notifier)
-                                    .state =
-                                BarisFilterCategory.all;
-                          },
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        FilterButton(
-                          label: 'Kondisi Baik',
-                          isSelected: activeFilter == BarisFilterCategory.good,
-                          onTap: () {
-                            ref
-                                    .read(barisFilterCategoryProvider.notifier)
-                                    .state =
-                                BarisFilterCategory.good;
-                          },
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        FilterButton(
-                          label: 'Kondisi Rusak',
-                          isSelected:
-                              activeFilter == BarisFilterCategory.damaged,
-                          onTap: () {
-                            ref
-                                    .read(barisFilterCategoryProvider.notifier)
-                                    .state =
-                                BarisFilterCategory.damaged;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // 3. List Cards Baris Tanam
-                  if (barisList.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                      child: Center(
+                    const SizedBox(height: 12),
+                    const Text('Laporan kerusakan tersimpan'),
+                    if ((state.reports[transfer.id] ?? []).isEmpty)
+                      const Text('Belum ada laporan kerusakan.'),
+                    for (final report in state.reports[transfer.id] ?? [])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
-                          'Tidak ada data baris tanam.',
-                          style: AppTypography.body.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
+                          '${report.date} • ${report.plantCount} tanaman • ${report.category}'
+                          '${report.note == null ? '' : '\n${report.note}'}',
                         ),
                       ),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: barisList.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) {
-                        return BarisTanamCard(item: barisList[index]);
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-          // 4. Sticky Bottom Action Button
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: const BoxDecoration(
-              color: AppColors.canvasWarm,
-            ),
-            child: SafeArea(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  side: const BorderSide(
-                    color: AppColors.primaryMint,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  backgroundColor: AppColors.cardSurface,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CatatKerusakanPage(mejaItem: mejaItem),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Catat Tanaman Rusak / Gagal',
-                  style: AppTypography.headline.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryMint,
-                  ),
+                    if (permissions.contains('budidaya:write'))
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(44, 48),
+                          backgroundColor: AppColors.darkNavy,
+                          foregroundColor: AppColors.accentLime,
+                        ),
+                        onPressed:
+                            state.loading ||
+                                state.submitting ||
+                                transfer.activePlants == 0
+                            ? null
+                            : () => Navigator.push(
+                                context,
+                                MaterialPageRoute<bool>(
+                                  builder: (_) => CatatKerusakanPage(
+                                    table: table,
+                                    initialTransfer: transfer,
+                                  ),
+                                ),
+                              ),
+                        child: const Text('Catat Kerusakan'),
+                      ),
+                  ],
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

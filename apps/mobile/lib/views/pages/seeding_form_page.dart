@@ -82,10 +82,12 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
             .updateStatus(widget.sowingRecord!.id, 'aktif');
       } else {
         final inventoryRecords = ref.read(connectedInventoryProvider).records;
-        final invId = _selectedInventoryId ??
+        final invId =
+            _selectedInventoryId ??
             (inventoryRecords.isNotEmpty ? inventoryRecords.first.id : '1');
-        final selectedItem =
-            inventoryRecords.where((item) => item.id == invId).firstOrNull;
+        final selectedItem = inventoryRecords
+            .where((item) => item.id == invId)
+            .firstOrNull;
         final unit = selectedItem?.unit ?? 'btr';
         await ref
             .read(connectedNurseryProvider.notifier)
@@ -122,7 +124,8 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
   void _openSeedPickerSheet(List<InventoryRecord> seedItems) {
     HapticFeedback.lightImpact();
     final currentId =
-        _selectedInventoryId ?? (seedItems.isNotEmpty ? seedItems.first.id : null);
+        _selectedInventoryId ??
+        (seedItems.isNotEmpty ? seedItems.first.id : null);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -171,8 +174,10 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded,
-                            color: AppColors.textSecondary),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textSecondary,
+                        ),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -183,7 +188,9 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                   child: ListView.separated(
                     shrinkWrap: true,
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xs,
+                    ),
                     itemCount: seedItems.length,
                     separatorBuilder: (context, index) => const Divider(
                       height: 1,
@@ -199,10 +206,11 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                           height: 40,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primaryMint.withOpacity(0.18)
+                                ? AppColors.primaryMint.withValues(alpha: 0.18)
                                 : AppColors.secondarySurface,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.input),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
                           ),
                           child: Icon(
                             Icons.eco_rounded,
@@ -325,9 +333,12 @@ class _SeedingFormPageState extends ConsumerState<SeedingFormPage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryMint.withOpacity(0.15),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.input),
+                            color: AppColors.primaryMint.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
                           ),
                           child: const Icon(
                             Icons.eco_rounded,

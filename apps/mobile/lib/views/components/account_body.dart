@@ -154,7 +154,9 @@ class AccountBody extends ConsumerWidget {
                     : () {
                         HapticFeedback.heavyImpact();
                         ref.read(sessionProvider.notifier).logout();
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst);
                       },
                 icon: const Icon(
                   Icons.logout_rounded,
@@ -170,9 +172,9 @@ class AccountBody extends ConsumerWidget {
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.dangerBg.withOpacity(0.5),
+                  backgroundColor: AppColors.dangerBg.withValues(alpha: 0.5),
                   side: BorderSide(
-                    color: AppColors.dangerRed.withOpacity(0.4),
+                    color: AppColors.dangerRed.withValues(alpha: 0.4),
                     width: 1.2,
                   ),
                   shape: RoundedRectangleBorder(
@@ -219,13 +221,16 @@ class AccountBody extends ConsumerWidget {
     );
   }
 
-  static Widget _buildEmployeeManagementTile(BuildContext context, WidgetRef ref) {
+  static Widget _buildEmployeeManagementTile(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
     return InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const EmployeeListPage()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const EmployeeListPage()));
       },
       borderRadius: BorderRadius.circular(AppRadius.card),
       child: BaseColCard(

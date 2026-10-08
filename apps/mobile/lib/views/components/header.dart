@@ -88,8 +88,8 @@ class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
       scale: _pressed ? 0.92 : 1.0,
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOutCubic,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),

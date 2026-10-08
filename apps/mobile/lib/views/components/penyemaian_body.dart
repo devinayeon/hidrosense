@@ -29,7 +29,9 @@ class PenyemaianBody extends ConsumerWidget {
             child: RefreshIndicator(
               onRefresh: refresh,
               child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,16 +43,24 @@ class PenyemaianBody extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: AppColors.dangerBg,
                           borderRadius: BorderRadius.circular(AppRadius.input),
-                          border: Border.all(color: AppColors.dangerRed.withOpacity(0.5)),
+                          border: Border.all(
+                            color: AppColors.dangerRed.withValues(alpha: 0.5),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline, size: 18, color: AppColors.dangerRed),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 18,
+                              color: AppColors.dangerRed,
+                            ),
                             const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: Text(
                                 state.error!,
-                                style: AppTypography.caption1.copyWith(color: AppColors.dangerRed),
+                                style: AppTypography.caption1.copyWith(
+                                  color: AppColors.dangerRed,
+                                ),
                               ),
                             ),
                           ],
@@ -59,7 +69,9 @@ class PenyemaianBody extends ConsumerWidget {
                     CustomSearchBar(
                       placeholder: 'Cari batch semaian...',
                       onChanged: (value) {
-                        ref.read(connectedNurseryProvider.notifier).setSearchQuery(value);
+                        ref
+                            .read(connectedNurseryProvider.notifier)
+                            .setSearchQuery(value);
                       },
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -67,7 +79,9 @@ class PenyemaianBody extends ConsumerWidget {
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 24.0),
-                          child: CircularProgressIndicator(color: AppColors.primaryMint),
+                          child: CircularProgressIndicator(
+                            color: AppColors.primaryMint,
+                          ),
                         ),
                       )
                     else if (items.isEmpty)
@@ -88,14 +102,18 @@ class PenyemaianBody extends ConsumerWidget {
                       )
                     else
                       ...items.map((item) {
-                        final isReady = item.status == 'aktif' &&
-                            item.isReadyToMove && item.remainingSeedCount > 0;
+                        final isReady =
+                            item.status == 'aktif' &&
+                            item.isReadyToMove &&
+                            item.remainingSeedCount > 0;
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: RowInfoCardMd(
                             backgroundColor: Colors.white,
                             borderColor: isReady
-                                ? AppColors.warningOrange.withOpacity(0.35)
+                                ? AppColors.warningOrange.withValues(
+                                    alpha: 0.35,
+                                  )
                                 : AppColors.borderLight,
                             onTap: () {
                               Navigator.push(
@@ -123,8 +141,12 @@ class PenyemaianBody extends ConsumerWidget {
                                       ? AppColors.warningBg
                                       : AppColors.accentMintSoft,
                                   statusBorderColor: isReady
-                                      ? AppColors.warningOrange.withOpacity(0.3)
-                                      : AppColors.primaryMint.withOpacity(0.3),
+                                      ? AppColors.warningOrange.withValues(
+                                          alpha: 0.3,
+                                        )
+                                      : AppColors.primaryMint.withValues(
+                                          alpha: 0.3,
+                                        ),
                                   note: item.note,
                                 ),
                                 if (isReady) ...[
@@ -146,7 +168,8 @@ class PenyemaianBody extends ConsumerWidget {
                                           horizontal: AppSpacing.sm,
                                           vertical: AppSpacing.xxs,
                                         ),
-                                        backgroundColor: AppColors.accentMintSoft,
+                                        backgroundColor:
+                                            AppColors.accentMintSoft,
                                       ),
                                       onPressed: () {
                                         TransferSeedlingBottomSheet.show(
@@ -190,10 +213,7 @@ class PenyemaianBody extends ConsumerWidget {
             decoration: const BoxDecoration(
               color: AppColors.canvasWarm,
               border: Border(
-                top: BorderSide(
-                  color: AppColors.borderSubtle,
-                  width: 0.5,
-                ),
+                top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
               ),
             ),
             child: SafeArea(

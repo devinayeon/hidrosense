@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
-import 'package:hidrosense_mobile/features/accounts/data/models/employee_model.dart';
 import 'package:hidrosense_mobile/features/accounts/data/repositories/employee_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';

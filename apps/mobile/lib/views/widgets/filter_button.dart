@@ -37,8 +37,12 @@ class _FilterButtonState extends State<FilterButton> {
         onTapCancel: () => setState(() => _pressed = false),
         child: CapsuleBadge(
           label: widget.label,
-          textColor: widget.isSelected ? AppColors.textOnDark : AppColors.textPrimary,
-          backgroundColor: widget.isSelected ? activeColor : AppColors.cardSurface,
+          textColor: widget.isSelected
+              ? AppColors.textOnDark
+              : AppColors.textPrimary,
+          backgroundColor: widget.isSelected
+              ? activeColor
+              : AppColors.cardSurface,
           borderColor: widget.isSelected ? activeColor : borderColor,
           size: CapsuleSize.large,
           fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -49,7 +53,7 @@ class _FilterButtonState extends State<FilterButton> {
           boxShadow: widget.isSelected
               ? [
                   BoxShadow(
-                    color: activeColor.withOpacity(0.25),
+                    color: activeColor.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

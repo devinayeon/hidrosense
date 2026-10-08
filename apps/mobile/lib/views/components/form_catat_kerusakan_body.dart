@@ -1,46 +1,21 @@
-// lib/views/components/form_catat_kerusakan_body.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../models/baris_tanam_model.dart';
-import '../../models/laporan_kerusakan_model.dart';
-import '../../models/meja_nft_model.dart';
-import '../../viewmodels/baris_tanam_viewmodel.dart';
+import '../../data/models/damage_record.dart';
+import '../../data/models/transfer_record.dart';
+import '../../viewmodels/damage_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
-import '../widgets/custom_input_field.dart';
-import '../widgets/item_image_placeholder.dart';
-import '../widgets/row_button.dart';
 
 class FormCatatKerusakanBody extends ConsumerStatefulWidget {
-  final MejaNft mejaItem;
-  final BarisTanam? initialBaris;
-  final bool isModal;
-
   const FormCatatKerusakanBody({
     super.key,
-    required this.mejaItem,
-    this.initialBaris,
-    this.isModal = false,
+    required this.tableId,
+    required this.tableName,
+    this.initialTransfer,
   });
-
-  /// Static helper untuk menampilkan form dalam Apple HIG Modal Bottom Sheet
-  static Future<bool?> show(
-    BuildContext context, {
-    required MejaNft mejaItem,
-    BarisTanam? initialBaris,
-  }) {
-    return showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => FormCatatKerusakanBody(
-        mejaItem: mejaItem,
-        initialBaris: initialBaris,
-        isModal: true,
-      ),
-    );
-  }
+  final String tableId, tableName;
+  final TransferRecord? initialTransfer;
 
   @override
   ConsumerState<FormCatatKerusakanBody> createState() =>
@@ -50,527 +25,264 @@ class FormCatatKerusakanBody extends ConsumerStatefulWidget {
 class _FormCatatKerusakanBodyState
     extends ConsumerState<FormCatatKerusakanBody> {
   final _formKey = GlobalKey<FormState>();
-
-  late TextEditingController _mejaController;
-  late TextEditingController _barisController;
-  late TextEditingController _jumlahRusakController;
-  late TextEditingController _kategoriController;
-  late TextEditingController _tanggalController;
-  late TextEditingController _penyebabController;
-
-  BarisTanam? _selectedBaris;
-  DateTime _selectedDate = DateTime.now();
-  String? _uploadedPhotoPath;
-
-  final List<String> _kategoriOptions = [
+  final _count = TextEditingController();
+  final _note = TextEditingController();
+  late String? _transferId = widget.initialTransfer?.id;
+  DateTime _date = jakartaToday();
+  String _category = 'Gagal Tumbuh / Busuk Akar';
+  bool _complete = false;
+  static const _categories = [
     'Gagal Tumbuh / Busuk Akar',
     'Terserang Hama Ulat / Kutu',
     'Daun Menguning / Layu',
-    'Batang Patah / Damaged',
+    'Batang Patah',
     'Lainnya',
   ];
 
   @override
   void initState() {
     super.initState();
-    _selectedBaris = widget.initialBaris;
-
-    _mejaController = TextEditingController(text: widget.mejaItem.name);
-    _barisController = TextEditingController(
-      text: _selectedBaris != null
-          ? '${_selectedBaris!.name} (${_selectedBaris!.holesRange})'
-          : '',
-    );
-    _jumlahRusakController = TextEditingController();
-    _kategoriController = TextEditingController(
-      text: 'Gagal Tumbuh / Busuk Akar',
-    );
-    _tanggalController = TextEditingController(
-      text: _formatDate(_selectedDate),
-    );
-    _penyebabController = TextEditingController();
+    final permissions =
+        ref.read(sessionProvider).user?.permissions ?? const <String>[];
+    if (permissions.contains('budidaya:read') &&
+        permissions.contains('budidaya:write')) {
+      ref.read(damageProvider(widget.tableId).notifier).beginDraft();
+    }
   }
 
   @override
   void dispose() {
-    _mejaController.dispose();
-    _barisController.dispose();
-    _jumlahRusakController.dispose();
-    _kategoriController.dispose();
-    _tanggalController.dispose();
-    _penyebabController.dispose();
+    _count.dispose();
+    _note.dispose();
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    final day = date.day.toString().padLeft(2, '0');
-    final month = months[date.month - 1];
-    return '$day $month ${date.year}';
-  }
-
-  void _selectBarisDialog(List<BarisTanam> allBaris) {
-    showModalBottomSheet(
+  Future<void> _pickDate(TransferRecord transfer) async {
+    final first = DateTime.parse(transfer.transferDate);
+    final last = jakartaToday();
+    if (first.isAfter(last)) return;
+    final picked = await showDatePicker(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.modal),
-            ),
-          ),
-          padding: EdgeInsets.only(
-            top: 8,
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Grabber Handle Apple HIG
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 5,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pilih Baris / Rentang Lubang',
-                    style: AppTypography.title3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              ...allBaris.map((baris) {
-                final isSelected = _selectedBaris?.id == baris.id;
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                  ),
-                  title: Text(
-                    '${baris.name} (${baris.holesRange})',
-                    style: AppTypography.body.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.primaryMint,
-                        )
-                      : null,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedBaris = baris;
-                      _barisController.text =
-                          '${baris.name} (${baris.holesRange})';
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-            ],
-          ),
-        );
-      },
+      firstDate: first,
+      lastDate: last,
+      initialDate: _date.isBefore(first)
+          ? first
+          : (_date.isAfter(last) ? last : _date),
     );
+    if (!mounted || picked == null) return;
+    setState(() => _date = picked);
   }
 
-  void _selectKategoriDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.modal),
-            ),
-          ),
-          padding: EdgeInsets.only(
-            top: 8,
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Grabber Handle Apple HIG
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 5,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pilih Kategori Kegagalan',
-                    style: AppTypography.title3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              ..._kategoriOptions.map((kat) {
-                final isSelected = _kategoriController.text == kat;
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                  ),
-                  title: Text(
-                    kat,
-                    style: AppTypography.body.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.primaryMint,
-                        )
-                      : null,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _kategoriController.text = kat;
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryMint,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _tanggalController.text = _formatDate(picked);
-      });
-    }
-  }
-
-  void _handleSubmit() {
-    if (_selectedBaris == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan pilih baris terlebih dahulu'),
-          backgroundColor: AppColors.dangerRed,
-        ),
-      );
-      return;
-    }
-
-    final jumlahText = _jumlahRusakController.text.trim();
-    final int? jumlah = int.tryParse(jumlahText);
-
-    if (jumlah == null || jumlah <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Masukkan jumlah rusak yang valid'),
-          backgroundColor: AppColors.dangerRed,
-        ),
-      );
-      return;
-    }
-
-    final laporan = LaporanKerusakan(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      mejaId: widget.mejaItem.id,
-      mejaName: widget.mejaItem.name,
-      barisId: _selectedBaris!.id,
-      barisName: _selectedBaris!.name,
-      jumlahRusak: jumlah,
-      kategoriKegagalan: _kategoriController.text,
-      tanggalDitemukan: _selectedDate,
-      penyebabUtama: _penyebabController.text.isNotEmpty
-          ? _penyebabController.text
-          : null,
-      fotoUrl: _uploadedPhotoPath,
-    );
-
-    // Update state via Riverpod ViewModel
-    ref
-        .read(barisTanamViewModelProvider.notifier)
-        .submitLaporanKerusakan(laporan);
-
-    HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Laporan kerusakan berhasil disimpan'),
-        backgroundColor: AppColors.primaryMint,
+  Future<void> _submit() async {
+    if (_complete || !_formKey.currentState!.validate()) return;
+    final notifier = ref.read(damageProvider(widget.tableId).notifier);
+    final result = await notifier.submit(
+      DamageDraft(
+        transferId: _transferId!,
+        date: apiDate(_date),
+        plantCount: int.parse(_count.text.trim()),
+        category: _category,
+        note: _note.text,
       ),
     );
-
-    Navigator.pop(context, true);
+    if (!mounted) return;
+    if (result == DamageSubmitResult.saved ||
+        result == DamageSubmitResult.savedRefreshFailed) {
+      _complete = true;
+      final warning = ref.read(damageProvider(widget.tableId)).refreshWarning;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(warning ?? 'Laporan kerusakan berhasil disimpan.'),
+        ),
+      );
+      Navigator.pop(context, true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final allBaris = ref.watch(barisTanamViewModelProvider);
-
-    return Container(
-      width: double.infinity,
-      height: widget.isModal ? null : double.infinity,
-      constraints: widget.isModal
-          ? BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.9,
-            )
-          : null,
-      decoration: BoxDecoration(
-        color: AppColors.canvasWarm,
-        borderRadius: widget.isModal
-            ? const BorderRadius.vertical(top: Radius.circular(AppRadius.modal))
-            : null,
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: widget.isModal ? MainAxisSize.min : MainAxisSize.max,
-        children: [
-          // Apple HIG Grabber Handle & Modal Header
-          if (widget.isModal) ...[
-            Center(
-              child: Container(
-                width: 36,
-                height: 5,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('budidaya:read') ||
+        !permissions.contains('budidaya:write')) {
+      return const Center(
+        child: Text('Akses pencatatan kerusakan tidak diizinkan.'),
+      );
+    }
+    final state = ref.watch(damageProvider(widget.tableId));
+    final candidates = state.transfers.where((t) => t.id == _transferId);
+    final selected = candidates.isEmpty ? null : candidates.first;
+    final enteredCount = int.tryParse(_count.text.trim());
+    final canReplay =
+        state.uncertainDraft != null &&
+        enteredCount != null &&
+        _transferId != null &&
+        jsonEncode(state.uncertainDraft!.toJson()) ==
+            jsonEncode(
+              DamageDraft(
+                transferId: _transferId!,
+                date: apiDate(_date),
+                plantCount: enteredCount,
+                category: _category,
+                note: _note.text,
+              ).toJson(),
+            );
+    return PopScope(
+      canPop: !state.submitting,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.tableName,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              if (state.loading) const LinearProgressIndicator(),
+              if (state.uncertainDraft != null)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Hasil penyimpanan belum dapat dipastikan. Coba simpan lagi dengan isian yang sama.',
+                  ),
+                ),
+              if (state.error != null) ...[
+                Text(
+                  state.error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                TextButton(
+                  onPressed: state.submitting
+                      ? null
+                      : () => ref
+                            .read(damageProvider(widget.tableId).notifier)
+                            .refresh(),
+                  child: const Text('Muat ulang batch'),
+                ),
+              ],
+              if (!state.loading && state.transfers.isEmpty)
+                const Text('Belum ada batch pemindahan pada meja ini.'),
+              DropdownButtonFormField<String>(
+                key: ValueKey(selected?.id),
+                initialValue: selected?.id,
+                isExpanded: true,
+                itemHeight: null,
+                selectedItemBuilder: (_) =>
+                    state.transfers.map((t) => Text('Batch #${t.id}')).toList(),
+                decoration: const InputDecoration(
+                  labelText: 'Batch pemindahan',
+                ),
+                items: state.transfers
+                    .map(
+                      (t) =>
+                          DropdownMenuItem(value: t.id, child: Text(t.label)),
+                    )
+                    .toList(),
+                onChanged: state.submitting
+                    ? null
+                    : (id) => setState(() => _transferId = id),
+                validator: (_) =>
+                    selected == null ? 'Pilih batch pemindahan.' : null,
+              ),
+              if (selected != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Dipindahkan ${selected.transferDate}. ${selected.activePlants} tanaman aktif dari ${selected.plantCount} tanaman dipindahkan.',
+                  ),
+                ),
+              const SizedBox(height: 16),
+              const Text('Jumlah tanaman rusak'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _count,
+                onChanged: (_) => setState(() {}),
+                enabled: !state.submitting,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(errorMaxLines: 4),
+                validator: (value) {
+                  final count = int.tryParse(value?.trim() ?? '');
+                  return count == null ||
+                          count <= 0 ||
+                          selected == null ||
+                          (!canReplay && count > selected.activePlants)
+                      ? 'Jumlah harus 1 sampai ${selected?.activePlants ?? 0} tanaman.'
+                      : null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _category,
+                isExpanded: true,
+                itemHeight: null,
+                selectedItemBuilder: (_) =>
+                    _categories.map((c) => Text(c.split(' / ').first)).toList(),
+                decoration: const InputDecoration(labelText: 'Jenis kerusakan'),
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: state.submitting
+                    ? null
+                    : (value) => setState(() => _category = value!),
+              ),
+              if (_category.contains(' / '))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(_category),
+                ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(44, 48),
+                ),
+                onPressed: state.submitting || selected == null
+                    ? null
+                    : () => _pickDate(selected),
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text('Tanggal kejadian: ${apiDate(_date)}'),
+              ),
+              const SizedBox(height: 16),
+              const Text('Keterangan (opsional)'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _note,
+                onChanged: (_) => setState(() {}),
+                enabled: !state.submitting,
+                maxLength: 1000,
+                minLines: 2,
+                maxLines: 4,
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(44, 52),
+                  backgroundColor: AppColors.darkNavy,
+                  foregroundColor: AppColors.accentLime,
+                ),
+                onPressed:
+                    state.submitting ||
+                        state.loading ||
+                        selected == null ||
+                        (selected.activePlants == 0 && !canReplay)
+                    ? null
+                    : _submit,
+                child: Text(
+                  state.submitting
+                      ? 'Menyimpan laporan...'
+                      : 'Simpan Laporan Kerusakan',
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xxs,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Catat Kerusakan',
-                    style: AppTypography.title3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppColors.borderSubtle),
-          ],
-
-          Expanded(
-            flex: widget.isModal ? 0 : 1,
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Pilih Meja / Lokasi (Read Only)
-                    CustomInputField(
-                      label: 'Pilih Meja / Lokasi',
-                      hintText: 'Meja NFT #01',
-                      controller: _mejaController,
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 2. Pilih Baris / Rentang Lubang
-                    CustomInputField(
-                      label: 'Pilih Baris / Rentang Lubang',
-                      hintText: 'Pilih Baris',
-                      controller: _barisController,
-                      readOnly: true,
-                      suffixIcon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textTertiary,
-                      ),
-                      onTap: () => _selectBarisDialog(allBaris),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 3. Jumlah Rusak (Lubang)
-                    CustomInputField(
-                      label: 'Jumlah Rusak (Lubang)',
-                      hintText: 'Masukkan jumlah bibit rusak (misal: 4)',
-                      controller: _jumlahRusakController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 4. Kategori Kegagalan
-                    CustomInputField(
-                      label: 'Kategori Kegagalan',
-                      hintText: 'Pilih Kategori',
-                      controller: _kategoriController,
-                      readOnly: true,
-                      suffixIcon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textTertiary,
-                      ),
-                      onTap: _selectKategoriDialog,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 5. Tanggal Ditemukan
-                    CustomInputField(
-                      label: 'Tanggal Ditemukan',
-                      hintText: 'Pilih Tanggal',
-                      controller: _tanggalController,
-                      readOnly: true,
-                      suffixIcon: const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 18,
-                        color: AppColors.textTertiary,
-                      ),
-                      onTap: _pickDate,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 6. Penyebab Utama (Estimasi)
-                    CustomInputField(
-                      label: 'Penyebab Utama (Estimasi)',
-                      hintText: 'Sumbatan air nutrisi / Hama ulat',
-                      controller: _penyebabController,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 7. Bukti Foto (Opsional)
-                    Text(
-                      'Bukti Foto (Opsional)',
-                      style: AppTypography.subheadline.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    GestureDetector(
-                      onTap: () {
-                        // Action upload foto
-                      },
-                      child: ItemImagePlaceholder(
-                        imageUrl: _uploadedPhotoPath,
-                        height: 100,
-                        placeholderText: 'UNGGAH FOTO DAUN/AKAR YANG RUSAK',
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // 8. Tombol Simpan Laporan Kerusakan (Apple HIG 52pt pill button)
-                    RowButton(
-                      label: 'Simpan Laporan Kerusakan',
-                      backgroundColor: AppColors.primaryMint,
-                      textColor: Colors.white,
-                      borderRadius: AppRadius.pill,
-                      height: 52,
-                      onTap: _handleSubmit,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

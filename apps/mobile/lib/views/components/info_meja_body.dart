@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/connected_table_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
+import '../pages/detail_tanaman_meja_page.dart';
 import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../pages/form_meja_nft_page.dart';
@@ -7,7 +11,7 @@ import '../widgets/row_info_card_md.dart';
 import '../widgets/row_button.dart';
 import '../widgets/fluid_capacity_meter.dart';
 
-class InfoMejaBody extends StatelessWidget {
+class InfoMejaBody extends ConsumerWidget {
   final TableRecord? tableRecord;
   final MejaNft? mejaItem;
 
@@ -15,7 +19,14 @@ class InfoMejaBody extends StatelessWidget {
     : assert(tableRecord != null || mejaItem != null);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    final records = this.tableRecord == null
+        ? const <TableRecord>[]
+        : ref.watch(connectedTableProvider).records;
+    final current = records.where((r) => r.id == this.tableRecord?.id);
+    final tableRecord = current.isEmpty ? this.tableRecord : current.first;
     final title = tableRecord?.displayName ?? mejaItem!.name;
     final totalCapacity = tableRecord?.holeCount ?? mejaItem!.capacityTotal;
     final activePlants = tableRecord?.activePlants ?? mejaItem!.capacityUsed;
@@ -87,22 +98,39 @@ class InfoMejaBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            RowButton(
-              label: 'Edit Pengaturan Meja',
-              backgroundColor: AppColors.darkNavy,
-              textColor: AppColors.accentLime,
-              onTap: () {
-                Navigator.push(
+            if (tableRecord != null &&
+                permissions.contains('budidaya:read')) ...[
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => FormMejaNftPage(
-                      tableRecord: tableRecord,
-                      mejaItem: mejaItem,
-                    ),
+                  MaterialPageRoute<void>(
+                    builder: (_) => DetailTanamanMejaPage(table: tableRecord),
                   ),
-                );
-              },
-            ),
+                ),
+                child: const Text('Batch & Laporan Kerusakan'),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            if (permissions.contains('budidaya:write'))
+              RowButton(
+                label: 'Edit Pengaturan Meja',
+                backgroundColor: AppColors.darkNavy,
+                textColor: AppColors.accentLime,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FormMejaNftPage(
+                        tableRecord: tableRecord,
+                        mejaItem: mejaItem,
+                      ),
+                    ),
+                  );
+                },
+              ),
             const SizedBox(height: AppSpacing.md),
           ],
         ),

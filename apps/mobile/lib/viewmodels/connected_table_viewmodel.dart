@@ -96,6 +96,14 @@ class ConnectedTableNotifier extends StateNotifier<TableState> {
     state = state.copyWith(searchQuery: query);
   }
 
+  Future<void> refreshTable(String id) async {
+    final updated = await _repo.getTable(id);
+    if (!mounted) return;
+    state = state.copyWith(
+      records: state.records.map((r) => r.id == id ? updated : r).toList(),
+    );
+  }
+
   void setStatusFilter(String? status) {
     if (status == null) {
       state = state.copyWith(clearStatusFilter: true);

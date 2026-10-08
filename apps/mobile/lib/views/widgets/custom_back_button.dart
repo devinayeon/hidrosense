@@ -19,7 +19,7 @@ class _CustomBackButtonState extends State<CustomBackButton> {
       scale: _pressed ? 0.92 : 1.0,
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOutCubic,
-      child: GestureDetector(
+      child: InkWell(
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
@@ -32,19 +32,17 @@ class _CustomBackButtonState extends State<CustomBackButton> {
           }
         },
         child: Container(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppRadius.input),
-            border: Border.all(
-              color: AppColors.borderLight,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.borderLight, width: 1),
             boxShadow: AppShadows.subtle,
           ),
           child: const Icon(
             Icons.arrow_back_rounded,
+            semanticLabel: 'Kembali',
             color: AppColors.textPrimary,
             size: 20,
           ),

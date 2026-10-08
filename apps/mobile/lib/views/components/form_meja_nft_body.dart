@@ -169,14 +169,19 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                         top: Radius.circular(AppRadius.modal),
                       ),
                     ),
-                    padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.xl),
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.xs,
+                      bottom: AppSpacing.xl,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 36,
                           height: 5,
-                          margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.xs,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.borderLight,
                             borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -186,7 +191,9 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                           padding: const EdgeInsets.all(AppSpacing.md),
                           child: Text(
                             'Pilih Status Meja',
-                            style: AppTypography.headline.copyWith(fontWeight: FontWeight.w700),
+                            style: AppTypography.headline.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         const Divider(height: 1, color: AppColors.borderSubtle),
@@ -204,7 +211,9 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                                 vertical: 14,
                               ),
                               color: isSelected
-                                  ? AppColors.accentMintSoft.withOpacity(0.5)
+                                  ? AppColors.accentMintSoft.withValues(
+                                      alpha: 0.5,
+                                    )
                                   : Colors.transparent,
                               child: Row(
                                 children: [
@@ -253,10 +262,7 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                 decoration: BoxDecoration(
                   color: AppColors.cardSurface,
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  border: Border.all(
-                    color: AppColors.borderLight,
-                    width: 1.0,
-                  ),
+                  border: Border.all(color: AppColors.borderLight, width: 1.0),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

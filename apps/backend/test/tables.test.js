@@ -68,7 +68,8 @@ test('tables permissions, anonymous and inactive users', async (t) => {
   const headers = bearer((await f.login()).json().data.access_token);
   check(await f.app.inject({ url: '/api/v1/meja-tanam', headers }), 200);
   for (const method of ['POST', 'PATCH']) check(await f.app.inject({ method,
-    url: `/api/v1/meja-tanam${method === 'PATCH' ? `/${d.id_meja}` : ''}`, headers, payload: { kode_meja: 'X', jumlah_lubang: 10 } }), 403);
+    url: `/api/v1/meja-tanam${method === 'PATCH' ? `/${d.id_meja}` : ''}`, headers,
+    payload: { kode_meja: method === 'POST' ? 'X' : 'Y', jumlah_lubang: 10 } }), method === 'POST' ? 201 : 200);
   check(await f.app.inject({ url: '/api/v1/meja-tanam' }), 401);
   await f.db.execute("UPDATE users SET status_aktif=0 WHERE username='pegawai'");
   check(await f.send('PATCH', `/${d.id_meja}`, { jumlah_lubang: 1 }), 401);

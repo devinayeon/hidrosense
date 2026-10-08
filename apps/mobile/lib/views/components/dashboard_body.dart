@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/row_info_card_md.dart';
 import '../widgets/base_col_card.dart';
@@ -221,18 +222,25 @@ class DashboardBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              _BusinessModuleCard(
-                title: 'Penjualan & Kasir',
-                subtitle: 'Pencatatan invoice, rekap omzet & transaksi',
-                icon: Icons.point_of_sale_outlined,
-                iconBg: AppColors.accentMintSoft,
-                iconColor: AppColors.primaryDarkTeal,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PenjualanPage()),
+              if (ref
+                      .watch(sessionProvider)
+                      .user
+                      ?.permissions
+                      .contains('penjualan:read') ??
+                  false) ...[
+                _BusinessModuleCard(
+                  title: 'Penjualan & Kasir',
+                  subtitle: 'Pencatatan invoice, rekap omzet & transaksi',
+                  icon: Icons.point_of_sale_outlined,
+                  iconBg: AppColors.accentMintSoft,
+                  iconColor: AppColors.primaryDarkTeal,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PenjualanPage()),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               _BusinessModuleCard(
                 title: 'Manajemen Panen',
                 subtitle: 'Pencatatan sortasi, panen baru & log produksi',
@@ -249,7 +257,7 @@ class DashboardBody extends ConsumerWidget {
                 title: 'Kondisi & Cuaca Kebun',
                 subtitle: 'Kondisi mikroklimat kebun & debit nutrisi',
                 icon: Icons.wb_sunny_outlined,
-                iconBg: AppColors.accentLime.withOpacity(0.3),
+                iconBg: AppColors.accentLime.withValues(alpha: 0.3),
                 iconColor: AppColors.darkNavy,
                 onTap: () => Navigator.push(
                   context,

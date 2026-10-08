@@ -208,7 +208,7 @@ test('transfers patch keterangan and idempotency replay', async (t) => {
   assert.equal(patched.json().data.version, '2');
 });
 
-test('transfers permissions: petani can read but cannot create or patch', async (t) => {
+test('transfers permissions: petani can read, create and patch', async (t) => {
   const f = await setup(t);
   await f.create();
 
@@ -223,20 +223,20 @@ test('transfers permissions: petani can read but cannot create or patch', async 
   const readDetail = await f.app.inject({ method: 'GET', url: '/api/v1/pemindahan/1', headers: petaniHeaders });
   check(readDetail, 200);
 
-  // Petani forbidden from creating or updating
-  const createForbidden = await f.app.inject({
+  const created = await f.app.inject({
     method: 'POST',
     url: '/api/v1/pemindahan',
     headers: petaniHeaders,
     payload: { id_penyemaian: '1', id_meja: '1', tanggal_pemindahan: '2026-09-16', jumlah_tanaman: 50 },
   });
-  check(createForbidden, 403);
+  check(created, 201);
 
-  const patchForbidden = await f.app.inject({
+  const patched = await f.app.inject({
     method: 'PATCH',
     url: '/api/v1/pemindahan/1',
     headers: petaniHeaders,
-    payload: { keterangan: 'Hack' },
+    payload: { keterangan: 'Catatan petani' },
   });
-  check(patchForbidden, 403);
+  check(patched, 200);
+  assert.equal(patched.json().data.keterangan, 'Catatan petani');
 });

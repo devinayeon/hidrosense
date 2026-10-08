@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/views/components/custom_bottom_navigation_bar.dart';
 import 'package:hidrosense_mobile/views/components/info_meja_body.dart';
@@ -102,6 +103,13 @@ void main() {
           bottomNavigationBar: CustomBottomNavigationBar(
             currentIndex: 0,
             onTap: (index) => selectedIndex = index,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.inventory),
+                label: 'Inventaris',
+              ),
+            ],
           ),
         ),
       ),
@@ -121,7 +129,11 @@ void main() {
       capacityTotal: 100,
       capacityUsed: 50,
     );
-    await tester.pumpWidget(MaterialApp(home: InfoMejaBody(mejaItem: table)));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(home: InfoMejaBody(mejaItem: table)),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 225));
     final fill = find.byKey(const ValueKey('fluid-capacity-fill'));
     final track = find.ancestor(of: fill, matching: find.byType(LayoutBuilder));

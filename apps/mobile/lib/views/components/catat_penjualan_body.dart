@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/penjualan_model.dart';
 import '../../viewmodels/catat_penjualan_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_input_field.dart';
@@ -107,6 +108,12 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
   }
 
   Future<void> _handleSave() async {
+    final permissions =
+        ref.read(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('penjualan:read') ||
+        !permissions.contains('penjualan:write')) {
+      return;
+    }
     final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
 
     // Sync data teks sebelum submit
@@ -140,6 +147,12 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
 
   @override
   Widget build(BuildContext context) {
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('penjualan:read') ||
+        !permissions.contains('penjualan:write')) {
+      return const Center(child: Text('Akses penjualan tidak diizinkan.'));
+    }
     final formState = ref.watch(catatPenjualanViewModelProvider);
     final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
     final batchList = ref.watch(availableBatchPanenProvider);
@@ -148,9 +161,7 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
       width: double.infinity,
       height: widget.isModal ? null : double.infinity,
       constraints: widget.isModal
-          ? BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.9,
-            )
+          ? BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9)
           : null,
       decoration: BoxDecoration(
         color: AppColors.canvasWarm,
@@ -299,8 +310,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
                     value: formState.status == null
                         ? null
                         : (formState.status == StatusPenjualan.lunas
-                            ? 'Lunas'
-                            : 'Belum Lunas'),
+                              ? 'Lunas'
+                              : 'Belum Lunas'),
                     items: const ['Lunas', 'Belum Lunas'],
                     onChanged: (val) {
                       if (val == 'Lunas') {

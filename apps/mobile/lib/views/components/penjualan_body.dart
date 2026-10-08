@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../viewmodels/penjualan_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../pages/catat_penjualan_page.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_search_bar.dart';
@@ -134,10 +135,7 @@ class PenjualanBody extends ConsumerWidget {
         ),
       ),
       trailing: isSelected
-          ? const Icon(
-              Icons.check_circle_rounded,
-              color: AppColors.primaryMint,
-            )
+          ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryMint)
           : null,
       onTap: onTap,
     );
@@ -145,6 +143,14 @@ class PenjualanBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!(ref
+            .watch(sessionProvider)
+            .user
+            ?.permissions
+            .contains('penjualan:read') ??
+        false)) {
+      return const Center(child: Text('Akses penjualan tidak diizinkan.'));
+    }
     final penjualanList = ref.watch(filteredPenjualanListProvider);
     final allCount = ref.watch(penjualanViewModelProvider).length;
     final totalPendapatan = ref.watch(totalPendapatanBulanIniProvider);
@@ -191,16 +197,14 @@ class PenjualanBody extends ConsumerWidget {
                           style: AppTypography.title1.copyWith(
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Dari total $allCount transaksi penjualan terlaksana',
                           style: AppTypography.caption1.copyWith(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],

@@ -59,7 +59,7 @@ class ItemImagePlaceholder extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(AppRadius.input),
             ),
             child: Icon(Icons.image_outlined, color: primaryColor, size: 24),

@@ -5,11 +5,13 @@ import '../theme/app_theme.dart';
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final List<BottomNavigationBarItem> items;
 
   const CustomBottomNavigationBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.items,
   });
 
   @override
@@ -44,28 +46,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_2_outlined),
-            activeIcon: Icon(Icons.inventory_2),
-            label: 'Inventaris',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.eco_outlined),
-            activeIcon: Icon(Icons.eco),
-            label: 'Semaian',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.point_of_sale_outlined),
-            activeIcon: Icon(Icons.point_of_sale),
-            label: 'Penjualan',
-          ),
-        ],
+        items: items,
       ),
     );
   }
