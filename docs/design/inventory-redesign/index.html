@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HidroSense inventory redesign</title>
+<style>
+body{margin:0;padding:32px;font:16px/1.5 system-ui,sans-serif;background:#fafaf7;color:#172231}main{max-width:1200px;margin:auto}h1{font-size:32px;margin:0 0 8px}p{max-width:850px}a{color:#0e756e}section{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin:24px 0 48px}figure{margin:0;width:260px}figure.wide{width:560px;max-width:100%}img{display:block;width:100%;height:auto;border:1px solid #dfe6dd;border-radius:12px}figcaption{padding:8px 0}h2{font-size:24px}small{color:#58665f}@media(max-width:600px){body{padding:20px}figure{width:100%}}
+</style>
+<main>
+<h1>Persediaan kebunmu</h1>
+<p>Implemented inventory screen: HidroSense illustrations, warm ivory and mint surfaces, a lime add action, readable stock details, and native interaction feedback.</p>
+<p><small>Flutter widget renders with repository seed data and labelled edge-case fixtures. The render harness uses Roboto under the app's Inter font token. These are layout and state evidence; they do not measure device frame rate.</small></p>
+<p><a href="../inventory-redesign.md">Design decisions and verification report</a></p>
+<h2>Main screen and stock detail</h2>
+<section>
+<figure><a href="render-light.png"><img src="render-light.png" alt="Inventory light theme"></a><figcaption>Light theme, 390 × 844</figcaption></figure>
+<figure><a href="render-dark.png"><img src="render-dark.png" alt="Inventory dark theme"></a><figcaption>Dark theme</figcaption></figure>
+<figure><a href="render-detail.png"><img src="render-detail.png" alt="Native stock detail sheet"></a><figcaption>Stock detail sheet</figcaption></figure>
+</section>
+<h2>Responsive layout and larger text</h2>
+<section>
+<figure><a href="render-small.png"><img src="render-small.png" alt="320 pixel wide inventory screen"></a><figcaption>Small phone, 320 × 700</figcaption></figure>
+<figure><a href="render-large-text.png"><img src="render-large-text.png" alt="Inventory at twice normal text size"></a><figcaption>2× text, Reduce Motion</figcaption></figure>
+<figure><a href="render-large-text-scrolled.png"><img src="render-large-text-scrolled.png" alt="Large text inventory rows with full names and quantities"></a><figcaption>2× text, scrolled to items</figcaption></figure>
+<figure class="wide"><a href="render-landscape.png"><img src="render-landscape.png" alt="Inventory in landscape orientation"></a><figcaption>Landscape, 844 × 390</figcaption></figure>
+</section>
+<h2>Data states</h2>
+<section>
+<figure><a href="render-attention.png"><img src="render-attention.png" alt="Low and empty stock fixtures"></a><figcaption>Low and zero stock fixtures</figcaption></figure>
+<figure><a href="render-cached.png"><img src="render-cached.png" alt="Cached inventory notice and timestamp"></a><figcaption>Cached data fixture</figcaption></figure>
+<figure><a href="render-no-results.png"><img src="render-no-results.png" alt="No search results with mascot and reset action"></a><figcaption>No search results</figcaption></figure>
+<figure><a href="render-empty.png"><img src="render-empty.png" alt="First inventory item empty state"></a><figcaption>First run</figcaption></figure>
+<figure><a href="render-loading.png"><img src="render-loading.png" alt="Inventory loading skeletons"></a><figcaption>Initial loading</figcaption></figure>
+<figure><a href="render-error.png"><img src="render-error.png" alt="Service failure with retry action"></a><figcaption>Service error fixture</figcaption></figure>
+</section>
+<h2>Native sheet motion</h2>
+<p>The sheet moves from the selected row into view. These deterministic Flutter frames show the transition at 80 ms intervals. Reduce Motion skips this transition.</p>
+<section>
+<figure><img src="motion-sheet-000.png" alt="Sheet animation at zero milliseconds"><figcaption>0 ms</figcaption></figure>
+<figure><img src="motion-sheet-080.png" alt="Sheet animation at 80 milliseconds"><figcaption>80 ms</figcaption></figure>
+<figure><img src="motion-sheet-160.png" alt="Sheet animation at 160 milliseconds"><figcaption>160 ms</figcaption></figure>
+<figure><img src="motion-sheet-240.png" alt="Sheet animation at 240 milliseconds"><figcaption>240 ms</figcaption></figure>
+</section>
+</main>
+</html>

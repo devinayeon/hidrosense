@@ -14,22 +14,22 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = AppColors.primaryMint;
-    const inactiveColor = AppColors.textTertiary;
+    final activeColor = Theme.of(context).brightness == Brightness.light
+        ? const Color(0xFF0E756E)
+        : Theme.of(context).colorScheme.primary;
+    final inactiveColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final surface = Theme.of(context).colorScheme.surface;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.cardSurface,
+      decoration: BoxDecoration(
+        color: surface,
         border: Border(
-          top: BorderSide(
-            color: AppColors.borderSubtle,
-            width: 0.5,
-          ),
+          top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
         ),
       ),
       child: BottomNavigationBar(
         elevation: 0,
-        backgroundColor: AppColors.cardSurface,
+        backgroundColor: surface,
         currentIndex: currentIndex,
         onTap: (index) {
           if (index != currentIndex) HapticFeedback.selectionClick();

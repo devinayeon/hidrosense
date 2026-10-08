@@ -18,6 +18,10 @@ void main() {
   testWidgets('login menampilkan saldo; logout menghapus inventaris', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final record = InventoryRecord.fromApi(
       {
         'id_inventaris': '1',
@@ -86,6 +90,9 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).at(0), 'mitra');
     await tester.enterText(find.byType(TextFormField).at(1), 'secret');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Masuk'));
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
 
@@ -108,7 +115,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Buka halaman Akun melalui Header icon
-    await tester.tap(find.byIcon(Icons.person_outline));
+    await tester.tap(find.byTooltip('Buka akun'));
     await tester.pumpAndSettle();
     expect(find.text('Pengguna'), findsOneWidget);
     expect(find.text('Mitra'), findsOneWidget);
