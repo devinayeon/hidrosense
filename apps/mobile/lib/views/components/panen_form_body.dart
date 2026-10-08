@@ -4,14 +4,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/panen_model.dart';
 import '../../viewmodels/panen_viewmodel.dart';
+import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/custom_text_area.dart';
 import '../widgets/row_button.dart';
 
 class PanenFormBody extends ConsumerStatefulWidget {
   final PanenItem? itemToEdit;
+  final bool isModal;
 
-  const PanenFormBody({super.key, this.itemToEdit});
+  const PanenFormBody({
+    super.key,
+    this.itemToEdit,
+    this.isModal = false,
+  });
+
+  /// Static helper untuk menampilkan form dalam Apple HIG Modal Bottom Sheet
+  static Future<bool?> show(
+    BuildContext context, {
+    PanenItem? itemToEdit,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PanenFormBody(
+        itemToEdit: itemToEdit,
+        isModal: true,
+      ),
+    );
+  }
 
   @override
   ConsumerState<PanenFormBody> createState() => _PanenFormBodyState();
@@ -71,7 +93,10 @@ class _PanenFormBodyState extends ConsumerState<PanenFormBody> {
 
     if (meja.isEmpty || berat.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap isi asal meja dan berat total')),
+        const SnackBar(
+          content: Text('Harap isi asal meja dan berat total'),
+          backgroundColor: AppColors.dangerRed,
+        ),
       );
       return;
     }
@@ -126,109 +151,172 @@ class _PanenFormBodyState extends ConsumerState<PanenFormBody> {
     }
 
     HapticFeedback.mediumImpact();
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Pilih Meja / Batch Semai
-              CustomInputField(
-                label: 'Pilih Meja / Batch Semai',
-                hintText: 'Pilih asal meja NFT atau Batch semaian',
-                controller: _mejaController,
+      height: widget.isModal ? null : double.infinity,
+      constraints: widget.isModal
+          ? BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            )
+          : null,
+      decoration: BoxDecoration(
+        color: AppColors.canvasWarm,
+        borderRadius: widget.isModal
+            ? const BorderRadius.vertical(top: Radius.circular(AppRadius.modal))
+            : null,
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: widget.isModal ? MainAxisSize.min : MainAxisSize.max,
+        children: [
+          // Apple HIG Grabber Handle & Modal Header
+          if (widget.isModal) ...[
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
               ),
-              const SizedBox(height: 16),
-
-              // 2. Tanggal Panen
-              CustomInputField(
-                label: 'Tanggal Panen',
-                hintText: 'Masukkan tanggal panen (Hari ini)',
-                controller: _tanggalController,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xxs,
               ),
-              const SizedBox(height: 16),
-
-              // 3. Row Berat Total & Harga Estimasi
-              Row(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: CustomInputField(
-                      label: 'Berat Total (Kg)',
-                      hintText: '0.0',
-                      controller: _beratTotalController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                  Text(
+                    isEdit ? 'Edit Hasil Panen' : 'Catat Hasil Panen',
+                    style: AppTypography.title3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CustomInputField(
-                      label: 'Harga Estimasi / Kg (Rp)',
-                      hintText: 'Rp 20.000',
-                      controller: _hargaEstimasiController,
-                      keyboardType: TextInputType.number,
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
                     ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+            ),
+            const Divider(height: 1, color: AppColors.borderSubtle),
+          ],
 
-              // 4. Row Jumlah Layak Jual & Reject/Rusak
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomInputField(
-                      label: 'Jumlah Layak Jual',
-                      hintText: '0 ikat/pcs',
-                      controller: _layakController,
-                      keyboardType: TextInputType.number,
+          Expanded(
+            flex: widget.isModal ? 0 : 1,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Pilih Meja / Batch Semai
+                    CustomInputField(
+                      label: 'Pilih Meja / Batch Semai',
+                      hintText: 'Pilih asal meja NFT atau Batch semaian',
+                      controller: _mejaController,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CustomInputField(
-                      label: 'Jumlah Reject/Rusak',
-                      hintText: '0 ikat/pcs',
-                      controller: _rejectController,
-                      keyboardType: TextInputType.number,
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 2. Tanggal Panen
+                    CustomInputField(
+                      label: 'Tanggal Panen',
+                      hintText: 'Masukkan tanggal panen (Hari ini)',
+                      controller: _tanggalController,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
-              // 5. Catatan Panen
-              CustomTextArea(
-                label: 'Catatan Panen',
-                hintText: 'Tuliskan catatan kondisi tanaman pasca-panen',
-                controller: _catatanController,
-              ),
-              const SizedBox(height: 28),
+                    // 3. Row Berat Total & Harga Estimasi
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Berat Total (Kg)',
+                            hintText: '0.0',
+                            controller: _beratTotalController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Harga Estimasi / Kg (Rp)',
+                            hintText: 'Rp 20.000',
+                            controller: _hargaEstimasiController,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
 
-              // 6. Button Simpan
-              RowButton(
-                label: isEdit ? 'Simpan Perubahan' : 'Simpan Hasil Panen',
-                backgroundColor: const Color.fromRGBO(57, 198, 195, 1),
-                textColor: Colors.white,
-                borderRadius: 24,
-                height: 52,
-                onTap: _saveForm,
+                    // 4. Row Jumlah Layak Jual & Reject/Rusak
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Jumlah Layak Jual',
+                            hintText: '0 ikat/pcs',
+                            controller: _layakController,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Jumlah Reject/Rusak',
+                            hintText: '0 ikat/pcs',
+                            controller: _rejectController,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 5. Catatan Panen
+                    CustomTextArea(
+                      label: 'Catatan Panen',
+                      hintText: 'Tuliskan catatan kondisi tanaman pasca-panen',
+                      controller: _catatanController,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // 6. Button Simpan (Apple HIG 52pt pill button)
+                    RowButton(
+                      label: isEdit ? 'Simpan Perubahan' : 'Simpan Hasil Panen',
+                      backgroundColor: AppColors.primaryMint,
+                      textColor: Colors.white,
+                      borderRadius: AppRadius.pill,
+                      height: 52,
+                      onTap: _saveForm,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

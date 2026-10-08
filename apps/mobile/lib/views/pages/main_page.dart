@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hidrosense_mobile/views/components/inventaris_body.dart';
-import 'package:hidrosense_mobile/views/components/penyemaian_body.dart'; // Import baru
+import '../components/inventaris_body.dart';
+import '../components/penyemaian_body.dart';
+import '../components/penjualan_body.dart';
 import '../components/header.dart';
 import '../components/dashboard_body.dart';
 import '../components/custom_bottom_navigation_bar.dart';
@@ -26,7 +27,8 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = const [
     DashboardBody(),
     InventarisBody(),
-    PenyemaianBody(), // Menggunakan widget PenyemaianBody
+    PenyemaianBody(),
+    PenjualanBody(),
   ];
 
   // Mengembalikan judul header berdasarkan index aktif
@@ -36,6 +38,8 @@ class _MainPageState extends State<MainPage> {
         return 'Daftar Inventaris';
       case 2:
         return 'Daftar Penyemaian';
+      case 3:
+        return 'Penjualan';
       case 0:
       default:
         return 'HidroSense';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/weather_model.dart';
+import '../theme/app_theme.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/capsule_badge.dart';
 import '../widgets/card_icon_box.dart';
@@ -10,59 +11,54 @@ class RekomendasiCuacaBody extends StatelessWidget {
 
   const RekomendasiCuacaBody({super.key, required this.item});
 
-  // @style
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Top Card: Rekomendasi Berbasis Cuaca
+            // 1. Top Card: Rekomendasi Berbasis Cuaca Apple HIG Banner
             RowInfoCardMd(
-              backgroundColor: const Color.fromRGBO(240, 251, 251, 1),
-              borderColor: const Color.fromRGBO(57, 198, 195, 1),
-              padding: const EdgeInsets.all(16),
+              backgroundColor: AppColors.accentMintSoft,
+              borderColor: AppColors.borderAccent,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              borderRadius: AppRadius.modal,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const CardIconBox(
                     iconData: Icons.cloud_outlined,
-                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
+                    backgroundColor: AppColors.primaryMint,
                     iconColor: Colors.white,
                     width: 44,
                     height: 44,
                     borderRadius: 14,
                     iconSize: 22,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Rekomendasi Berbasis Cuaca',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
+                          style: AppTypography.headline.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: Colors.black,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text(
                           item.ringkasanSaran,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.3,
-                            color: Colors.black54,
+                          style: AppTypography.subheadline.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.35,
                           ),
                         ),
                       ],
@@ -71,41 +67,36 @@ class RekomendasiCuacaBody extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
 
             // 2. Section Header
-            const Text(
+            Text(
               'TINDAKAN REKOMENDASI HARI INI',
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.caption1.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: Color.fromRGBO(57, 198, 195, 1),
+                color: AppColors.primaryDarkTeal,
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
 
             // 3. List Cards Rekomendasi
             ...item.rekomendasiList.map((rec) {
               final isPenting = rec.isPenting;
-              final tagBgColor = isPenting
-                  ? const Color.fromRGBO(255, 243, 236, 1)
-                  : const Color.fromRGBO(240, 251, 251, 1);
-              final tagTextColor = isPenting
-                  ? const Color.fromRGBO(255, 154, 85, 1)
-                  : const Color.fromRGBO(57, 198, 195, 1);
-              final tagBorderColor = isPenting
-                  ? const Color.fromRGBO(255, 154, 85, 1)
-                  : const Color.fromRGBO(57, 198, 195, 1);
+              final tagBgColor =
+                  isPenting ? AppColors.warningBg : AppColors.accentMintSoft;
+              final tagTextColor =
+                  isPenting ? AppColors.warningOrange : AppColors.primaryDarkTeal;
+              final tagBorderColor =
+                  isPenting ? AppColors.warningOrange : AppColors.primaryMint;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: BaseColCard(
                   backgroundColor: Colors.white,
-                  borderColor: const Color.fromRGBO(230, 230, 225, 1),
-                  borderRadius: 20,
-                  padding: const EdgeInsets.all(16),
+                  borderColor: AppColors.borderLight,
+                  borderRadius: AppRadius.card,
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -115,15 +106,13 @@ class RekomendasiCuacaBody extends StatelessWidget {
                           Expanded(
                             child: Text(
                               rec.judul,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
+                              style: AppTypography.headline.copyWith(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: Colors.black,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.xs),
                           CapsuleBadge(
                             label: rec.labelTag,
                             textColor: tagTextColor,
@@ -133,26 +122,20 @@ class RekomendasiCuacaBody extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         rec.deskripsi,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
+                        style: AppTypography.subheadline.copyWith(
+                          color: AppColors.textPrimary,
                           height: 1.4,
-                          color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         rec.alasan,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 11,
+                        style: AppTypography.caption1.copyWith(
+                          color: AppColors.textTertiary,
                           height: 1.3,
-                          color: Colors.black45,
                         ),
                       ),
                     ],
@@ -161,21 +144,18 @@ class RekomendasiCuacaBody extends StatelessWidget {
               );
             }),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.sm),
 
             // 4. Disclaimer Footer
-            const Text(
+            Text(
               'Disclaimer: Saran otomatis sistem berdasarkan analisis cuaca lokal & usia tanaman terkini. Modifikasi sesuai pengamatan visual lapangan petani.',
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.caption2.copyWith(
                 fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                height: 1.3,
-                color: Colors.black38,
+                color: AppColors.textTertiary,
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

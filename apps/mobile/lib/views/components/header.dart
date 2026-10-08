@@ -26,15 +26,15 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       toolbarHeight: preferredSize.height,
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
-      titleSpacing: showBackButton ? 12 : 16,
+      titleSpacing: showBackButton ? AppSpacing.sm : AppSpacing.md,
       leadingWidth: showBackButton ? 56 : 0,
       leading: showBackButton
           ? Padding(
-              padding: const EdgeInsets.only(left: 16.0),
+              padding: const EdgeInsets.only(left: AppSpacing.md),
               child: Center(
                 child: CustomBackButton(
                   onTap: onBackPressed ?? () => Navigator.maybePop(context),
@@ -48,18 +48,15 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         overflow: largeTitle ? TextOverflow.ellipsis : null,
         style: largeTitle
             ? AppTypography.largeTitle
-            : const TextStyle(
-                fontFamily: 'Inter',
+            : AppTypography.title3.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 20,
-                height: 1.0,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
       ),
       actions: [
         if (showUserIcon)
           Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: AppSpacing.md),
             child: _HeaderAvatarButton(
               onTap: () {
                 Navigator.push(
@@ -92,28 +89,28 @@ class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOutCubic,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color.fromRGBO(221, 244, 90, 1),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color.fromRGBO(23, 34, 49, 0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.person_outline,
-            color: Colors.black,
-            size: 22,
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: AppColors.accentLime,
+              shape: BoxShape.circle,
+              boxShadow: AppShadows.subtle,
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              color: AppColors.darkNavy,
+              size: 22,
+            ),
           ),
         ),
       ),

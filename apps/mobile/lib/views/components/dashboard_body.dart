@@ -11,6 +11,9 @@ import '../pages/seeding_form_page.dart';
 import '../pages/main_page.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/meja_nft_page.dart';
+import '../pages/penjualan_page.dart';
+import '../pages/panen_page.dart';
+import '../pages/cuaca_page.dart';
 
 class DashboardBody extends ConsumerWidget {
   const DashboardBody({super.key});
@@ -197,10 +200,121 @@ class DashboardBody extends ConsumerWidget {
                   );
                 },
               ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'OPERASIONAL & BISNIS',
+                style: AppTypography.footnote.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _BusinessModuleCard(
+                title: 'Penjualan & Kasir',
+                subtitle: 'Pencatatan invoice, rekap omzet & transaksi',
+                icon: Icons.point_of_sale_outlined,
+                iconBg: AppColors.accentMintSoft,
+                iconColor: AppColors.primaryDarkTeal,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PenjualanPage()),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _BusinessModuleCard(
+                title: 'Manajemen Panen',
+                subtitle: 'Pencatatan sortasi, panen baru & log produksi',
+                icon: Icons.agriculture_outlined,
+                iconBg: AppColors.warningBg,
+                iconColor: AppColors.warningOrange,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PanenPage()),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _BusinessModuleCard(
+                title: 'Kondisi & Cuaca Kebun',
+                subtitle: 'Kondisi mikroklimat kebun & debit nutrisi',
+                icon: Icons.wb_sunny_outlined,
+                iconBg: AppColors.accentLime.withOpacity(0.3),
+                iconColor: AppColors.darkNavy,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CuacaPage()),
+                ),
+              ),
               const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BusinessModuleCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _BusinessModuleCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RowInfoCardMd(
+      backgroundColor: AppColors.cardSurface,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
+      child: Row(
+        children: [
+          CardIconBox(
+            iconData: icon,
+            backgroundColor: iconBg,
+            iconColor: iconColor,
+            width: 44,
+            height: 44,
+            borderRadius: AppRadius.input,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.subheadline.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTypography.caption1.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textTertiary,
+            size: 20,
+          ),
+        ],
       ),
     );
   }

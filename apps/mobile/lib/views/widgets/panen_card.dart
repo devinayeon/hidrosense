@@ -1,6 +1,7 @@
 // lib/views/widgets/panen_card.dart
 import 'package:flutter/material.dart';
 import '../../models/panen_model.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 import 'row_info_card_md.dart';
 
@@ -16,15 +17,12 @@ class PanenCard extends StatelessWidget {
 
     // Styling Badge berdasarkan status
     final String badgeLabel = isEstimasi ? 'Estimasi' : 'Selesai';
-    final Color badgeBgColor = isEstimasi
-        ? const Color.fromRGBO(224, 247, 246, 1)
-        : const Color.fromRGBO(236, 253, 245, 1);
-    final Color badgeTextColor = isEstimasi
-        ? const Color.fromRGBO(57, 198, 195, 1)
-        : const Color.fromRGBO(34, 197, 94, 1);
-    final Color badgeBorderColor = isEstimasi
-        ? const Color.fromRGBO(57, 198, 195, 0.4)
-        : const Color.fromRGBO(34, 197, 94, 0.4);
+    final Color badgeBgColor =
+        isEstimasi ? AppColors.accentMintSoft : AppColors.successBg;
+    final Color badgeTextColor =
+        isEstimasi ? AppColors.primaryDarkTeal : AppColors.successGreen;
+    final Color badgeBorderColor =
+        isEstimasi ? AppColors.primaryMint : AppColors.successGreen;
 
     // Dynamic subtitle (Meja info, HSS, Tanggal)
     final String subtitleText = item.targetHss != null
@@ -33,8 +31,12 @@ class PanenCard extends StatelessWidget {
 
     return RowInfoCardMd(
       backgroundColor: Colors.white,
-      borderColor: const Color.fromRGBO(240, 240, 235, 1),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      borderColor: AppColors.borderLight,
+      borderRadius: AppRadius.card,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 14,
+      ),
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,15 +49,13 @@ class PanenCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppTypography.subheadline.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color.fromRGBO(23, 34, 49, 1),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.xs),
               CapsuleBadge(
                 label: badgeLabel,
                 textColor: badgeTextColor,
@@ -66,28 +66,24 @@ class PanenCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.xxs),
 
           // Baris Tengah: Info Meja / HSS / Tanggal
           Text(
             subtitleText,
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.caption1.copyWith(
               fontWeight: FontWeight.w500,
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.xxs),
 
           // Baris Bawah: Detail Hasil / Estimasi
           Text(
             item.resultText,
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.caption1.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: Color.fromRGBO(31, 41, 55, 1),
+              color: AppColors.textPrimary,
             ),
           ),
         ],

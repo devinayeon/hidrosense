@@ -6,6 +6,7 @@ import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/inventaris_viewmodel.dart';
 import 'add_form_inventaris_page.dart';
 import '../components/header.dart';
+import '../theme/app_theme.dart';
 import '../widgets/item_image_placeholder.dart';
 import '../widgets/capsule_badge.dart';
 import '../widgets/row_info_card_md.dart';
@@ -86,58 +87,62 @@ class InfoItemInventarisPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: const Header(titleText: 'Detail Barang', showBackButton: true),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ItemImagePlaceholder(imageUrl: currentItem.imageUrl),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               currentItem.name,
-              style: const TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.title2.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 20,
-                height: 1.0,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.xs),
             CapsuleBadge(
               label: currentItem.category,
-              textColor: const Color.fromRGBO(57, 198, 195, 1),
-              backgroundColor: const Color.fromRGBO(237, 249, 248, 1),
+              textColor: AppColors.primaryMint,
+              backgroundColor: AppColors.accentMintSoft,
+              borderColor: AppColors.primaryMint,
               size: CapsuleSize.medium,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             RowInfoCardMd(
               backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(235, 238, 242, 1),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              borderColor: AppColors.borderLight,
+              borderRadius: AppRadius.card,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 14,
+              ),
               child: StockInfoRow(
                 stockValue: currentItem.formattedStock,
                 stockUnit: currentItem.stockUnit,
                 mainUnit: currentItem.mainUnit,
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            const SizedBox(height: AppSpacing.xl),
+            Text(
               'RIWAYAT PERUBAHAN STOK',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
+              style: AppTypography.caption1.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
-                color: Color.fromRGBO(107, 114, 128, 1),
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             RowInfoCardMd(
               backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(235, 238, 242, 1),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              borderColor: AppColors.borderLight,
+              borderRadius: AppRadius.card,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
               child: Column(
                 children: List.generate(historyList.length, (index) {
                   final hItem = historyList[index];
@@ -158,23 +163,26 @@ class InfoItemInventarisPage extends ConsumerWidget {
                         const Divider(
                           height: 20,
                           thickness: 1,
-                          color: Color.fromRGBO(243, 244, 246, 1),
+                          color: AppColors.borderSubtle,
                         ),
                     ],
                   );
                 }),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             Row(
               children: [
                 Expanded(
                   child: ColButton(
                     text: 'Edit Barang',
-                    textColor: const Color.fromRGBO(57, 198, 195, 1),
+                    textColor: AppColors.primaryMint,
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(57, 198, 195, 1),
+                    borderColor: AppColors.primaryMint,
+                    height: 52,
+                    borderRadius: AppRadius.pill,
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       final matchingRecords = ref
                           .read(connectedInventoryProvider)
                           .records
@@ -200,19 +208,21 @@ class InfoItemInventarisPage extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: ColButton(
                     text: 'Nonaktifkan',
-                    textColor: const Color.fromRGBO(255, 140, 66, 1),
-                    backgroundColor: const Color.fromRGBO(255, 248, 245, 1),
-                    borderColor: const Color.fromRGBO(255, 140, 66, 1),
+                    textColor: AppColors.warningOrange,
+                    backgroundColor: AppColors.warningBg,
+                    borderColor: AppColors.warningOrange,
+                    height: 52,
+                    borderRadius: AppRadius.pill,
                     onPressed: () => _showDeactivateDialog(context, ref),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

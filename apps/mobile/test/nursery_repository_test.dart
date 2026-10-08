@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hidrosense_mobile/data/models/nursery_record.dart';
 import 'package:hidrosense_mobile/data/repositories/nursery_repository.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
 import 'package:http/http.dart' as http;

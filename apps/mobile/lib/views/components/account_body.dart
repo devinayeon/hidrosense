@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/session_viewmodel.dart';
+import '../theme/app_theme.dart';
 import '../widgets/base_col_card.dart';
 import '../widgets/capsule_badge.dart';
 import '../widgets/card_icon_box.dart';
@@ -21,101 +22,116 @@ class AccountBody extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             BaseColCard(
               backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(230, 230, 225, 1),
-              borderRadius: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              borderColor: AppColors.borderLight,
+              borderRadius: AppRadius.modal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.lg,
+              ),
               child: Column(
                 children: [
                   Container(
                     width: 64,
                     height: 64,
                     decoration: const BoxDecoration(
-                      color: Color.fromRGBO(57, 198, 195, 1),
+                      color: AppColors.primaryMint,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.person_outline, color: Colors.white, size: 36),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 20,
-                      color: Color.fromRGBO(23, 34, 49, 1),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: Colors.white,
+                      size: 36,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    user.name,
+                    style: AppTypography.title2.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.darkNavy,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
                   CapsuleBadge(
                     label: roleLabel,
-                    textColor: const Color.fromRGBO(221, 244, 90, 1),
-                    backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
+                    textColor: AppColors.accentLime,
+                    backgroundColor: AppColors.darkNavy,
                     size: CapsuleSize.medium,
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, thickness: 1, color: Color.fromRGBO(240, 240, 235, 1)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppColors.borderSubtle,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   _detailRow(
                     icon: Icons.alternate_email_rounded,
-                    bgColor: const Color.fromRGBO(230, 247, 247, 1),
-                    iconColor: const Color.fromRGBO(57, 198, 195, 1),
+                    bgColor: AppColors.accentMintSoft,
+                    iconColor: AppColors.primaryDarkTeal,
                     text: 'Username: ${user.username}',
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _detailRow(
                     icon: Icons.badge_outlined,
-                    bgColor: const Color.fromRGBO(255, 243, 236, 1),
-                    iconColor: const Color.fromRGBO(255, 154, 85, 1),
+                    bgColor: AppColors.warningBg,
+                    iconColor: AppColors.warningOrange,
                     text: 'ID Pengguna: ${user.id}',
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   _detailRow(
                     icon: Icons.vpn_key_outlined,
-                    bgColor: const Color.fromRGBO(240, 250, 220, 1),
-                    iconColor: const Color.fromRGBO(130, 180, 20, 1),
+                    bgColor: AppColors.successBg,
+                    iconColor: AppColors.successGreen,
                     text: 'Izin: ${user.permissions.join(', ')}',
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            const RowInfoCardMd(
-              backgroundColor: Color.fromRGBO(240, 251, 251, 1),
-              borderColor: Color.fromRGBO(57, 198, 195, 1),
-              padding: EdgeInsets.all(16),
+            const SizedBox(height: AppSpacing.md),
+            RowInfoCardMd(
+              backgroundColor: Colors.white,
+              borderColor: AppColors.borderLight,
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  CardIconBox(
-                    iconData: Icons.adjust_rounded,
-                    backgroundColor: Color.fromRGBO(57, 198, 195, 1),
-                    iconColor: Colors.white,
+                  const CardIconBox(
+                    iconData: Icons.shield_outlined,
+                    backgroundColor: AppColors.accentMintSoft,
+                    iconColor: AppColors.primaryDarkTeal,
                     width: 40,
                     height: 40,
-                    borderRadius: 12,
+                    borderRadius: AppRadius.input,
                     iconSize: 20,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Status Sesi',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          style: AppTypography.headline.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Terhubung dengan otentikasi JWT backend.',
-                          style: TextStyle(fontSize: 11, color: Colors.black54),
+                          style: AppTypography.footnote.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -123,10 +139,10 @@ class AccountBody extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 52,
               child: OutlinedButton.icon(
                 onPressed: session.busy
                     ? null
@@ -137,26 +153,30 @@ class AccountBody extends ConsumerWidget {
                       },
                 icon: const Icon(
                   Icons.logout_rounded,
-                  color: Color.fromRGBO(255, 154, 85, 1),
+                  color: AppColors.dangerRed,
                   size: 20,
                 ),
                 label: Text(
                   session.busy ? 'Mengeluarkan...' : 'Keluar Dari Akun',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
+                  style: AppTypography.headline.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Color.fromRGBO(255, 154, 85, 1),
+                    fontSize: 15,
+                    color: AppColors.dangerRed,
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(255, 248, 242, 1),
-                  side: const BorderSide(color: Color.fromRGBO(255, 154, 85, 1), width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  backgroundColor: AppColors.dangerBg.withOpacity(0.5),
+                  side: BorderSide(
+                    color: AppColors.dangerRed.withOpacity(0.4),
+                    width: 1.2,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),
@@ -177,18 +197,16 @@ class AccountBody extends ConsumerWidget {
           iconColor: iconColor,
           width: 32,
           height: 32,
-          borderRadius: 10,
+          borderRadius: AppRadius.badge,
           iconSize: 18,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.caption1.copyWith(
               fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: Colors.black87,
+              color: AppColors.textPrimary,
             ),
           ),
         ),

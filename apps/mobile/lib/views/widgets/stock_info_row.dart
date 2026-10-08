@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class StockInfoRow extends StatelessWidget {
@@ -14,9 +15,9 @@ class StockInfoRow extends StatelessWidget {
     required this.stockValue,
     required this.stockUnit,
     required this.mainUnit,
-    this.unitTextColor = const Color.fromRGBO(57, 198, 195, 1),
-    this.badgeBgColor = const Color.fromRGBO(220, 252, 92, 1),
-    this.badgeTextColor = const Color.fromRGBO(20, 30, 45, 1),
+    this.unitTextColor = AppColors.primaryMint,
+    this.badgeBgColor = AppColors.accentLime,
+    this.badgeTextColor = AppColors.darkNavy,
   });
 
   @override
@@ -30,36 +31,31 @@ class StockInfoRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Stok Saat Ini',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
+              style: AppTypography.subheadline.copyWith(
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
-                color: Color.fromRGBO(107, 114, 128, 1),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
                   stockValue,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 28,
+                  style: AppTypography.title1.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Color.fromRGBO(17, 24, 39, 1),
+                    color: AppColors.textPrimary,
                     height: 1.0,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   stockUnit,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
+                  style: AppTypography.callout.copyWith(
                     fontWeight: FontWeight.w600,
                     color: unitTextColor,
                     height: 1.0,
@@ -75,16 +71,14 @@ class StockInfoRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Satuan Utama',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
+              style: AppTypography.subheadline.copyWith(
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
-                color: Color.fromRGBO(107, 114, 128, 1),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xs),
             CapsuleBadge(
               label: mainUnit,
               textColor: badgeTextColor,

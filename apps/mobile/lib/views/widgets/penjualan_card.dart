@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/penjualan_model.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class PenjualanCard extends StatelessWidget {
@@ -18,26 +19,27 @@ class PenjualanCard extends StatelessWidget {
     );
 
     final String statusText = item.isLunas ? 'LUNAS' : 'BELUM LUNAS';
-    final Color badgeBg = item.isLunas
-        ? const Color.fromRGBO(240, 251, 251, 1)
-        : const Color.fromRGBO(255, 243, 236, 1);
-    final Color badgeText = item.isLunas
-        ? const Color.fromRGBO(57, 198, 195, 1)
-        : const Color.fromRGBO(255, 154, 85, 1);
+    final Color badgeBg =
+        item.isLunas ? AppColors.accentMintSoft : AppColors.warningBg;
+    final Color badgeText =
+        item.isLunas ? AppColors.primaryDarkTeal : AppColors.warningOrange;
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 14,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
-              color: const Color.fromRGBO(240, 240, 235, 1),
-              width: 1.5,
+              color: AppColors.borderLight,
+              width: 1.2,
             ),
           ),
           child: Row(
@@ -51,27 +53,22 @@ class PenjualanCard extends StatelessWidget {
                   children: [
                     Text(
                       item.pembeli,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
+                      style: AppTypography.subheadline.copyWith(
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: Color.fromRGBO(23, 34, 49, 1),
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       '${item.tanggal} • ${item.kuantitas}',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: Color.fromRGBO(107, 114, 128, 1),
+                      style: AppTypography.caption1.copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.xs),
 
               // Total Harga & Badge Status
               Column(
@@ -79,14 +76,15 @@ class PenjualanCard extends StatelessWidget {
                 children: [
                   Text(
                     currencyFormatter.format(item.totalHarga),
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
+                    style: AppTypography.subheadline.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                      color: Color.fromRGBO(23, 34, 49, 1),
+                      color: AppColors.textPrimary,
+                      fontFeatures: const [
+                        FontFeature.tabularFigures(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xxs),
                   CapsuleBadge(
                     label: statusText,
                     textColor: badgeText,

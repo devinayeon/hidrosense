@@ -53,67 +53,59 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
         titleText: 'Detail Penyemaian',
         showBackButton: true,
       ),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.title2.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: Color.fromRGBO(23, 34, 49, 1),
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               'Varietas: $variety',
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 15,
+              style: AppTypography.subheadline.copyWith(
                 fontWeight: FontWeight.w500,
-                color: Color.fromRGBO(107, 114, 128, 1),
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             BaseColCard(
               backgroundColor: Colors.white,
-              borderColor: const Color.fromRGBO(243, 244, 246, 1),
-              borderRadius: 20,
-              padding: const EdgeInsets.all(16.0),
+              borderColor: AppColors.borderLight,
+              borderRadius: AppRadius.modal,
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Progres Usia Semai',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
+                        style: AppTypography.caption1.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Color.fromRGBO(107, 114, 128, 1),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       Text(
                         '$hssDays dari $totalHss Hari',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
+                        style: AppTypography.subheadline.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: Color.fromRGBO(23, 34, 49, 1),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadius.badge),
                     child: TweenAnimationBuilder<double>(
                       tween: Tween<double>(begin: 0.0, end: progress),
                       duration: const Duration(milliseconds: 450),
@@ -122,90 +114,75 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                           LinearProgressIndicator(
                             value: animatedVal,
                             minHeight: 10,
-                            backgroundColor: const Color.fromRGBO(
-                              229,
-                              231,
-                              235,
-                              1,
-                            ),
+                            backgroundColor: AppColors.borderLight,
                             valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color.fromRGBO(57, 198, 195, 1),
+                              AppColors.primaryMint,
                             ),
                           ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Rencana pindah tanam: HSS $totalHss',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      color: Color.fromRGBO(156, 163, 175, 1),
+                    style: AppTypography.caption1.copyWith(
+                      color: AppColors.textTertiary,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
                   child: BaseColCard(
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(243, 244, 246, 1),
-                    borderRadius: 20,
-                    padding: const EdgeInsets.all(16.0),
+                    borderColor: AppColors.borderLight,
+                    borderRadius: AppRadius.modal,
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Bibit Sehat',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                          style: AppTypography.caption1.copyWith(
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text(
                           '$count Bibit',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 20,
+                          style: AppTypography.title2.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: Color.fromRGBO(23, 34, 49, 1),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: BaseColCard(
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(243, 244, 246, 1),
-                    borderRadius: 20,
-                    padding: const EdgeInsets.all(16.0),
+                    borderColor: AppColors.borderLight,
+                    borderRadius: AppRadius.modal,
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Bibit Rusak',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Color.fromRGBO(107, 114, 128, 1),
+                          style: AppTypography.caption1.copyWith(
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text(
                           '$damagedCount Bibit',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 20,
+                          style: AppTypography.title2.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: Color.fromRGBO(23, 34, 49, 1),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -214,25 +191,23 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             if (materials.isNotEmpty) ...[
-              const Text(
+              Text(
                 'BAHAN YANG DIGUNAKAN',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
+                style: AppTypography.caption1.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
-                  color: Color.fromRGBO(107, 114, 128, 1),
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               BaseColCard(
                 backgroundColor: Colors.white,
-                borderColor: const Color.fromRGBO(243, 244, 246, 1),
-                borderRadius: 20,
+                borderColor: AppColors.borderLight,
+                borderRadius: AppRadius.modal,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: AppSpacing.md,
                   vertical: 14,
                 ),
                 child: Column(
@@ -249,10 +224,8 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                           Expanded(
                             child: Text(
                               item,
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 14,
-                                color: Color.fromRGBO(23, 34, 49, 1),
+                              style: AppTypography.subheadline.copyWith(
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
@@ -262,20 +235,20 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.xl),
             ],
             Row(
               children: [
                 Expanded(
                   child: ColButton(
                     text: 'Kembali',
-                    textColor: const Color.fromRGBO(57, 198, 195, 1),
+                    textColor: AppColors.primaryMint,
                     backgroundColor: Colors.white,
-                    borderColor: const Color.fromRGBO(57, 198, 195, 1),
+                    borderColor: AppColors.primaryMint,
                     height: 52,
-                    borderRadius: 25,
+                    borderRadius: AppRadius.pill,
                     onPressed: () {
-                      HapticFeedback.heavyImpact();
+                      HapticFeedback.lightImpact();
                       Navigator.pop(context);
                     },
                   ),
@@ -283,7 +256,7 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                 if (sowingRecord?.status == 'aktif' &&
                     sowingRecord?.isReadyToMove == true &&
                     !_transferred) ...[
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: ColButton(
                       text: 'Pindahkan ke Meja',
@@ -291,7 +264,7 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                       backgroundColor: AppColors.accentLime,
                       borderColor: AppColors.accentLime,
                       height: 52,
-                      borderRadius: 25,
+                      borderRadius: AppRadius.pill,
                       fontSize: 13.5,
                       onPressed: () {
                         showModalBottomSheet<void>(

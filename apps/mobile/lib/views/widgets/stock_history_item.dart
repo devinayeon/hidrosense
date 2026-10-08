@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class StockHistoryItem extends StatelessWidget {
@@ -18,13 +19,14 @@ class StockHistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Warna badge berdasarkan jenis perubahan (kurang/tambah)
-    final Color badgeBgColor = isReduction
-        ? const Color.fromRGBO(255, 241, 236, 1) // Merah muda / Orange soft
-        : const Color.fromRGBO(237, 249, 248, 1); // Tosca soft
+    final Color badgeBgColor =
+        isReduction ? AppColors.warningBg : AppColors.accentMintSoft;
 
-    final Color badgeTextColor = isReduction
-        ? const Color.fromRGBO(255, 138, 80, 1) // Orange / Merah
-        : const Color.fromRGBO(57, 198, 195, 1); // Tosca
+    final Color badgeTextColor =
+        isReduction ? AppColors.warningOrange : AppColors.primaryDarkTeal;
+
+    final Color badgeBorderColor =
+        isReduction ? AppColors.warningOrange : AppColors.primaryMint;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -39,32 +41,29 @@ class StockHistoryItem extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
+                style: AppTypography.subheadline.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Color.fromRGBO(17, 24, 39, 1),
+                  color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               Text(
                 date,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
+                style: AppTypography.caption1.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Color.fromRGBO(156, 163, 175, 1),
+                  color: AppColors.textTertiary,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.sm),
         // Sisi Kanan: Capsule Badge Jumlah Stok
         CapsuleBadge(
           label: amountText,
           textColor: badgeTextColor,
           backgroundColor: badgeBgColor,
+          borderColor: badgeBorderColor,
           size: CapsuleSize.medium,
           fontWeight: FontWeight.w700,
         ),

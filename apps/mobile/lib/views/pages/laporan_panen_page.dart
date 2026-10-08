@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/panen_model.dart';
 import '../components/header.dart';
 import '../components/laporan_panen_body.dart';
+import '../theme/app_theme.dart';
 
 class LaporanPanenPage extends StatelessWidget {
   final PanenItem item;
@@ -13,7 +14,7 @@ class LaporanPanenPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const Header(titleText: 'Laporan Panen', showBackButton: true),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: LaporanPanenBody(item: item),
     );
   }

@@ -3,6 +3,7 @@ import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../components/header.dart';
 import '../components/info_meja_body.dart';
+import '../theme/app_theme.dart';
 
 class InfoMejaPage extends StatelessWidget {
   final TableRecord? tableRecord;
@@ -19,7 +20,7 @@ class InfoMejaPage extends StatelessWidget {
     final title = tableRecord?.displayName ?? mejaItem?.name ?? 'Detail Meja';
     return Scaffold(
       appBar: Header(titleText: title, showBackButton: true),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: InfoMejaBody(
         tableRecord: tableRecord,
         mejaItem: mejaItem,

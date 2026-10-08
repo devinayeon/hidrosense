@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/meja_nft_model.dart';
 import '../components/header.dart';
 import '../components/detail_tanaman_meja_body.dart';
+import '../theme/app_theme.dart';
 
 class DetailTanamanMejaPage extends StatelessWidget {
   final MejaNft mejaItem;
@@ -13,7 +14,7 @@ class DetailTanamanMejaPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: Header(titleText: mejaItem.name, showBackButton: true),
-      backgroundColor: const Color.fromRGBO(250, 250, 247, 1),
+      backgroundColor: AppColors.canvasWarm,
       body: DetailTanamanMejaBody(mejaItem: mejaItem),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Brand & Accent Colors
   static const Color primaryMint = Color(0xFF39C6C5);
+  static const Color accentMintSoft = Color(0x1A39C6C5);
   static const Color primaryDarkTeal = Color(0xFF168681);
   static const Color accentLime = Color(0xFFDDF45A);
   static const Color darkNavy = Color(0xFF172231);
@@ -52,6 +53,7 @@ class AppRadius {
   static const double badge = 8.0;
   static const double input = 12.0;
   static const double card = 16.0;
+  static const double dialog = 20.0;
   static const double modal = 24.0;
   static const double pill = 999.0;
 }

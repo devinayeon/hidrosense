@@ -25,7 +25,7 @@ class StockStatusBadge extends StatelessWidget {
     switch (status) {
       case StockStatus.aman:
         statusColor = AppColors.primaryDarkTeal;
-        bgColor = const Color(0xFFEAF7F6);
+        bgColor = AppColors.accentMintSoft;
         label = 'Stok Aman';
         break;
       case StockStatus.menipis:

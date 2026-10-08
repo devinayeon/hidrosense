@@ -1,6 +1,7 @@
 // lib/views/widgets/meja_nft_card_content.dart
 import 'package:flutter/material.dart';
 import '../../models/meja_nft_model.dart';
+import '../theme/app_theme.dart';
 import 'capsule_badge.dart';
 
 class MejaNftCardContent extends StatelessWidget {
@@ -21,62 +22,48 @@ class MejaNftCardContent extends StatelessWidget {
           children: [
             Text(
               item.name,
-              style: const TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.headline.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
             ),
             CapsuleBadge(
               label: isAktif ? 'Aktif' : 'Perawatan',
-              textColor: isAktif
-                  ? const Color.fromRGBO(2, 132, 199, 1)
-                  : const Color.fromRGBO(217, 119, 6, 1),
-              backgroundColor: isAktif
-                  ? const Color.fromRGBO(224, 242, 254, 1)
-                  : const Color.fromRGBO(254, 243, 199, 1),
+              textColor: isAktif ? AppColors.infoBlue : AppColors.warningOrange,
+              backgroundColor: isAktif ? AppColors.infoBg : AppColors.warningBg,
               size: CapsuleSize.small,
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.xs),
         if (isAktif) ...[
           Text(
             'Kapasitas: ${item.capacityUsed} / ${item.capacityTotal} Lubang Terisi',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+            style: AppTypography.caption1.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xxs),
           Text(
             '${item.batchName ?? ""} • ${item.variety ?? ""} (${item.hss ?? 0} HSS)',
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: AppTypography.caption1.copyWith(
               fontWeight: FontWeight.w500,
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+              color: AppColors.textSecondary,
             ),
           ),
         ] else ...[
           Text(
             'Kapasitas: Kosong (${item.maintenanceNote ?? "Dalam Perawatan"})',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: Color.fromRGBO(107, 114, 128, 1),
+            style: AppTypography.caption1.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           if (item.maintenanceEta != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               item.maintenanceEta!,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                color: Color.fromRGBO(156, 163, 175, 1),
+              style: AppTypography.caption2.copyWith(
+                color: AppColors.textTertiary,
               ),
             ),
           ],

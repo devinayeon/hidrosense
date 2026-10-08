@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
+import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
 import '../widgets/row_button.dart';
 
@@ -121,10 +122,10 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color.fromRGBO(250, 250, 247, 1),
+      color: AppColors.canvasWarm,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -133,83 +134,174 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
               hintText: 'Contoh: M-01 atau Meja NFT #01',
               controller: _codeController,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             CustomInputField(
               label: 'Kapasitas Lubang Default',
               hintText: '250',
               controller: _capacityController,
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: AppSpacing.md),
+            Text(
               'Status Meja Utama',
-              style: TextStyle(
-                fontFamily: 'Inter',
+              style: AppTypography.subheadline.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: Color.fromRGBO(23, 34, 49, 1),
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color.fromRGBO(229, 231, 235, 1),
-                  width: 1.2,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedStatus,
-                  isExpanded: true,
-                  icon: const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color.fromRGBO(156, 163, 175, 1),
+            const SizedBox(height: AppSpacing.xs),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                final options = [
+                  ('tersedia', 'Tersedia / Aktif', Icons.check_circle_outline),
+                  ('pemeliharaan', 'Perawatan', Icons.build_circle_outlined),
+                  ('penuh', 'Penuh', Icons.grid_goldenratio),
+                  ('nonaktif', 'Nonaktif', Icons.block_outlined),
+                ];
+                showModalBottomSheet<void>(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.cardSurface,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(AppRadius.modal),
+                      ),
+                    ),
+                    padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.xl),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 5,
+                          margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                          decoration: BoxDecoration(
+                            color: AppColors.borderLight,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Text(
+                            'Pilih Status Meja',
+                            style: AppTypography.headline.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const Divider(height: 1, color: AppColors.borderSubtle),
+                        ...options.map((opt) {
+                          final isSelected = _selectedStatus == opt.$1;
+                          return InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _selectedStatus = opt.$1);
+                              Navigator.pop(ctx);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: 14,
+                              ),
+                              color: isSelected
+                                  ? AppColors.accentMintSoft.withOpacity(0.5)
+                                  : Colors.transparent,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    opt.$3,
+                                    size: 20,
+                                    color: isSelected
+                                        ? AppColors.primaryMint
+                                        : AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      opt.$2,
+                                      style: AppTypography.body.copyWith(
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: isSelected
+                                            ? AppColors.primaryDarkTeal
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppColors.primaryMint,
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'tersedia',
-                      child: Text('Tersedia / Aktif'),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  border: Border.all(
+                    color: AppColors.borderLight,
+                    width: 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedStatus == 'tersedia'
+                          ? 'Tersedia / Aktif'
+                          : _selectedStatus == 'pemeliharaan'
+                          ? 'Perawatan'
+                          : _selectedStatus == 'penuh'
+                          ? 'Penuh'
+                          : 'Nonaktif',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    DropdownMenuItem(
-                      value: 'pemeliharaan',
-                      child: Text('Perawatan'),
-                    ),
-                    DropdownMenuItem(value: 'penuh', child: Text('Penuh')),
-                    DropdownMenuItem(
-                      value: 'nonaktif',
-                      child: Text('Nonaktif'),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                      size: 20,
                     ),
                   ],
-                  onChanged: (value) {
-                    if (value != null) setState(() => _selectedStatus = value);
-                  },
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             CustomInputField(
               label: 'Catatan / Spesifikasi',
               hintText: 'Merek pompa, debit air, tipe pipa PVC',
               controller: _notesController,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             RowButton(
               label: _submitting
                   ? 'Menyimpan...'
                   : widget.tableRecord == null
                   ? 'Simpan Meja'
                   : 'Perbarui Pengaturan Meja',
-              backgroundColor: const Color.fromRGBO(23, 34, 49, 1),
-              textColor: const Color.fromRGBO(221, 244, 90, 1),
-              borderRadius: 24,
+              backgroundColor: AppColors.darkNavy,
+              textColor: AppColors.accentLime,
+              borderRadius: AppRadius.pill,
               height: 52,
               onTap: _submitting ? null : _saveForm,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

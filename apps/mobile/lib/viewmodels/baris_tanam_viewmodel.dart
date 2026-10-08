@@ -79,7 +79,6 @@ final filteredBarisTanamListProvider = Provider<List<BarisTanam>>((ref) {
     case BarisFilterCategory.damaged:
       return allList.where((item) => !item.isPerfect).toList();
     case BarisFilterCategory.all:
-    default:
       return allList;
   }
 });

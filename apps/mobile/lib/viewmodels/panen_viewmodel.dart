@@ -107,7 +107,6 @@ final filteredPanenListProvider = Provider<List<PanenItem>>((ref) {
     case PanenFilterCategory.completed:
       return allList.where((item) => !item.isEstimasi).toList();
     case PanenFilterCategory.all:
-    default:
       return allList;
   }
 });
