@@ -1,3 +1,4 @@
+import '../../core/uuid.dart';
 import '../models/inventory_record.dart';
 import '../models/jenis_inventaris_record.dart';
 import '../models/stock_movement_record.dart';
@@ -90,6 +91,7 @@ class InventoryRepository {
   }) async {
     final response = await _api.post(
       'stok',
+      headers: {'Idempotency-Key': generateUuidV4()},
       body: {
         'jenis_stok': direction,
         'details': details,

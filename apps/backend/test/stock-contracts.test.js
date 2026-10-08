@@ -1,11 +1,36 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { randomUUID } from 'node:crypto';
+import { stockFixture } from '../test-support/stock-fixture.js';
 import { fromMinor, MAX_QUANTITY_MINOR, positiveDecimalSchema, toMinor } from '../src/common/quantities.ts';
 import { createStockSchema, emptyQuerySchema, historyQuerySchema, idParamSchema, parseInput,
   reverseStockSchema } from '../src/features/stock/contracts.ts';
 
 const line = (id = '1', jumlah = '0.01', satuan = ' ml ') => ({ id_inventaris: id, jumlah, satuan });
 const create = (details = [line()], fields = {}) => ({ jenis_stok: 'masuk', details, ...fields });
+
+test('seed inventory initial stock requires a UUID and records the screenshot values exactly once', async (t) => {
+  const f = await stockFixture(t);
+  const response = await f.app.inject({ method: 'POST', url: '/api/v1/inventaris',
+    headers: f.headers, payload: { id_jenis_inventaris: f.items[0].id_jenis_inventaris,
+      nama_barang: 'Benih Buah Naga', satuan: 'Pcs', stok_minimum: '5' } });
+  assert.equal(response.statusCode, 201, response.body);
+  const item = response.json().data;
+  const payload = { jenis_stok: 'masuk',
+    details: [{ id_inventaris: item.id_inventaris, jumlah: '10', satuan: 'Pcs' }],
+    keterangan: 'Saldo awal registrasi barang' };
+  const missing = await f.app.inject({ method: 'POST', url: '/api/v1/stok', headers: f.headers, payload });
+  assert.equal(missing.statusCode, 400);
+  assert.equal(missing.json().error.message, 'Input tidak sesuai kontrak API.');
+  assert.equal((await f.balance(item)).saldo, '0');
+  const headers = { 'idempotency-key': randomUUID() };
+  assert.equal((await f.post(payload, headers)).statusCode, 201);
+  assert.equal((await f.post(payload, headers)).statusCode, 200);
+  const balance = await f.balance(item);
+  assert.equal(balance.saldo, '10');
+  assert.equal(balance.stok_minimum, '5');
+  assert.equal(balance.di_bawah_minimum, false);
+});
 
 test('scale-100 quantities preserve exact repeated fractions and bounds', () => {
   assert.equal(toMinor('0.1') + toMinor('0.2'), 30n);

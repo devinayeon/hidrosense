@@ -17,6 +17,122 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   test(
+    'new seed item saves stock 10 and minimum 5 with the required stock UUID',
+    () async {
+      final db = await databaseFactoryFfi.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: InventoryCache.createSchema,
+        ),
+      );
+      final cache = InventoryCache(db);
+      var balance = '0';
+      var creates = 0;
+      var stockWrites = 0;
+      final item = {
+        ...master('1'),
+        'nama_barang': 'Benih Buah Naga',
+        'nama_jenis': 'Benih',
+        'satuan': 'Pcs',
+        'stok_minimum': '5',
+      };
+      final api = ApiClient(
+        MockClient((request) async {
+          final path = request.url.path;
+          if (request.method == 'POST' && path.endsWith('/inventaris')) {
+            creates++;
+            expect(jsonDecode(request.body), {
+              'id_jenis_inventaris': '1',
+              'nama_barang': 'Benih Buah Naga',
+              'satuan': 'Pcs',
+              'stok_minimum': '5',
+            });
+            return reply(201, {'data': item});
+          }
+          if (request.method == 'POST' && path.endsWith('/stok')) {
+            stockWrites++;
+            expect(
+              request.headers['Idempotency-Key'],
+              matches(
+                r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+              ),
+            );
+            expect(jsonDecode(request.body), {
+              'jenis_stok': 'masuk',
+              'details': [
+                {'id_inventaris': '1', 'jumlah': '10', 'satuan': 'Pcs'},
+              ],
+              'keterangan': 'Saldo awal registrasi barang',
+            });
+            balance = '10';
+            return reply(201, {
+              'data': {
+                'id_stok': '1',
+                'id_user': '1',
+                'tanggal_stok': '2026-10-08T12:00:00Z',
+                'jenis_stok': 'masuk',
+                'details': [
+                  {
+                    'id_detail_stok': '1',
+                    'id_inventaris': '1',
+                    'jumlah': '10',
+                    'satuan': 'Pcs',
+                  },
+                ],
+              },
+            });
+          }
+          if (path.endsWith('/saldo')) {
+            return reply(200, {
+              'data': {
+                'id_inventaris': '1',
+                'satuan': 'Pcs',
+                'saldo': balance,
+                'stok_minimum': '5',
+                'di_bawah_minimum': balance == '0',
+              },
+            });
+          }
+          return reply(200, {
+            'data': [item],
+            'meta': {'page': 1, 'total': 1, 'total_pages': 1},
+          });
+        }),
+        baseUri: Uri.parse('https://example.test/api/v1'),
+      )..setTokens(accessToken: 'access', refreshToken: 'refresh');
+      addTearDown(() async {
+        api.close();
+        await cache.close();
+      });
+      final repository = InventoryRepository(
+        api,
+        Future.value(cache),
+        userId: '1',
+      );
+      final created = await repository.createItem(
+        categoryId: '1',
+        name: 'Benih Buah Naga',
+        unit: 'Pcs',
+        minimum: '5',
+      );
+      await repository.recordStockMovement(
+        direction: 'masuk',
+        details: [
+          {'id_inventaris': created.id, 'jumlah': '10', 'satuan': 'Pcs'},
+        ],
+        note: 'Saldo awal registrasi barang',
+      );
+      expect(creates, 1);
+      expect(stockWrites, 1);
+      final cached = (await repository.cached())!.records.single;
+      expect(cached.balance, '10');
+      expect(cached.minimum, '5');
+      expect(cached.isLow, false);
+    },
+  );
+
+  test(
     'all pages and exact balances replace cache only after full success',
     () async {
       final db = await databaseFactoryFfi.openDatabase(
