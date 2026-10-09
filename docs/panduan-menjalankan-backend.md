@@ -193,3 +193,28 @@ npm run dev
 
 Biarkan `npm run dev` berjalan, lalu jalankan pemeriksaan health atau test
 fitur dari terminal lain.
+
+## Ganti target lokal vs Turso
+
+Default harian adalah SQLite lokal. Semua script hanya membaca `.env`,
+jadi ganti target berarti ganti isi `.env` dari file template yang sudah
+disiapkan di `apps/backend` (semuanya di-ignore git kecuali `.example`):
+
+```powershell
+cd apps/backend
+Copy-Item .env.local .env -Force  # kerja harian (lokal)
+Copy-Item .env.turso .env -Force  # verifikasi remote (sekali jalan)
+```
+
+- `.env.local` — SQLite lokal `file:./data/hidrosense.db`.
+- `.env.turso` — Turso remote hasil `turso db show --url` +
+  `turso db tokens create` (pakai token full-access, bukan read-only).
+- `.env.turso.example` — template tanpa token asli untuk anggota tim baru.
+
+Jangan develop harian langsung ke Turso: reset-nya mahal (harus
+`destroy/create` atau `DROP TABLE`) dan rollback `0006` memblokir DB yang
+sudah di-seed. Alurnya: `npm run check` hijau di lokal dulu, baru switch
+ke Turso, lalu `npm run db:status` (di DB baru harusnya semua `pending`;
+kalau `applied`, berarti salah URL — STOP), `npm run db:migrate`,
+`npm run db:seed`, dan cek `/health/live` + `/health/ready`. Selesai
+verifikasi, kembali dengan `Copy-Item .env.local .env -Force`.

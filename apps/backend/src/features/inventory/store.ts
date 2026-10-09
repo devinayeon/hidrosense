@@ -69,7 +69,8 @@ export async function getObat(db: Executor, id: string) {
 const inventarisColumns = `CAST(i.id_inventaris AS TEXT) AS id_inventaris,
   CAST(i.id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,CAST(i.id_obat AS TEXT) AS id_obat,
   i.nama_barang,i.satuan,CAST(i.stok_minimum_minor AS TEXT) AS stok_minimum,i.status_aktif,
-  j.nama_jenis,o.nama_obat,${syncColumns('inventaris', 'i.id_inventaris')}`;
+  j.nama_jenis,o.nama_obat,CAST(COALESCE(b.saldo_minor,0) AS TEXT) AS saldo_minor,
+  ${syncColumns('inventaris', 'i.id_inventaris')}`;
 
 export function inventarisResponse(row: Row) {
   return {
@@ -80,6 +81,8 @@ export function inventarisResponse(row: Row) {
     nama_barang: String(row.nama_barang),
     satuan: String(row.satuan),
     stok_minimum: row.stok_minimum === null ? null : fromMinor(String(row.stok_minimum)),
+    saldo: fromMinor(String(row.saldo_minor)),
+    di_bawah_minimum: row.stok_minimum !== null && BigInt(String(row.saldo_minor)) < BigInt(String(row.stok_minimum)),
     status_aktif: Number(row.status_aktif),
     nama_jenis: String(row.nama_jenis),
     nama_obat: row.nama_obat === null ? null : String(row.nama_obat),
@@ -91,6 +94,7 @@ export async function getInventaris(db: Executor, id: string) {
     sql: `SELECT ${inventarisColumns} FROM inventaris i
       JOIN jenis_inventaris j ON j.id_jenis_inventaris=i.id_jenis_inventaris
       LEFT JOIN obat o ON o.id_obat=i.id_obat
+      LEFT JOIN stok_saldo b ON b.id_inventaris=i.id_inventaris
       WHERE i.id_inventaris=?`,
     args: [id],
   })).rows[0];

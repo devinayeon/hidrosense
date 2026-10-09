@@ -284,7 +284,8 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     Map<String, String>? query,
-  }) => _authRequest('PATCH', path, body: body, query: query);
+    Map<String, String>? headers,
+  }) => _authRequest('PATCH', path, body: body, query: query, headers: headers);
 
   Future<Map<String, dynamic>> delete(
     String path, {

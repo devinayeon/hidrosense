@@ -9,6 +9,8 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   final bool showUserIcon;
   final VoidCallback? onBackPressed;
   final bool largeTitle;
+  final double? toolbarHeight;
+  final int? titleMaxLines;
 
   const Header({
     super.key,
@@ -17,10 +19,13 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     this.showUserIcon = true,
     this.onBackPressed,
     this.largeTitle = false,
+    this.toolbarHeight,
+    this.titleMaxLines,
   });
 
   @override
-  Size get preferredSize => Size.fromHeight(largeTitle ? 88 : kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(toolbarHeight ?? (largeTitle ? 88 : kToolbarHeight));
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +49,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
           : null,
       title: Text(
         titleText,
-        maxLines: largeTitle ? 1 : null,
+        maxLines: titleMaxLines ?? (largeTitle ? 1 : null),
         overflow: largeTitle ? TextOverflow.ellipsis : null,
         style: largeTitle
             ? AppTypography.largeTitle

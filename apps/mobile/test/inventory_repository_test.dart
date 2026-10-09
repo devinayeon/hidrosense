@@ -48,7 +48,9 @@ void main() {
               'satuan': 'Pcs',
               'stok_minimum': '5',
             });
-            return reply(201, {'data': item});
+            return reply(201, {
+              'data': {...item, 'saldo': '0', 'di_bawah_minimum': true},
+            });
           }
           if (request.method == 'POST' && path.endsWith('/stok')) {
             stockWrites++;
@@ -83,19 +85,11 @@ void main() {
               },
             });
           }
-          if (path.endsWith('/saldo')) {
-            return reply(200, {
-              'data': {
-                'id_inventaris': '1',
-                'satuan': 'Pcs',
-                'saldo': balance,
-                'stok_minimum': '5',
-                'di_bawah_minimum': balance == '0',
-              },
-            });
-          }
+          expect(path, '/api/v1/inventaris');
           return reply(200, {
-            'data': [item],
+            'data': [
+              {...item, 'saldo': balance, 'di_bawah_minimum': balance == '0'},
+            ],
             'meta': {'page': 1, 'total': 1, 'total_pages': 1},
           });
         }),
@@ -123,6 +117,7 @@ void main() {
         ],
         note: 'Saldo awal registrasi barang',
       );
+      await repository.refresh();
       expect(creates, 1);
       expect(stockWrites, 1);
       final cached = (await repository.cached())!.records.single;
@@ -143,7 +138,7 @@ void main() {
         ),
       );
       final cache = InventoryCache(db);
-      var failSecondBalance = false;
+      var failSecondPage = false;
       var shortSecondPage = false;
       final api = ApiClient(
         MockClient((request) async {
@@ -165,28 +160,27 @@ void main() {
           }
           if (path.endsWith('/inventaris')) {
             final page = int.parse(request.url.queryParameters['page']!);
+            if (page == 2 && failSecondPage) {
+              return reply(503, {
+                'error': {'code': 'NOT_READY', 'message': 'Belum siap'},
+              });
+            }
             return reply(200, {
               'data': page == 2 && shortSecondPage
                   ? []
-                  : [master(page.toString())],
-              'meta': {'page': page, 'limit': 20, 'total': 2, 'total_pages': 2},
+                  : List.generate(
+                      page == 1 ? 20 : 1,
+                      (i) => master('${page == 1 ? i + 1 : 21}'),
+                    ),
+              'meta': {
+                'page': page,
+                'limit': 20,
+                'total': 21,
+                'total_pages': 2,
+              },
             });
           }
-          if (failSecondBalance && path.endsWith('/2/saldo')) {
-            return reply(503, {
-              'error': {'code': 'NOT_READY', 'message': 'Belum siap'},
-            });
-          }
-          final id = path.split('/')[4];
-          return reply(200, {
-            'data': {
-              'id_inventaris': id,
-              'satuan': 'kg',
-              'saldo': id == '1' ? '0.25' : '2',
-              'stok_minimum': '1',
-              'di_bawah_minimum': id == '1',
-            },
-          });
+          throw StateError('Unexpected request: $path');
         }),
         baseUri: Uri.parse('https://example.test/api/v1'),
       );
@@ -197,18 +191,16 @@ void main() {
         userId: '1',
       );
       final first = await repository.refresh();
-      expect(first.records.map((r) => r.balance), ['0.25', '2']);
-      expect((await repository.cached())!.records.length, 2);
-      failSecondBalance = true;
+      expect(first.records.first.balance, '0.25');
+      expect(first.records.last.balance, '2');
+      expect((await repository.cached())!.records.length, 21);
+      failSecondPage = true;
       await expectLater(repository.refresh(), throwsA(isA<ApiException>()));
-      expect((await repository.cached())!.records.map((r) => r.balance), [
-        '0.25',
-        '2',
-      ]);
-      failSecondBalance = false;
+      expect((await repository.cached())!.records.first.balance, '0.25');
+      failSecondPage = false;
       shortSecondPage = true;
       await expectLater(repository.refresh(), throwsA(isA<FormatException>()));
-      expect((await repository.cached())!.records.length, 2);
+      expect((await repository.cached())!.records.length, 21);
       shortSecondPage = false;
       final delayedCache = Completer<InventoryCache>();
       final pending = InventoryRepository(
@@ -220,7 +212,7 @@ void main() {
       api.clearSession();
       delayedCache.complete(cache);
       await expectLater(pending, throwsA(isA<ApiException>()));
-      expect((await repository.cached())!.records.length, 2);
+      expect((await repository.cached())!.records.length, 21);
       api.close();
       await cache.close();
     },
@@ -239,4 +231,6 @@ Map<String, dynamic> master(String id) => {
   'status_aktif': 1,
   'nama_jenis': 'Pupuk',
   'nama_obat': null,
+  'saldo': id == '1' ? '0.25' : '2',
+  'di_bawah_minimum': id == '1',
 };

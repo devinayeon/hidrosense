@@ -10,6 +10,7 @@ class InventoryRepository {
   final ApiClient _api;
   final Future<InventoryCache> _cache;
   final String userId;
+  String get serverOrigin => _api.serverOrigin;
 
   Future<InventorySnapshot?> cached() async =>
       (await _cache).read(serverOrigin: _api.serverOrigin, userId: userId);
@@ -35,9 +36,11 @@ class InventoryRepository {
     required String name,
     required String unit,
     String? minimum,
+    String? idempotencyKey,
   }) async {
     final response = await _api.post(
       'inventaris',
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
       body: {
         'id_jenis_inventaris': categoryId,
         'id_obat': ?medicineId,
@@ -50,16 +53,7 @@ class InventoryRepository {
     if (data is! Map<String, dynamic> || data['id_inventaris'] is! String) {
       throw const FormatException('Gagal membuat barang inventaris.');
     }
-    final id = data['id_inventaris'] as String;
-    final balanceRes = await _api.get('inventaris/$id/saldo');
-    if (balanceRes['data'] is! Map<String, dynamic>) {
-      throw const FormatException('Gagal membaca saldo inventaris baru.');
-    }
-    await refresh();
-    return InventoryRecord.fromApi(
-      data,
-      balanceRes['data'] as Map<String, dynamic>,
-    );
+    return InventoryRecord.fromApi(data, data);
   }
 
   Future<InventoryRecord> updateItem(
@@ -69,6 +63,7 @@ class InventoryRepository {
     String? name,
     String? unit,
     String? minimum,
+    String? idempotencyKey,
   }) async {
     final body = <String, dynamic>{};
     if (categoryId != null) body['id_jenis_inventaris'] = categoryId;
@@ -79,20 +74,16 @@ class InventoryRepository {
       body['stok_minimum'] = minimum.isEmpty ? null : minimum;
     }
 
-    final response = await _api.patch('inventaris/$id', body: body);
+    final response = await _api.patch(
+      'inventaris/$id',
+      body: body,
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
+    );
     final data = response['data'];
     if (data is! Map<String, dynamic>) {
       throw const FormatException('Gagal memperbarui barang inventaris.');
     }
-    final balanceRes = await _api.get('inventaris/$id/saldo');
-    if (balanceRes['data'] is! Map<String, dynamic>) {
-      throw const FormatException('Gagal membaca saldo inventaris.');
-    }
-    await refresh();
-    return InventoryRecord.fromApi(
-      data,
-      balanceRes['data'] as Map<String, dynamic>,
-    );
+    return InventoryRecord.fromApi(data, data);
   }
 
   Future<void> deactivateItem(String id) async {
@@ -103,10 +94,11 @@ class InventoryRepository {
     required String direction,
     required List<Map<String, String>> details,
     String? note,
+    String? idempotencyKey,
   }) async {
     final response = await _api.post(
       'stok',
-      headers: {'Idempotency-Key': generateUuidV4()},
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
       body: {
         'jenis_stok': direction,
         'details': details,
@@ -117,7 +109,6 @@ class InventoryRepository {
     if (data is! Map<String, dynamic>) {
       throw const FormatException('Gagal mencatat mutasi stok.');
     }
-    await refresh();
     return StockMovementRecord.fromJson(data);
   }
 
@@ -171,7 +162,6 @@ class InventoryRepository {
       }
       expectedTotal = meta['total'] as int;
       totalPages = meta['total_pages'];
-      // B006 exposes individual balances; keep concurrency bounded to one.
       for (final master in data) {
         if (master is! Map<String, dynamic> ||
             master['id_inventaris'] is! String ||
@@ -180,11 +170,7 @@ class InventoryRepository {
         }
         final id = master['id_inventaris'] as String;
         if (!ids.add(id)) throw const FormatException('Inventaris duplikat.');
-        final balance = await _api.get('inventaris/$id/saldo');
-        if (balance['data'] is! Map<String, dynamic>) {
-          throw const FormatException('Saldo inventaris tidak valid.');
-        }
-        records.add(InventoryRecord.fromApi(master, balance['data']));
+        records.add(InventoryRecord.fromApi(master, master));
       }
       page++;
     } while (page <= totalPages);
