@@ -48,7 +48,36 @@ http.Response response(Object data, {int status = 200}) =>
 
 ApiClient apiFor(Future<http.Response> Function(http.Request) handler) =>
     ApiClient(
-      MockClient(handler),
+      MockClient((request) async {
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/penyemaian/sem-01')) {
+          return response({
+            'data': {
+              'id_penyemaian': 'sem-01',
+              'id_user': 'usr-01',
+              'tanggal_semai': '2026-09-01',
+              'jumlah_benih': 100,
+              'status_penyemaian': 'aktif',
+              'usia_hari': 20,
+              'siap_pindah': true,
+            },
+          });
+        }
+        final result = await handler(request);
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/penyemaian') &&
+            result.statusCode == 200) {
+          final decoded = jsonDecode(result.body) as Map<String, dynamic>;
+          final data = decoded['data'] as List;
+          decoded['meta'] = {
+            'page': 1,
+            'total': data.length,
+            'total_pages': data.isEmpty ? 0 : 1,
+          };
+          return response(decoded);
+        }
+        return result;
+      }),
       baseUri: Uri.parse('https://example.test/api/v1'),
     )..setTokens(accessToken: 'access', refreshToken: 'refresh');
 
@@ -61,6 +90,24 @@ Future<void> pumpTransfer(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        sessionProvider.overrideWith(
+          (ref) => SessionViewModel(
+            api,
+            initialState: const SessionState(
+              user: SessionUser(
+                id: 'usr-01',
+                name: 'Petani',
+                username: 'petani',
+                role: 'petani',
+                permissions: [
+                  'penyemaian:read',
+                  'penyemaian:write',
+                  'budidaya:write',
+                ],
+              ),
+            ),
+          ),
+        ),
         apiClientProvider.overrideWithValue(api),
         connectedNurseryProvider.overrideWith(
           (ref) => ConnectedNurseryViewModel(
@@ -361,6 +408,24 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          sessionProvider.overrideWith(
+            (ref) => SessionViewModel(
+              api,
+              initialState: const SessionState(
+                user: SessionUser(
+                  id: 'usr-01',
+                  name: 'Petani',
+                  username: 'petani',
+                  role: 'petani',
+                  permissions: [
+                    'penyemaian:read',
+                    'penyemaian:write',
+                    'budidaya:write',
+                  ],
+                ),
+              ),
+            ),
+          ),
           apiClientProvider.overrideWithValue(api),
           connectedNurseryProvider.overrideWith(
             (ref) => ConnectedNurseryViewModel(
@@ -544,6 +609,24 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sessionProvider.overrideWith(
+              (ref) => SessionViewModel(
+                api,
+                initialState: const SessionState(
+                  user: SessionUser(
+                    id: 'usr-01',
+                    name: 'Petani',
+                    username: 'petani',
+                    role: 'petani',
+                    permissions: [
+                      'penyemaian:read',
+                      'penyemaian:write',
+                      'budidaya:write',
+                    ],
+                  ),
+                ),
+              ),
+            ),
             apiClientProvider.overrideWithValue(api),
             connectedNurseryProvider.overrideWith(
               (ref) => ConnectedNurseryViewModel(
@@ -604,8 +687,26 @@ void main() {
       isReadyToMove: true,
     );
     for (final record in [notReady, completedReady, readySowing]) {
+      final api = apiFor((_) async => response({'data': []}));
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            sessionProvider.overrideWith(
+              (ref) => SessionViewModel(
+                api,
+                initialState: const SessionState(
+                  user: SessionUser(
+                    id: 'usr-01',
+                    name: 'Petani',
+                    username: 'petani',
+                    role: 'petani',
+                    permissions: ['penyemaian:read', 'penyemaian:write'],
+                  ),
+                ),
+              ),
+            ),
+            sowingDetailProvider(record.id).overrideWith((ref) async => record),
+          ],
           child: MaterialApp(home: InfoSeedingPage(sowingRecord: record)),
         ),
       );

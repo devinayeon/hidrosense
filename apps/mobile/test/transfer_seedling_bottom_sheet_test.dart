@@ -69,11 +69,17 @@ void main() {
                   'status_meja': 'tersedia',
                 },
               ];
+            } else if (request.url.path.endsWith('/penyemaian/1')) {
+              data = sowing();
             } else {
               data = [sowing()];
             }
             return http.Response(
-              jsonEncode({'data': data}),
+              jsonEncode({
+                'data': data,
+                if (request.url.path.endsWith('/penyemaian'))
+                  'meta': {'page': 1, 'total': 1, 'total_pages': 1},
+              }),
               request.method == 'POST' ? 201 : 200,
             );
           }),
@@ -82,6 +88,24 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              sessionProvider.overrideWith(
+                (ref) => SessionViewModel(
+                  api,
+                  initialState: const SessionState(
+                    user: SessionUser(
+                      id: '2',
+                      name: 'Petani',
+                      username: 'petani',
+                      role: 'petani',
+                      permissions: [
+                        'penyemaian:read',
+                        'penyemaian:write',
+                        'budidaya:write',
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               apiClientProvider.overrideWithValue(api),
               connectedNurseryProvider.overrideWith(
                 (ref) => ConnectedNurseryViewModel(NurseryRepository(api)),

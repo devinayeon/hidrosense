@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/seeding_form_page.dart';
 import '../theme/app_theme.dart';
@@ -15,6 +16,11 @@ class PenyemaianBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    if (user == null || !user.permissions.contains('penyemaian:read')) {
+      return const Center(child: Text('Penyemaian memerlukan izin baca.'));
+    }
+    final canWrite = user.permissions.contains('penyemaian:write');
     final state = ref.watch(connectedNurseryProvider);
     final refresh = ref.read(connectedNurseryProvider.notifier).refresh;
     final items = state.filteredRecords;
@@ -59,7 +65,7 @@ class PenyemaianBody extends ConsumerWidget {
                               child: Text(
                                 state.error!,
                                 style: AppTypography.caption1.copyWith(
-                                  color: AppColors.dangerRed,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -92,20 +98,17 @@ class PenyemaianBody extends ConsumerWidget {
                             state.error != null && state.records.isEmpty
                                 ? 'Data penyemaian belum dapat ditampilkan.'
                                 : state.records.isEmpty
-                                ? 'Belum ada batch penyemaian aktif.'
+                                ? 'Belum ada batch penyemaian.'
                                 : 'Penyemaian tidak ditemukan.',
                             style: AppTypography.body.copyWith(
-                              color: AppColors.textTertiary,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ),
                       )
                     else
                       ...items.map((item) {
-                        final isReady =
-                            item.status == 'aktif' &&
-                            item.isReadyToMove &&
-                            item.remainingSeedCount > 0;
+                        final isReady = item.canTransfer;
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: RowInfoCardMd(
@@ -129,14 +132,11 @@ class PenyemaianBody extends ConsumerWidget {
                               children: [
                                 SeedingCardContent(
                                   batchName: item.batchName,
-                                  variety: 'Selada Hidroponik',
                                   dateText: item.sowingDate,
                                   seedCountText: item.seedCountText,
                                   hssText: item.hssText,
                                   statusLabel: item.statusLabel,
-                                  statusTextColor: isReady
-                                      ? AppColors.warningOrange
-                                      : AppColors.primaryDarkTeal,
+                                  statusTextColor: AppColors.textPrimary,
                                   statusBgColor: isReady
                                       ? AppColors.warningBg
                                       : AppColors.accentMintSoft,
@@ -149,14 +149,15 @@ class PenyemaianBody extends ConsumerWidget {
                                         ),
                                   note: item.note,
                                 ),
-                                if (isReady) ...[
+                                if (isReady && canWrite) ...[
                                   const SizedBox(height: AppSpacing.sm),
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: OutlinedButton.icon(
                                       style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size(44, 44),
                                         side: const BorderSide(
-                                          color: AppColors.primaryDarkTeal,
+                                          color: AppColors.textPrimary,
                                           width: 1.2,
                                         ),
                                         shape: RoundedRectangleBorder(
@@ -186,7 +187,7 @@ class PenyemaianBody extends ConsumerWidget {
                                         'Pindah ke Meja',
                                         style: AppTypography.caption1.copyWith(
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.primaryDarkTeal,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ),
@@ -205,36 +206,35 @@ class PenyemaianBody extends ConsumerWidget {
           ),
 
           // Sticky Bottom Action Container (Apple HIG 52pt pill button)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: const BoxDecoration(
-              color: AppColors.canvasWarm,
-              border: Border(
-                top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
+          if (canWrite)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: const BoxDecoration(
+                color: AppColors.canvasWarm,
+                border: Border(
+                  top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: RowButton(
+                  label: '+ Mulai Penyemaian Baru',
+                  borderRadius: AppRadius.pill,
+                  height: 52 * MediaQuery.textScalerOf(context).scale(1),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SeedingFormPage(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            child: SafeArea(
-              top: false,
-              child: RowButton(
-                label: '+ Mulai Penyemaian Baru',
-                backgroundColor: AppColors.primaryDarkTeal,
-                textColor: Colors.white,
-                borderRadius: AppRadius.pill,
-                height: 52,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SeedingFormPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -37,7 +37,7 @@ const user = SessionUser(
   name: 'Mitra',
   username: 'mitra',
   role: 'petani',
-  permissions: [],
+  permissions: ['penyemaian:read', 'penyemaian:write'],
 );
 
 Map<String, dynamic> sowingJson(
@@ -56,7 +56,8 @@ Map<String, dynamic> sowingJson(
 };
 
 class TestNursery extends ConnectedNurseryViewModel {
-  TestNursery(ApiClient api, ConnectedNurseryState initial)
+  final ApiClient api;
+  TestNursery(this.api, ConnectedNurseryState initial)
     : super(NurseryRepository(api), autoLoad: false) {
     state = initial;
   }
@@ -79,7 +80,15 @@ class TestInventory extends ConnectedInventoryViewModel {
 Future<void> pumpDashboard(WidgetTester tester, TestNursery nursery) =>
     tester.pumpWidget(
       ProviderScope(
-        overrides: [connectedNurseryProvider.overrideWith((ref) => nursery)],
+        overrides: [
+          connectedNurseryProvider.overrideWith((ref) => nursery),
+          sessionProvider.overrideWith(
+            (ref) => SessionViewModel(
+              nursery.api,
+              initialState: const SessionState(user: user),
+            ),
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
           home: const Scaffold(body: DashboardBody()),
@@ -95,7 +104,15 @@ void main() {
       final nursery = TestNursery(api, const ConnectedNurseryState());
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [connectedNurseryProvider.overrideWith((ref) => nursery)],
+          overrides: [
+            connectedNurseryProvider.overrideWith((ref) => nursery),
+            sessionProvider.overrideWith(
+              (ref) => SessionViewModel(
+                api,
+                initialState: const SessionState(user: user),
+              ),
+            ),
+          ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
             home: const MainPage(),
@@ -134,6 +151,11 @@ void main() {
       var calls = 0;
       final api = apiFor((request) async {
         expect(request.method, 'GET');
+        if (request.url.path.endsWith('/ready-from-api')) {
+          return response({
+            'data': sowingJson('ready-from-api', ready: true, age: 1),
+          });
+        }
         expect(request.url.path, '/api/v1/penyemaian');
         calls++;
         return response({
@@ -142,18 +164,19 @@ void main() {
             sowingJson('old-but-not-ready', age: 40),
             sowingJson('completed', ready: true, status: 'selesai'),
           ],
+          'meta': {'page': 1, 'total': 3, 'total_pages': 1},
         });
       });
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            apiClientProvider.overrideWithValue(api),
             sessionProvider.overrideWith(
               (ref) => SessionViewModel(
                 api,
                 initialState: const SessionState(user: user),
               ),
             ),
+            apiClientProvider.overrideWithValue(api),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
@@ -196,6 +219,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          sessionProvider.overrideWith(
+            (ref) => SessionViewModel(
+              api,
+              initialState: const SessionState(user: user),
+            ),
+          ),
           connectedNurseryProvider.overrideWith((ref) => nursery),
           connectedInventoryProvider.overrideWith((ref) => TestInventory(api)),
         ],
@@ -261,6 +290,12 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              sessionProvider.overrideWith(
+                (ref) => SessionViewModel(
+                  api,
+                  initialState: const SessionState(user: user),
+                ),
+              ),
               connectedNurseryProvider.overrideWith((ref) => nursery),
             ],
             child: MaterialApp(

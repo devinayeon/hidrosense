@@ -305,12 +305,12 @@ test('N-11: ID representation preserves signed64 format across nursery responses
   }
 });
 
-test('N-12: PATCH status keeps omitted note; explicit null clears it', async (t) => {
+test('N-12: PATCH keeps omitted note; explicit null clears it', async (t) => {
   const f = await nurseryFixture(t);
   const created = await f.post(f.defaultPayload());
   const id = created.json().data.id_penyemaian;
   assert.equal(created.json().data.keterangan, 'Penyemaian batch 1');
-  const changed = await f.patch(id, { status_penyemaian: 'selesai' });
+  const changed = await f.patch(id, { jumlah_benih: 101 });
   assert.equal(changed.statusCode, 200, changed.body);
   assert.equal(changed.json().data.keterangan, 'Penyemaian batch 1');
   const cleared = await f.patch(id, { keterangan: null });

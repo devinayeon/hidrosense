@@ -5,6 +5,47 @@ import '../services/api_client.dart';
 class NurseryRepository {
   NurseryRepository(this._api);
   final ApiClient _api;
+  String get serverOrigin => _api.serverOrigin;
+
+  Future<List<SowingRecord>> listSowings() async {
+    final records = <SowingRecord>[];
+    final ids = <String>{};
+    var page = 1;
+    int? total;
+    var totalPages = 1;
+    do {
+      final response = await _api.get(
+        'penyemaian',
+        query: {'page': '$page', 'limit': '50'},
+      );
+      final data = response['data'];
+      final meta = response['meta'];
+      if (data is! List ||
+          meta is! Map ||
+          meta['page'] != page ||
+          meta['total'] is! int ||
+          meta['total_pages'] is! int ||
+          (meta['total'] as int) < 0 ||
+          (meta['total_pages'] as int) < 0 ||
+          (total != null && meta['total'] != total)) {
+        throw const FormatException('Daftar penyemaian tidak lengkap.');
+      }
+      total = meta['total'];
+      totalPages = meta['total_pages'];
+      for (final row in data) {
+        final item = SowingRecord.fromJson(row as Map<String, dynamic>);
+        if (!ids.add(item.id)) {
+          throw const FormatException('Batch penyemaian duplikat.');
+        }
+        records.add(item);
+      }
+      page++;
+    } while (page <= totalPages);
+    if (records.length != total) {
+      throw const FormatException('Daftar penyemaian tidak lengkap.');
+    }
+    return records;
+  }
 
   Future<void> transferSowing({
     required String idempotencyKey,
@@ -25,26 +66,6 @@ class NurseryRepository {
         if (note != null && note.isNotEmpty) 'keterangan': note,
       },
     );
-  }
-
-  Future<List<SowingRecord>> listSowings({
-    int page = 1,
-    int limit = 50,
-    String? status,
-    bool? readyOnly,
-  }) async {
-    final query = <String, String>{'page': '$page', 'limit': '$limit'};
-    if (status != null) query['status_penyemaian'] = status;
-    if (readyOnly == true) query['siap_pindah'] = '1';
-
-    final response = await _api.get('penyemaian', query: query);
-    final data = response['data'];
-    if (data is! List) {
-      throw const FormatException('Daftar penyemaian tidak valid.');
-    }
-    return data
-        .map((item) => SowingRecord.fromJson(item as Map<String, dynamic>))
-        .toList();
   }
 
   Future<SowingRecord> getSowing(String id) async {
@@ -86,13 +107,18 @@ class NurseryRepository {
     int? seedCount,
     String? status,
     String? note,
+    String? idempotencyKey,
   }) async {
     final body = <String, dynamic>{};
     if (seedCount != null) body['jumlah_benih'] = seedCount;
     if (status != null) body['status_penyemaian'] = status;
     if (note != null) body['keterangan'] = note;
 
-    final response = await _api.patch('penyemaian/$id', body: body);
+    final response = await _api.patch(
+      'penyemaian/$id',
+      body: body,
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
+    );
     final data = response['data'];
     if (data is! Map<String, dynamic>) {
       throw const FormatException('Gagal memperbarui penyemaian.');

@@ -56,13 +56,21 @@ void main() {
                 'nama': 'Mitra',
                 'username': 'mitra',
                 'role': 'petani',
-                'permissions': ['inventaris:read', 'inventaris:write'],
+                'permissions': [
+                  'inventaris:read',
+                  'inventaris:write',
+                  'penyemaian:read',
+                  'penyemaian:write',
+                ],
               },
             },
           });
         }
         if (request.url.path.endsWith('/penyemaian')) {
-          return respond({'data': []});
+          return respond({
+            'data': [],
+            'meta': {'page': 1, 'total': 0, 'total_pages': 0},
+          });
         }
         return respond({'data': {}});
       }),

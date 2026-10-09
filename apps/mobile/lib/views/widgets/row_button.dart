@@ -53,9 +53,15 @@ class _RowButtonState extends State<RowButton> {
             splashColor: widget.textColor.withValues(alpha: 0.12),
             highlightColor: Colors.transparent,
             child: Center(
-              child: Text(
-                widget.label,
-                style: AppTypography.headline.copyWith(color: widget.textColor),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Text(
+                  widget.label,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.headline.copyWith(
+                    color: widget.textColor,
+                  ),
+                ),
               ),
             ),
           ),

@@ -19,39 +19,37 @@ class CustomSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width ?? double.infinity,
-      height: 44,
+      constraints: BoxConstraints(
+        minHeight: 44 * MediaQuery.textScalerOf(context).scale(1),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(AppRadius.input),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: 1.0,
-        ),
+        border: Border.all(color: AppColors.borderLight, width: 1.0),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.search,
-            color: AppColors.textTertiary,
-            size: 20,
-          ),
+          const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: AppTypography.body.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              style: AppTypography.body.copyWith(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: placeholder,
                 hintStyle: AppTypography.callout.copyWith(
                   fontWeight: FontWeight.w400,
-                  color: AppColors.textTertiary,
+                  color: AppColors.textSecondary,
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.xs,
+                ),
                 isCollapsed: true,
               ),
             ),

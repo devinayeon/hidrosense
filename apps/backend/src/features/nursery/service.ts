@@ -14,6 +14,10 @@ export async function createSowing(
   now: number,
   input: CreateSowingInput,
 ) {
+  const today = new Date(now + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  if (input.tanggal_semai > today) {
+    throw new ApiError(422, 'SOWING_DATE_IN_FUTURE', 'Tanggal semai tidak boleh melewati hari ini.');
+  }
   // Insert penyemaian row first to obtain its ID for the stock origin FK.
   const inserted = (await tx.execute({
     sql: `INSERT INTO penyemaian (id_user, tanggal_semai, jumlah_benih, status_penyemaian, keterangan)
@@ -43,8 +47,10 @@ export async function updateSowing(
   input: UpdateSowingInput,
   now: number,
 ) {
-  // Ensure exists
-  await getSowing(tx, id, now);
+  const current = await getSowing(tx, id, now);
+  if (current.status_penyemaian === 'selesai') {
+    throw new ApiError(409, 'SOWING_COMPLETED', 'Penyemaian yang selesai tidak dapat diubah.');
+  }
 
   if (input.jumlah_benih !== undefined) {
     const moved = await countMoved(tx, id);

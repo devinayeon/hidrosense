@@ -8,7 +8,7 @@ class SeedingCardContent extends StatelessWidget {
   final Color statusTextColor;
   final Color statusBgColor;
   final Color statusBorderColor;
-  final String variety;
+  final String? variety;
   final String dateText;
   final String seedCountText;
   final String hssText;
@@ -21,7 +21,7 @@ class SeedingCardContent extends StatelessWidget {
     required this.statusTextColor,
     required this.statusBgColor,
     required this.statusBorderColor,
-    required this.variety,
+    this.variety,
     required this.dateText,
     required this.seedCountText,
     required this.hssText,
@@ -34,22 +34,19 @@ class SeedingCardContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Baris Atas: Judul Batch dan Badge Status
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                batchName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.headline.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+            Text(
+              batchName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.headline.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.xs),
             CapsuleBadge(
               label: statusLabel,
               textColor: statusTextColor,
@@ -63,21 +60,23 @@ class SeedingCardContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
 
         // Subtitle Varietas
-        Text(
-          'Varietas: $variety',
-          style: AppTypography.subheadline.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+        if (variety != null)
+          Text(
+            'Varietas: $variety',
+            style: AppTypography.subheadline.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
 
         const SizedBox(height: AppSpacing.xxs),
 
         // Info Semaian & HSS (Tanggal + Jumlah Bibit • X HSS)
         RichText(
+          textScaler: MediaQuery.textScalerOf(context),
           text: TextSpan(
             style: AppTypography.caption1.copyWith(
-              color: AppColors.textTertiary,
+              color: AppColors.textSecondary,
             ),
             children: [
               TextSpan(text: 'Semaian: $dateText '),
@@ -127,7 +126,7 @@ class SeedingCardContent extends StatelessWidget {
                     note!,
                     style: AppTypography.caption1.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: AppColors.warningOrange,
+                      color: AppColors.textPrimary,
                       height: 1.3,
                     ),
                   ),

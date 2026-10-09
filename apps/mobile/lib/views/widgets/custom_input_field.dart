@@ -16,6 +16,8 @@ class CustomInputField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
   final ValueChanged<String>? onFieldSubmitted;
+  final Color errorColor;
+  final int maxLines;
 
   const CustomInputField({
     super.key,
@@ -32,6 +34,8 @@ class CustomInputField extends StatelessWidget {
     this.textInputAction,
     this.focusNode,
     this.onFieldSubmitted,
+    this.errorColor = AppColors.dangerRed,
+    this.maxLines = 1,
   });
 
   @override
@@ -44,6 +48,7 @@ class CustomInputField extends StatelessWidget {
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           readOnly: readOnly,
+          maxLines: maxLines,
           onTap: onTap,
           focusNode: focusNode,
           textInputAction: textInputAction,
@@ -52,6 +57,12 @@ class CustomInputField extends StatelessWidget {
           decoration: InputDecoration(
             labelText: label,
             hintText: hintText,
+            hintStyle: AppTypography.body.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            suffixStyle: AppTypography.body.copyWith(
+              color: AppColors.textSecondary,
+            ),
             labelStyle: AppTypography.subheadline,
             floatingLabelBehavior: FloatingLabelBehavior.always,
             contentPadding: const EdgeInsets.symmetric(
@@ -64,9 +75,7 @@ class CustomInputField extends StatelessWidget {
             suffixText: suffixText,
             errorText: errorText,
             errorMaxLines: 2,
-            errorStyle: AppTypography.footnote.copyWith(
-              color: AppColors.dangerRed,
-            ),
+            errorStyle: AppTypography.footnote.copyWith(color: errorColor),
             enabledBorder: _inputBorder(AppColors.borderLight),
             focusedBorder: _inputBorder(AppColors.primaryMint, width: 1.5),
             errorBorder: _inputBorder(AppColors.dangerRed),

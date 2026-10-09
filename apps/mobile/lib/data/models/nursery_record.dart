@@ -55,8 +55,13 @@ class SowingRecord {
   final List<SowingMaterialLine> materials;
 
   String get batchName => 'Batch #$id';
-  String get statusLabel =>
-      isReadyToMove ? 'Siap Pindah ($hssText)' : 'Semai ($hssText)';
+  bool get canTransfer =>
+      status == 'aktif' && isReadyToMove && remainingSeedCount > 0;
+  String get statusLabel => status == 'selesai'
+      ? 'Selesai'
+      : canTransfer
+      ? 'Siap Pindah ($hssText)'
+      : 'Semai ($hssText)';
   String get hssText => ageDays != null ? '$ageDays HSS' : '- HSS';
   String get seedCountText => '$remainingSeedCount Butir';
 
@@ -68,7 +73,10 @@ class SowingRecord {
       throw const FormatException('Data penyemaian tidak valid.');
     }
 
-    final rawMaterials = json['consumed_materials'] ?? json['materials'];
+    final rawMaterials =
+        json['stok_konsumsi'] ??
+        json['consumed_materials'] ??
+        json['materials'];
     final matList = rawMaterials is List
         ? rawMaterials
               .map(

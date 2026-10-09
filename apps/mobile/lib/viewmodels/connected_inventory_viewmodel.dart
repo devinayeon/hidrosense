@@ -134,6 +134,12 @@ class ConnectedInventoryViewModel
     return _refreshTask ??= _refresh().whenComplete(() => _refreshTask = null);
   }
 
+  Future<void> refreshAfterWrite() async {
+    await _initialLoad;
+    await _refreshTask;
+    await refresh();
+  }
+
   Future<void> _refresh() async {
     if (state.loading) return;
     _setList(

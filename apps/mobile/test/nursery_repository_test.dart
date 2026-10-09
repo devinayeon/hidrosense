@@ -38,15 +38,12 @@ void main() {
               'usia_hari': 5,
               'siap_pindah': false,
               'keterangan': 'Batch Selada Hijau',
-              'materials': [
-                {
-                  'id_inventaris': 'inv-01',
-                  'jumlah': '200',
-                  'satuan': 'butir'
-                }
-              ]
-            }
-          ]
+              'stok_konsumsi': [
+                {'id_inventaris': 'inv-01', 'jumlah': '200', 'satuan': 'butir'},
+              ],
+            },
+          ],
+          'meta': {'page': 1, 'total': 1, 'total_pages': 1},
         }),
         200,
         headers: {'content-type': 'application/json'},
@@ -91,7 +88,7 @@ void main() {
             'jumlah_benih': 150,
             'status_penyemaian': 'aktif',
             'siap_pindah': false,
-          }
+          },
         }),
         201,
         headers: {'content-type': 'application/json'},
@@ -111,15 +108,58 @@ void main() {
       seedCount: 150,
       note: 'Tes Semai',
       materials: [
-        {
-          'id_inventaris': 'inv-seed',
-          'jumlah': '150',
-          'satuan': 'butir',
-        },
+        {'id_inventaris': 'inv-seed', 'jumlah': '150', 'satuan': 'butir'},
       ],
     );
 
     expect(rec.id, 'sem-new');
     expect(rec.seedCount, 150);
   });
+
+  test(
+    'NurseryRepository updateSowing sends PATCH with correct payload',
+    () async {
+      final mockClient = MockNurseryHttpClient((req) async {
+        expect(req.method, 'PATCH');
+        expect(req.url.path, '/api/v1/penyemaian/sem-01');
+        final body = jsonDecode(req.body);
+        expect(body['jumlah_benih'], 180);
+        expect(body['keterangan'], 'Diperbarui');
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'data': {
+              'id_penyemaian': 'sem-01',
+              'id_user': 'usr-01',
+              'tanggal_semai': '2026-10-01',
+              'jumlah_benih': 180,
+              'status_penyemaian': 'aktif',
+              'siap_pindah': false,
+              'keterangan': 'Diperbarui',
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final api = ApiClient(
+        mockClient,
+        baseUri: Uri.parse('http://localhost:3000/api/v1'),
+        allowInsecureLocalhost: true,
+      );
+      api.setTokens(accessToken: 'token-abc', refreshToken: 'ref-xyz');
+      final repo = NurseryRepository(api);
+
+      final rec = await repo.updateSowing(
+        'sem-01',
+        seedCount: 180,
+        note: 'Diperbarui',
+      );
+
+      expect(rec.id, 'sem-01');
+      expect(rec.seedCount, 180);
+      expect(rec.note, 'Diperbarui');
+    },
+  );
 }

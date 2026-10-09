@@ -23,9 +23,13 @@ class DashboardBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nursery = ref.watch(connectedNurseryProvider);
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    final canRead = user?.permissions.contains('penyemaian:read') == true;
+    final nursery = canRead
+        ? ref.watch(connectedNurseryProvider)
+        : const ConnectedNurseryState();
     final active = nursery.records.where((item) => item.status == 'aktif');
-    final ready = active.where((item) => item.isReadyToMove).toList();
+    final ready = active.where((item) => item.canTransfer).toList();
     final hasData = !nursery.loading && nursery.error == null;
     final actions =
         <({String title, IconData icon, Widget page, VoidCallback? onTap})>[
@@ -35,12 +39,13 @@ class DashboardBody extends ConsumerWidget {
             page: const AddFormInventarisPage(),
             onTap: null,
           ),
-          (
-            title: '+ Semai',
-            icon: Icons.eco_outlined,
-            page: const SeedingFormPage(),
-            onTap: null,
-          ),
+          if (user?.permissions.contains('penyemaian:write') == true)
+            (
+              title: '+ Semai',
+              icon: Icons.eco_outlined,
+              page: const SeedingFormPage(),
+              onTap: null,
+            ),
           (
             title: 'Cek Stok',
             icon: Icons.view_in_ar_outlined,
@@ -58,7 +63,9 @@ class DashboardBody extends ConsumerWidget {
     return ColoredBox(
       color: AppColors.canvasWarm,
       child: RefreshIndicator(
-        onRefresh: ref.read(connectedNurseryProvider.notifier).refresh,
+        onRefresh: canRead
+            ? ref.read(connectedNurseryProvider.notifier).refresh
+            : () async {},
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
@@ -67,7 +74,9 @@ class DashboardBody extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (nursery.error != null)
+              if (!canRead)
+                const Text('Penyemaian memerlukan izin baca.')
+              else if (nursery.error != null)
                 _DashboardAlert(
                   title: 'Data semaian belum dapat diperbarui',
                   subtitle: nursery.error!,
@@ -117,9 +126,11 @@ class DashboardBody extends ConsumerWidget {
                       backgroundColor: AppColors.primaryMint,
                       child: TopInfoContent(
                         topText: 'Batch Semai Aktif',
-                        middleText: hasData ? '${active.length} Batch' : '—',
+                        middleText: hasData
+                            ? '${active.length} Batch'
+                            : 'Belum dimuat',
                         bottomText: 'Pada daftar dimuat',
-                        textColor: AppColors.textOnDark,
+                        textColor: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -131,7 +142,7 @@ class DashboardBody extends ConsumerWidget {
                         topText: 'Benih Disemai',
                         middleText: hasData
                             ? '${active.fold<int>(0, (count, item) => count + item.remainingSeedCount)} Butir'
-                            : '—',
+                            : 'Belum dimuat',
                         bottomText: 'Dari batch aktif dimuat',
                         textColor: AppColors.textPrimary,
                       ),

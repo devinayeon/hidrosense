@@ -1,4 +1,6 @@
 import 'dart:convert';
+import '../core/business_date.dart';
+export '../core/business_date.dart' show jakartaToday, apiDate;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/uuid.dart';
 import '../data/models/damage_record.dart';
@@ -7,14 +9,6 @@ import '../data/repositories/damage_repository.dart';
 import '../data/services/api_client.dart';
 import 'connected_table_viewmodel.dart';
 import 'session_viewmodel.dart';
-
-DateTime jakartaToday([DateTime? now]) {
-  final jakarta = (now ?? DateTime.now()).toUtc().add(const Duration(hours: 7));
-  return DateTime(jakarta.year, jakarta.month, jakarta.day);
-}
-
-String apiDate(DateTime date) =>
-    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
 class DamageState {
   const DamageState({
