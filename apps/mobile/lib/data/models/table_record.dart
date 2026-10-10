@@ -22,7 +22,9 @@ class TableRecord {
   final String? version;
 
   String get displayName => 'Meja $code';
-  bool get isMaintenance => status == 'pemeliharaan';
+  bool get isMaintenance =>
+      status == 'pemeliharaan' || status == 'perbaikan' || status == 'rusak';
+  bool get isActive => isAvailable || isFull;
   bool get isAvailable => status == 'tersedia';
   bool get isFull => status == 'penuh';
   bool get isInactive => status == 'nonaktif';
@@ -60,7 +62,8 @@ class TableRecord {
       status: json['status_meja'] as String? ?? 'tersedia',
       notes: json['keterangan'] as String?,
       activePlants: (json['tanaman_aktif'] as num?)?.toInt() ?? 0,
-      availableCapacity: (json['kapasitas_tersedia'] as num?)?.toInt() ??
+      availableCapacity:
+          (json['kapasitas_tersedia'] as num?)?.toInt() ??
           ((json['jumlah_lubang'] as num).toInt() -
               ((json['tanaman_aktif'] as num?)?.toInt() ?? 0)),
       publicId: json['public_id'] as String?,

@@ -5,17 +5,32 @@ import '../../viewmodels/session_viewmodel.dart';
 import 'login_page.dart';
 import 'main_page.dart';
 
-class AppGate extends ConsumerWidget {
+class AppGate extends ConsumerStatefulWidget {
   const AppGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(sessionProvider.select((state) => state.user));
+  ConsumerState<AppGate> createState() => _AppGateState();
+}
 
-    return Navigator(
-      key: ValueKey(user?.id),
-      onGenerateRoute: (_) => MaterialPageRoute<void>(
-        builder: (_) => user == null ? const LoginPage() : const MainPage(),
+class _AppGateState extends ConsumerState<AppGate> {
+  GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  String? _userId;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    if (user?.id != _userId) {
+      _userId = user?.id;
+      _navigatorKey = GlobalKey<NavigatorState>();
+    }
+
+    return NavigatorPopHandler<Object?>(
+      onPopWithResult: (result) => _navigatorKey.currentState?.maybePop(result),
+      child: Navigator(
+        key: _navigatorKey,
+        onGenerateRoute: (_) => MaterialPageRoute<void>(
+          builder: (_) => user == null ? const LoginPage() : const MainPage(),
+        ),
       ),
     );
   }

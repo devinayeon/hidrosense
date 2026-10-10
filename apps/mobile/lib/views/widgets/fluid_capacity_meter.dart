@@ -39,8 +39,9 @@ class FluidCapacityMeter extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (showLabel) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Text(
                 'Okupansi Meja NFT',
@@ -54,9 +55,7 @@ class FluidCapacityMeter extends StatelessWidget {
                 style: AppTypography.tabular(
                   AppTypography.caption1.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: ratio >= 0.95
-                        ? AppColors.dangerRed
-                        : AppColors.textPrimary,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),

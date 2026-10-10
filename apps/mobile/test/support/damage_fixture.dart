@@ -79,10 +79,21 @@ class FakeDamageRepository extends DamageRepository {
   List<TransferRecord> transfers = [TransferRecord.fromJson(transferJson())];
   List<DamageRecord> reports = [];
   final keys = <String>[];
+  final editKeys = <String>[];
   final drafts = <DamageDraft>[];
   Object? loadError;
   Future<DamageRecord> Function(DamageDraft, String)? onCreate;
   Future<List<TransferRecord>> Function()? onList;
+  Future<TransferRecord> Function(String, String?)? onUpdateTransfer;
+  Future<DamageRecord> Function(
+    String, {
+    String? date,
+    int? plantCount,
+    String? category,
+    String? note,
+  })?
+  onUpdateDamage;
+
   @override
   Future<List<TransferRecord>> listTransfers(String tableId) async {
     if (loadError != null) throw loadError!;
@@ -91,6 +102,7 @@ class FakeDamageRepository extends DamageRepository {
 
   @override
   Future<List<DamageRecord>> listDamages(String transferId) async => reports;
+
   @override
   Future<DamageRecord> createDamage(DamageDraft draft, String key) async {
     keys.add(key);
@@ -98,5 +110,60 @@ class FakeDamageRepository extends DamageRepository {
     return onCreate != null
         ? onCreate!(draft, key)
         : DamageRecord.fromJson(damageJson());
+  }
+
+  @override
+  Future<TransferRecord> updateTransfer(
+    String id, {
+    String? note,
+    String? idempotencyKey,
+  }) async {
+    if (idempotencyKey != null) editKeys.add(idempotencyKey);
+    final transfer = transfers.firstWhere((record) => record.id == id);
+    return onUpdateTransfer != null
+        ? onUpdateTransfer!(id, note)
+        : TransferRecord(
+            id: transfer.id,
+            tableId: transfer.tableId,
+            sowingId: transfer.sowingId,
+            transferDate: transfer.transferDate,
+            plantCount: transfer.plantCount,
+            activePlants: transfer.activePlants,
+            sowingDate: transfer.sowingDate,
+            note: note,
+            seedlingAgeDays: transfer.seedlingAgeDays,
+            estimatedHarvestDate: transfer.estimatedHarvestDate,
+            hss: transfer.hss,
+            hst: transfer.hst,
+            remainingHarvestDays: transfer.remainingHarvestDays,
+          );
+  }
+
+  @override
+  Future<DamageRecord> updateDamage(
+    String id, {
+    String? date,
+    int? plantCount,
+    String? category,
+    String? note,
+    String? idempotencyKey,
+  }) async {
+    if (idempotencyKey != null) editKeys.add(idempotencyKey);
+    return onUpdateDamage != null
+        ? onUpdateDamage!(
+            id,
+            date: date,
+            plantCount: plantCount,
+            category: category,
+            note: note,
+          )
+        : DamageRecord.fromJson({
+            ...damageJson(id: id),
+            'version': '2',
+            'tanggal_kejadian': ?date,
+            'jumlah_tanaman': ?plantCount,
+            'jenis_kerusakan': ?category,
+            'keterangan': note,
+          });
   }
 }

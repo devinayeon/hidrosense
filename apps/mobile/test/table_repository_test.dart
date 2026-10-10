@@ -37,8 +37,9 @@ void main() {
               'keterangan': 'Meja Sayur A',
               'tanaman_aktif': 100,
               'kapasitas_tersedia': 150,
-            }
-          ]
+            },
+          ],
+          'meta': {'page': 1, 'limit': 50, 'total': 1, 'total_pages': 1},
         }),
         200,
         headers: {'content-type': 'application/json'},
@@ -83,7 +84,7 @@ void main() {
             'status_meja': 'tersedia',
             'tanaman_aktif': 0,
             'kapasitas_tersedia': 300,
-          }
+          },
         }),
         201,
         headers: {'content-type': 'application/json'},

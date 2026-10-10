@@ -13,9 +13,11 @@ class FormCatatKerusakanBody extends ConsumerStatefulWidget {
     required this.tableId,
     required this.tableName,
     this.initialTransfer,
+    this.damageRecordToEdit,
   });
   final String tableId, tableName;
   final TransferRecord? initialTransfer;
+  final DamageRecord? damageRecordToEdit;
 
   @override
   ConsumerState<FormCatatKerusakanBody> createState() =>
@@ -27,7 +29,7 @@ class _FormCatatKerusakanBodyState
   final _formKey = GlobalKey<FormState>();
   final _count = TextEditingController();
   final _note = TextEditingController();
-  late String? _transferId = widget.initialTransfer?.id;
+  late String? _transferId;
   DateTime _date = jakartaToday();
   String _category = 'Gagal Tumbuh / Busuk Akar';
   bool _complete = false;
@@ -42,11 +44,31 @@ class _FormCatatKerusakanBodyState
   @override
   void initState() {
     super.initState();
+    final edit = widget.damageRecordToEdit;
+    if (edit != null) {
+      _transferId = edit.transferId;
+      _count.text = edit.plantCount.toString();
+      _note.text = edit.note ?? '';
+      _date = DateTime.tryParse(edit.date) ?? jakartaToday();
+      _category = edit.category;
+    } else {
+      _transferId = widget.initialTransfer?.id;
+    }
     final permissions =
         ref.read(sessionProvider).user?.permissions ?? const <String>[];
     if (permissions.contains('budidaya:read') &&
         permissions.contains('budidaya:write')) {
-      ref.read(damageProvider(widget.tableId).notifier).beginDraft();
+      final vm = ref.read(damageProvider(widget.tableId).notifier);
+      vm.beginDraft();
+      final pending = vm.pendingDraft;
+      final target = edit == null ? 'create' : 'damage:${edit.id}';
+      if (pending != null && vm.pendingTarget == target) {
+        _transferId = pending.transferId;
+        _count.text = '${pending.plantCount}';
+        _note.text = pending.note ?? '';
+        _date = DateTime.parse(pending.date);
+        _category = pending.category;
+      }
     }
   }
 
@@ -68,28 +90,94 @@ class _FormCatatKerusakanBodyState
       initialDate: _date.isBefore(first)
           ? first
           : (_date.isAfter(last) ? last : _date),
+      builder: (ctx, child) {
+        final theme = Theme.of(ctx);
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.brightness == Brightness.light
+                  ? AppColors.darkNavy
+                  : theme.colorScheme.primary,
+              onPrimary: theme.brightness == Brightness.light
+                  ? AppColors.accentLime
+                  : theme.colorScheme.onPrimary,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: child!,
+          ),
+        );
+      },
     );
     if (!mounted || picked == null) return;
     setState(() => _date = picked);
   }
 
   Future<void> _submit() async {
-    if (_complete || !_formKey.currentState!.validate()) return;
+    if (_complete) return;
+    final user = ref.read(sessionProvider).user;
+    if (user?.permissions.contains('budidaya:write') != true) return;
+    final current = ref.read(damageProvider(widget.tableId));
+    if (current.submitting || !_formKey.currentState!.validate()) return;
     final notifier = ref.read(damageProvider(widget.tableId).notifier);
+    final count = int.parse(_count.text.trim());
+    final note = _note.text.trim();
+
+    if (widget.damageRecordToEdit != null) {
+      final ok = await notifier.updateDamage(
+        widget.damageRecordToEdit!.id,
+        date: apiDate(_date),
+        plantCount: count,
+        category: _category,
+        note: note.isNotEmpty ? note : null,
+      );
+      if (!mounted || !identical(user, ref.read(sessionProvider).user)) return;
+      if (ok == DamageSubmitResult.saved ||
+          ok == DamageSubmitResult.savedRefreshFailed) {
+        _complete = true;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ref.read(damageProvider(widget.tableId)).refreshWarning ??
+                  'Laporan kerusakan berhasil diperbarui.',
+            ),
+          ),
+        );
+        Navigator.pop(context, true);
+      } else {
+        final err = ref.read(damageProvider(widget.tableId)).error;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err ?? 'Gagal memperbarui laporan kerusakan.'),
+          ),
+        );
+      }
+      return;
+    }
+
     final result = await notifier.submit(
       DamageDraft(
         transferId: _transferId!,
         date: apiDate(_date),
-        plantCount: int.parse(_count.text.trim()),
+        plantCount: count,
         category: _category,
         note: _note.text,
       ),
     );
-    if (!mounted) return;
+    if (!mounted || !identical(user, ref.read(sessionProvider).user)) return;
     if (result == DamageSubmitResult.saved ||
         result == DamageSubmitResult.savedRefreshFailed) {
       _complete = true;
       final warning = ref.read(damageProvider(widget.tableId)).refreshWarning;
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(warning ?? 'Laporan kerusakan berhasil disimpan.'),
@@ -112,6 +200,15 @@ class _FormCatatKerusakanBodyState
     final state = ref.watch(damageProvider(widget.tableId));
     final candidates = state.transfers.where((t) => t.id == _transferId);
     final selected = candidates.isEmpty ? null : candidates.first;
+    final notifier = ref.read(damageProvider(widget.tableId).notifier);
+    final locked = notifier.payloadLocked;
+    final categories = {..._categories, _category}.toList();
+    final latest = state.reports.values
+        .expand((r) => r)
+        .where((r) => r.id == widget.damageRecordToEdit?.id);
+    final editCount = latest.isEmpty
+        ? (widget.damageRecordToEdit?.plantCount ?? 0)
+        : latest.first.plantCount;
     final enteredCount = int.tryParse(_count.text.trim());
     final canReplay =
         state.uncertainDraft != null &&
@@ -160,6 +257,9 @@ class _FormCatatKerusakanBodyState
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  ),
                   onPressed: state.submitting
                       ? null
                       : () => ref
@@ -186,7 +286,10 @@ class _FormCatatKerusakanBodyState
                           DropdownMenuItem(value: t.id, child: Text(t.label)),
                     )
                     .toList(),
-                onChanged: state.submitting
+                onChanged:
+                    state.submitting ||
+                        locked ||
+                        widget.damageRecordToEdit != null
                     ? null
                     : (id) => setState(() => _transferId = id),
                 validator: (_) =>
@@ -205,16 +308,19 @@ class _FormCatatKerusakanBodyState
               TextFormField(
                 controller: _count,
                 onChanged: (_) => setState(() {}),
-                enabled: !state.submitting,
+                enabled: !state.submitting && !locked,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(errorMaxLines: 4),
                 validator: (value) {
                   final count = int.tryParse(value?.trim() ?? '');
+                  final maxAllowed = selected == null
+                      ? 0
+                      : selected.activePlants + editCount;
                   return count == null ||
                           count <= 0 ||
                           selected == null ||
-                          (!canReplay && count > selected.activePlants)
-                      ? 'Jumlah harus 1 sampai ${selected?.activePlants ?? 0} tanaman.'
+                          (!canReplay && count > maxAllowed)
+                      ? 'Jumlah harus 1 sampai $maxAllowed tanaman.'
                       : null;
                 },
               ),
@@ -224,12 +330,12 @@ class _FormCatatKerusakanBodyState
                 isExpanded: true,
                 itemHeight: null,
                 selectedItemBuilder: (_) =>
-                    _categories.map((c) => Text(c.split(' / ').first)).toList(),
+                    categories.map((c) => Text(c.split(' / ').first)).toList(),
                 decoration: const InputDecoration(labelText: 'Jenis kerusakan'),
-                items: _categories
+                items: categories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
-                onChanged: state.submitting
+                onChanged: state.submitting || locked
                     ? null
                     : (value) => setState(() => _category = value!),
               ),
@@ -243,7 +349,7 @@ class _FormCatatKerusakanBodyState
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(44, 48),
                 ),
-                onPressed: state.submitting || selected == null
+                onPressed: state.submitting || locked || selected == null
                     ? null
                     : () => _pickDate(selected),
                 icon: const Icon(Icons.calendar_today_outlined),
@@ -255,7 +361,7 @@ class _FormCatatKerusakanBodyState
               TextFormField(
                 controller: _note,
                 onChanged: (_) => setState(() {}),
-                enabled: !state.submitting,
+                enabled: !state.submitting && !locked,
                 maxLength: 1000,
                 minLines: 2,
                 maxLines: 4,
@@ -271,13 +377,17 @@ class _FormCatatKerusakanBodyState
                     state.submitting ||
                         state.loading ||
                         selected == null ||
-                        (selected.activePlants == 0 && !canReplay)
+                        (selected.activePlants == 0 &&
+                            widget.damageRecordToEdit == null &&
+                            !canReplay)
                     ? null
                     : _submit,
                 child: Text(
                   state.submitting
                       ? 'Menyimpan laporan...'
-                      : 'Simpan Laporan Kerusakan',
+                      : (widget.damageRecordToEdit != null
+                            ? 'Simpan Perubahan Laporan'
+                            : 'Simpan Laporan Kerusakan'),
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/business_date.dart';
 import '../data/models/nursery_record.dart';
+import '../data/models/transfer_record.dart';
 import '../data/repositories/nursery_repository.dart';
 import '../data/services/api_client.dart';
 import 'session_viewmodel.dart';
@@ -14,6 +15,50 @@ final sowingCommandsProvider = Provider(
 );
 final nurseryClockProvider = Provider<DateTime Function()>(
   (ref) => DateTime.now,
+);
+
+typedef SeedlingTransferPayload = ({
+  String idempotencyKey,
+  String sowingId,
+  String tableId,
+  String transferDate,
+  int plantCount,
+  String note,
+});
+
+class SeedlingTransferCommand extends ChangeNotifier {
+  SeedlingTransferCommand(this.payload);
+
+  final SeedlingTransferPayload payload;
+  bool submitting = false;
+  bool saved = false;
+  bool rejected = false;
+  String? error;
+  TransferRecord? receipt;
+
+  void start() {
+    submitting = true;
+    error = null;
+    notifyListeners();
+  }
+
+  void complete(TransferRecord receipt) {
+    this.receipt = receipt;
+    saved = true;
+    submitting = false;
+    notifyListeners();
+  }
+
+  void fail(Object failure, {required bool definitivelyRejected}) {
+    error = serviceError(failure);
+    submitting = false;
+    rejected = definitivelyRejected;
+    notifyListeners();
+  }
+}
+
+final seedlingTransferCommandsProvider = Provider(
+  (ref) => <(String, String, String), SeedlingTransferCommand>{},
 );
 
 class ConnectedNurseryState {
@@ -76,6 +121,7 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
   ConnectedNurseryViewModel(
     this._repository, {
     bool autoLoad = true,
+    this.canWrite = true,
     String userId = '',
     Map<(String, String), SowingCommand>? commands,
     Future<String?> Function()? refreshInventory,
@@ -88,31 +134,70 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
   }
 
   final NurseryRepository _repository;
+  final bool canWrite;
   late final (String, String) _scope;
   late final Map<(String, String), SowingCommand> _commands;
   late final Future<String?> Function()? _refreshInventory;
   Future<void>? _refreshTask;
   SowingCommand? get _command => _commands[_scope];
 
-  Future<void> transferSowing({
+  Future<TransferRecord> transferSowing({
     required String idempotencyKey,
     required String sowingId,
     required String tableId,
     required String transferDate,
     required int plantCount,
     String? note,
-  }) => _repository.transferSowing(
-    idempotencyKey: idempotencyKey,
-    sowingId: sowingId,
-    tableId: tableId,
-    transferDate: transferDate,
-    plantCount: plantCount,
-    note: note,
-  );
+  }) async {
+    if (!mounted || !canWrite) {
+      throw StateError('Akses pemindahan bibit tidak diizinkan.');
+    }
+    return _repository.transferSowing(
+      idempotencyKey: idempotencyKey,
+      sowingId: sowingId,
+      tableId: tableId,
+      transferDate: transferDate,
+      plantCount: plantCount,
+      note: note,
+    );
+  }
+
+  Future<void> submitTransfer(SeedlingTransferCommand command) async {
+    if (!mounted || !canWrite) {
+      throw StateError('Akses pemindahan bibit tidak diizinkan.');
+    }
+    if (command.submitting || command.saved) return;
+    command.start();
+    try {
+      final payload = command.payload;
+      final receipt = await _repository.transferSowing(
+        idempotencyKey: payload.idempotencyKey,
+        sowingId: payload.sowingId,
+        tableId: payload.tableId,
+        transferDate: payload.transferDate,
+        plantCount: payload.plantCount,
+        note: payload.note,
+      );
+      command.complete(receipt);
+    } catch (error) {
+      final definitivelyRejected =
+          error is ApiException &&
+          error.status >= 400 &&
+          error.status < 500 &&
+          error.code != 'SESSION_CHANGED';
+      command.fail(error, definitivelyRejected: definitivelyRejected);
+      rethrow;
+    }
+  }
 
   Future<void> refresh() {
     if (!mounted) return Future.value();
     return _refreshTask ??= _refresh().whenComplete(() => _refreshTask = null);
+  }
+
+  Future<void> refreshAfterTransfer() async {
+    await _refreshTask;
+    if (mounted) await refresh();
   }
 
   Future<void> _refresh() async {
@@ -240,6 +325,9 @@ final connectedNurseryProvider =
       final vm = ConnectedNurseryViewModel(
         ref.watch(nurseryRepositoryProvider),
         userId: user.id,
+        canWrite:
+            user.permissions.contains('penyemaian:write') &&
+            user.permissions.contains('budidaya:write'),
         commands: ref.watch(sowingCommandsProvider),
         refreshInventory: () async {
           final inventory = ref.read(connectedInventoryProvider.notifier);

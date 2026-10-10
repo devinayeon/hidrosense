@@ -133,7 +133,7 @@ void main() {
       pending.complete(DamageRecord.fromJson(damageJson()));
       await tester.pumpAndSettle();
       expect(find.byType(CatatKerusakanPage), findsNothing);
-      expect(find.textContaining('Laporan tersimpan.'), findsOneWidget);
+      expect(find.textContaining('Tersimpan.'), findsOneWidget);
       expect(repo.keys.length, 1);
       expect(repo.drafts.single.note, 'Catatan tetap');
       expect(tester.takeException(), isNull);

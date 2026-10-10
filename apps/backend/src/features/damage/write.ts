@@ -53,8 +53,8 @@ export function damageWrite(
           idField: 'id_kerusakan',
           effect: () =>
             command.action === 'create'
-              ? createDamage(tx, command.input)
-              : updateDamage(tx, command.id, command.input),
+              ? createDamage(tx, command.input, clock())
+              : updateDamage(tx, command.id, command.input, clock()),
         },
       ),
   );

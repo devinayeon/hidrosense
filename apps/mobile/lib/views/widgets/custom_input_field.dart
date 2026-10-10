@@ -77,7 +77,7 @@ class CustomInputField extends StatelessWidget {
             errorMaxLines: 2,
             errorStyle: AppTypography.footnote.copyWith(color: errorColor),
             enabledBorder: _inputBorder(AppColors.borderLight),
-            focusedBorder: _inputBorder(AppColors.primaryMint, width: 1.5),
+            focusedBorder: _inputBorder(AppColors.primaryDarkTeal, width: 2),
             errorBorder: _inputBorder(AppColors.dangerRed),
             focusedErrorBorder: _inputBorder(AppColors.dangerRed, width: 1.5),
           ),

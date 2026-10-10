@@ -1,10 +1,12 @@
 import '../models/damage_record.dart';
 import '../models/transfer_record.dart';
 import '../services/api_client.dart';
+import '../../core/uuid.dart';
 
 class DamageRepository {
   DamageRepository(this._api);
   final ApiClient _api;
+  String get serverOrigin => _api.serverOrigin;
 
   Future<List<TransferRecord>> listTransfers(String tableId) async {
     final rows = await _list('pemindahan', {'id_meja': tableId});
@@ -40,6 +42,65 @@ class DamageRepository {
     final record = DamageRecord.fromJson(data);
     if (record.transferId != draft.transferId) {
       throw const FormatException('Respons batch laporan tidak sesuai.');
+    }
+    return record;
+  }
+
+  Future<TransferRecord> updateTransfer(
+    String id, {
+    String? note,
+    String? idempotencyKey,
+  }) async {
+    final response = await _api.patch(
+      'pemindahan/$id',
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
+      body: {
+        'keterangan': note != null && note.trim().isNotEmpty
+            ? note.trim()
+            : null,
+      },
+    );
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Respons pembaruan batch tidak valid.');
+    }
+    final record = TransferRecord.fromJson(data);
+    if (record.id != id) {
+      throw const FormatException('Respons batch tidak sesuai target.');
+    }
+    return record;
+  }
+
+  Future<DamageRecord> updateDamage(
+    String id, {
+    String? date,
+    int? plantCount,
+    String? category,
+    String? note,
+    String? idempotencyKey,
+  }) async {
+    final body = <String, dynamic>{};
+    if (date != null && date.isNotEmpty) body['tanggal_kejadian'] = date;
+    if (plantCount != null) body['jumlah_tanaman'] = plantCount;
+    if (category != null && category.isNotEmpty) {
+      body['jenis_kerusakan'] = category.trim();
+    }
+    body['keterangan'] = note != null && note.trim().isNotEmpty
+        ? note.trim()
+        : null;
+
+    final response = await _api.patch(
+      'kerusakan/$id',
+      headers: {'Idempotency-Key': idempotencyKey ?? generateUuidV4()},
+      body: body,
+    );
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Respons pembaruan kerusakan tidak valid.');
+    }
+    final record = DamageRecord.fromJson(data);
+    if (record.id != id) {
+      throw const FormatException('Respons laporan tidak sesuai target.');
     }
     return record;
   }

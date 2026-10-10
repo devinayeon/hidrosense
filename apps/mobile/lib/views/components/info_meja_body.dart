@@ -22,6 +22,9 @@ class InfoMejaBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final permissions =
         ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('budidaya:read')) {
+      return const Center(child: Text('Akses meja tanam tidak diizinkan.'));
+    }
     final records = this.tableRecord == null
         ? const <TableRecord>[]
         : ref.watch(connectedTableProvider).records;
@@ -116,6 +119,7 @@ class InfoMejaBody extends ConsumerWidget {
             ],
             if (permissions.contains('budidaya:write'))
               RowButton(
+                height: MediaQuery.textScalerOf(context).scale(52),
                 label: 'Edit Pengaturan Meja',
                 backgroundColor: AppColors.darkNavy,
                 textColor: AppColors.accentLime,

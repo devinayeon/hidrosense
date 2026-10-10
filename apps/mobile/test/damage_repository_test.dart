@@ -177,4 +177,74 @@ void main() {
       );
     },
   );
+
+  test('TransferRecord.fromJson parses HSS, HST, and harvest estimation', () {
+    final json = {
+      ...transferJson(id: '10'),
+      'tanggal_semai': '2026-09-01',
+      'keterangan': 'Batch Selada Varietas Unggul',
+      'umur_semai_hari': 15,
+      'estimasi_panen': '2026-10-16',
+      'hss': 20,
+      'hst': 5,
+      'sisa_hari_panen': 25,
+    };
+    final record = TransferRecord.fromJson(json);
+    expect(record.sowingDate, '2026-09-01');
+    expect(record.note, 'Batch Selada Varietas Unggul');
+    expect(record.seedlingAgeDays, 15);
+    expect(record.estimatedHarvestDate, '2026-10-16');
+    expect(record.hss, 20);
+    expect(record.hst, 5);
+    expect(record.remainingHarvestDays, 25);
+  });
+
+  test('updateTransfer sends PATCH with keterangan', () async {
+    final api = apiFor((request) async {
+      expect(request.method, 'PATCH');
+      expect(request.url.path, '/api/v1/pemindahan/1');
+      final body = jsonDecode(request.body);
+      expect(body['keterangan'], 'Catatan diperbarui');
+      return reply({
+        'data': {
+          ...transferJson(id: '1'),
+          'keterangan': 'Catatan diperbarui',
+        },
+      });
+    });
+    addTearDown(api.close);
+    final repo = DamageRepository(api);
+    final updated = await repo.updateTransfer('1', note: 'Catatan diperbarui');
+    expect(updated.note, 'Catatan diperbarui');
+  });
+
+  test('updateDamage sends PATCH with updated fields', () async {
+    final api = apiFor((request) async {
+      expect(request.method, 'PATCH');
+      expect(request.url.path, '/api/v1/kerusakan/5');
+      final body = jsonDecode(request.body);
+      expect(body['jumlah_tanaman'], 8);
+      expect(body['jenis_kerusakan'], 'Daun Menguning');
+      expect(body['keterangan'], 'Koreksi');
+      return reply({
+        'data': {
+          ...damageJson(id: '5'),
+          'jumlah_tanaman': 8,
+          'jenis_kerusakan': 'Daun Menguning',
+          'keterangan': 'Koreksi',
+        },
+      });
+    });
+    addTearDown(api.close);
+    final repo = DamageRepository(api);
+    final updated = await repo.updateDamage(
+      '5',
+      plantCount: 8,
+      category: 'Daun Menguning',
+      note: 'Koreksi',
+    );
+    expect(updated.plantCount, 8);
+    expect(updated.category, 'Daun Menguning');
+    expect(updated.note, 'Koreksi');
+  });
 }

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/views/components/custom_bottom_navigation_bar.dart';
-import 'package:hidrosense_mobile/views/components/info_meja_body.dart';
+import 'package:hidrosense_mobile/views/widgets/fluid_capacity_meter.dart';
 import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
-import 'package:hidrosense_mobile/models/meja_nft_model.dart';
 import 'package:hidrosense_mobile/models/seeding_batch_model.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 
@@ -122,16 +120,11 @@ void main() {
   testWidgets('table occupancy progress animates over HIG duration', (
     tester,
   ) async {
-    final table = MejaNft(
-      id: '1',
-      name: 'M-01',
-      status: MejaStatus.aktif,
-      capacityTotal: 100,
-      capacityUsed: 50,
-    );
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: InfoMejaBody(mejaItem: table)),
+      const MaterialApp(
+        home: Scaffold(
+          body: FluidCapacityMeter(activePlants: 50, totalCapacity: 100),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 225));

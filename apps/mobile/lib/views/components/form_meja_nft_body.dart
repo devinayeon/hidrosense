@@ -4,37 +4,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/table_record.dart';
 import '../../models/meja_nft_model.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
-import '../widgets/row_button.dart';
 
 class FormMejaNftBody extends ConsumerStatefulWidget {
+  const FormMejaNftBody({super.key, this.tableRecord, this.mejaItem});
   final TableRecord? tableRecord;
   final MejaNft? mejaItem;
-
-  const FormMejaNftBody({super.key, this.tableRecord, this.mejaItem});
-
   @override
   ConsumerState<FormMejaNftBody> createState() => _FormMejaNftBodyState();
 }
 
 class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
-  late TextEditingController _codeController;
-  late TextEditingController _capacityController;
-  late TextEditingController _notesController;
-  String _selectedStatus = 'tersedia';
+  late final TextEditingController _codeController,
+      _capacityController,
+      _notesController;
+  late String _selectedStatus;
   bool _submitting = false;
-
+  String? _error;
   @override
   void initState() {
     super.initState();
-    final rec = widget.tableRecord;
-    final item = widget.mejaItem;
+    final rec = widget.tableRecord, item = widget.mejaItem;
     _codeController = TextEditingController(
       text: rec?.code ?? item?.name ?? '',
     );
     _capacityController = TextEditingController(
-      text: (rec?.holeCount ?? item?.capacityTotal ?? 250).toString(),
+      text: '${rec?.holeCount ?? item?.capacityTotal ?? 250}',
     );
     _notesController = TextEditingController(
       text: rec?.notes ?? item?.notes ?? '',
@@ -42,6 +39,18 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     _selectedStatus =
         rec?.status ??
         (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia');
+    final user = ref.read(sessionProvider).user;
+    if (user?.permissions.contains('budidaya:write') == true) {
+      final command = ref.read(connectedTableProvider.notifier).pendingCommand;
+      if (command?.uncertain == true &&
+          command?.target == (rec?.id ?? 'create')) {
+        _codeController.text = command!.body['kode_meja'] as String? ?? '';
+        _capacityController.text = '${command.body['jumlah_lubang']}';
+        _notesController.text = command.body['keterangan'] as String? ?? '';
+        _selectedStatus =
+            command.body['status_meja'] as String? ?? _selectedStatus;
+      }
+    }
   }
 
   @override
@@ -53,64 +62,63 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
   }
 
   Future<void> _saveForm() async {
-    final code = _codeController.text.trim();
+    if (_submitting) return;
+    final user = ref.read(sessionProvider).user;
+    if (user?.permissions.contains('budidaya:write') != true) return;
+    final code = _codeController.text.trim(),
+        notes = _notesController.text.trim();
     final capacity = int.tryParse(_capacityController.text.trim()) ?? 0;
-    final notes = _notesController.text.trim();
-
-    if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kode / Nama Meja tidak boleh kosong')),
+    if (code.isEmpty ||
+        code.length > 30 ||
+        capacity <= 0 ||
+        capacity > 9007199254740991 ||
+        notes.length > 1000) {
+      setState(
+        () => _error =
+            'Isi kode 1–30 karakter, kapasitas positif, dan catatan maksimal 1000 karakter.',
       );
       return;
     }
-    if (capacity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kapasitas lubang harus lebih dari 0')),
-      );
-      return;
-    }
-
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    final vm = ref.read(connectedTableProvider.notifier);
     try {
       final rec = widget.tableRecord;
       if (rec == null) {
-        await ref
-            .read(connectedTableProvider.notifier)
-            .createTable(
-              code: code,
-              holeCount: capacity,
-              status: _selectedStatus,
-              notes: notes.isNotEmpty ? notes : null,
-            );
-      } else {
-        await ref
-            .read(connectedTableProvider.notifier)
-            .updateTable(
-              rec.id,
-              code: code,
-              holeCount: capacity,
-              status: _selectedStatus,
-              notes: notes.isNotEmpty ? notes : null,
-            );
-      }
-      if (mounted) {
-        HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              rec == null
-                  ? 'Meja tanam berhasil ditambahkan'
-                  : 'Meja tanam berhasil diperbarui',
-            ),
-          ),
+        await vm.createTable(
+          code: code,
+          holeCount: capacity,
+          status: _selectedStatus,
+          notes: notes.isEmpty ? null : notes,
         );
-        Navigator.pop(context);
+      } else {
+        await vm.updateTable(
+          rec.id,
+          code: code,
+          holeCount: capacity,
+          status: _selectedStatus,
+          notes: notes.isEmpty ? null : notes,
+        );
       }
+      if (!mounted || !identical(user, ref.read(sessionProvider).user)) return;
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            vm.refreshWarning == null
+                ? (rec == null
+                      ? 'Meja tanam berhasil ditambahkan'
+                      : 'Meja tanam berhasil diperbarui')
+                : 'Meja tersimpan. Data terbaru belum dapat dimuat.',
+          ),
+        ),
+      );
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan meja: $e')));
+      if (mounted && identical(user, ref.read(sessionProvider).user)) {
+        setState(() => _error = 'Gagal menyimpan meja: $e');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -119,196 +127,121 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: AppColors.canvasWarm,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomInputField(
-              label: 'Kode / Nama Meja',
-              hintText: 'Contoh: M-01 atau Meja NFT #01',
-              controller: _codeController,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            CustomInputField(
-              label: 'Kapasitas Lubang Default',
-              hintText: '250',
-              controller: _capacityController,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Status Meja Utama',
-              style: AppTypography.subheadline.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                final options = [
-                  ('tersedia', 'Tersedia / Aktif', Icons.check_circle_outline),
-                  ('pemeliharaan', 'Perawatan', Icons.build_circle_outlined),
-                  ('penuh', 'Penuh', Icons.grid_goldenratio),
-                  ('nonaktif', 'Nonaktif', Icons.block_outlined),
-                ];
-                showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  builder: (ctx) => Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.cardSurface,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(AppRadius.modal),
-                      ),
-                    ),
-                    padding: const EdgeInsets.only(
-                      top: AppSpacing.xs,
-                      bottom: AppSpacing.xl,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 5,
-                          margin: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.borderLight,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Text(
-                            'Pilih Status Meja',
-                            style: AppTypography.headline.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const Divider(height: 1, color: AppColors.borderSubtle),
-                        ...options.map((opt) {
-                          final isSelected = _selectedStatus == opt.$1;
-                          return InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              setState(() => _selectedStatus = opt.$1);
-                              Navigator.pop(ctx);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.md,
-                                vertical: 14,
-                              ),
-                              color: isSelected
-                                  ? AppColors.accentMintSoft.withValues(
-                                      alpha: 0.5,
-                                    )
-                                  : Colors.transparent,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    opt.$3,
-                                    size: 20,
-                                    color: isSelected
-                                        ? AppColors.primaryMint
-                                        : AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: Text(
-                                      opt.$2,
-                                      style: AppTypography.body.copyWith(
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        color: isSelected
-                                            ? AppColors.primaryDarkTeal
-                                            : AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: AppColors.primaryMint,
-                                      size: 20,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('budidaya:read') ||
+        !permissions.contains('budidaya:write')) {
+      return const Center(child: Text('Akses perubahan meja tidak diizinkan.'));
+    }
+    ref.watch(connectedTableProvider);
+    final locked = ref.read(connectedTableProvider.notifier).payloadLocked;
+    final statuses = <String, String>{
+      'tersedia': 'Tersedia / Aktif',
+      'pemeliharaan': 'Perawatan',
+      'penuh': 'Penuh',
+      'nonaktif': 'Nonaktif',
+    };
+    statuses.putIfAbsent(_selectedStatus, () => _selectedStatus);
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
+        color: AppColors.canvasWarm,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (locked)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Hasil belum pasti. Ulangi penyimpanan dengan isian yang sama.',
+                  ),
+                ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: 14,
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
-                  borderRadius: BorderRadius.circular(AppRadius.input),
-                  border: Border.all(color: AppColors.borderLight, width: 1.0),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              AbsorbPointer(
+                absorbing: _submitting || locked,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      _selectedStatus == 'tersedia'
-                          ? 'Tersedia / Aktif'
-                          : _selectedStatus == 'pemeliharaan'
-                          ? 'Perawatan'
-                          : _selectedStatus == 'penuh'
-                          ? 'Penuh'
-                          : 'Nonaktif',
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                    CustomInputField(
+                      label: 'Kode / Nama Meja',
+                      hintText: 'Contoh: M-01',
+                      controller: _codeController,
                     ),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSecondary,
-                      size: 20,
+                    const SizedBox(height: AppSpacing.md),
+                    CustomInputField(
+                      label: 'Kapasitas Lubang Default',
+                      hintText: '250',
+                      controller: _capacityController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedStatus,
+                      style: AppTypography.body,
+                      dropdownColor: AppColors.cardSurface,
+                      iconEnabledColor: AppColors.textSecondary,
+                      isExpanded: true,
+                      itemHeight: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Status Meja Utama',
+                        labelStyle: AppTypography.subheadline,
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        filled: true,
+                        fillColor: AppColors.cardSurface,
+                        border: OutlineInputBorder(),
+                      ),
+                      items: statuses.entries
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _submitting || locked
+                          ? null
+                          : (s) => setState(() => _selectedStatus = s!),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    CustomInputField(
+                      label: 'Catatan / Spesifikasi',
+                      hintText: 'Merek pompa, debit air, tipe pipa PVC',
+                      controller: _notesController,
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            CustomInputField(
-              label: 'Catatan / Spesifikasi',
-              hintText: 'Merek pompa, debit air, tipe pipa PVC',
-              controller: _notesController,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            RowButton(
-              label: _submitting
-                  ? 'Menyimpan...'
-                  : widget.tableRecord == null
-                  ? 'Simpan Meja'
-                  : 'Perbarui Pengaturan Meja',
-              backgroundColor: AppColors.darkNavy,
-              textColor: AppColors.accentLime,
-              borderRadius: AppRadius.pill,
-              height: 52,
-              onTap: _submitting ? null : _saveForm,
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
+              const SizedBox(height: AppSpacing.xl),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(44, 52),
+                  backgroundColor: AppColors.darkNavy,
+                  foregroundColor: AppColors.accentLime,
+                ),
+                onPressed: _submitting ? null : _saveForm,
+                child: Text(
+                  _submitting
+                      ? 'Menyimpan...'
+                      : widget.tableRecord == null
+                      ? 'Simpan Meja'
+                      : 'Perbarui Pengaturan Meja',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
         ),
       ),
     );

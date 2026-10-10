@@ -1,5 +1,6 @@
 import '../../core/uuid.dart';
 import '../models/nursery_record.dart';
+import '../models/transfer_record.dart';
 import '../services/api_client.dart';
 
 class NurseryRepository {
@@ -47,7 +48,7 @@ class NurseryRepository {
     return records;
   }
 
-  Future<void> transferSowing({
+  Future<TransferRecord> transferSowing({
     required String idempotencyKey,
     required String sowingId,
     required String tableId,
@@ -55,7 +56,7 @@ class NurseryRepository {
     required int plantCount,
     String? note,
   }) async {
-    await _api.post(
+    final response = await _api.post(
       'pemindahan',
       headers: {'Idempotency-Key': idempotencyKey},
       body: {
@@ -66,6 +67,20 @@ class NurseryRepository {
         if (note != null && note.isNotEmpty) 'keterangan': note,
       },
     );
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Respons pemindahan tidak valid.');
+    }
+    final receipt = TransferRecord.fromJson(data);
+    if (receipt.sowingId != sowingId ||
+        receipt.tableId != tableId ||
+        receipt.transferDate != transferDate ||
+        receipt.plantCount != plantCount) {
+      throw const FormatException(
+        'Respons pemindahan tidak sesuai permintaan.',
+      );
+    }
+    return receipt;
   }
 
   Future<SowingRecord> getSowing(String id) async {

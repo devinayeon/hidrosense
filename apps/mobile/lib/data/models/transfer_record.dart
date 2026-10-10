@@ -6,10 +6,27 @@ class TransferRecord {
     required this.transferDate,
     required this.plantCount,
     required this.activePlants,
+    this.sowingDate,
+    this.note,
+    this.seedlingAgeDays,
+    this.estimatedHarvestDate,
+    this.hss,
+    this.hst,
+    this.remainingHarvestDays,
+    this.version,
   });
 
   final String id, tableId, sowingId, transferDate;
   final int plantCount, activePlants;
+  final String? sowingDate;
+  final String? note;
+  final int? seedlingAgeDays;
+  final String? estimatedHarvestDate;
+  final int? hss;
+  final int? hst;
+  final int? remainingHarvestDays;
+  final String? version;
+
   String get label => 'Batch #$id • $transferDate';
 
   factory TransferRecord.fromJson(Map<String, dynamic> json) {
@@ -38,6 +55,14 @@ class TransferRecord {
       transferDate: date,
       plantCount: count,
       activePlants: active,
+      sowingDate: json['tanggal_semai'] as String?,
+      note: json['keterangan'] as String?,
+      seedlingAgeDays: (json['umur_semai_hari'] as num?)?.toInt(),
+      estimatedHarvestDate: json['estimasi_panen'] as String?,
+      hss: (json['hss'] as num?)?.toInt(),
+      hst: (json['hst'] as num?)?.toInt(),
+      remainingHarvestDays: (json['sisa_hari_panen'] as num?)?.toInt(),
+      version: json['version'] as String?,
     );
   }
 }

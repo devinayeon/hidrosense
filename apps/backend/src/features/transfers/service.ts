@@ -33,6 +33,11 @@ export async function createTransfer(
   const pindahMs = Date.parse(`${input.tanggal_pemindahan}T00:00:00Z`);
   const umurSemaiHari = Math.floor((pindahMs - semaiMs) / dayMs);
 
+  const today = new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (input.tanggal_pemindahan > today) {
+    throw new ApiError(400, 'INVALID_TRANSFER_DATE', 'Tanggal pemindahan tidak boleh di masa depan.');
+  }
+
   if (umurSemaiHari < 0) {
     throw new ApiError(400, 'INVALID_TRANSFER_DATE', 'Tanggal pemindahan tidak boleh lebih awal dari tanggal semai.');
   }
@@ -56,7 +61,7 @@ export async function createTransfer(
     throw new ApiError(404, 'TABLE_NOT_FOUND', 'Meja tanam tidak ditemukan.');
   }
   const statusMeja = String(tableRow.status_meja).toLowerCase();
-  if (statusMeja === 'rusak' || statusMeja === 'perbaikan') {
+  if (statusMeja !== 'tersedia') {
     throw new ApiError(409, 'TABLE_NOT_AVAILABLE', 'Meja tanam sedang tidak dapat digunakan.');
   }
 

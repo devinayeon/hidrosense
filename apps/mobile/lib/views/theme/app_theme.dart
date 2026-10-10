@@ -195,9 +195,8 @@ class AppTypography {
   );
 
   /// Helper untuk memastikan angka tabular tidak bergeser saat nilai berubah.
-  static TextStyle tabular(TextStyle base) => base.copyWith(
-    fontFeatures: const [FontFeature.tabularFigures()],
-  );
+  static TextStyle tabular(TextStyle base) =>
+      base.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 }
 
 /// Konfigurasi ThemeData Flutter berbasis Apple HIG.
@@ -234,25 +233,39 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.cardSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
-          borderSide: const BorderSide(color: AppColors.borderLight, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderLight,
+            width: 1.0,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
-          borderSide: const BorderSide(color: AppColors.borderLight, width: 1.0),
+          borderSide: const BorderSide(
+            color: AppColors.borderLight,
+            width: 1.0,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
-          borderSide: const BorderSide(color: AppColors.primaryMint, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.primaryDarkTeal,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: const BorderSide(color: AppColors.dangerRed, width: 1.0),
         ),
         hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
-        labelStyle: AppTypography.subheadline.copyWith(color: AppColors.textSecondary),
+        labelStyle: AppTypography.subheadline.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.cardSurface,

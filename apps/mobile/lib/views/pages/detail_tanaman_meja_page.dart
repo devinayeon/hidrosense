@@ -10,6 +10,8 @@ class DetailTanamanMejaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: Header(
+      toolbarHeight: MediaQuery.textScalerOf(context).scale(21) > 30 ? 96 : 64,
+      titleMaxLines: 2,
       titleText: 'Batch ${table.displayName}',
       showBackButton: true,
     ),

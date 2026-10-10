@@ -57,7 +57,12 @@ void main() {
                 );
               }
               moved += body['jumlah_tanaman'] as int;
-              data = {'id_pemindahan': '1'};
+              data = {
+                'id_pemindahan': '1',
+                ...body,
+                'tanaman_aktif': body['jumlah_tanaman'],
+                'version': '1',
+              };
             } else if (request.url.path.endsWith('/meja-tanam')) {
               data = [
                 {
@@ -77,8 +82,15 @@ void main() {
             return http.Response(
               jsonEncode({
                 'data': data,
-                if (request.url.path.endsWith('/penyemaian'))
-                  'meta': {'page': 1, 'total': 1, 'total_pages': 1},
+                if (data is List)
+                  'meta': {
+                    'page': 1,
+                    'limit': request.url.path.endsWith('/meja-tanam')
+                        ? 50
+                        : 100,
+                    'total': data.length,
+                    'total_pages': data.isEmpty ? 0 : 1,
+                  },
               }),
               request.method == 'POST' ? 201 : 200,
             );
@@ -100,6 +112,7 @@ void main() {
                       permissions: [
                         'penyemaian:read',
                         'penyemaian:write',
+                        'budidaya:read',
                         'budidaya:write',
                       ],
                     ),

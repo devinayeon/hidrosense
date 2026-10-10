@@ -9,10 +9,17 @@ class MejaNftPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: Header(titleText: 'Manajemen Meja NFT', showBackButton: true),
+    return Scaffold(
+      appBar: Header(
+        titleText: 'Manajemen Meja NFT',
+        showBackButton: true,
+        toolbarHeight: MediaQuery.textScalerOf(context).scale(21) > 30
+            ? 96
+            : 64,
+        titleMaxLines: 2,
+      ),
       backgroundColor: AppColors.canvasWarm,
-      body: MejaNftBody(),
+      body: const MejaNftBody(),
     );
   }
 }

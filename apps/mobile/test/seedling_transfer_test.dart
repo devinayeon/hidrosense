@@ -17,8 +17,8 @@ import 'package:http/testing.dart';
 import 'package:intl/intl.dart';
 
 const readySowing = SowingRecord(
-  id: 'sem-01',
-  userId: 'usr-01',
+  id: '1',
+  userId: '1',
   sowingDate: '2026-09-01',
   seedCount: 100,
   status: 'aktif',
@@ -32,7 +32,7 @@ final uuidV4 = RegExp(
 );
 
 Map<String, dynamic> tableJson({
-  String id = 'meja-01',
+  String id = '1',
   int capacity = 12,
   String status = 'tersedia',
 }) => {
@@ -50,11 +50,11 @@ ApiClient apiFor(Future<http.Response> Function(http.Request) handler) =>
     ApiClient(
       MockClient((request) async {
         if (request.method == 'GET' &&
-            request.url.path.endsWith('/penyemaian/sem-01')) {
+            request.url.path.endsWith('/penyemaian/1')) {
           return response({
             'data': {
-              'id_penyemaian': 'sem-01',
-              'id_user': 'usr-01',
+              'id_penyemaian': '1',
+              'id_user': '1',
               'tanggal_semai': '2026-09-01',
               'jumlah_benih': 100,
               'status_penyemaian': 'aktif',
@@ -76,6 +76,35 @@ ApiClient apiFor(Future<http.Response> Function(http.Request) handler) =>
           };
           return response(decoded);
         }
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/meja-tanam') &&
+            result.statusCode == 200) {
+          final decoded = jsonDecode(result.body) as Map<String, dynamic>;
+          final data = decoded['data'];
+          if (data is List) {
+            decoded['meta'] = {
+              'page': 1,
+              'limit': 50,
+              'total': data.length,
+              'total_pages': data.isEmpty ? 0 : 1,
+            };
+            return response(decoded);
+          }
+        }
+        if (request.method == 'POST' &&
+            request.url.path.endsWith('/pemindahan') &&
+            result.statusCode >= 200 &&
+            result.statusCode < 300) {
+          final sent = jsonDecode(request.body) as Map<String, dynamic>;
+          return response({
+            'data': {
+              'id_pemindahan': '1',
+              ...sent,
+              'tanaman_aktif': sent['jumlah_tanaman'],
+              'version': '1',
+            },
+          }, status: result.statusCode);
+        }
         return result;
       }),
       baseUri: Uri.parse('https://example.test/api/v1'),
@@ -95,13 +124,14 @@ Future<void> pumpTransfer(
             api,
             initialState: const SessionState(
               user: SessionUser(
-                id: 'usr-01',
+                id: '1',
                 name: 'Petani',
                 username: 'petani',
                 role: 'petani',
                 permissions: [
                   'penyemaian:read',
                   'penyemaian:write',
+                  'budidaya:read',
                   'budidaya:write',
                 ],
               ),
@@ -157,8 +187,8 @@ void main() {
         tester,
         api,
         sowingRecord: const SowingRecord(
-          id: 'sem-01',
-          userId: 'usr-01',
+          id: '1',
+          userId: '1',
           sowingDate: '2026-09-01',
           seedCount: 100,
           remainingSeedCount: 5,
@@ -167,7 +197,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await chooseTable(tester, 'meja-01');
+      await chooseTable(tester, '1');
       await tester.enterText(find.byType(TextFormField).first, '6');
       await submit(tester);
       await tester.pumpAndSettle();
@@ -188,8 +218,8 @@ void main() {
         expect(request.headers['Authorization'], 'Bearer access');
         expect(request.headers['Idempotency-Key'], testIdempotencyKey);
         expect(jsonDecode(request.body), {
-          'id_penyemaian': 'sem-01',
-          'id_meja': 'meja-01',
+          'id_penyemaian': '1',
+          'id_meja': '1',
           'tanggal_pemindahan': '2026-10-07',
           'jumlah_tanaman': 12,
           if (calls == 0) 'keterangan': 'Rak A',
@@ -197,15 +227,15 @@ void main() {
         calls++;
         return response({
           'success': true,
-          'data': {'id_pemindahan': 'move-01'},
+          'data': {'id_pemindahan': '1'},
         }, status: 201);
       });
       final repo = NurseryRepository(api);
       for (final note in ['Rak A', '']) {
         await repo.transferSowing(
           idempotencyKey: testIdempotencyKey,
-          sowingId: 'sem-01',
-          tableId: 'meja-01',
+          sowingId: '1',
+          tableId: '1',
           transferDate: '2026-10-07',
           plantCount: 12,
           note: note,
@@ -228,8 +258,8 @@ void main() {
     await expectLater(
       NurseryRepository(api).transferSowing(
         idempotencyKey: testIdempotencyKey,
-        sowingId: 'sem-01',
-        tableId: 'meja-01',
+        sowingId: '1',
+        tableId: '1',
         transferDate: '2026-10-07',
         plantCount: 12,
       ),
@@ -262,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
       await submit(tester);
       expect(find.text('Pilih meja tujuan.'), findsOneWidget);
-      await chooseTable(tester, 'meja-01');
+      await chooseTable(tester, '1');
       expect(find.textContaining('Meja full'), findsNothing);
       expect(find.textContaining('Meja maintenance'), findsNothing);
       await tester.enterText(find.byType(TextFormField).first, '0');
@@ -281,7 +311,7 @@ void main() {
       );
       expect(
         find.text(
-          'Estimasi panen (+45 hari): ${DateFormat('yyyy-MM-dd').format(today.add(const Duration(days: 45)))}',
+          'Estimasi panen (45 HSS): ${DateFormat('yyyy-MM-dd').format(DateTime.parse(readySowing.sowingDate).add(const Duration(days: 45)))}',
         ),
         findsOneWidget,
       );
@@ -291,7 +321,7 @@ void main() {
   );
 
   testWidgets(
-    'date picker changes transfer date and harvest estimate sent to API',
+    'date picker changes transfer date while harvest estimate stays sowing plus45 days',
     (tester) async {
       String? sentDate;
       final api = apiFor((request) async {
@@ -305,14 +335,14 @@ void main() {
       });
       await pumpTransfer(tester, api);
       await tester.pumpAndSettle();
-      await chooseTable(tester, 'meja-01');
+      await chooseTable(tester, '1');
       await tester.tap(find.textContaining('Tanggal pemindahan:'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Switch to input'));
       await tester.pumpAndSettle();
       final nextDay = DateUtils.dateOnly(
         DateTime.now(),
-      ).add(const Duration(days: 1));
+      ).subtract(const Duration(days: 1));
       await tester.enterText(
         find.byType(TextField).last,
         DateFormat('MM/dd/yyyy').format(nextDay),
@@ -321,7 +351,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Estimasi panen (+45 hari): ${DateFormat('yyyy-MM-dd').format(nextDay.add(const Duration(days: 45)))}',
+          'Estimasi panen (45 HSS): ${DateFormat('yyyy-MM-dd').format(DateTime.parse(readySowing.sowingDate).add(const Duration(days: 45)))}',
         ),
         findsOneWidget,
       );
@@ -357,7 +387,7 @@ void main() {
     });
     await pumpTransfer(tester, api);
     await tester.pumpAndSettle();
-    await chooseTable(tester, 'meja-01');
+    await chooseTable(tester, '1');
     await tester.enterText(find.byType(TextFormField).first, '10');
     await submit(tester);
     await tester.pumpAndSettle();
@@ -413,13 +443,14 @@ void main() {
               api,
               initialState: const SessionState(
                 user: SessionUser(
-                  id: 'usr-01',
+                  id: '1',
                   name: 'Petani',
                   username: 'petani',
                   role: 'petani',
                   permissions: [
                     'penyemaian:read',
                     'penyemaian:write',
+                    'budidaya:read',
                     'budidaya:write',
                   ],
                 ),
@@ -443,7 +474,7 @@ void main() {
     await tester.ensureVisible(find.text('Pindahkan ke Meja'));
     await tester.tap(find.text('Pindahkan ke Meja'));
     await tester.pumpAndSettle();
-    await chooseTable(tester, 'meja-01');
+    await chooseTable(tester, '1');
     await tester.enterText(find.byType(TextFormField).first, '10');
     await tester.enterText(find.byType(TextFormField).last, 'Rak A');
     await submit(tester);
@@ -532,7 +563,7 @@ void main() {
       });
       await pumpTransfer(tester, api, onTransferred: () => saved++);
       await tester.pumpAndSettle();
-      await chooseTable(tester, 'meja-01');
+      await chooseTable(tester, '1');
       await tester.enterText(find.byType(TextFormField).first, '12');
       await submit(tester);
       await tester.tap(find.text('Menyimpan...'));
@@ -614,13 +645,14 @@ void main() {
                 api,
                 initialState: const SessionState(
                   user: SessionUser(
-                    id: 'usr-01',
+                    id: '1',
                     name: 'Petani',
                     username: 'petani',
                     role: 'petani',
                     permissions: [
                       'penyemaian:read',
                       'penyemaian:write',
+                      'budidaya:read',
                       'budidaya:write',
                     ],
                   ),
@@ -649,7 +681,7 @@ void main() {
       expect(find.byType(SeedlingTransferSheet), findsNothing);
       await tester.tap(find.text('Pindahkan ke Meja'));
       await tester.pumpAndSettle();
-      await chooseTable(tester, 'meja-01');
+      await chooseTable(tester, '1');
       await tester.enterText(find.byType(TextFormField).first, '12');
       await submit(tester);
       await tester.binding.handlePopRoute();
@@ -672,7 +704,7 @@ void main() {
   ) async {
     const notReady = SowingRecord(
       id: 'sem-02',
-      userId: 'usr-01',
+      userId: '1',
       sowingDate: '2026-10-01',
       seedCount: 100,
       status: 'aktif',
@@ -680,7 +712,7 @@ void main() {
     );
     const completedReady = SowingRecord(
       id: 'sem-03',
-      userId: 'usr-01',
+      userId: '1',
       sowingDate: '2026-09-01',
       seedCount: 100,
       status: 'selesai',
@@ -696,7 +728,7 @@ void main() {
                 api,
                 initialState: const SessionState(
                   user: SessionUser(
-                    id: 'usr-01',
+                    id: '1',
                     name: 'Petani',
                     username: 'petani',
                     role: 'petani',

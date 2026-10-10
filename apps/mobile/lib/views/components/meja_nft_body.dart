@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/table_record.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../pages/form_meja_nft_page.dart';
 import '../pages/info_meja_page.dart';
 import '../theme/app_theme.dart';
@@ -17,6 +18,11 @@ class MejaNftBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final permissions =
+        ref.watch(sessionProvider).user?.permissions ?? const <String>[];
+    if (!permissions.contains('budidaya:read')) {
+      return const Center(child: Text('Akses meja tanam tidak diizinkan.'));
+    }
     final state = ref.watch(connectedTableProvider);
     final notifier = ref.read(connectedTableProvider.notifier);
     final counts = state.counts;
@@ -84,10 +90,10 @@ class MejaNftBody extends ConsumerWidget {
                       state.error != null && state.records.isEmpty
                           ? 'Data meja tanam belum dapat dimuat.'
                           : state.records.isEmpty
-                              ? 'Belum ada meja tanam terdaftar.'
-                              : 'Meja tanam tidak ditemukan.',
+                          ? 'Belum ada meja tanam terdaftar.'
+                          : 'Meja tanam tidak ditemukan.',
                       style: AppTypography.body.copyWith(
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -103,7 +109,8 @@ class MejaNftBody extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => InfoMejaPage(tableRecord: item),
+                            builder: (context) =>
+                                InfoMejaPage(tableRecord: item),
                           ),
                         );
                       },
@@ -112,19 +119,21 @@ class MejaNftBody extends ConsumerWidget {
                   );
                 }),
               const SizedBox(height: AppSpacing.xs),
-              RowButton(
-                label: '+ Tambah Meja NFT Baru',
-                backgroundColor: AppColors.darkNavy,
-                textColor: AppColors.accentLime,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FormMejaNftPage(),
-                    ),
-                  );
-                },
-              ),
+              if (permissions.contains('budidaya:write'))
+                RowButton(
+                  height: MediaQuery.textScalerOf(context).scale(52),
+                  label: '+ Tambah Meja NFT Baru',
+                  backgroundColor: AppColors.darkNavy,
+                  textColor: AppColors.accentLime,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FormMejaNftPage(),
+                      ),
+                    );
+                  },
+                ),
               const SizedBox(height: AppSpacing.md),
             ],
           ),
@@ -144,8 +153,9 @@ class _ConnectedTableCardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
           children: [
             Text(
               item.displayName,
@@ -157,9 +167,7 @@ class _ConnectedTableCardContent extends StatelessWidget {
             ),
             CapsuleBadge(
               label: item.statusLabel,
-              textColor: isMaintenance
-                  ? AppColors.warningOrange
-                  : AppColors.primaryDarkTeal,
+              textColor: AppColors.textPrimary,
               backgroundColor: isMaintenance
                   ? AppColors.warningBg
                   : AppColors.accentMintSoft,
@@ -179,9 +187,9 @@ class _ConnectedTableCardContent extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Kapasitas: ${item.activePlants} / ${item.holeCount} Lubang Terisi (${item.occupancyPercentage}%)',
-            style: AppTypography.caption1.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: AppTypography.tabular(
+              AppTypography.caption1,
+            ).copyWith(color: AppColors.textSecondary),
           ),
           if (item.notes != null && item.notes!.isNotEmpty) ...[
             const SizedBox(height: 2),
@@ -189,7 +197,7 @@ class _ConnectedTableCardContent extends StatelessWidget {
               item.notes!,
               style: AppTypography.caption1.copyWith(
                 fontSize: 11,
-                color: AppColors.textTertiary,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -197,7 +205,7 @@ class _ConnectedTableCardContent extends StatelessWidget {
           Text(
             'Dalam Perawatan / Pemeliharaan',
             style: AppTypography.caption1.copyWith(
-              color: AppColors.warningOrange,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
