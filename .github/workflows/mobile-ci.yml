@@ -4,9 +4,17 @@ on:
     paths:
         - "apps/mobile/**"
 jobs:
-    test:
+  test:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v4
-        - uses: subosito/flutter-action@v2
-        - run: cd apps/mobile && flutter pub get && flutter test
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.0"
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - run: flutter analyze
+        working-directory: apps/mobile
+      - run: flutter test
+        working-directory: apps/mobile
