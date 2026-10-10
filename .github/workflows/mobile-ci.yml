@@ -1,8 +1,11 @@
 name: Mobile CI
 on:
-    push:
+  push:
     paths:
-        - "apps/mobile/**"
+      - "apps/mobile/**"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
 jobs:
   test:
     runs-on: ubuntu-latest
