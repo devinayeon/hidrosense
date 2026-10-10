@@ -1,3 +1,4 @@
+import { backfillHarvest } from './harvest-weights.js';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -69,6 +70,7 @@ export async function migrate(client, migrations, { direction = 'up', allowDataL
       // SQL is trusted, reviewed migration code; runtime values use bound parameters.
       // Do not put BEGIN/COMMIT or foreign_keys=OFF in migration files.
       await tx.executeMultiple(migration[direction]);
+      if (direction === 'up' && migration.id === '0011_harvest_weights') await backfillHarvest(tx);
       if (direction === 'up') {
         await tx.execute({ sql: 'INSERT INTO _schema_migrations (id, checksum) VALUES (?, ?)', args: [migration.id, migration.checksum] });
       } else {

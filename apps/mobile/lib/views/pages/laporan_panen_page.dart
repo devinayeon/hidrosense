@@ -1,21 +1,22 @@
-// lib/views/pages/laporan_panen_page.dart
 import 'package:flutter/material.dart';
-import '../../models/panen_model.dart';
 import '../components/header.dart';
 import '../components/laporan_panen_body.dart';
-import '../theme/app_theme.dart';
+import '../widgets/harvest_access.dart';
 
 class LaporanPanenPage extends StatelessWidget {
-  final PanenItem item;
-
-  const LaporanPanenPage({super.key, required this.item});
-
+  const LaporanPanenPage({super.key, required this.harvestId});
+  final String harvestId;
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const Header(titleText: 'Laporan Panen', showBackButton: true),
-      backgroundColor: AppColors.canvasWarm,
-      body: LaporanPanenBody(item: item),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: Header(
+      titleText: 'Laporan Panen',
+      showBackButton: true,
+      showUserIcon: false,
+      toolbarHeight:
+          56 + (MediaQuery.textScalerOf(context).scale(24) - 24) * 4.2,
+      titleMaxLines: 3,
+      useThemeColors: true,
+    ),
+    body: HarvestAccess(child: LaporanPanenBody(harvestId: harvestId)),
+  );
 }

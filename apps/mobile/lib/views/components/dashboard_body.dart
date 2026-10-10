@@ -252,18 +252,25 @@ class DashboardBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
-              _BusinessModuleCard(
-                title: 'Manajemen Panen',
-                subtitle: 'Pencatatan sortasi, panen baru & log produksi',
-                icon: Icons.agriculture_outlined,
-                iconBg: AppColors.warningBg,
-                iconColor: AppColors.warningOrange,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PanenPage()),
+              if (ref
+                      .watch(sessionProvider)
+                      .user
+                      ?.permissions
+                      .contains('panen:read') ??
+                  false) ...[
+                _BusinessModuleCard(
+                  title: 'Manajemen Panen',
+                  subtitle: 'Pencatatan sortasi, panen baru & log produksi',
+                  icon: Icons.agriculture_outlined,
+                  iconBg: AppColors.warningBg,
+                  iconColor: AppColors.warningOrange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PanenPage()),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               _BusinessModuleCard(
                 title: 'Kondisi & Cuaca Kebun',
                 subtitle: 'Kondisi mikroklimat kebun & debit nutrisi',

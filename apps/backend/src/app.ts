@@ -15,6 +15,7 @@ import { registerStock } from './features/stock/index.js';
 import { registerNursery } from './features/nursery/index.js';
 import { registerTables } from './features/tables/index.js';
 import { registerTransfers } from './features/transfers/index.js';
+import { registerHarvest } from './features/harvest/index.js';
 import { registerDamage } from './features/damage/index.js';
 
 interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
@@ -98,5 +99,6 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   registerTables(app, db, clock);
   registerTransfers(app, db, clock);
   registerDamage(app, db, clock);
+  registerHarvest(app, db, clock);
   return app;
 }

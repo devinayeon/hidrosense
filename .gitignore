@@ -1,6 +1,7 @@
 # Miscellaneous
 *.class
 *.lock
+!/apps/mobile/pubspec.lock
 *.log
 *.pyc
 *.swp

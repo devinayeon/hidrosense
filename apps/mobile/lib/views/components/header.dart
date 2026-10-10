@@ -11,6 +11,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   final bool largeTitle;
   final double? toolbarHeight;
   final int? titleMaxLines;
+  final bool useThemeColors;
 
   const Header({
     super.key,
@@ -21,6 +22,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     this.largeTitle = false,
     this.toolbarHeight,
     this.titleMaxLines,
+    this.useThemeColors = false,
   });
 
   @override
@@ -31,12 +33,14 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       toolbarHeight: preferredSize.height,
-      backgroundColor: AppColors.canvasWarm,
+      backgroundColor: useThemeColors
+          ? Theme.of(context).colorScheme.surface
+          : AppColors.canvasWarm,
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: showBackButton ? AppSpacing.sm : AppSpacing.md,
-      leadingWidth: showBackButton ? 56 : 0,
+      leadingWidth: showBackButton ? (useThemeColors ? 64 : 56) : 0,
       leading: showBackButton
           ? Padding(
               padding: const EdgeInsets.only(left: AppSpacing.md),
@@ -55,7 +59,9 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
             ? AppTypography.largeTitle
             : AppTypography.title3.copyWith(
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: useThemeColors
+                    ? Theme.of(context).colorScheme.onSurface
+                    : AppColors.textPrimary,
               ),
       ),
       actions: [
