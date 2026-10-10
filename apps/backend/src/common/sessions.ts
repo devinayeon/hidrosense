@@ -63,3 +63,4 @@ export async function createSession(db: Client, user: Row, now: number) {
   const { sessionId: _sessionId, ...identity } = principal;
   return { ...tokenResponse(tokens, accessExpiry, refreshExpiry, now), user: identity };
 }
+
