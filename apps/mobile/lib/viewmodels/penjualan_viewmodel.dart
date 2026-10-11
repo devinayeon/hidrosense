@@ -3,51 +3,60 @@ import '../models/penjualan_model.dart';
 
 enum PenjualanFilterCategory { all, lunas, belumLunas }
 
+const defaultPenjualanList = [
+  PenjualanItem(
+    id: '1',
+    pembeli: 'Supermarket Jaya Makmur',
+    tanggal: '12 Nov 2024',
+    kuantitas: '50 Kg Selada',
+    totalHarga: 1000000,
+    status: StatusPenjualan.lunas,
+  ),
+  PenjualanItem(
+    id: '2',
+    pembeli: 'Toko Sayur Segar Ibu Ani',
+    tanggal: '10 Nov 2024',
+    kuantitas: '25 Kg Selada',
+    totalHarga: 500000,
+    status: StatusPenjualan.belumLunas,
+  ),
+  PenjualanItem(
+    id: '3',
+    pembeli: 'Resto Green Salad',
+    tanggal: '08 Nov 2024',
+    kuantitas: '70 Kg Selada',
+    totalHarga: 1400000,
+    status: StatusPenjualan.lunas,
+  ),
+  PenjualanItem(
+    id: '4',
+    pembeli: 'Catering Healthy Meal',
+    tanggal: '05 Nov 2024',
+    kuantitas: '40 Kg Selada',
+    totalHarga: 800000,
+    status: StatusPenjualan.belumLunas,
+  ),
+];
+
 class PenjualanViewModel extends StateNotifier<List<PenjualanItem>> {
-  PenjualanViewModel() : super([]) {
-    fetchPenjualanData();
-  }
+  PenjualanViewModel([List<PenjualanItem>? initialData])
+      : super(initialData ?? defaultPenjualanList);
 
   Future<void> fetchPenjualanData() async {
     await Future.delayed(const Duration(milliseconds: 200));
-    state = const [
-      PenjualanItem(
-        id: '1',
-        pembeli: 'Supermarket Jaya Makmur',
-        tanggal: '12 Nov 2024',
-        kuantitas: '50 Kg Selada',
-        totalHarga: 1000000,
-        status: StatusPenjualan.lunas,
-      ),
-      PenjualanItem(
-        id: '2',
-        pembeli: 'Toko Sayur Segar Ibu Ani',
-        tanggal: '10 Nov 2024',
-        kuantitas: '25 Kg Selada',
-        totalHarga: 500000,
-        status: StatusPenjualan.belumLunas,
-      ),
-      PenjualanItem(
-        id: '3',
-        pembeli: 'Resto Green Salad',
-        tanggal: '08 Nov 2024',
-        kuantitas: '70 Kg Selada',
-        totalHarga: 1400000,
-        status: StatusPenjualan.lunas,
-      ),
-      PenjualanItem(
-        id: '4',
-        pembeli: 'Catering Healthy Meal',
-        tanggal: '05 Nov 2024',
-        kuantitas: '40 Kg Selada',
-        totalHarga: 800000,
-        status: StatusPenjualan.belumLunas,
-      ),
-    ];
+    if (!mounted) return;
+    state = defaultPenjualanList;
   }
 
   void addPenjualan(PenjualanItem item) {
     state = [item, ...state];
+  }
+
+  void updatePenjualan(PenjualanItem updatedItem) {
+    state = [
+      for (final item in state)
+        if (item.id == updatedItem.id) updatedItem else item,
+    ];
   }
 }
 

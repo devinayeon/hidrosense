@@ -122,22 +122,25 @@ class PenjualanBody extends ConsumerWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.xxs,
-      ),
-      title: Text(
-        title,
-        style: AppTypography.body.copyWith(
-          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xxs,
         ),
+        title: Text(
+          title,
+          style: AppTypography.body.copyWith(
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryMint)
+            : null,
+        onTap: onTap,
       ),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryMint)
-          : null,
-      onTap: onTap,
     );
   }
 
@@ -291,11 +294,18 @@ class PenjualanBody extends ConsumerWidget {
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (context, index) {
+                        final item = penjualanList[index];
                         return PenjualanCard(
-                          item: penjualanList[index],
+                          item: item,
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            // Action detail transaksi penjualan
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CatatPenjualanPage(itemToEdit: item),
+                              ),
+                            );
                           },
                         );
                       },

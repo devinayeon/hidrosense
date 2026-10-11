@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/penjualan_model.dart';
 import '../../viewmodels/catat_penjualan_viewmodel.dart';
+import '../../viewmodels/penjualan_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_dropdown_field.dart';
@@ -14,16 +15,24 @@ import '../widgets/row_button.dart';
 
 class CatatPenjualanBody extends ConsumerStatefulWidget {
   final bool isModal;
+  final PenjualanItem? itemToEdit;
 
-  const CatatPenjualanBody({super.key, this.isModal = false});
+  const CatatPenjualanBody({
+    super.key,
+    this.isModal = false,
+    this.itemToEdit,
+  });
 
   /// Static helper untuk menampilkan form dalam format Apple HIG Modal Bottom Sheet
-  static Future<bool?> show(BuildContext context) {
+  static Future<bool?> show(BuildContext context, {PenjualanItem? itemToEdit}) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CatatPenjualanBody(isModal: true),
+      builder: (context) => CatatPenjualanBody(
+        isModal: true,
+        itemToEdit: itemToEdit,
+      ),
     );
   }
 
@@ -38,21 +47,47 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
   late final TextEditingController _hargaController;
   late final TextEditingController _catatanController;
 
+  bool get isEdit => widget.itemToEdit != null;
+
   @override
   void initState() {
     super.initState();
-    _pembeliController = TextEditingController();
-    _beratController = TextEditingController();
-    _hargaController = TextEditingController();
-    _catatanController = TextEditingController();
+    final item = widget.itemToEdit;
+    _pembeliController = TextEditingController(text: item?.pembeli ?? '');
 
-    // Tanggal default (hari ini) sudah ada di state ViewModel,
-    // jadi tampilkan juga di field agar konsisten.
+    double initBerat = 0.0;
+    if (item != null) {
+      final match = RegExp(r'^([0-9.,]+)').firstMatch(item.kuantitas);
+      if (match != null) {
+        initBerat =
+            double.tryParse(match.group(1)!.replaceAll(',', '.')) ?? 0.0;
+      }
+    }
+    _beratController = TextEditingController(
+      text: initBerat > 0 ? formatAngka(initBerat) : '',
+    );
+
+    double initHargaPerKg = 0.0;
+    if (item != null && initBerat > 0) {
+      initHargaPerKg = (item.totalHarga / initBerat).roundToDouble();
+    }
+    _hargaController = TextEditingController(
+      text: initHargaPerKg > 0 ? initHargaPerKg.toInt().toString() : '',
+    );
+
+    _catatanController = TextEditingController(text: item?.catatan ?? '');
+
     final defaultTanggal =
         ref.read(catatPenjualanViewModelProvider).tanggal ?? DateTime.now();
     _tanggalController = TextEditingController(
-      text: formatTanggalIndo(defaultTanggal),
+      text: item?.tanggal ?? formatTanggalIndo(defaultTanggal),
     );
+
+    _pembeliController.addListener(() {
+      ref
+          .read(catatPenjualanViewModelProvider.notifier)
+          .setPembeli(_pembeliController.text);
+    });
 
     _beratController.addListener(() {
       // Terima "2,5" maupun "2.5"
@@ -67,6 +102,29 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
       final val = double.tryParse(digits) ?? 0.0;
       ref.read(catatPenjualanViewModelProvider.notifier).setHargaPerKg(val);
     });
+
+    if (item != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
+        formVm.setPembeli(item.pembeli);
+        if (initBerat > 0) formVm.setBerat(initBerat);
+        if (initHargaPerKg > 0) formVm.setHargaPerKg(initHargaPerKg);
+        formVm.setStatus(item.status);
+        if (item.catatan != null) formVm.setCatatan(item.catatan!);
+
+        final batchList = ref.read(availableBatchPanenProvider);
+        final matchedBatch = batchList.firstWhere(
+          (b) =>
+              b.id == item.batchPanenId ||
+              item.kuantitas.toLowerCase().contains(
+                    b.nama.split('-').last.trim().toLowerCase(),
+                  ),
+          orElse: () => batchList.first,
+        );
+        formVm.setBatch(matchedBatch);
+      });
+    }
   }
 
   @override
@@ -114,18 +172,62 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
         !permissions.contains('penjualan:write')) {
       return;
     }
+    final messenger = ScaffoldMessenger.of(context);
     final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
 
     // Sync data teks sebelum submit
     formVm.setPembeli(_pembeliController.text);
     formVm.setCatatan(_catatanController.text);
 
+    if (isEdit) {
+      if (!formVm.validateForm()) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              formVm.validationMessage() ?? 'Form belum lengkap.',
+            ),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+        return;
+      }
+      final formState = ref.read(catatPenjualanViewModelProvider);
+      final komoditasNama =
+          formState.selectedBatch?.nama.split('-').last.trim() ?? 'Selada';
+      final updatedItem = widget.itemToEdit!.copyWith(
+        pembeli: formState.pembeli.trim(),
+        tanggal: _tanggalController.text.trim().isEmpty
+            ? widget.itemToEdit!.tanggal
+            : _tanggalController.text.trim(),
+        kuantitas: '${formatAngka(formState.beratKg)} Kg $komoditasNama',
+        totalHarga: formState.totalEstimasi,
+        status: formState.status!,
+        catatan: formState.catatan,
+        batchPanenId: formState.selectedBatch?.id,
+      );
+      ref
+          .read(penjualanViewModelProvider.notifier)
+          .updatePenjualan(updatedItem);
+      HapticFeedback.mediumImpact();
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Penjualan berhasil diperbarui!'),
+          backgroundColor: AppColors.primaryMint,
+        ),
+      );
+      Navigator.pop(context, true);
+      return;
+    }
+
     final success = await formVm.submitPenjualan(ref);
     if (!mounted) return;
 
     if (success) {
       HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Penjualan berhasil dicatat!'),
           backgroundColor: AppColors.primaryMint,
@@ -133,7 +235,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
       );
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             formVm.validationMessage() ??
@@ -197,7 +300,7 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Catat Penjualan',
+                    isEdit ? 'Edit Penjualan' : 'Catat Penjualan',
                     style: AppTypography.title3.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
@@ -345,9 +448,11 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
             color: AppColors.canvasWarm,
             child: SafeArea(
               child: RowButton(
-                label: formState.isLoading
-                    ? 'Menyimpan...'
-                    : 'Simpan Penjualan',
+                label: isEdit
+                    ? 'Simpan Perubahan'
+                    : (formState.isLoading
+                        ? 'Menyimpan...'
+                        : 'Simpan Penjualan'),
                 backgroundColor: AppColors.primaryMint,
                 textColor: Colors.white,
                 borderRadius: AppRadius.pill,
