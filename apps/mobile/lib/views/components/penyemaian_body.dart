@@ -25,20 +25,32 @@ class PenyemaianBody extends ConsumerWidget {
     final refresh = ref.read(connectedNurseryProvider.notifier).refresh;
     final items = state.filteredRecords;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
+    // Inset dari Scaffold: top = status bar + header, bottom = floating navbar.
+    final insets = MediaQuery.paddingOf(context);
+    final buttonHeight = 52 * MediaQuery.textScalerOf(context).scale(1);
+    // Ruang untuk tombol "Mulai Penyemaian Baru" yang melayang di atas navbar
+    final actionSpace = canWrite
+        ? buttonHeight + AppSpacing.md + AppSpacing.sm
+        : 0.0;
+
+    return ColoredBox(
       color: AppColors.canvasWarm,
-      child: Column(
+      child: Stack(
         children: [
-          Expanded(
+          Positioned.fill(
             child: RefreshIndicator(
+              edgeOffset: insets.top,
               onRefresh: refresh,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  insets.top + AppSpacing.md,
+                  AppSpacing.md,
+                  insets.bottom + actionSpace + AppSpacing.md,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -205,33 +217,44 @@ class PenyemaianBody extends ConsumerWidget {
             ),
           ),
 
-          // Sticky Bottom Action Container (Apple HIG 52pt pill button)
+          // Tombol aksi melayang di atas navbar. Latar hanya fade tipis
+          // (bukan kotak solid) supaya konten tetap tembus di belakangnya.
           if (canWrite)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: const BoxDecoration(
-                color: AppColors.canvasWarm,
-                border: Border(
-                  top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: insets.bottom,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.canvasWarm.withValues(alpha: 0),
+                      AppColors.canvasWarm.withValues(alpha: 0.92),
+                    ],
+                  ),
                 ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: RowButton(
-                  label: '+ Mulai Penyemaian Baru',
-                  borderRadius: AppRadius.pill,
-                  height: 52 * MediaQuery.textScalerOf(context).scale(1),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SeedingFormPage(),
-                      ),
-                    );
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: RowButton(
+                    label: '+ Mulai Penyemaian Baru',
+                    borderRadius: AppRadius.pill,
+                    height: buttonHeight,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SeedingFormPage(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../components/inventaris_body.dart';
 import '../components/penyemaian_body.dart';
@@ -19,6 +21,7 @@ class MainPage extends ConsumerStatefulWidget {
 
 class _MainPageState extends ConsumerState<MainPage> {
   late int _selectedIndex;
+  bool _isScrolled = false;
 
   @override
   void initState() {
@@ -26,7 +29,6 @@ class _MainPageState extends ConsumerState<MainPage> {
     _selectedIndex = widget.initialIndex;
   }
 
-  // Mengembalikan judul header berdasarkan index aktif
   String get _headerTitle {
     switch (_selectedIndex) {
       case 1:
@@ -44,7 +46,20 @@ class _MainPageState extends ConsumerState<MainPage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _isScrolled = false;
     });
+  }
+
+  bool _onScrollNotification(ScrollUpdateNotification notification) {
+    // Hanya scroll vertikal utama; abaikan list horizontal (chip, dll.)
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    final scrolled = notification.metrics.pixels > 10.0;
+    if (scrolled != _isScrolled) {
+      setState(() => _isScrolled = scrolled);
+    }
+    return false;
   }
 
   @override
@@ -56,20 +71,50 @@ class _MainPageState extends ConsumerState<MainPage> {
             ?.permissions
             .contains('penjualan:read') ??
         false;
+
+    final isInventoryLoading = ref.watch(
+      connectedInventoryProvider.select((s) => s.loading),
+    );
+
     final pages = [
       DashboardBody(onInventoryTap: () => _onItemTapped(1)),
       const InventarisBody(),
       const PenyemaianBody(),
       if (canReadSales) const PenjualanBody(),
     ];
+
     if (_selectedIndex < 0 || _selectedIndex >= pages.length) {
       _selectedIndex = 0;
     }
+
     return Scaffold(
-      appBar: _selectedIndex == 1
-          ? const InventoryHeader()
-          : Header(titleText: _headerTitle, largeTitle: _selectedIndex == 0),
-      body: pages[_selectedIndex],
+      // Body SELALU berada di belakang header & navbar supaya konten tembus
+      // di belakang kaca. Tiap halaman memberi padding atas/bawah sendiri
+      // DI DALAM scroll view (MediaQuery.paddingOf), bukan lewat SafeArea.
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: Header(
+        titleText: _headerTitle,
+        largeTitle: _selectedIndex == 0,
+        isScrolled: _isScrolled,
+        capsuleOnScroll: true, // Hanya jadi capsule saat _isScrolled true
+        actions: _selectedIndex == 1
+            ? [
+                IconButton(
+                  tooltip: 'Perbarui inventaris',
+                  onPressed: isInventoryLoading
+                      ? null
+                      : ref.read(connectedInventoryProvider.notifier).refresh,
+                  icon: const Icon(CupertinoIcons.arrow_clockwise, size: 22),
+                ),
+                const SizedBox(width: 4),
+              ]
+            : null,
+      ),
+      body: NotificationListener<ScrollUpdateNotification>(
+        onNotification: _onScrollNotification,
+        child: pages[_selectedIndex],
+      ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

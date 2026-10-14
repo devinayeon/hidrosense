@@ -9,6 +9,7 @@ import 'package:hidrosense_mobile/data/repositories/inventory_repository.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
 import 'package:hidrosense_mobile/data/services/inventory_cache.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_inventory_viewmodel.dart';
+import 'package:hidrosense_mobile/views/components/header.dart';
 import 'package:hidrosense_mobile/views/components/inventaris_body.dart';
 import 'package:hidrosense_mobile/views/pages/add_form_inventaris_page.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
@@ -85,7 +86,7 @@ Future<TestInventory> pumpInventory(
           ).copyWith(disableAnimations: reduceMotion),
           child: child!,
         ),
-        home: const Scaffold(appBar: InventoryHeader(), body: InventarisBody()),
+        home: const Scaffold(appBar: Header(), body: InventarisBody()),
       ),
     ),
   );

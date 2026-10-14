@@ -137,7 +137,10 @@ class PenjualanBody extends ConsumerWidget {
           ),
         ),
         trailing: isSelected
-            ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryMint)
+            ? const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primaryMint,
+              )
             : null,
         onTap: onTap,
       ),
@@ -164,118 +167,140 @@ class PenjualanBody extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: AppColors.canvasWarm,
-      child: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Top Card Total Pendapatan Bulan Ini Apple HIG Squircle
-                  RowInfoCardMd(
-                    backgroundColor: AppColors.primaryMint,
-                    borderColor: AppColors.primaryMint,
-                    borderRadius: AppRadius.modal,
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Total Pendapatan Bulan Ini',
-                          style: AppTypography.subheadline.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          currencyFormatter.format(totalPendapatan),
-                          style: AppTypography.title1.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Dari total $allCount transaksi penjualan terlaksana',
-                          style: AppTypography.caption1.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+    final insets = MediaQuery.paddingOf(context);
+    const buttonHeight = 52.0;
+    const actionSpace = buttonHeight + AppSpacing.md + AppSpacing.sm;
 
-                  // 2. Baris Search & Filter Button
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomSearchBar(
-                          placeholder: 'Cari pembeli...',
-                          onChanged: (val) {
-                            ref
-                                    .read(penjualanSearchQueryProvider.notifier)
-                                    .state =
-                                val;
-                          },
+    return ColoredBox(
+      color: AppColors.canvasWarm,
+      child: Stack(
+        children: [
+          // CustomScrollView menggantikan SingleChildScrollView + ListView
+          Positioned.fill(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Padding atas untuk mengakomodasi header melayang
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    top: insets.top + AppSpacing.md,
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // 1. Top Card Total Pendapatan
+                      RowInfoCardMd(
+                        backgroundColor: AppColors.primaryMint,
+                        borderColor: AppColors.primaryMint,
+                        borderRadius: AppRadius.modal,
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Total Pendapatan Bulan Ini',
+                              style: AppTypography.subheadline.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              currencyFormatter.format(totalPendapatan),
+                              style: AppTypography.title1.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'Dari total $allCount transaksi penjualan terlaksana',
+                              style: AppTypography.caption1.copyWith(
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
-                      InkWell(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          _showFilterBottomSheet(context, ref);
-                        },
-                        borderRadius: BorderRadius.circular(AppRadius.card),
-                        child: Container(
-                          height: 44,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondarySurface,
-                            borderRadius: BorderRadius.circular(AppRadius.card),
-                            border: Border.all(color: AppColors.borderLight),
-                          ),
-                          child: Center(
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.filter_list_rounded,
-                                  size: 16,
-                                  color: AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: AppSpacing.xxs),
-                                Text(
-                                  'Filter',
-                                  style: AppTypography.caption1.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
+                      const SizedBox(height: AppSpacing.md),
+
+                      // 2. Baris Search & Filter Button
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomSearchBar(
+                              placeholder: 'Cari pembeli...',
+                              onChanged: (val) {
+                                ref
+                                        .read(
+                                          penjualanSearchQueryProvider.notifier,
+                                        )
+                                        .state =
+                                    val;
+                              },
                             ),
                           ),
-                        ),
+                          const SizedBox(width: AppSpacing.xs),
+                          InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _showFilterBottomSheet(context, ref);
+                            },
+                            borderRadius: BorderRadius.circular(AppRadius.card),
+                            child: Container(
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondarySurface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.card,
+                                ),
+                                border: Border.all(
+                                  color: AppColors.borderLight,
+                                ),
+                              ),
+                              child: Center(
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.filter_list_rounded,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: AppSpacing.xxs),
+                                    Text(
+                                      'Filter',
+                                      style: AppTypography.caption1.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                      const SizedBox(height: AppSpacing.md),
+                    ]),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                ),
 
-                  // 3. Daftar Card Penjualan
-                  if (penjualanList.isEmpty)
-                    Padding(
+                // 3. Daftar Card Penjualan menggunakan SliverList yang asli (Lazy Loading + Tanpa Bug Jarak)
+                if (penjualanList.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.xxxl,
+                        horizontal: AppSpacing.md,
                       ),
                       child: Center(
                         child: Text(
@@ -285,11 +310,18 @@ class PenjualanBody extends ConsumerWidget {
                           ),
                         ),
                       ),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      // Padding bawah agar list tidak tertutup tombol melayang
+                      insets.bottom + actionSpace + AppSpacing.md,
+                    ),
+                    sliver: SliverList.separated(
                       itemCount: penjualanList.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: AppSpacing.sm),
@@ -310,34 +342,50 @@ class PenjualanBody extends ConsumerWidget {
                         );
                       },
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
 
-          // 4. Bottom Action Button: + Catat Penjualan Baru (Apple HIG 52pt pill button)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            color: AppColors.canvasWarm,
-            child: SafeArea(
-              child: RowButton(
-                label: '+ Catat Penjualan Baru',
-                backgroundColor: AppColors.darkNavy,
-                textColor: AppColors.accentLime,
-                borderRadius: AppRadius.pill,
-                height: 52,
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CatatPenjualanPage(),
-                    ),
-                  );
-                },
+          // 4. Tombol aksi melayang di atas navbar
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: insets.bottom,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.canvasWarm.withValues(alpha: 0),
+                    AppColors.canvasWarm.withValues(alpha: 0.92),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: RowButton(
+                  label: '+ Catat Penjualan Baru',
+                  backgroundColor: AppColors.darkNavy,
+                  textColor: AppColors.accentLime,
+                  borderRadius: AppRadius.pill,
+                  height: buttonHeight,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CatatPenjualanPage(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
