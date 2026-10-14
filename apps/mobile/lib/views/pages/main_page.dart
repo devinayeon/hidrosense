@@ -1,6 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
+// Sesuaikan import provider inventaris kamu di sini (misal connectedInventoryProvider)
+// import '../../viewmodels/inventory_viewmodel.dart';
 import '../components/inventaris_body.dart';
 import '../components/penyemaian_body.dart';
 import '../components/penjualan_body.dart';
@@ -26,7 +30,6 @@ class _MainPageState extends ConsumerState<MainPage> {
     _selectedIndex = widget.initialIndex;
   }
 
-  // Mengembalikan judul header berdasarkan index aktif
   String get _headerTitle {
     switch (_selectedIndex) {
       case 1:
@@ -56,19 +59,41 @@ class _MainPageState extends ConsumerState<MainPage> {
             ?.permissions
             .contains('penjualan:read') ??
         false;
+
+    // Mengecek status loading dari provider inventaris secara opsional
+    final isInventoryLoading = ref.watch(
+      connectedInventoryProvider.select((s) => s.loading),
+    );
+
     final pages = [
       DashboardBody(onInventoryTap: () => _onItemTapped(1)),
       const InventarisBody(),
       const PenyemaianBody(),
       if (canReadSales) const PenjualanBody(),
     ];
+
     if (_selectedIndex < 0 || _selectedIndex >= pages.length) {
       _selectedIndex = 0;
     }
+
     return Scaffold(
-      appBar: _selectedIndex == 1
-          ? const InventoryHeader()
-          : Header(titleText: _headerTitle, largeTitle: _selectedIndex == 0),
+      appBar: Header(
+        titleText: _headerTitle,
+        largeTitle: _selectedIndex == 0,
+        // Tombol perbarui inventaris dijadikan opsional (hanya muncul saat di tab Inventaris / index 1)
+        actions: _selectedIndex == 1
+            ? [
+                IconButton(
+                  tooltip: 'Perbarui inventaris',
+                  onPressed: isInventoryLoading
+                      ? null
+                      : ref.read(connectedInventoryProvider.notifier).refresh,
+                  icon: const Icon(CupertinoIcons.arrow_clockwise, size: 22),
+                ),
+                const SizedBox(width: 4),
+              ]
+            : null,
+      ),
       body: pages[_selectedIndex],
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,

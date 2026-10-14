@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../pages/account_page.dart';
 import '../widgets/custom_back_button.dart';
 import '../theme/app_theme.dart';
+import '../widgets/inventory_illustration.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
   final String titleText;
@@ -12,6 +13,8 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   final double? toolbarHeight;
   final int? titleMaxLines;
   final bool useThemeColors;
+  final List<Widget>?
+  actions; // <- Ditambahkan agar bisa terima tombol opsional (misal: refresh)
 
   const Header({
     super.key,
@@ -23,6 +26,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
     this.toolbarHeight,
     this.titleMaxLines,
     this.useThemeColors = false,
+    this.actions,
   });
 
   @override
@@ -65,6 +69,10 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               ),
       ),
       actions: [
+        // Menampilkan tombol opsional tambahan jika ada (misal tombol refresh inventaris)
+        if (actions != null) ...actions!,
+
+        // Tombol Avatar User standar
         if (showUserIcon)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -117,10 +125,9 @@ class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
               shape: BoxShape.circle,
               boxShadow: AppShadows.subtle,
             ),
-            child: const Icon(
-              Icons.person_outline,
-              color: AppColors.darkNavy,
-              size: 22,
+            child: const InventoryIllustration(
+              asset: InventoryIllustration.avatar,
+              size: 34,
             ),
           ),
         ),

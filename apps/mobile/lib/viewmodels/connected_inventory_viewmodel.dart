@@ -41,6 +41,17 @@ class ConnectedInventoryState {
   final String? saveError;
   final bool canFinishWithoutStock;
 
+  /// Records yang aktif (tidak diarsipkan).
+  List<InventoryRecord> get activeRecords =>
+      records.where((item) => item.active).toList();
+
+  /// Daftar kategori unik dari records aktif, sudah diurutkan.
+  List<String> get activeCategories =>
+      (activeRecords.map((item) => item.category).toSet().toList()..sort());
+
+  /// True hanya saat pertama kali memuat dan belum ada data sama sekali.
+  bool get isInitialLoading => loading && activeRecords.isEmpty;
+
   ConnectedInventoryState withSave({
     required bool saving,
     InventoryDraft? draft,
