@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
-// Sesuaikan import provider inventaris kamu di sini (misal connectedInventoryProvider)
-// import '../../viewmodels/inventory_viewmodel.dart';
 import '../components/inventaris_body.dart';
 import '../components/penyemaian_body.dart';
 import '../components/penjualan_body.dart';
@@ -23,6 +21,7 @@ class MainPage extends ConsumerStatefulWidget {
 
 class _MainPageState extends ConsumerState<MainPage> {
   late int _selectedIndex;
+  bool _isScrolled = false;
 
   @override
   void initState() {
@@ -47,7 +46,20 @@ class _MainPageState extends ConsumerState<MainPage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _isScrolled = false;
     });
+  }
+
+  bool _onScrollNotification(ScrollUpdateNotification notification) {
+    // Hanya scroll vertikal utama; abaikan list horizontal (chip, dll.)
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    final scrolled = notification.metrics.pixels > 10.0;
+    if (scrolled != _isScrolled) {
+      setState(() => _isScrolled = scrolled);
+    }
+    return false;
   }
 
   @override
@@ -60,7 +72,6 @@ class _MainPageState extends ConsumerState<MainPage> {
             .contains('penjualan:read') ??
         false;
 
-    // Mengecek status loading dari provider inventaris secara opsional
     final isInventoryLoading = ref.watch(
       connectedInventoryProvider.select((s) => s.loading),
     );
@@ -77,10 +88,16 @@ class _MainPageState extends ConsumerState<MainPage> {
     }
 
     return Scaffold(
+      // Body SELALU berada di belakang header & navbar supaya konten tembus
+      // di belakang kaca. Tiap halaman memberi padding atas/bawah sendiri
+      // DI DALAM scroll view (MediaQuery.paddingOf), bukan lewat SafeArea.
+      extendBodyBehindAppBar: true,
+      extendBody: true,
       appBar: Header(
         titleText: _headerTitle,
         largeTitle: _selectedIndex == 0,
-        // Tombol perbarui inventaris dijadikan opsional (hanya muncul saat di tab Inventaris / index 1)
+        isScrolled: _isScrolled,
+        capsuleOnScroll: true, // Hanya jadi capsule saat _isScrolled true
         actions: _selectedIndex == 1
             ? [
                 IconButton(
@@ -94,7 +111,10 @@ class _MainPageState extends ConsumerState<MainPage> {
               ]
             : null,
       ),
-      body: pages[_selectedIndex],
+      body: NotificationListener<ScrollUpdateNotification>(
+        onNotification: _onScrollNotification,
+        child: pages[_selectedIndex],
+      ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

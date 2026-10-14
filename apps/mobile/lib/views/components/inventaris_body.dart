@@ -134,8 +134,7 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
   @override
   Widget build(BuildContext context) {
     ref.listen(connectedInventoryProvider, (_, next) {
-      if (_category != null &&
-          !next.activeCategories.contains(_category)) {
+      if (_category != null && !next.activeCategories.contains(_category)) {
         setState(() => _category = null);
       }
     });
@@ -156,13 +155,20 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
         .toList();
     final initialLoading = state.isInitialLoading;
 
+    // Inset dari Scaffold: top = status bar + header, bottom = floating navbar.
+    final insets = MediaQuery.paddingOf(context);
+    final showAddButton = View.of(context).viewInsets.bottom == 0;
+    // Tinggi tombol (52) + padding atas/bawah (12 + 12)
+    final addButtonSpace = showAddButton ? 52.0 + 24.0 : 0.0;
+
     return ColoredBox(
       color: colors.canvas,
-      child: Column(
+      child: Stack(
         children: [
-          Expanded(
+          Positioned.fill(
             child: RefreshIndicator(
               color: colors.teal,
+              edgeOffset: insets.top,
               onRefresh: refresh,
               child: CustomScrollView(
                 keyboardDismissBehavior:
@@ -170,7 +176,7 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    padding: EdgeInsets.fromLTRB(20, insets.top + 12, 20, 0),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +270,7 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                       sliver: SliverList.builder(
                         itemCount: filtered.length,
                         itemBuilder: (_, index) {
@@ -280,13 +286,24 @@ class _InventarisBodyState extends ConsumerState<InventarisBody> {
                         },
                       ),
                     ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                  // Ruang bawah: navbar + tombol tambah barang
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: insets.bottom + addButtonSpace + 12,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          if (View.of(context).viewInsets.bottom == 0)
-            _InventoryAddButton(onTap: _addItem, colors: colors),
+          // Tombol melayang di atas navbar, tanpa kotak solid.
+          if (showAddButton)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: insets.bottom,
+              child: _InventoryAddButton(onTap: _addItem, colors: colors),
+            ),
         ],
       ),
     );
@@ -341,9 +358,7 @@ class _InventorySearchBar extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         labelText: 'Cari barang',
-        labelStyle: AppTypography.subheadline.copyWith(
-          color: colors.secondary,
-        ),
+        labelStyle: AppTypography.subheadline.copyWith(color: colors.secondary),
         floatingLabelStyle: TextStyle(color: colors.teal),
         fillColor: colors.surface,
         prefixIcon: Icon(
@@ -414,9 +429,7 @@ class _InventoryCategoryChips extends StatelessWidget {
                 selectedColor: AppColors.accentLime,
                 backgroundColor: colors.surface,
                 labelStyle: AppTypography.subheadline.copyWith(
-                  color: selected == category
-                      ? AppColors.darkNavy
-                      : colors.ink,
+                  color: selected == category ? AppColors.darkNavy : colors.ink,
                   fontWeight: FontWeight.w600,
                 ),
                 side: BorderSide(
@@ -501,9 +514,16 @@ class _InventoryAddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      // Fade tipis, bukan kotak solid, supaya konten tembus di belakangnya.
       decoration: BoxDecoration(
-        color: colors.canvas,
-        border: Border(top: BorderSide(color: colors.border)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colors.canvas.withValues(alpha: 0),
+            colors.canvas.withValues(alpha: 0.92),
+          ],
+        ),
       ),
       child: SizedBox(
         width: double.infinity,

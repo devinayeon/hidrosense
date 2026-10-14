@@ -91,6 +91,34 @@ class AppShadows {
   ];
 }
 
+/// Token material Liquid Glass — blur sigma, tint, specular, dan border highlight.
+/// Digunakan oleh [GlassContainer] dan komponen frosted glass lainnya.
+class AppGlass {
+  // Blur — lebih tinggi agar efek kaca nyata meski tint lebih transparan.
+  static const double blurSigma = 22.0;
+  static const double navBlurSigma = 28.0;
+  static const double headerBlurSigma = 24.0;
+
+  // Light mode
+  /// Tint kartu glass (light mode) — 60% opacity agar blur tembus pandang.
+  static const Color tintLight = Color(0x99FFFFFF);
+
+  /// Tint navbar & header capsule (light mode) — warm white, 60% opacity.
+  static const Color navTintLight = Color(0x99FAFAF7);
+
+  /// Specular highlight gradasi atas-kiri (light mode).
+  static const Color specularLight = Color(0x44FFFFFF);
+
+  /// Border tipis tepi kaca (light mode).
+  static const Color borderLight = Color(0x38FFFFFF);
+
+  // Dark mode
+  static const Color tintDark = Color(0xAA1E2D3D);
+  static const Color navTintDark = Color(0xB5172231);
+  static const Color specularDark = Color(0x20FFFFFF);
+  static const Color borderDark = Color(0x25FFFFFF);
+}
+
 /// Skala Tipografi Apple HIG (Type Ramp) berbasis font Inter.
 class AppTypography {
   static const String fontFamily = 'Inter';
