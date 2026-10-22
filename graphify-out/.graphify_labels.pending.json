@@ -1,10 +1,16 @@
 {
+<<<<<<< HEAD
   "8": "growth_backend_flow_test.dart",
+=======
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "10": "app_theme.dart",
   "11": "StatelessWidget",
   "12": "form_meja_nft_body.dart",
   "21": "form_catat_kerusakan_body.dart",
+<<<<<<< HEAD
   "23": "prd-stock-ledger.md",
+=======
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "25": "Runner-Bridging-Header.h",
   "33": "inventory_redesign_test.dart",
   "37": "package:flutter/material.dart",
@@ -12,11 +18,19 @@
   "50": "seedling_transfer_sheet.dart",
   "63": "package:flutter_test/flutter_test.dart",
   "65": "growth_backend_flow_test.dart",
+<<<<<<< HEAD
   "70": "seeding_form_page.dart",
   "71": "harvest-remediation-2026-10-10.md",
   "72": "app_surface_colors.dart",
   "73": "dashboard_login_test.dart",
   "76": "connectedInventoryProvider",
+=======
+  "70": "info_seeding_page.dart",
+  "71": "harvest-remediation-2026-10-10.md",
+  "72": "package:flutter_riverpod/flutter_riverpod.dart",
+  "73": "dashboard_login_test.dart",
+  "76": "seeding_form_page.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "77": "Rules",
   "78": "inventaris_body.dart",
   "81": "employee_viewmodel.dart",
@@ -29,11 +43,19 @@
   "97": "harvest_fixture.dart",
   "108": "panen_form_body.dart",
   "111": "damage_fixture.dart",
+<<<<<<< HEAD
   "117": "nursery_repository.dart",
   "124": "employee_form_sheet.dart",
   "128": "connected_nursery_viewmodel.dart",
   "143": "2. Daftar Cerita Pengguna (User Stories B000–B009)",
   "145": "login_header_hero.dart",
+=======
+  "117": "String? get",
+  "124": "employee_form_sheet.dart",
+  "128": "connected_nursery_viewmodel.dart",
+  "143": "2. Daftar Cerita Pengguna (User Stories B000–B009)",
+  "145": "custom_search_bar.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "147": "employee_model.dart",
   "148": "3. Perbaikan yang Telah Diterapkan",
   "150": "employee_list_page.dart",
@@ -46,6 +68,7 @@
   "161": "connected_inventory_page_test.dart",
   "162": "Modul 02: Pedoman Interaksi & Pengalaman Pengguna (UX & Interaction Guidelines)",
   "165": "Diagnosis inventaris: request berulang dan simpan lambat",
+<<<<<<< HEAD
   "171": "string",
   "173": "Panduan Menjalankan Backend HidroSense",
   "176": "inventory_draft.dart",
@@ -55,19 +78,33 @@
   "193": "Panduan Penggunaan Skill `ui-ux-pro-max`",
   "198": "connected_table_viewmodel.dart",
   "199": "sowing_draft.dart",
+=======
+  "171": "inventory_colors.dart",
+  "173": "Panduan Menjalankan Backend HidroSense",
+  "176": "inventory_draft.dart",
+  "181": "transfer_note_dialog.dart",
+  "185": "penjualan_body.dart",
+  "193": "Panduan Penggunaan Skill `ui-ux-pro-max`",
+  "198": "connected_table_viewmodel.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "202": "../theme/app_theme.dart",
   "204": "package:hidrosense_mobile/data/services/api_client.dart",
   "206": "login_page.dart",
   "211": "dart:convert",
   "215": "ab_testing_service.dart",
+<<<<<<< HEAD
   "218": "custom_input_field.dart",
   "220": "B001 dan B002: fondasi API dan autentikasi",
+=======
+  "220": "rencana-backend.md",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "225": "damage_record.dart",
   "226": "remediation_capture.dart",
   "227": "app_gate.dart",
   "228": "2. Alur Pengguna Inti (Core User Flows)",
   "230": "call_claude",
   "231": "harvest_record.dart",
+<<<<<<< HEAD
   "232": "ConsumerState",
   "233": "connected_inventory_viewmodel.dart",
   "234": "dashboard_body.dart",
@@ -81,10 +118,22 @@
   "250": "B004 — Fondasi sinkronisasi server",
   "254": "Audit konteks backend dan mobile B000–B008",
   "275": "harvest_repository.dart",
+=======
+  "232": "../../viewmodels/session_viewmodel.dart",
+  "233": "connected_inventory_viewmodel.dart",
+  "234": "dashboard_body.dart",
+  "236": "sessionProvider",
+  "239": "harvest-ui-server.js",
+  "246": "2. Rencana Eksekusi Bertahap (Phased Roadmap)",
+  "247": "glass_container.dart",
+  "250": "B004 — Fondasi sinkronisasi server",
+  "254": "Audit konteks backend dan mobile B000–B008",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "278": "Penyemaian Bibit Petani: review dan remediasi",
   "279": "business_date.dart",
   "280": "fluid_capacity_meter.dart",
   "284": "Point",
+<<<<<<< HEAD
   "287": "MaterialPageRoute",
   "288": "penjualan_viewmodel.dart",
   "292": "3. Skema Data & Kontrak API",
@@ -92,6 +141,12 @@
   "299": "base_col_card.dart",
   "309": "panen_viewmodel.dart",
   "311": "String? get",
+=======
+  "292": "3. Skema Data & Kontrak API",
+  "298": "API inventaris B005",
+  "309": "panen_viewmodel.dart",
+  "311": "growth-ui-server.js",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "312": "uuid.dart",
   "313": "B005 — Master inventaris",
   "314": "Implementasi Backend B009 — Pemindahan Bibit ke Meja Tanam",
@@ -101,6 +156,7 @@
   "318": "Spesifikasi Teknis Database Seeder HidroSense",
   "319": "API akun pegawai dan profil — B003",
   "320": "Laporan Peninjauan Status Fitur HidroSense (B000 – B017+)",
+<<<<<<< HEAD
   "321": "Path",
   "322": "custom_bottom_navigation_bar.dart",
   "323": "_PenjualanBodyState",
@@ -117,4 +173,7 @@
   "334": "zod",
   "335": "Size",
   "336": "ApiException"
+=======
+  "321": "Path"
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
 }
