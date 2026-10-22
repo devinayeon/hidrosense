@@ -265,8 +265,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
       );
       await _wait(
         tester,
-        () =>
-            find.text('Belum ada meja tanam terdaftar.').evaluate().isNotEmpty,
+        () => find.text('Belum ada meja tanam.').evaluate().isNotEmpty,
       );
       await _tap(tester, find.text('+ Tambah Meja NFT Baru'));
       final tableFields = find.descendant(
