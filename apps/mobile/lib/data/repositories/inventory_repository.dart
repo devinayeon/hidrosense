@@ -15,20 +15,8 @@ class InventoryRepository {
   Future<InventorySnapshot?> cached() async =>
       (await _cache).read(serverOrigin: _api.serverOrigin, userId: userId);
 
-  Future<List<JenisInventarisRecord>> fetchCategories() async {
-    final response = await _api.get(
-      'jenis-inventaris',
-      query: {'limit': '100', 'status_aktif': '1'},
-    );
-    final data = response['data'];
-    if (data is! List) throw const FormatException('Kategori tidak valid.');
-    return data
-        .map(
-          (json) =>
-              JenisInventarisRecord.fromJson(json as Map<String, dynamic>),
-        )
-        .toList();
-  }
+  Future<List<JenisInventarisRecord>> fetchCategories() =>
+      fetchInventoryCategories(_api);
 
   Future<InventoryRecord> createItem({
     required String categoryId,
@@ -191,4 +179,20 @@ class InventoryRepository {
       fetchedAt: fetchedAt,
     );
   }
+}
+
+Future<List<JenisInventarisRecord>> fetchInventoryCategories(
+  ApiClient api,
+) async {
+  final response = await api.get(
+    'jenis-inventaris',
+    query: {'limit': '100', 'status_aktif': '1'},
+  );
+  final data = response['data'];
+  if (data is! List) throw const FormatException('Kategori tidak valid.');
+  return data
+      .map(
+        (json) => JenisInventarisRecord.fromJson(json as Map<String, dynamic>),
+      )
+      .toList();
 }
