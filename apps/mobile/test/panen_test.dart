@@ -167,8 +167,24 @@ void main() {
       await pump(tester, const PanenPage(), repo, vm: vm);
       expect(find.text('Mendatang (1)'), findsOneWidget);
       expect(find.text('Selesai (1)'), findsOneWidget);
-      expect(find.text('Panen #1'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Batch #1'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Batch #1'), findsOneWidget);
       expect(find.textContaining('Estimasi 2026-10-10'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Panen #1'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Panen #1'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Batch #1'),
+        -250,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Batch #1'));
       await tester.pumpAndSettle();
       expect(find.text('Tambah Hasil Panen'), findsOneWidget);

@@ -1,17 +1,17 @@
 # Graph Report - hidrosense  (2026-10-22)
 
 ## Corpus Check
-- 617 files · ~657,945 words
+- 617 files · ~658,922 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 56 file(s) not represented in the graph (top: (none) 10, .xcconfig 8, .xml 7)
 
 ## Summary
-- 5607 nodes · 8718 edges · 330 communities (287 shown, 43 thin omitted)
+- 5622 nodes · 8759 edges · 331 communities (288 shown, 43 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 67 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `42e1db97`
+- Built from commit: `26368508`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,7 +24,7 @@
 - my_application.cc
 - utils.cpp
 - .codex/skills/caveman-compress/scripts/cli.py
-- growth_backend_flow_test.dart
+- dart:async
 - migrate.js
 - app_theme.dart
 - ../theme/app_theme.dart
@@ -37,9 +37,10 @@
 - .codex/skills/caveman-explore/package.json
 - .codex/skills/caveman-learn/package.json
 - Color
-- VoidCallback?
+- seeding_batch_card.dart
 - MainActivity.kt
-- inventory_redesign_test.dart
+- prd-stock-ledger.md
+- package:hidrosense_mobile/data/services/api_client.dart
 - .agents/skills/caveman-compress/README.md
 - .codex/skills/caveman-compress/README.md
 - .agents/skills/cavecrew/SKILL.md
@@ -79,7 +80,7 @@
 - seeding_form_page.dart
 - harvest-remediation-2026-10-10.md
 - app_surface_colors.dart
-- package:flutter_riverpod/flutter_riverpod.dart
+- dashboard_login_test.dart
 - Subagent-Driven Development
 - Dart/Flutter Patterns
 - ../../viewmodels/session_viewmodel.dart
@@ -147,7 +148,7 @@
 - Middleware Guide - Express Middleware Patterns
 - 2. Daftar Cerita Pengguna (User Stories B000–B009)
 - TypeScript Best Practices
-- custom_search_bar.dart
+- login_header_hero.dart
 - Rules
 - employee_model.dart
 - 3. Perbaikan yang Telah Diterapkan
@@ -202,12 +203,12 @@
 - SQLite Advanced Patterns
 - connected_table_viewmodel.dart
 - sowing_draft.dart
-- item_image_placeholder.dart
+- form_catat_kerusakan_body.dart
 - meja_nft_model.dart
 - stock_info_row.dart
 - Animation Audit Playbook
 - package:flutter_test/flutter_test.dart
-- List
+- stock_movement_record.dart
 - login_page.dart
 - catat_penjualan_viewmodel.dart
 - inventory_item_model.dart
@@ -222,14 +223,14 @@
 - Flutter/Dart Code Review Best Practices
 - custom_input_field.dart
 - Architecting Flutter Applications
-- B001 dan B002: fondasi API dan autentikasi
+- inventory_cache.dart
 - Ponytail
 - The Fixes
 - catat_penjualan_body.dart
-- account_viewmodel.dart
+- employee_viewmodel_test.dart
 - catat_kerusakan_page.dart
 - damage_backend_flow_test.dart
-- String? get
+- auth-infrastructure.test.js
 - 2. Alur Pengguna Inti (Core User Flows)
 - win32_window.cpp
 - call_claude
@@ -238,21 +239,21 @@
 - connected_inventory_viewmodel.dart
 - dashboard_body.dart
 - Core Concepts
-- laporan_panen_body.dart
+- panen_body.dart
 - inventory_repository.dart
 - account_body.dart
 - harvest-ui-server.js
-- seeding_card_content.dart
+- base_col_card.dart
 - penjualan_model.dart
-- app.ts
+- custom_dropdown_field.dart
 - Android Mobile Design
-- header.dart
+- row_button.dart
 - Temuan yang diverifikasi
 - 2. Rencana Eksekusi Bertahap (Phased Roadmap)
 - glass_container.dart
 - Database backend HidroSense
 - stock-concurrency.test.js
-- B004 — Fondasi sinkronisasi server
+- API inventaris B005
 - Core Concepts
 - add_form_inventaris_page.dart
 - 4. State Management (Library-Agnostic)
@@ -279,7 +280,7 @@
 - Kontrak API Penyemaian B007
 - Penyemaian Bibit Petani: review dan remediasi
 - business_date.dart
-- Review B001/B002
+- .MessageHandler
 - Plain writing: write it the way one designer would
 - Plain writing: write it the way one designer would
 - ponytail-review/SKILL.md
@@ -293,11 +294,11 @@
 - Asking the scoping round
 - 3. Skema Data & Kontrak API
 - Asking the scoping round
-- GLOSSARY.md
+- Implementasi Backend B007: Penyemaian, Usia Bibit, Kesiapan 15 Hari, dan Pemakaian Bahan
 - The report
 - Scoping rules
 - Searching Mobbin
-- API inventaris B005
+- fluid_capacity_meter.dart
 - 2. Peningkatan Nyata pada Layar Aplikasi
 - The report
 - Scoping rules
@@ -309,9 +310,9 @@
 - Answering a challenge after the render
 - panen_viewmodel.dart
 - Answering a challenge after the render
-- growth-ui-server.js
+- static const
 - uuid.dart
-- B005 — Master inventaris
+- col_info_card_sm.dart
 - Implementasi Backend B009 — Pemindahan Bibit ke Meja Tanam
 - Kontrak API B009: Pemindahan Bibit ke Meja Tanam (Transfers)
 - Panduan Desain Antarmuka & Pengalaman Pengguna (HIG Design System) — HidroSense Mobile
@@ -322,6 +323,7 @@
 - header.dart
 - Kontrak API Stock Ledger B006
 - Review dan perbaikan B003
+- EmployeeModel
 - Panduan Reset Database (Lokal & Turso Baru)
 - rencana-backend.md
 - inventory_fixtures.dart
@@ -357,15 +359,15 @@
 ## Hyperedges (group relationships)
 - **Hidroponik Cultivation Lifecycle** — srs_nursery_management, srs_table_capacity_management, srs_growth_monitoring, srs_harvest_sales_tracking [INFERRED 0.95]
 
-## Communities (330 total, 43 thin omitted)
+## Communities (331 total, 43 thin omitted)
 
 ### Community 0 - "re"
 Cohesion: 0.18
 Nodes (6): main(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
 
 ### Community 1 - "Win32Window"
-Cohesion: 0.15
-Nodes (5): EnableFullDpiSupportIfAvailable(), Win32Window, child_content_, quit_on_close_, window_handle_
+Cohesion: 0.24
+Nodes (4): Win32Window, child_content_, quit_on_close_, window_handle_
 
 ### Community 2 - "AppDelegate"
 Cohesion: 0.07
@@ -391,13 +393,13 @@ Nodes (4): wWinMain(), CreateAndAttachConsole(), GetCommandLineArguments(), Utf8
 Cohesion: 0.16
 Nodes (7): main(), backup_dir_for(), detect_file_type(), _is_code_line(), _is_json_content(), _is_yaml_content(), should_compress()
 
-### Community 8 - "growth_backend_flow_test.dart"
-Cohesion: 0.07
-Nodes (16): table, cleanups, close, ensureVisible, f, inner, main, pump (+8 more)
+### Community 8 - "dart:async"
+Cohesion: 0.09
+Nodes (11): main, table, main, api, main, repo, vm, main (+3 more)
 
 ### Community 9 - "migrate.js"
-Cohesion: 0.09
-Nodes (24): report, report, environmentSchema, readConfig(), [command, ...args], backupDatabase(), openDatabase(), appliedMigrations() (+16 more)
+Cohesion: 0.10
+Nodes (23): report, report, environmentSchema, readConfig(), [command, ...args], backupDatabase(), openDatabase(), appliedMigrations() (+15 more)
 
 ### Community 10 - "app_theme.dart"
 Cohesion: 0.03
@@ -405,11 +407,11 @@ Nodes (69): accentLime, accentMintSoft, AppColors, AppGlass, AppRadius, AppShado
 
 ### Community 11 - "../theme/app_theme.dart"
 Cohesion: 0.07
-Nodes (26): InventoryRecord, build, category, _CategoryBadge, colors, InventoryCard, item, onTap (+18 more)
+Nodes (26): InventoryRecord, build, MejaNftPage, build, category, _CategoryBadge, colors, InventoryCard (+18 more)
 
 ### Community 12 - "form_meja_nft_body.dart"
-Cohesion: 0.05
-Nodes (27): TableRecord, MejaNft, createState, dispose, _error, mejaItem, _notesController, _selectedStatus (+19 more)
+Cohesion: 0.06
+Nodes (26): TableRecord, MejaNft, createState, dispose, _error, mejaItem, _notesController, _selectedStatus (+18 more)
 
 ### Community 13 - "Mobile App (Flutter)"
 Cohesion: 0.18
@@ -440,16 +442,16 @@ Cohesion: 0.20
 Nodes (9): description, files, license, name, private, scripts, test, type (+1 more)
 
 ### Community 20 - "Color"
-Cohesion: 0.08
-Nodes (20): backgroundColor, build, CategoryBadge, CategoryBadgeSize, label, size, textColor, backgroundColor (+12 more)
+Cohesion: 0.05
+Nodes (33): backgroundColor, build, CategoryBadge, CategoryBadgeSize, label, size, textColor, backgroundColor (+25 more)
 
-### Community 21 - "VoidCallback?"
-Cohesion: 0.06
-Nodes (25): SowingRecord, build, _CapacityBar, color, item, MejaNftCard, onTap, ratio (+17 more)
+### Community 21 - "seeding_batch_card.dart"
+Cohesion: 0.13
+Nodes (12): SowingRecord, build, canWrite, item, onTap, onTransfer, SeedingBatchCard, build (+4 more)
 
-### Community 33 - "inventory_redesign_test.dart"
-Cohesion: 0.11
-Nodes (15): api, dark, item, main, model, nutrient, publish, pump (+7 more)
+### Community 33 - "package:hidrosense_mobile/data/services/api_client.dart"
+Cohesion: 0.05
+Nodes (32): jsonResponse, main, client, main, origin, page, record, reply (+24 more)
 
 ### Community 34 - ".agents/skills/caveman-compress/README.md"
 Cohesion: 0.09
@@ -464,8 +466,8 @@ Cohesion: 0.14
 Nodes (12): cavecrew, Example chaining, How to invoke, Model overrides, See also, What it does, Auto-clarity (inherited), Chaining patterns (+4 more)
 
 ### Community 37 - "package:flutter/material.dart"
-Cohesion: 0.06
-Nodes (20): build, CuacaPage, build, harvestId, LaporanPanenPage, build, MejaNftPage, build (+12 more)
+Cohesion: 0.09
+Nodes (13): AccountPage, build, build, CuacaPage, build, harvestId, LaporanPanenPage, build (+5 more)
 
 ### Community 38 - "Caveman Help"
 Cohesion: 0.14
@@ -516,8 +518,8 @@ Cohesion: 0.04
 Nodes (38): autoLoad, beginDraft, _command, current, damage, DamageCommand, damageCommandsProvider, damageRepositoryProvider (+30 more)
 
 ### Community 50 - "seedling_transfer_sheet.dart"
-Cohesion: 0.07
-Nodes (28): nurseryClockProvider, seedlingTransferCommandsProvider, _acknowledgedSave, _acknowledgeSave, _chooseDate, _command, _commandChanged, createState (+20 more)
+Cohesion: 0.08
+Nodes (23): _acknowledgedSave, _acknowledgeSave, _chooseDate, _command, _commandChanged, createState, _date, dispose (+15 more)
 
 ### Community 51 - "Review Caveman evidence"
 Cohesion: 0.25
@@ -607,9 +609,9 @@ Nodes (32): Blueprint panen dan penjualan, Estimasi dan penerimaan, Izin, Kontra
 Cohesion: 0.13
 Nodes (13): border, canvas, controlBorder, dark, error, ink, mintSurface, of (+5 more)
 
-### Community 73 - "package:flutter_riverpod/flutter_riverpod.dart"
-Cohesion: 0.05
-Nodes (21): main, api, apiFor, main, publish, pumpDashboard, response, sowingJson (+13 more)
+### Community 73 - "dashboard_login_test.dart"
+Cohesion: 0.10
+Nodes (9): api, apiFor, main, publish, pumpDashboard, response, sowingJson, user (+1 more)
 
 ### Community 74 - "Subagent-Driven Development"
 Cohesion: 0.06
@@ -620,8 +622,8 @@ Cohesion: 0.08
 Nodes (25): 10. Testing Quick Reference, 1. Null Safety Fundamentals, 2. Immutable State, 3. Async Composition, 4. Widget Architecture, 5. State Management: BLoC/Cubit, 6. State Management: Riverpod, 7. Navigation with GoRouter (+17 more)
 
 ### Community 76 - "../../viewmodels/session_viewmodel.dart"
-Cohesion: 0.07
-Nodes (18): createState, initialIndex, initState, _isScrolled, MainPage, _MainPageState, _onItemTapped, _onScrollNotification (+10 more)
+Cohesion: 0.06
+Nodes (20): build, CatatPenjualanPage, itemToEdit, createState, initialIndex, initState, _isScrolled, _onItemTapped (+12 more)
 
 ### Community 77 - "Rules"
 Cohesion: 0.06
@@ -629,7 +631,7 @@ Nodes (27): Architecture review, Business-agnostic libraries, Dependency directi
 
 ### Community 78 - "StatelessWidget"
 Cohesion: 0.04
-Nodes (42): activeIsEmpty, _addItem, categories, _category, _clearFilters, colors, controller, createState (+34 more)
+Nodes (43): activeIsEmpty, _addItem, categories, _category, _clearFilters, colors, controller, createState (+35 more)
 
 ### Community 79 - "AGENTS.md"
 Cohesion: 0.50
@@ -641,39 +643,39 @@ Nodes (31): Accordion / collapse, Animation Recipes, Button press, Drag to dismi
 
 ### Community 81 - "employee_viewmodel.dart"
 Cohesion: 0.07
-Nodes (26): actionSuccessMessage, activateEmployee, cancelDeactivation, copyWith, createEmployee, deactivateEmployee, _debounceTimer, dispose (+18 more)
+Nodes (24): actionSuccessMessage, activateEmployee, cancelDeactivation, copyWith, createEmployee, deactivateEmployee, _debounceTimer, dispose (+16 more)
 
 ### Community 82 - "seedling_transfer_test.dart"
-Cohesion: 0.08
-Nodes (17): main, apiFor, chooseTable, ensureVisible, main, pump, pumpAndSettle, pumpTransfer (+9 more)
+Cohesion: 0.07
+Nodes (19): main, main, apiFor, chooseTable, ensureVisible, main, pump, pumpAndSettle (+11 more)
 
 ### Community 84 - "harvest/contracts.ts"
 Cohesion: 0.15
-Nodes (25): backfillHarvest(), formatWeight(), parseWeight(), createDetail, CreateHarvestInput, createHarvestSchema, date, emptyQuerySchema (+17 more)
+Nodes (26): Json, backfillHarvest(), formatWeight(), parseWeight(), createDetail, CreateHarvestInput, createHarvestSchema, date (+18 more)
 
 ### Community 85 - "transfers/write.ts"
 Cohesion: 0.18
 Nodes (23): CreateTransferInput, createTransferSchema, dateSchema, emptyQuerySchema, ListTransferQuery, listTransferQuerySchema, UpdateTransferInput, updateTransferSchema (+15 more)
 
 ### Community 87 - "feature_illustration.dart"
-Cohesion: 0.06
-Nodes (26): getClip, shouldReclip, TopHeroWaveClipper, _waveDepthFraction, build, height, imageAssetPath, LoginHeaderHero (+18 more)
+Cohesion: 0.14
+Nodes (13): asset, build, emptyInventory, emptyNursery, FeatureIllustration, harvest, inventory, noResults (+5 more)
 
 ### Community 88 - "damage/write.ts"
 Cohesion: 0.19
 Nodes (21): CreateDamageInput, createDamageSchema, dateSchema, emptyQuerySchema, ListDamageQuery, listDamageQuerySchema, UpdateDamageInput, updateDamageSchema (+13 more)
 
 ### Community 95 - "employee_repository.dart"
-Cohesion: 0.08
-Nodes (19): activateEmployee, _api, createEmployee, deactivateEmployee, EmployeeRepository, EmployeeRepositoryImpl, employeeRepositoryProvider, getEmployeeDetail (+11 more)
+Cohesion: 0.15
+Nodes (11): activateEmployee, _api, createEmployee, deactivateEmployee, EmployeeRepository, EmployeeRepositoryImpl, employeeRepositoryProvider, getEmployeeDetail (+3 more)
 
 ### Community 97 - "harvest_fixture.dart"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (23): bodies, canReadBatches, canWrite, detailError, getHarvest, harvestApi, harvestDraft, harvestJson (+15 more)
 
 ### Community 108 - "panen_form_body.dart"
-Cohesion: 0.08
-Nodes (20): HarvestReadState, _buildRow, _correctWeights, createState, dispose, _editing, _field, id (+12 more)
+Cohesion: 0.06
+Nodes (31): HarvestReadState, panenViewModelProvider, build, createState, harvestId, initState, LaporanPanenBody, _LaporanState (+23 more)
 
 ### Community 109 - "nodejs-backend-patterns — detailed patterns and worked examples"
 Cohesion: 0.06
@@ -684,40 +686,40 @@ Cohesion: 0.08
 Nodes (25): API Design Patterns, Authentication & Authorization, Backend Development Patterns, Background Jobs & Queues, Cache-Aside Pattern, Caching Strategies, Centralized Error Handler, Database Patterns (+17 more)
 
 ### Community 111 - "damage_fixture.dart"
-Cohesion: 0.06
-Nodes (29): DamageRepository, jsonResponse, main, main, api, main, repo, vm (+21 more)
+Cohesion: 0.09
+Nodes (21): DamageRepository, apiFor, createDamage, damageJson, draft, drafts, editKeys, employee (+13 more)
 
 ### Community 112 - "nursery_record.dart"
 Cohesion: 0.09
 Nodes (21): ageDays, amount, batchName, canTransfer, fromJson, hssText, id, inventoryId (+13 more)
 
 ### Community 113 - "@libsql/client"
-Cohesion: 0.14
-Nodes (38): authenticatedWrite(), fastify, FastifyRequest, requirePermission(), derive(), dummySalt, hashPassword(), verifyPassword() (+30 more)
+Cohesion: 0.22
+Nodes (25): requirePermission(), idParamSchema, parseInput(), registerActivateEmployee(), AccountChanges, createEmployeeSchema, employeeIdSchema, fields (+17 more)
 
 ### Community 114 - "common/errors.ts"
-Cohesion: 0.14
-Nodes (22): canonicalJson(), DomainMutation, executeDomainMutation(), executeOperation(), hashPayload(), initializeStockIdentity(), Json, nextResourceVersion() (+14 more)
+Cohesion: 0.12
+Nodes (24): authenticatedWrite(), canonicalJson(), DomainMutation, executeDomainMutation(), executeOperation(), hashPayload(), initializeStockIdentity(), nextResourceVersion() (+16 more)
 
 ### Community 115 - "table_record.dart"
 Cohesion: 0.10
 Nodes (19): activePlants, availableCapacity, code, displayName, fromJson, holeCount, id, isActive (+11 more)
 
 ### Community 116 - "nursery/index.ts"
-Cohesion: 0.17
-Nodes (22): CreateSowingInput, createSowingSchema, dateSchema, emptyQuerySchema, listSowingQuerySchema, materialLineSchema, SowingMaterial, UpdateSowingInput (+14 more)
+Cohesion: 0.18
+Nodes (20): CreateSowingInput, createSowingSchema, dateSchema, emptyQuerySchema, listSowingQuerySchema, materialLineSchema, SowingMaterial, UpdateSowingInput (+12 more)
 
 ### Community 117 - "String? get"
-Cohesion: 0.09
-Nodes (16): _api, createDamage, _list, listDamages, listTransfers, serverOrigin, updateDamage, updateTransfer (+8 more)
+Cohesion: 0.07
+Nodes (25): _api, createDamage, _list, listDamages, listTransfers, serverOrigin, updateDamage, updateTransfer (+17 more)
 
 ### Community 118 - ".codex/skills/caveman-compress/scripts/compress.py"
 Cohesion: 0.08
 Nodes (19): build_compress_prompt(), build_fix_prompt(), compress_file(), _compress_file_locked(), file_lock(), first_nonblank_line(), is_sensitive_path(), _is_smaller_than_body() (+11 more)
 
 ### Community 119 - "tables/write.ts"
-Cohesion: 0.19
-Nodes (21): activeListQuerySchema, CreateTableInput, createTableSchema, emptyQuerySchema, fields, ListTableInput, listTableSchema, UpdateTableInput (+13 more)
+Cohesion: 0.21
+Nodes (20): CreateTableInput, createTableSchema, emptyQuerySchema, fields, ListTableInput, listTableSchema, UpdateTableInput, updateTableSchema (+12 more)
 
 ### Community 120 - "Urutan Pengerjaan Backend HidroSense"
 Cohesion: 0.14
@@ -740,8 +742,8 @@ Cohesion: 0.09
 Nodes (23): _alamatController, build, _buildField, _buildPasswordField, createState, dispose, _emailController, employee (+15 more)
 
 ### Community 125 - "B003 — Akun pegawai dan profil"
-Cohesion: 0.29
-Nodes (7): B003 — Akun pegawai dan profil, Breakdown implementasi, Keputusan dan batas pekerjaan, Pengujian, Perbaikan review B003, Pola implementasi, Review B001/B002
+Cohesion: 0.15
+Nodes (11): B003 — Akun pegawai dan profil, Breakdown implementasi, Keputusan dan batas pekerjaan, Pengujian, Perbaikan review B003, Pola implementasi, Review B001/B002, Hasil dan perbaikan (+3 more)
 
 ### Community 126 - "crud-development/SKILL.md"
 Cohesion: 0.05
@@ -819,17 +821,17 @@ Nodes (21): 1. Persona Pengguna, 2. Daftar Cerita Pengguna (User Stories B000–
 Cohesion: 0.33
 Nodes (5): Make Illegal States Unrepresentable, Optional: type-fest, Pair with React Best Practices, Runtime Validation with Zod, TypeScript Best Practices
 
-### Community 145 - "custom_search_bar.dart"
-Cohesion: 0.12
-Nodes (12): build, controller, CustomSearchBar, onChanged, placeholder, width, build, controller (+4 more)
+### Community 145 - "login_header_hero.dart"
+Cohesion: 0.17
+Nodes (9): build, height, imageAssetPath, LoginHeaderHero, _maximumHeight, _minimumHeight, _placeholder, _screenHeightFraction (+1 more)
 
 ### Community 146 - "Rules"
 Cohesion: 0.06
 Nodes (27): Architecture review, Business-agnostic libraries, Dependency direction, Transport and domain boundaries, Avoid PostgreSQL-only dialect usage in models; wrap in `models.types`, Detect and avoid duplicate/redundant indexes, Do not query other tables inside `@property`, Guard migration incompatibilities with dialect checks and shared types (+19 more)
 
 ### Community 147 - "employee_model.dart"
-Cohesion: 0.11
-Nodes (16): alamat, copyWith, email, EmployeeModel, fromJson, hashCode, id, isActive (+8 more)
+Cohesion: 0.12
+Nodes (15): alamat, copyWith, email, fromJson, hashCode, id, isActive, nama (+7 more)
 
 ### Community 148 - "3. Perbaikan yang Telah Diterapkan"
 Cohesion: 0.11
@@ -841,7 +843,7 @@ Nodes (20): Android Navigation Patterns, Back Handler, Basic Deep Link Setup, Ba
 
 ### Community 150 - "employee_list_page.dart"
 Cohesion: 0.14
-Nodes (12): build, _buildEmptyState, createState, dispose, EmployeeListPage, _EmployeeListPageState, _filterChip, _handleToggleStatus (+4 more)
+Nodes (10): build, _buildEmptyState, createState, dispose, _filterChip, _handleToggleStatus, _openAddSheet, _openEditSheet (+2 more)
 
 ### Community 151 - "HTML Report Format"
 Cohesion: 0.10
@@ -868,8 +870,8 @@ Cohesion: 0.12
 Nodes (12): activePlants, estimatedHarvestDate, fromJson, hss, hst, label, note, remainingHarvestDays (+4 more)
 
 ### Community 159 - "employee_tile.dart"
-Cohesion: 0.08
-Nodes (18): confirmActivation, confirmDeactivation, EmployeeDialogs, build, employee, EmployeeTile, _infoChip, onEdit (+10 more)
+Cohesion: 0.06
+Nodes (23): confirmActivation, confirmDeactivation, EmployeeDialogs, build, employee, EmployeeTile, _infoChip, onEdit (+15 more)
 
 ### Community 160 - "Laporan progres dan kesiapan backend HidroSense"
 Cohesion: 0.15
@@ -896,31 +898,31 @@ Cohesion: 0.12
 Nodes (15): Arah perbaikan yang diperlukan, Batas dan backlog, Cakupan empat fungsi inventaris, Delivery Gate antislop: PASS, Diagnosis inventaris: request berulang dan simpan lambat, Findings berdasarkan bukti, Koreksi klaim backend dalam lampiran, Matriks bukti konektivitas (+7 more)
 
 ### Community 166 - "verify-turso-features.mjs"
-Cohesion: 0.14
-Nodes (25): now, report, integerIdSchema, createInventarisSchema, createJenisSchema, createObatSchema, updateInventarisSchema, updateJenisSchema (+17 more)
+Cohesion: 0.12
+Nodes (33): now, report, fromMinor(), positiveDecimalSchema, toMinor(), activeListQuerySchema, integerIdSchema, createInventarisSchema (+25 more)
 
 ### Community 167 - "B006 staging deployment plan for migration 0006"
 Cohesion: 0.33
 Nodes (5): B006 staging deployment plan for migration 0006, D-01: snapshot and restore proof, D-02: apply and inspect 0006, D-03 and D-04 handoff, Target and stop conditions
 
 ### Community 168 - "stock/store.ts"
-Cohesion: 0.11
-Nodes (33): fromMinor(), MAX_QUANTITY_MINOR, positiveDecimalSchema, toMinor(), createStockSchema, directionSchema, emptyQuerySchema, historyQuerySchema (+25 more)
+Cohesion: 0.16
+Nodes (27): ApiError, directionSchema, emptyQuerySchema, historyQuerySchema, lineSchema, reasonSchema, reverseStockSchema, StockInput (+19 more)
 
 ### Community 169 - "Verifikasi Turso live — B000–B005"
 Cohesion: 0.29
 Nodes (6): Hasil pengujian, Keamanan dan cakupan, Kesimpulan, Latensi, Skill dan reproduksi, Verifikasi Turso live — B000–B005
 
 ### Community 170 - "B008 — Meja tanam"
-Cohesion: 0.08
-Nodes (21): B008 — Meja tanam, Bukti akhir, Definisi selesai, Plan dan kontrak penerimaan, Review lanjutan, Todo / task, Batas pekerjaan, Check dan review (+13 more)
+Cohesion: 0.07
+Nodes (26): B008 — Meja tanam, Bukti akhir, Definisi selesai, Plan dan kontrak penerimaan, Review lanjutan, Todo / task, Batas pekerjaan, Check dan review (+18 more)
 
 ### Community 171 - "string"
-Cohesion: 0.07
-Nodes (24): AppSurfaceColors, build, detail, eyebrow, FeatureOverviewCard, illustration, illustrationSize, subtitle (+16 more)
+Cohesion: 0.05
+Nodes (38): build, detail, eyebrow, FeatureOverviewCard, illustration, illustrationSize, subtitle, title (+30 more)
 
 ### Community 172 - "ref_node_assert"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (17): setup(), setup(), setup(), preflight, jenisPayload, obatPayload, pegawaiHeaders(), petaniHeaders() (+9 more)
 
 ### Community 173 - "Panduan Menjalankan Backend HidroSense"
@@ -928,8 +930,8 @@ Cohesion: 0.13
 Nodes (15): 1. Menyiapkan konfigurasi database, 2. Menjalankan migrasi, 3. Mengisi data uji dengan seeder, 4. Menjalankan backend, 5. Menguji fitur, Ganti target lokal vs Turso, Memeriksa kesehatan API, Mode build dan production-like (+7 more)
 
 ### Community 174 - "ref_node_fs"
-Cohesion: 0.11
-Nodes (11): md, skillFile, skill, extensions, largest, root, backendRoot, db (+3 more)
+Cohesion: 0.08
+Nodes (16): md, skillFile, skill, extensions, largest, root, backendRoot, db (+8 more)
 
 ### Community 175 - "BMAD Readiness Report"
 Cohesion: 0.10
@@ -952,12 +954,12 @@ Cohesion: 0.14
 Nodes (13): Common Skill Categories, Find Skills, How to Help Users Find Skills, Step 1: Understand What They Need, Step 2: Check the Leaderboard First, Step 3: Search for Skills, Step 4: Verify Quality Before Recommending, Step 5: Present Options to the User (+5 more)
 
 ### Community 180 - "ref_node_crypto"
-Cohesion: 0.28
-Nodes (6): reconcileStock(), get(), unavailable(), expectError(), stockFixture(), stockState()
+Cohesion: 0.18
+Nodes (8): MAX_QUANTITY_MINOR, createStockSchema, reconcileStock(), get(), unavailable(), expectError(), stockFixture(), stockState()
 
 ### Community 181 - "transfer_note_dialog.dart"
-Cohesion: 0.07
-Nodes (20): DamageRecord, TransferRecord, _editTransferNote, table, build, CatatKerusakanPage, damageRecordToEdit, initialTransfer (+12 more)
+Cohesion: 0.15
+Nodes (13): build, _busy, _controller, createState, dispose, _error, initState, notifier (+5 more)
 
 ### Community 182 - "_"
 Cohesion: 0.08
@@ -972,8 +974,8 @@ Cohesion: 0.25
 Nodes (7): 1. Pin the fixed point, 2. Identify the spec source, 3. Identify the standards sources, 4. Spawn both sub-agents in parallel, 5. Aggregate, Process, Why two axes
 
 ### Community 185 - "sessionProvider"
-Cohesion: 0.07
-Nodes (40): connectedNurseryProvider, connectedTableProvider, damageProvider, apiClientProvider, sessionProvider, build, DashboardBody, build (+32 more)
+Cohesion: 0.08
+Nodes (41): connectedNurseryProvider, nurseryClockProvider, seedlingTransferCommandsProvider, connectedTableProvider, apiClientProvider, sessionProvider, weatherViewModelProvider, AccountBody (+33 more)
 
 ### Community 186 - "Database Migration Patterns"
 Cohesion: 0.06
@@ -993,11 +995,11 @@ Nodes (6): Backup dan preservasi, Bukti dan perintah, Deployment migrasi Turso 0
 
 ### Community 190 - "package:flutter_riverpod/flutter_riverpod.dart"
 Cohesion: 0.07
-Nodes (15): build, main, MyApp, main, api, current, farmer, main (+7 more)
+Nodes (14): build, main, MyApp, main, api, current, farmer, main (+6 more)
 
 ### Community 191 - "ApiError"
-Cohesion: 0.23
-Nodes (16): ApiError, commonReads, permissionsFor(), rolePermissions, consumeLimit(), ACCESS_TTL_MS, authenticate(), createSession() (+8 more)
+Cohesion: 0.14
+Nodes (28): AppOptions, buildApp(), requestPath(), fastify, FastifyRequest, installErrors(), sendError(), commonReads (+20 more)
 
 ### Community 193 - "Panduan Penggunaan Skill `ui-ux-pro-max`"
 Cohesion: 0.14
@@ -1021,23 +1023,23 @@ Nodes (18): Advanced FTS5 Queries, Advanced Query Patterns, Common Table Express
 
 ### Community 198 - "connected_table_viewmodel.dart"
 Cohesion: 0.05
-Nodes (32): api, body, canWrite, ConnectedTableNotifier, copyWith, createTable, error, _generation (+24 more)
+Nodes (33): api, body, canWrite, ConnectedTableNotifier, copyWith, createTable, error, _generation (+25 more)
 
 ### Community 199 - "sowing_draft.dart"
 Cohesion: 0.14
 Nodes (10): attempt, draft, inventoryId, key, receipt, seedCount, SowingCommand, SowingDraft (+2 more)
 
-### Community 200 - "item_image_placeholder.dart"
-Cohesion: 0.12
-Nodes (15): _GlassEdgePainter, borderRadius, build, _buildPlaceholderContent, color, DashedBorderPainter, dashSpace, dashWidth (+7 more)
+### Community 200 - "form_catat_kerusakan_body.dart"
+Cohesion: 0.08
+Nodes (23): damageProvider, build, _editTransferNote, table, build, _categories, _category, _complete (+15 more)
 
 ### Community 201 - "meja_nft_model.dart"
 Cohesion: 0.10
 Nodes (19): batchName, capacityTotal, capacityUsed, copyWith, estimatedHarvestDate, failedCount, healthyCount, hss (+11 more)
 
 ### Community 202 - "stock_info_row.dart"
-Cohesion: 0.06
-Nodes (26): PenjualanItem, build, category, categoryBgColor, categoryColor, ItemInfoDetails, name, stockText (+18 more)
+Cohesion: 0.05
+Nodes (33): build, category, categoryBgColor, categoryColor, ItemInfoDetails, name, stockText, batchName (+25 more)
 
 ### Community 203 - "Animation Audit Playbook"
 Cohesion: 0.08
@@ -1045,15 +1047,15 @@ Nodes (22): 1. Purpose & frequency, 2. Easing & duration, 3. Physicality & origi
 
 ### Community 204 - "package:flutter_test/flutter_test.dart"
 Cohesion: 0.05
-Nodes (31): InventoryCache, main, respond, jsonReply, main, deactivateItem, item, main (+23 more)
+Nodes (34): InventoryCache, main, respond, deactivateItem, item, main, operation, item (+26 more)
 
-### Community 205 - "List"
-Cohesion: 0.06
-Nodes (25): amount, date, details, direction, fromJson, id, idDetail, inventoryId (+17 more)
+### Community 205 - "stock_movement_record.dart"
+Cohesion: 0.12
+Nodes (15): amount, date, details, direction, fromJson, id, idDetail, inventoryId (+7 more)
 
 ### Community 206 - "login_page.dart"
-Cohesion: 0.05
-Nodes (36): _categories, _category, _complete, _count, createState, damageRecordToEdit, _date, dispose (+28 more)
+Cohesion: 0.07
+Nodes (24): _brand, build, createState, didChangeDependencies, dispose, _formKey, _hidePassword, initState (+16 more)
 
 ### Community 207 - "catat_penjualan_viewmodel.dart"
 Cohesion: 0.07
@@ -1072,8 +1074,8 @@ Cohesion: 0.10
 Nodes (19): SessionUser, api, ApiException, baseUri, busy, dispose, error, login (+11 more)
 
 ### Community 211 - "dart:convert"
-Cohesion: 0.07
-Nodes (24): client, main, origin, page, record, reply, switchTo, uuid (+16 more)
+Cohesion: 0.06
+Nodes (28): cleanups, close, ensureVisible, f, inner, main, pump, _RecordingClient (+20 more)
 
 ### Community 212 - "Architecting the Data Layer"
 Cohesion: 0.11
@@ -1088,28 +1090,28 @@ Cohesion: 0.11
 Nodes (17): Color Roles Usage, Color System, Custom Color Scheme, Custom Fonts, Custom Shape Usage, Dynamic Color (Material You), Elevation and Shadows, Extended Colors (+9 more)
 
 ### Community 215 - "ab_testing_service.dart"
-Cohesion: 0.18
+Cohesion: 0.17
 Nodes (8): AbTestingService, abTestingServiceProvider, activeVariant, clearLogs, EmployeeLayoutVariant, experimentKey, logEvent, _loggedEvents
 
 ### Community 216 - "weather_model.dart"
-Cohesion: 0.06
-Nodes (30): alasan, arahAngin, curahHujan, deskripsi, estimasiHujan, isPenting, judul, kecepatanAngin (+22 more)
+Cohesion: 0.04
+Nodes (44): AccountModel, idPerkebunan, nama, noWhatsApp, peran, statusSinkronisasi, username, alasan (+36 more)
 
 ### Community 217 - "Flutter/Dart Code Review Best Practices"
 Cohesion: 0.15
 Nodes (12): 11. Navigation and Routing, 14. Dependency Injection, 1. General Project Health, 2. Dart Language Pitfalls, 8. Platform-Specific Concerns, Flutter/Dart Code Review Best Practices, General principles (apply to any routing solution):, iOS/Android differences: (+4 more)
 
 ### Community 218 - "custom_input_field.dart"
-Cohesion: 0.05
-Nodes (36): build, CustomDropdownField, errorText, hintText, items, label, onChanged, _openModalPicker (+28 more)
+Cohesion: 0.04
+Nodes (39): build, controller, CustomInputField, errorColor, errorText, focusNode, hintText, _inputBorder (+31 more)
 
 ### Community 219 - "Architecting Flutter Applications"
 Cohesion: 0.15
 Nodes (12): Architecting Flutter Applications, Architectural Layers, Contents, Data Layer, Data Layer: Service and Repository, Examples, Logic Layer (Domain - Optional), Project Structure (+4 more)
 
-### Community 220 - "B001 dan B002: fondasi API dan autentikasi"
-Cohesion: 0.33
-Nodes (6): Aturan sesi luring, B001 dan B002: fondasi API dan autentikasi, Breakdown dan hasil, Keputusan akses yang sudah disepakati, Langkah berikutnya, Pilihan implementasi
+### Community 220 - "inventory_cache.dart"
+Cohesion: 0.14
+Nodes (9): close, createSchema, _db, fetchedAt, InventorySnapshot, open, read, records (+1 more)
 
 ### Community 221 - "Ponytail"
 Cohesion: 0.22
@@ -1120,31 +1122,31 @@ Cohesion: 0.09
 Nodes (21): 10. Status bar color doesn't match, 11. Right in Chrome, wrong on phone, 1. Hover state stuck after tap, 2. Gray/blue flash on tap, 3. Layout has the wrong height, 4. Page zooms into the input, 5. Tap feels laggy, 6. Pull-to-refresh hijacks scroll (+13 more)
 
 ### Community 223 - "catat_penjualan_body.dart"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (19): availableBatchPanenProvider, catatPenjualanViewModelProvider, _beratController, build, _catatanController, CatatPenjualanBody, _CatatPenjualanBodyState, createState (+11 more)
 
-### Community 224 - "account_viewmodel.dart"
-Cohesion: 0.12
-Nodes (14): AccountModel, idPerkebunan, nama, noWhatsApp, peran, statusSinkronisasi, username, AccountState (+6 more)
+### Community 224 - "employee_viewmodel_test.dart"
+Cohesion: 0.15
+Nodes (8): activateEmployee, createEmployee, deactivateEmployee, getEmployeeDetail, getEmployees, main, mockData, updateEmployee
 
 ### Community 225 - "catat_kerusakan_page.dart"
-Cohesion: 0.18
-Nodes (7): category, DamageDraft, fromJson, note, plantCount, toJson, version
+Cohesion: 0.10
+Nodes (14): category, DamageDraft, DamageRecord, fromJson, note, plantCount, toJson, version (+6 more)
 
 ### Community 226 - "damage_backend_flow_test.dart"
 Cohesion: 0.08
 Nodes (18): cleanups, f, main, meja_tanam, pemindahan, penyemaian, _RealHttpOverrides, url (+10 more)
 
-### Community 227 - "String? get"
-Cohesion: 0.18
-Nodes (8): _api, getHarvest, _list, listHarvests, listTransfers, _record, serverOrigin, write
+### Community 227 - "auth-infrastructure.test.js"
+Cohesion: 0.30
+Nodes (7): derive(), dummySalt, hashPassword(), verifyPassword(), seed(), bootstrapPetani(), schema
 
 ### Community 228 - "2. Alur Pengguna Inti (Core User Flows)"
 Cohesion: 0.18
 Nodes (10): 1. Arsitektur Informasi & Hirarki Navigasi, 2. Alur Pengguna Inti (Core User Flows), 3 Pola Navigasi HIG:, Flow 1: Autentikasi & Pembagian Peran (B002), Flow 2: Manajemen Inventaris & Buku Besar Stok (B005 & B006), Flow 3: Siklus Penyemaian Benih (B007), Flow 4: Pemantauan Meja Tanam NFT (B008), Flow 5: Pemindahan Bibit ke Meja Tanam & Estimasi Panen (B009) (+2 more)
 
 ### Community 229 - "win32_window.cpp"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (5): Scale(), Win32Window::Win32Window(), WindowClassRegistrar, class_registered_, instance_
 
 ### Community 230 - "call_claude"
@@ -1156,8 +1158,8 @@ Cohesion: 0.07
 Nodes (21): date, details, fromJson, harvestDate, HarvestDetail, harvestId, HarvestWeight, maximum (+13 more)
 
 ### Community 232 - "ConsumerState"
-Cohesion: 0.09
-Nodes (22): FormCatatKerusakanBody, FormMejaNftBody, _FormMejaNftBodyState, InventarisBody, _InventarisBodyState, MejaNftBody, _MejaNftBodyState, _FormState (+14 more)
+Cohesion: 0.10
+Nodes (19): EmployeeListPage, _EmployeeListPageState, FormMejaNftBody, InventarisBody, _InventarisBodyState, MejaNftBody, PenjualanBody, PenyemaianBody (+11 more)
 
 ### Community 233 - "connected_inventory_viewmodel.dart"
 Cohesion: 0.05
@@ -1165,47 +1167,47 @@ Nodes (32): activeCategories, activeRecords, cache, cached, canFinishWithoutStoc
 
 ### Community 234 - "dashboard_body.dart"
 Cohesion: 0.04
-Nodes (32): accentColor, _BusinessModuleCard, caption, _DashboardAlert, _DashboardStat, icon, label, onInventoryTap (+24 more)
+Nodes (35): accentColor, _BusinessModuleCard, caption, _DashboardAlert, _DashboardStat, icon, label, onInventoryTap (+27 more)
 
 ### Community 235 - "Core Concepts"
 Cohesion: 0.25
 Nodes (7): 1. Material Design 3 Principles, 2. Jetpack Compose Layout System, 3. Navigation Patterns, 4. Material 3 Theming, 5. Component Examples, Core Concepts, mobile-android-design — detailed sections
 
-### Community 236 - "laporan_panen_body.dart"
-Cohesion: 0.16
-Nodes (12): panenFilterCategoryProvider, panenViewModelProvider, build, createState, harvestId, initState, LaporanPanenBody, _LaporanState (+4 more)
+### Community 236 - "panen_body.dart"
+Cohesion: 0.10
+Nodes (18): PanenFilterCategory, panenFilterCategoryProvider, build, colors, completedCount, createState, dispose, _filterBatches (+10 more)
 
 ### Community 237 - "inventory_repository.dart"
 Cohesion: 0.10
 Nodes (16): _api, _cache, cached, createItem, data, deactivateItem, fetchCategories, fetchInventoryCategories (+8 more)
 
 ### Community 238 - "account_body.dart"
-Cohesion: 0.09
-Nodes (15): PrakiraanHarian, weatherViewModelProvider, AccountBody, build, _buildEmployeeManagementTile, _detailRow, build, _buildMetricCard (+7 more)
+Cohesion: 0.11
+Nodes (9): PrakiraanHarian, _detailRow, _buildMetricCard, build, item, RekomendasiCuacaBody, build, prakiraanItem (+1 more)
 
 ### Community 239 - "harvest-ui-server.js"
 Cohesion: 0.20
 Nodes (8): cleanups, control, estimateDate, info, requests, sowingDate, today, transferDate
 
-### Community 240 - "seeding_card_content.dart"
-Cohesion: 0.15
-Nodes (12): batchName, build, dateText, hssText, note, seedCountText, SeedingCardContent, statusBgColor (+4 more)
+### Community 240 - "base_col_card.dart"
+Cohesion: 0.17
+Nodes (10): backgroundColor, BaseColCard, borderColor, borderRadius, borderWidth, build, child, height (+2 more)
 
 ### Community 241 - "penjualan_model.dart"
 Cohesion: 0.12
 Nodes (14): BatchPanen, batchPanenId, catatan, copyWith, id, isLunas, kuantitas, nama (+6 more)
 
-### Community 242 - "app.ts"
-Cohesion: 0.35
-Nodes (9): AppOptions, buildApp(), requestPath(), installErrors(), sendError(), AppConfig, registerInventory(), registerSync() (+1 more)
+### Community 242 - "custom_dropdown_field.dart"
+Cohesion: 0.20
+Nodes (9): build, CustomDropdownField, errorText, hintText, items, label, onChanged, _openModalPicker (+1 more)
 
 ### Community 243 - "Android Mobile Design"
 Cohesion: 0.29
 Nodes (6): Android Mobile Design, Best Practices, Common Issues, Detailed section: Core Concepts, Quick Start Component, When to Use This Skill
 
-### Community 244 - "header.dart"
-Cohesion: 0.05
-Nodes (43): backgroundColor, borderColor, borderRadius, build, ColButton, _ColButtonState, createState, fontSize (+35 more)
+### Community 244 - "row_button.dart"
+Cohesion: 0.17
+Nodes (12): backgroundColor, borderRadius, build, createState, height, label, onTap, _pressed (+4 more)
 
 ### Community 245 - "Temuan yang diverifikasi"
 Cohesion: 0.15
@@ -1216,20 +1218,20 @@ Cohesion: 0.20
 Nodes (9): 1. Audit Komponen & Layar Eksisting, 2. Rencana Eksekusi Bertahap (Phased Roadmap), 3. Aturan Arsitektur & Kualitas Kode, Fase 1: Fondasi Token & Tema Aplikasi (Design Foundation), Fase 2: Standarisasi Widget Inti (Core Widgets Refactor), Fase 3: Rekonstruksi Halaman & Alur Pengguna (Pages & Sheets), Fase 4: Integrasi Motion, Ergonomi Haptik & Verification Gate, Modul 05: Peta Jalan Implementasi & Rekonstruksi Kode (Implementation Roadmap) (+1 more)
 
 ### Community 247 - "glass_container.dart"
-Cohesion: 0.05
-Nodes (36): backgroundColor, BaseColCard, borderColor, borderRadius, borderWidth, build, child, height (+28 more)
+Cohesion: 0.07
+Nodes (23): barBlurSigma, barTintDark, barTintLight, blurSigma, borderRadius, bottom, build, child (+15 more)
 
 ### Community 248 - "Database backend HidroSense"
 Cohesion: 0.25
 Nodes (8): Backup dan pemulihan, Bukti pengujian dan batas pekerjaan, Database backend HidroSense, Disiplin migrasi, Menjalankan API dan autentikasi, Menjalankan lokal, Pemetaan DBML ke SQLite, Target Turso/libSQL
 
 ### Community 249 - "stock-concurrency.test.js"
-Cohesion: 0.43
+Cohesion: 0.36
 Nodes (5): competingRequests(), fileFixture(), inspect(), now, runWriters()
 
-### Community 250 - "B004 — Fondasi sinkronisasi server"
-Cohesion: 0.29
-Nodes (7): B004 — Fondasi sinkronisasi server, Bukti, Implementasi, Kompatibilitas mapping lama, Kontrak HTTP reservasi, Koreksi audit dan batas arsitektur 2 Oktober 2026, Review B000–B003
+### Community 250 - "API inventaris B005"
+Cohesion: 0.09
+Nodes (19): B004 — Fondasi sinkronisasi server, Bukti, Implementasi, Kompatibilitas mapping lama, Kontrak HTTP reservasi, Koreksi audit dan batas arsitektur 2 Oktober 2026, Review B000–B003, B005 — Master inventaris (+11 more)
 
 ### Community 251 - "Core Concepts"
 Cohesion: 0.17
@@ -1244,8 +1246,8 @@ Cohesion: 0.22
 Nodes (9): 4. State Management (Library-Agnostic), Architecture:, Immutability & value equality (for immutable-state solutions: BLoC, Riverpod, Redux):, Local vs global state:, Reactivity discipline (for reactive-mutation solutions: MobX, GetX, Signals):, Rebuild optimization:, State shape design:, Subscriptions & disposal: (+1 more)
 
 ### Community 254 - "Audit konteks backend dan mobile B000–B008"
-Cohesion: 0.12
-Nodes (15): Integrasi mobile: login dan inventaris baca, Keputusan implementasi, Planning dan task, Review dan check, Todo berikutnya, Audit konteks backend dan mobile B000–B008, Check dan batas bukti, Instalasi skill (+7 more)
+Cohesion: 0.20
+Nodes (10): Audit konteks backend dan mobile B000–B008, Check dan batas bukti, Instalasi skill, Kesimpulan, Planning, Review mobile dan mapping minimum, Review rancangan database, Review status B000–B008 (+2 more)
 
 ### Community 255 - "B006 — Review dan Refaktor Arsitektur"
 Cohesion: 0.40
@@ -1317,15 +1319,15 @@ Nodes (4): 15. Static Analysis, Configuration:, Enforcement:, Key rules to verif
 
 ### Community 275 - "table_repository.dart"
 Cohesion: 0.18
-Nodes (9): _api, createTable, fetchTables, getTable, _omittedNotes, serverOrigin, TableRepository, updateTable (+1 more)
+Nodes (8): _api, createTable, fetchTables, getTable, _omittedNotes, serverOrigin, TableRepository, updateTable
 
 ### Community 276 - "Redesign a screen from a reference"
 Cohesion: 0.13
 Nodes (15): 1. Scope the target, 2. Freeze the baseline, 3. Search and lock references, 4. Plan the moves, 5. Apply, 6. Check the render against the job, 7. Render the before and after image, 8. Report (+7 more)
 
 ### Community 277 - "Kontrak API Penyemaian B007"
-Cohesion: 0.08
-Nodes (22): 1. Ringkasan Eksekutif, 2. Komponen yang Dibangun, 3. Dokumentasi & Kontrak API, Hasil review 4 Oktober 2026, Implementasi Backend B007: Penyemaian, Usia Bibit, Kesiapan 15 Hari, dan Pemakaian Bahan, Migrasi Basis Data:, Pengujian (`test/`):, Endpoint (+14 more)
+Cohesion: 0.13
+Nodes (15): Endpoint, Error Bisnis, GET `/api/v1/penyemaian/:id` (Detail Sowing), GET `/api/v1/penyemaian` (List Sowings), Headers, Klarifikasi review waktu, Kontrak API Penyemaian B007, PATCH `/api/v1/penyemaian/:id` (Update Sowing) (+7 more)
 
 ### Community 278 - "Penyemaian Bibit Petani: review dan remediasi"
 Cohesion: 0.22
@@ -1334,10 +1336,6 @@ Nodes (8): Batas dan backlog, Delivery Gate antislop, Hasil, Matriks konektivita
 ### Community 279 - "business_date.dart"
 Cohesion: 0.25
 Nodes (7): apiDate, difference, jakarta, jakartaToday, next, untilJakartaMidnight, utc
-
-### Community 280 - "Review B001/B002"
-Cohesion: 0.40
-Nodes (4): Hasil dan perbaikan, Penggunaan skill, Perubahan untuk B003, Review B001/B002
 
 ### Community 281 - "Plain writing: write it the way one designer would"
 Cohesion: 0.18
@@ -1360,7 +1358,7 @@ Cohesion: 0.20
 Nodes (10): 1. Scope, 2. Freeze the baseline, 3. Search wide and find the axis, 4. Build each variation from its side, 5. Check each variation, 6. The variations board, 7. Report, Applying a variation (+2 more)
 
 ### Community 287 - "info_seeding_page.dart"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (9): SeedingBatch, sowingDetailProvider, build, createState, InfoSeedingPage, _InfoSeedingPageState, seedingItem, sowingRecord (+1 more)
 
 ### Community 288 - "penjualan_viewmodel.dart"
@@ -1383,6 +1381,10 @@ Nodes (7): 1. Latar Belakang & Keputusan Bisnis, 2. Aturan Invarian & Validasi, 
 Cohesion: 0.22
 Nodes (9): Asking the scoping round, How a round is asked, Mode, The codebase question, The domain, The order of the rounds, The proposed scope, The Scope line (+1 more)
 
+### Community 294 - "Implementasi Backend B007: Penyemaian, Usia Bibit, Kesiapan 15 Hari, dan Pemakaian Bahan"
+Cohesion: 0.22
+Nodes (7): 1. Ringkasan Eksekutif, 2. Komponen yang Dibangun, 3. Dokumentasi & Kontrak API, Hasil review 4 Oktober 2026, Implementasi Backend B007: Penyemaian, Usia Bibit, Kesiapan 15 Hari, dan Pemakaian Bahan, Migrasi Basis Data:, Pengujian (`test/`):
+
 ### Community 295 - "The report"
 Cohesion: 0.25
 Nodes (8): Before writing, Changes, Degraded, Length and order, Links and files, The closing menu, The report, Unchanged
@@ -1395,9 +1397,9 @@ Nodes (8): Crops, Look words, Naming a region, Platform, Relaxing a default, Sco
 Cohesion: 0.25
 Nodes (7): A second pull, Choosing the mode, Choosing the tool, How search works, Searching Mobbin, When a search falls short, Writing the query
 
-### Community 298 - "API inventaris B005"
-Cohesion: 0.29
-Nodes (7): API inventaris B005, Daftar, Endpoint dan hasil, Error per endpoint, Idempotensi dan sinkronisasi, Schema body, Schema response resource
+### Community 298 - "fluid_capacity_meter.dart"
+Cohesion: 0.25
+Nodes (7): activePlants, build, compact, FluidCapacityMeter, height, showLabel, totalCapacity
 
 ### Community 300 - "2. Peningkatan Nyata pada Layar Aplikasi"
 Cohesion: 0.25
@@ -1436,24 +1438,24 @@ Cohesion: 0.50
 Nodes (3): Answering a challenge after the render, Defend the render that exists, What moves the stance
 
 ### Community 309 - "panen_viewmodel.dart"
-Cohesion: 0.03
-Nodes (51): HarvestRepository, acknowledgeConflict, beginDraft, body, canReadBatches, _commands, conflictId, correct (+43 more)
+Cohesion: 0.04
+Nodes (50): HarvestRepository, acknowledgeConflict, beginDraft, body, canReadBatches, _commands, conflictId, correct (+42 more)
 
 ### Community 310 - "Answering a challenge after the render"
 Cohesion: 0.50
 Nodes (3): Answering a challenge after the render, Defend the render that exists, What moves the stance
 
-### Community 311 - "growth-ui-server.js"
-Cohesion: 0.33
-Nodes (5): cleanups, info, requests, sowingDate, today
+### Community 311 - "static const"
+Cohesion: 0.29
+Nodes (4): getClip, shouldReclip, TopHeroWaveClipper, _waveDepthFraction
 
 ### Community 312 - "uuid.dart"
 Cohesion: 0.33
 Nodes (4): bytes, generateUuidV4, hex, random
 
-### Community 313 - "B005 — Master inventaris"
-Cohesion: 0.40
-Nodes (5): B005 — Master inventaris, Implementasi, Koreksi audit dan refactor 2 Oktober 2026, Migrasi dan verifikasi, Review prasyarat B000–B004
+### Community 313 - "col_info_card_sm.dart"
+Cohesion: 0.29
+Nodes (5): backgroundColor, borderColor, build, child, ColInfoCardSm
 
 ### Community 314 - "Implementasi Backend B009 — Pemindahan Bibit ke Meja Tanam"
 Cohesion: 0.33
@@ -1484,8 +1486,8 @@ Cohesion: 0.40
 Nodes (4): 1. Ringkasan Eksekutif, 2. Tabel Evaluasi Status Fitur, 3. Catatan Penting & Rekomendasi Reviewer, Laporan Peninjauan Status Fitur HidroSense (B000 – B017+)
 
 ### Community 322 - "header.dart"
-Cohesion: 0.06
-Nodes (26): build, currentIndex, CustomBottomNavigationBar, _GlassNavItem, isSelected, item, items, onTap (+18 more)
+Cohesion: 0.03
+Nodes (55): build, currentIndex, CustomBottomNavigationBar, _GlassNavItem, isSelected, item, items, onTap (+47 more)
 
 ### Community 323 - "Kontrak API Stock Ledger B006"
 Cohesion: 0.40
@@ -1495,37 +1497,41 @@ Nodes (5): Endpoint, Error bisnis, Kontrak API Stock Ledger B006, Read, Write da
 Cohesion: 0.40
 Nodes (4): Penerapan guideline, Review dan perbaikan B003, Temuan yang telah diperbaiki, Validasi
 
+### Community 326 - "EmployeeModel"
+Cohesion: 0.50
+Nodes (3): EmployeeModel, EmployeeListState, EmployeeViewModel
+
 ### Community 327 - "Panduan Reset Database (Lokal & Turso Baru)"
 Cohesion: 0.29
 Nodes (6): A. Reset lokal SQLite sampai fresh (kerja harian), B. Pakai database Turso yang baru dibuat, C. Pindah-pindah target (contoh alur kamu sekarang), D. Kalau error, Konsep 30 detik (wajib paham), Panduan Reset Database (Lokal & Turso Baru)
 
 ### Community 328 - "rencana-backend.md"
-Cohesion: 0.15
-Nodes (11): 1. Ringkasan Eksekutif, 2. Matriks Penyelesaian Backlog (PB), 3. Temuan Teknis & Code Review (`/caveman-review`), 4. Rekomendasi Langkah Selanjutnya, Laporan Status Penyelesaian Frontend Mobile (Flutter), Acuan Pengembangan HidroSense, Aturan dan gerbang kualitas yang perlu diingat, Kondisi repo saat acuan pertama dibuat (30 September 2026) (+3 more)
+Cohesion: 0.10
+Nodes (17): Aturan sesi luring, B001 dan B002: fondasi API dan autentikasi, Breakdown dan hasil, Keputusan akses yang sudah disepakati, Langkah berikutnya, Pilihan implementasi, 1. Ringkasan Eksekutif, 2. Matriks Penyelesaian Backlog (PB) (+9 more)
 
 ### Community 335 - "Size"
 Cohesion: 0.50
 Nodes (3): Size, height, width
 
 ## Knowledge Gaps
-- **1585 isolated node(s):** `@types/node`, `tsx`, `typescript`, `jakarta`, `utc` (+1580 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3700 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **1597 isolated node(s):** `@types/node`, `tsx`, `typescript`, `jakarta`, `utc` (+1592 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3711 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `authenticatedWrite()` connect `@libsql/client` to `B006 Stock Ledger Architecture and Refinement Decisions`, `verify-turso-features.mjs`, `harvest-remediation-2026-10-10.md`, `stock/store.ts`, `ref_node_assert`, `common/errors.ts`, `app.ts`, `harvest/contracts.ts`, `transfers/write.ts`, `B006 Stock Ledger PRD`, `tables/write.ts`, `damage/write.ts`, `ApiError`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+- **Why does `authenticatedWrite()` connect `common/errors.ts` to `B006 Stock Ledger Architecture and Refinement Decisions`, `verify-turso-features.mjs`, `harvest-remediation-2026-10-10.md`, `stock/store.ts`, `ref_node_assert`, `@libsql/client`, `B006 Stock Ledger PRD`, `harvest/contracts.ts`, `transfers/write.ts`, `tables/write.ts`, `damage/write.ts`, `ApiError`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **What connects `@types/node`, `tsx`, `typescript` to the rest of the system?**
-  _1585 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1597 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.07058823529411765 - nodes in this community are weakly interconnected._
 - **Why does `B006 Stock Ledger PRD` connect `B006 Stock Ledger PRD` to `prd-stock-ledger.md`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Should `.agents/skills/caveman-compress/scripts/validate.py` be split into smaller, more focused modules?**
   _Cohesion score 0.11330049261083744 - nodes in this community are weakly interconnected._
-- **Why does `Baseline review: B000–B005` connect `B006 Stock Ledger PRD` to `@libsql/client`?**
+- **Why does `Baseline review: B000–B005` connect `B006 Stock Ledger PRD` to `common/errors.ts`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Should `.agents/skills/caveman-compress/scripts/compress.py` be split into smaller, more focused modules?**
   _Cohesion score 0.07372549019607844 - nodes in this community are weakly interconnected._
