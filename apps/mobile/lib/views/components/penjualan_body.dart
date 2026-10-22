@@ -2,112 +2,135 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../viewmodels/penjualan_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../pages/catat_penjualan_page.dart';
 import '../theme/app_theme.dart';
-import '../widgets/custom_search_bar.dart';
+import '../widgets/app_surface_colors.dart';
+import '../widgets/feature_illustration.dart';
+import '../widgets/feature_overview_card.dart';
 import '../widgets/penjualan_card.dart';
 import '../widgets/row_button.dart';
-import '../widgets/row_info_card_md.dart';
+import '../widgets/surface_empty_state.dart';
+import '../widgets/surface_search_field.dart';
+import '../widgets/surface_section_header.dart';
 
-class PenjualanBody extends ConsumerWidget {
+class PenjualanBody extends ConsumerStatefulWidget {
   const PenjualanBody({super.key});
 
-  void _showFilterBottomSheet(BuildContext context, WidgetRef ref) {
+  @override
+  ConsumerState<PenjualanBody> createState() => _PenjualanBodyState();
+}
+
+class _PenjualanBodyState extends ConsumerState<PenjualanBody> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _clearFilters() {
+    FocusScope.of(context).unfocus();
+    _searchController.clear();
+    ref.read(penjualanSearchQueryProvider.notifier).state = '';
+    ref.read(penjualanFilterCategoryProvider.notifier).state =
+        PenjualanFilterCategory.all;
+  }
+
+  void _showFilterBottomSheet() {
     final activeFilter = ref.read(penjualanFilterCategoryProvider);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
+      useRootNavigator: false,
+      useSafeArea: true,
       isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.modal),
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final colors = AppSurfaceColors.of(sheetContext);
+
+        Widget option({
+          required String title,
+          required bool selected,
+          required VoidCallback onTap,
+        }) {
+          return InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.input),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: 14,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTypography.body.copyWith(
+                        color: selected ? colors.ink : colors.secondary,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (selected)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: colors.teal,
+                      size: 22,
+                    ),
+                ],
+              ),
             ),
-          ),
-          padding: EdgeInsets.only(
-            top: 8,
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+          );
+        }
+
+        void select(PenjualanFilterCategory category) {
+          HapticFeedback.selectionClick();
+          ref.read(penjualanFilterCategoryProvider.notifier).state = category;
+          Navigator.pop(sheetContext);
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + AppSpacing.xl,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Grabber Handle Apple HIG
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 5,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
+              Text(
+                'Filter Status Penjualan',
+                style: AppTypography.title3.copyWith(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Filter Status Penjualan',
-                    style: AppTypography.title3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _buildFilterOption(
-                context,
-                ref,
+              option(
                 title: 'Semua Status',
-                isSelected: activeFilter == PenjualanFilterCategory.all,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(penjualanFilterCategoryProvider.notifier).state =
-                      PenjualanFilterCategory.all;
-                  Navigator.pop(context);
-                },
+                selected: activeFilter == PenjualanFilterCategory.all,
+                onTap: () => select(PenjualanFilterCategory.all),
               ),
-              _buildFilterOption(
-                context,
-                ref,
+              option(
                 title: 'Lunas',
-                isSelected: activeFilter == PenjualanFilterCategory.lunas,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(penjualanFilterCategoryProvider.notifier).state =
-                      PenjualanFilterCategory.lunas;
-                  Navigator.pop(context);
-                },
+                selected: activeFilter == PenjualanFilterCategory.lunas,
+                onTap: () => select(PenjualanFilterCategory.lunas),
               ),
-              _buildFilterOption(
-                context,
-                ref,
+              option(
                 title: 'Belum Lunas',
-                isSelected: activeFilter == PenjualanFilterCategory.belumLunas,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(penjualanFilterCategoryProvider.notifier).state =
-                      PenjualanFilterCategory.belumLunas;
-                  Navigator.pop(context);
-                },
+                selected: activeFilter == PenjualanFilterCategory.belumLunas,
+                onTap: () => select(PenjualanFilterCategory.belumLunas),
               ),
+              const SizedBox(height: AppSpacing.xs),
             ],
           ),
         );
@@ -115,51 +138,30 @@ class PenjualanBody extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterOption(
-    BuildContext context,
-    WidgetRef ref, {
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.xxs,
-        ),
-        title: Text(
-          title,
-          style: AppTypography.body.copyWith(
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-          ),
-        ),
-        trailing: isSelected
-            ? const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.primaryMint,
-              )
-            : null,
-        onTap: onTap,
-      ),
-    );
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!(ref
+  Widget build(BuildContext context) {
+    final canRead =
+        ref
             .watch(sessionProvider)
             .user
             ?.permissions
             .contains('penjualan:read') ??
-        false)) {
+        false;
+    if (!canRead) {
       return const Center(child: Text('Akses penjualan tidak diizinkan.'));
     }
+
     final penjualanList = ref.watch(filteredPenjualanListProvider);
-    final allCount = ref.watch(penjualanViewModelProvider).length;
+    final allItems = ref.watch(penjualanViewModelProvider);
     final totalPendapatan = ref.watch(totalPendapatanBulanIniProvider);
+    final query = ref.watch(penjualanSearchQueryProvider);
+    final filter = ref.watch(penjualanFilterCategoryProvider);
+    final colors = AppSurfaceColors.of(context);
+
+    final allCount = allItems.length;
+    final paidCount = allItems.where((item) => item.isLunas).length;
+    final hasFilter =
+        query.trim().isNotEmpty || filter != PenjualanFilterCategory.all;
 
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',
@@ -168,227 +170,221 @@ class PenjualanBody extends ConsumerWidget {
     );
 
     final insets = MediaQuery.paddingOf(context);
-    const buttonHeight = 52.0;
-    const actionSpace = buttonHeight + AppSpacing.md + AppSpacing.sm;
+    final showAction = View.of(context).viewInsets.bottom == 0;
+    final buttonHeight = 52 * MediaQuery.textScalerOf(context).scale(1);
+    final actionSpace = showAction ? buttonHeight + AppSpacing.xl : 0.0;
 
     return ColoredBox(
-      color: AppColors.canvasWarm,
+      color: colors.canvas,
       child: Stack(
         children: [
-          // CustomScrollView menggantikan SingleChildScrollView + ListView
           Positioned.fill(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // Padding atas untuk mengakomodasi header melayang
-                SliverPadding(
-                  padding: EdgeInsets.only(
-                    top: insets.top + AppSpacing.md,
-                    left: AppSpacing.md,
-                    right: AppSpacing.md,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // 1. Top Card Total Pendapatan
-                      RowInfoCardMd(
-                        backgroundColor: AppColors.primaryMint,
-                        borderColor: AppColors.primaryMint,
-                        borderRadius: AppRadius.modal,
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Total Pendapatan Bulan Ini',
-                              style: AppTypography.subheadline.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              currencyFormatter.format(totalPendapatan),
-                              style: AppTypography.title1.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              'Dari total $allCount transaksi penjualan terlaksana',
-                              style: AppTypography.caption1.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-
-                      // 2. Baris Search & Filter Button
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomSearchBar(
-                              placeholder: 'Cari pembeli...',
-                              onChanged: (val) {
-                                ref
-                                        .read(
-                                          penjualanSearchQueryProvider.notifier,
-                                        )
-                                        .state =
-                                    val;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _showFilterBottomSheet(context, ref);
-                            },
-                            borderRadius: BorderRadius.circular(AppRadius.card),
-                            child: Container(
-                              height: 44,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.md,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondarySurface,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.card,
-                                ),
-                                border: Border.all(
-                                  color: AppColors.borderLight,
-                                ),
-                              ),
-                              child: Center(
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.filter_list_rounded,
-                                      size: 16,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    const SizedBox(width: AppSpacing.xxs),
-                                    Text(
-                                      'Filter',
-                                      style: AppTypography.caption1.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                    ]),
-                  ),
-                ),
-
-                // 3. Daftar Card Penjualan menggunakan SliverList yang asli (Lazy Loading + Tanpa Bug Jarak)
-                if (penjualanList.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.xxxl,
-                        horizontal: AppSpacing.md,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Tidak ada data penjualan.',
-                          style: AppTypography.subheadline.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else
+            child: Padding(
+              padding: EdgeInsets.only(bottom: actionSpace),
+              child: CustomScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
-                      AppSpacing.md,
+                      AppSpacing.lg,
+                      insets.top + AppSpacing.sm,
+                      AppSpacing.lg,
                       0,
-                      AppSpacing.md,
-                      // Padding bawah agar list tidak tertutup tombol melayang
-                      insets.bottom + actionSpace + AppSpacing.md,
                     ),
-                    sliver: SliverList.separated(
-                      itemCount: penjualanList.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final item = penjualanList[index];
-                        return PenjualanCard(
-                          item: item,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    CatatPenjualanPage(itemToEdit: item),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FeatureOverviewCard(
+                            eyebrow: 'Total Pendapatan Bulan Ini',
+                            title: currencyFormatter.format(totalPendapatan),
+                            subtitle:
+                                'Dari total $allCount transaksi penjualan '
+                                'terlaksana',
+                            detail:
+                                '$paidCount lunas · '
+                                '${allCount - paidCount} belum lunas',
+                            titleStyle: AppTypography.title1.copyWith(
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                            illustration: FeatureIllustration.sales,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: SurfaceSearchField(
+                                  controller: _searchController,
+                                  label: 'Cari pembeli...',
+                                  query: query,
+                                  onChanged: (value) {
+                                    ref
+                                            .read(
+                                              penjualanSearchQueryProvider
+                                                  .notifier,
+                                            )
+                                            .state =
+                                        value;
+                                  },
+                                  onClear: () {
+                                    _searchController.clear();
+                                    ref
+                                            .read(
+                                              penjualanSearchQueryProvider
+                                                  .notifier,
+                                            )
+                                            .state =
+                                        '';
+                                  },
+                                ),
                               ),
-                            );
-                          },
-                        );
-                      },
+                              const SizedBox(width: AppSpacing.xs),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: colors.ink,
+                                  minimumSize: const Size(0, 56),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.sm,
+                                  ),
+                                  side: BorderSide(color: colors.controlBorder),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.input,
+                                    ),
+                                  ),
+                                  textStyle: AppTypography.caption1.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  _showFilterBottomSheet();
+                                },
+                                icon: Icon(
+                                  Icons.tune_rounded,
+                                  size: 18,
+                                  color: hasFilter
+                                      ? colors.teal
+                                      : colors.secondary,
+                                ),
+                                label: Text(
+                                  'Filter',
+                                  style: TextStyle(
+                                    color: hasFilter ? colors.teal : colors.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          SurfaceSectionHeader(
+                            title: 'Riwayat penjualan',
+                            trailing: '${penjualanList.length} transaksi',
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                      ),
                     ),
                   ),
-              ],
-            ),
-          ),
-
-          // 4. Tombol aksi melayang di atas navbar
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: insets.bottom,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.canvasWarm.withValues(alpha: 0),
-                    AppColors.canvasWarm.withValues(alpha: 0.92),
-                  ],
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: RowButton(
-                  label: '+ Catat Penjualan Baru',
-                  backgroundColor: AppColors.darkNavy,
-                  textColor: AppColors.accentLime,
-                  borderRadius: AppRadius.pill,
-                  height: buttonHeight,
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CatatPenjualanPage(),
+                  if (penjualanList.isEmpty)
+                    SliverToBoxAdapter(
+                      child: SurfaceEmptyState(
+                        illustration: hasFilter
+                            ? FeatureIllustration.noResults
+                            : FeatureIllustration.sales,
+                        title: hasFilter
+                            ? 'Penjualan tidak ditemukan.'
+                            : 'Tidak ada data penjualan.',
+                        message: hasFilter
+                            ? 'Coba nama pembeli lain atau ubah filter status.'
+                            : 'Catat transaksi pertama untuk melihat rekap '
+                                  'omzet di sini.',
+                        actionLabel: hasFilter ? 'Hapus filter' : null,
+                        onAction: hasFilter ? _clearFilters : null,
                       ),
-                    );
-                  },
-                ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: penjualanList.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: AppSpacing.sm),
+                        itemBuilder: (context, index) {
+                          final item = penjualanList[index];
+                          return PenjualanCard(
+                            key: ValueKey(item.id),
+                            item: item,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      CatatPenjualanPage(itemToEdit: item),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: insets.bottom + AppSpacing.sm),
+                  ),
+                ],
               ),
             ),
           ),
+          if (showAction)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: insets.bottom,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      colors.canvas.withValues(alpha: 0),
+                      colors.canvas.withValues(alpha: 0.92),
+                    ],
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: RowButton(
+                    label: '+ Catat Penjualan Baru',
+                    backgroundColor: AppColors.accentLime,
+                    textColor: AppColors.darkNavy,
+                    borderRadius: AppRadius.pill,
+                    height: buttonHeight,
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CatatPenjualanPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
