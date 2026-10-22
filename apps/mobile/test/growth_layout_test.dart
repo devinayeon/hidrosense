@@ -188,6 +188,30 @@ void main() {
         } else {
           await tester.pumpAndSettle();
         }
+        if (screen == 'create' ||
+            screen == 'edit' ||
+            screen == 'edit-keyboard') {
+          final statusField = find
+              .byType(DropdownButtonFormField<String>)
+              .first;
+          final dropdown = tester.widget<DropdownButton<String>>(
+            find.descendant(
+              of: statusField,
+              matching: find.byType(DropdownButton<String>),
+            ),
+          );
+          expect(
+            dropdown.items!.map((item) => item.value),
+            isNot(contains('penuh')),
+          );
+          expect(dropdown.value, screen == 'create' ? 'tersedia' : 'perbaikan');
+          expect(
+            find.text(
+              'Status Penuh diterapkan otomatis saat semua lubang terisi.',
+            ),
+            findsOneWidget,
+          );
+        }
         if (screen == 'note') {
           await tester.tap(
             find.widgetWithIcon(IconButton, Icons.edit_note_rounded),
@@ -249,4 +273,106 @@ void main() {
       });
     }
   }
+
+  testWidgets('edit meja penuh menampilkan status terkunci', (
+    tester,
+  ) async {
+    final api = apiFor(
+      (request) async => reply({
+        'data': <Object>[],
+        'meta': {'page': 1, 'limit': 50, 'total': 0, 'total_pages': 0},
+      }),
+    );
+    addTearDown(api.close);
+    const fullTable = TableRecord(
+      id: '1',
+      code: 'M-01',
+      holeCount: 250,
+      status: 'penuh',
+      activePlants: 250,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          apiClientProvider.overrideWithValue(api),
+          sessionProvider.overrideWith(
+            (_) => SessionViewModel(
+              api,
+              initialState: SessionState(
+                user: SessionUser(
+                  id: farmer.id,
+                  name: farmer.name,
+                  username: farmer.username,
+                  role: farmer.role,
+                  permissions: farmer.permissions,
+                ),
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const FormMejaNftPage(tableRecord: fullTable),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final statusField = find.byType(DropdownButtonFormField<String>).first;
+    final dropdown = tester.widget<DropdownButton<String>>(
+      find.descendant(
+        of: statusField,
+        matching: find.byType(DropdownButton<String>),
+      ),
+    );
+    expect(dropdown.value, 'penuh');
+    expect(dropdown.items!.map((item) => item.value), contains('penuh'));
+    expect(dropdown.onChanged, isNull);
+    expect(
+      find.text('Status Penuh tidak dapat diubah selama semua lubang terisi.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('kapasitas meja ditolak saat melebihi 1000 lubang', (
+    tester,
+  ) async {
+    final api = apiFor(
+      (request) async => reply({
+        'data': <Object>[],
+        'meta': {'page': 1, 'limit': 50, 'total': 0, 'total_pages': 0},
+      }),
+    );
+    addTearDown(api.close);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          apiClientProvider.overrideWithValue(api),
+          sessionProvider.overrideWith(
+            (_) => SessionViewModel(
+              api,
+              initialState: SessionState(
+                user: SessionUser(
+                  id: farmer.id,
+                  name: farmer.name,
+                  username: farmer.username,
+                  role: farmer.role,
+                  permissions: farmer.permissions,
+                ),
+              ),
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: FormMejaNftPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'M-01');
+    await tester.enterText(fields.at(1), '1001');
+    final saveButton = find.widgetWithText(FilledButton, 'Simpan Meja');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pump();
+    expect(find.textContaining('kapasitas 1–1000'), findsOneWidget);
+  });
 }

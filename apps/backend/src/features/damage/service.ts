@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
 import { countTableActive } from '../transfers/store.js';
+import { syncTableStatus } from '../tables/store.js';
 import { insertDamage, patchDamage, sumDamageForTransfer } from './store.js';
 import type { CreateDamageInput, UpdateDamageInput } from './contracts.js';
 
@@ -15,7 +16,7 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput, no
   validateFutureDate(input.tanggal_kejadian, now);
   // 1. Fetch & validate transfer (pemindahan)
   const transferRow = (await tx.execute({
-    sql: 'SELECT id_pemindahan, tanggal_pemindahan, jumlah_tanaman FROM pemindahan WHERE id_pemindahan = ?',
+    sql: 'SELECT id_pemindahan, tanggal_pemindahan, jumlah_tanaman, CAST(id_meja AS TEXT) AS id_meja FROM pemindahan WHERE id_pemindahan = ?',
     args: [input.id_pemindahan],
   })).rows[0];
   if (!transferRow) {
@@ -48,7 +49,9 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput, no
     );
   }
 
-  return insertDamage(tx, input);
+  const damage = await insertDamage(tx, input);
+  await syncTableStatus(tx, String(transferRow.id_meja));
+  return damage;
 }
 
 export async function updateDamage(tx: Transaction, id: string, input: UpdateDamageInput, now: number) {
@@ -108,5 +111,7 @@ export async function updateDamage(tx: Transaction, id: string, input: UpdateDam
     }
   }
 
-  return patchDamage(tx, id, input);
+  const damage = await patchDamage(tx, id, input);
+  await syncTableStatus(tx, String(existing.id_meja));
+  return damage;
 }

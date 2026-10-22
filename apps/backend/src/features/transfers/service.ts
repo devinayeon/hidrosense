@@ -7,6 +7,7 @@ import {
   insertTransfer,
   patchTransfer,
 } from './store.js';
+import { syncTableStatus } from '../tables/store.js';
 import type { CreateTransferInput, UpdateTransferInput } from './contracts.js';
 
 const dayMs = 24 * 60 * 60 * 1000;
@@ -72,8 +73,9 @@ export async function createTransfer(
     throw new ApiError(409, 'TABLE_CAPACITY_EXCEEDED', 'Kapasitas lubang meja tanam tidak mencukupi.');
   }
 
-  // 6. Insert transfer
+  // 6. Insert transfer and derive the table status from its new occupancy
   const result = await insertTransfer(tx, input, now);
+  await syncTableStatus(tx, input.id_meja);
 
   // 7. Auto-mark sowing as 'selesai' if all seedlings moved
   if (alreadyMoved + input.jumlah_tanaman >= Number(sowingRow.jumlah_benih)) {

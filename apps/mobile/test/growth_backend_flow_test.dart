@@ -296,6 +296,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
       expect(initialBatch['tanggal_pemindahan'], apiDate(today));
       expect(initialBatch['hss'], hss);
       expect(initialBatch['hst'], 0);
+      expect((await data('meja-tanam/1'))['status_meja'], 'penuh');
       await batches();
       await _wait(
         tester,
@@ -328,6 +329,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
       expect(report['jumlah_tanaman'], 5);
       expect(report['version'], '1');
       expect((await data('meja-tanam/1'))['kapasitas_tersedia'], 5);
+      expect((await data('meja-tanam/1'))['status_meja'], 'tersedia');
       await _wait(
         tester,
         () => find.byType(CatatKerusakanPage).evaluate().isEmpty,
@@ -335,6 +337,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
       await back();
       await transfer(5);
       expect((await data('meja-tanam/1'))['tanaman_aktif'], 250);
+      expect((await data('meja-tanam/1'))['status_meja'], 'penuh');
       await batches();
       await _wait(
         tester,
@@ -425,6 +428,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
       expect(finalTable['jumlah_lubang'], 252);
       expect(finalTable['tanaman_aktif'], 252);
       expect(finalTable['kapasitas_tersedia'], 0);
+      expect(finalTable['status_meja'], 'penuh');
       expect((await data('pemindahan/1'))['keterangan'], 'Catatan batch tetap');
       final savedWrites = transport.writes
           .where((w) => w.status >= 200 && w.status < 300)

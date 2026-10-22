@@ -158,6 +158,66 @@ test('transfers enforce table hole capacity limits and unavailable table status'
   check(toBroken, 409, 'TABLE_NOT_AVAILABLE');
 });
 
+test('filling a table derives penuh and freeing capacity restores tersedia', async (t) => {
+  const f = await setup(t);
+  const getTable = async () => {
+    const response = await f.app.inject({
+      method: 'GET', url: '/api/v1/meja-tanam/1', headers: f.headers,
+    });
+    check(response, 200);
+    return response.json().data;
+  };
+
+  const filled = await f.create({ jumlah_tanaman: 250 });
+  check(filled, 201);
+  let table = await getTable();
+  assert.equal(table.status_meja, 'penuh');
+  assert.equal(table.kapasitas_tersedia, 0);
+  const fullOnly = await f.app.inject({
+    method: 'GET', url: '/api/v1/meja-tanam?status_meja=penuh', headers: f.headers,
+  });
+  check(fullOnly, 200);
+  assert.equal(fullOnly.json().meta.total, 1);
+  check(await f.create({ jumlah_tanaman: 1 }), 409, 'TABLE_NOT_AVAILABLE');
+
+  const damage = await f.app.inject({
+    method: 'POST', url: '/api/v1/kerusakan', headers: f.headers,
+    payload: {
+      id_pemindahan: filled.json().data.id_pemindahan,
+      tanggal_kejadian: '2026-09-20', jumlah_tanaman: 1, jenis_kerusakan: 'Busuk akar',
+    },
+  });
+  check(damage, 201);
+  table = await getTable();
+  assert.equal(table.status_meja, 'tersedia');
+  assert.equal(table.kapasitas_tersedia, 1);
+
+  const refilled = await f.create({ jumlah_tanaman: 1 });
+  check(refilled, 201);
+  table = await getTable();
+  assert.equal(table.status_meja, 'penuh');
+
+  const harvested = await f.app.inject({
+    method: 'POST', url: '/api/v1/panen', headers: f.headers,
+    payload: {
+      tanggal_panen: '2026-09-20',
+      details: [{
+        id_pemindahan: refilled.json().data.id_pemindahan,
+        jumlah_tanaman: 1, berat_total: '1.20', berat_reject: '0.20',
+      }],
+    },
+  });
+  check(harvested, 201);
+  table = await getTable();
+  assert.equal(table.status_meja, 'tersedia');
+  assert.equal(table.kapasitas_tersedia, 1);
+
+  check(await f.create({ jumlah_tanaman: 1 }), 201);
+  table = await getTable();
+  assert.equal(table.status_meja, 'penuh');
+  assert.equal(table.kapasitas_tersedia, 0);
+});
+
 test('transfers list, detail, pagination, and filter', async (t) => {
   const f = await setup(t);
   await f.create({ jumlah_tanaman: 100 });
