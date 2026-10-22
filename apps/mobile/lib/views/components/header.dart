@@ -139,8 +139,10 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               ),
             )
           : null,
-      title: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 200),
+      title: Text(
+        titleText,
+        maxLines: titleMaxLines ?? (largeTitle ? 1 : null),
+        overflow: largeTitle ? TextOverflow.ellipsis : null,
         style: largeTitle
             ? AppTypography.largeTitle
             : AppTypography.title3.copyWith(
@@ -149,11 +151,6 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                     ? Theme.of(context).colorScheme.onSurface
                     : AppColors.textPrimary,
               ),
-        child: Text(
-          titleText,
-          maxLines: titleMaxLines ?? (largeTitle ? 1 : null),
-          overflow: largeTitle ? TextOverflow.ellipsis : null,
-        ),
       ),
       actions: [
         ...?actions,
@@ -189,27 +186,30 @@ class _HeaderAvatarButtonState extends State<_HeaderAvatarButton> {
       scale: _pressed ? 0.92 : 1.0,
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOutCubic,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          alignment: Alignment.center,
+      child: Tooltip(
+        message: 'Buka akun',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onTap,
           child: Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.accentLime,
-              shape: BoxShape.circle,
-              boxShadow: AppShadows.subtle,
-            ),
-            child: const InventoryIllustration(
-              asset: InventoryIllustration.avatar,
-              size: 34,
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: AppColors.accentLime,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.subtle,
+              ),
+              child: const InventoryIllustration(
+                asset: InventoryIllustration.avatar,
+                size: 34,
+              ),
             ),
           ),
         ),
