@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/inventory_record.dart';
+import '../data/models/jenis_inventaris_record.dart';
 import '../data/repositories/inventory_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/inventory_cache.dart';
@@ -319,4 +320,13 @@ final connectedInventoryProvider =
         ),
         commands: ref.watch(inventoryCommandsProvider),
       );
+    });
+
+final inventoryCategoriesProvider =
+    FutureProvider.autoDispose<List<JenisInventarisRecord>>((ref) async {
+      final user = ref.watch(sessionProvider.select((state) => state.user));
+      if (user == null) {
+        throw StateError('Kategori inventaris memerlukan sesi.');
+      }
+      return fetchInventoryCategories(ref.watch(apiClientProvider));
     });

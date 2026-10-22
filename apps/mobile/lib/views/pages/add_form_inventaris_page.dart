@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/inventory_record.dart';
+import '../../data/models/jenis_inventaris_record.dart';
 import '../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../viewmodels/inventory_draft.dart';
 import '../../viewmodels/session_viewmodel.dart';
@@ -27,21 +28,14 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
   late TextEditingController _stockController;
   late TextEditingController _minimumController;
 
-  String? _selectedCategory;
+  String? _selectedCategoryId;
+  String? _selectedCategoryName;
   String? _selectedUnit;
   bool _saving = false;
   Map<String, String> _errors = {};
   String? _formUserId;
   bool get _locked =>
       _saving || ref.read(connectedInventoryProvider).pendingDraft != null;
-
-  final Map<String, String> _categoryMap = {
-    'Benih': '1',
-    'Pupuk': '2',
-    'Obat': '3',
-    'Peralatan': '4',
-    'Media Tanam': '5',
-  };
 
   final List<String> _units = [
     'Kg',
@@ -61,9 +55,8 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
     _stockController = TextEditingController(text: item?.balance ?? '');
     _minimumController = TextEditingController(text: item?.minimum ?? '');
 
-    if (item?.category != null && _categoryMap.containsKey(item!.category)) {
-      _selectedCategory = item.category;
-    }
+    _selectedCategoryId = item?.categoryId;
+    _selectedCategoryName = item?.category;
     if (item?.unit != null) {
       final match = _units.firstWhere(
         (u) => u.toLowerCase() == item!.unit.toLowerCase(),
@@ -81,9 +74,10 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
       _nameController.text = pending.name;
       _stockController.text = pending.initialStock;
       _minimumController.text = pending.minimum;
-      _selectedCategory = _categoryMap.entries
-          .firstWhere((entry) => entry.value == pending.categoryId)
-          .key;
+      _selectedCategoryId = pending.categoryId;
+      if (pending.categoryId != item?.categoryId) {
+        _selectedCategoryName = null;
+      }
       _selectedUnit = pending.unit;
     }
   }
@@ -96,8 +90,37 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
     super.dispose();
   }
 
+  String? _categoryName(
+    List<JenisInventarisRecord> categories,
+    String? categoryId,
+  ) {
+    for (final category in categories) {
+      if (category.id == categoryId) return category.name;
+    }
+    return null;
+  }
+
   Future<void> _saveForm({bool withoutStock = false}) async {
     if (_saving) return;
+    final categoryState = ref.read(inventoryCategoriesProvider);
+    final categories =
+        categoryState.valueOrNull ?? const <JenisInventarisRecord>[];
+    final categoryId =
+        _selectedCategoryId ??
+        (categories.isEmpty ? null : categories.first.id);
+    if (categoryId == null) {
+      setState(
+        () => _errors = {
+          ..._errors,
+          'category': categoryState.isLoading
+              ? 'Tunggu kategori selesai dimuat.'
+              : categoryState.hasError
+              ? 'Kategori gagal dimuat. Coba lagi.'
+              : 'Belum ada kategori inventaris aktif.',
+        },
+      );
+      return;
+    }
     final selectedUnit = _selectedUnit ?? 'Pcs';
     final originalUnit = widget.initialRecord?.unit;
     final unit =
@@ -109,7 +132,7 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
     final draft = InventoryDraft(
       id: widget.itemId,
       name: _nameController.text.trim(),
-      categoryId: _categoryMap[_selectedCategory ?? 'Benih'] ?? '1',
+      categoryId: categoryId,
       unit: unit,
       minimum: _minimumController.text.trim(),
       initialStock: _stockController.text.trim(),
@@ -187,6 +210,11 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
         ),
       );
     }
+    final categoriesAsync = ref.watch(inventoryCategoriesProvider);
+    final categories =
+        categoriesAsync.valueOrNull ?? const <JenisInventarisRecord>[];
+    final selectedCategoryName =
+        _selectedCategoryName ?? _categoryName(categories, _selectedCategoryId);
     return PopScope(
       canPop: !_saving,
       child: Scaffold(
@@ -261,10 +289,13 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
               _label('Kategori'),
               const SizedBox(height: AppSpacing.xs),
               _selectorField<String>(
-                value: _selectedCategory,
-                hintText: 'Pilih Kategori Barang',
+                value: selectedCategoryName,
+                hintText: categoriesAsync.isLoading
+                    ? 'Memuat kategori...'
+                    : 'Pilih Kategori Barang',
                 modalTitle: 'Pilih Kategori Barang',
-                items: _categoryMap.keys.toList(),
+                items: categories.map((category) => category.name).toList(),
+                enabled: categories.isNotEmpty,
                 iconBuilder: (cat) {
                   final c = cat.toLowerCase();
                   if (c.contains('benih')) return Icons.eco_rounded;
@@ -272,11 +303,52 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
                     return Icons.water_drop_rounded;
                   }
                   if (c.contains('obat')) return Icons.shield_rounded;
-                  if (c.contains('peralatan')) return Icons.handyman_rounded;
+                  if (c.contains('peralatan') || c.contains('perlengkapan')) {
+                    return Icons.handyman_rounded;
+                  }
                   return Icons.grid_view_rounded;
                 },
-                onChanged: (val) => setState(() => _selectedCategory = val),
+                onChanged: (name) {
+                  final category = categories.firstWhere(
+                    (category) => category.name == name,
+                  );
+                  setState(() {
+                    _selectedCategoryId = category.id;
+                    _selectedCategoryName = category.name;
+                    _errors = {..._errors}..remove('category');
+                  });
+                },
               ),
+              if (categoriesAsync.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'Gagal memuat kategori inventaris.',
+                        style: AppTypography.footnote.copyWith(
+                          color: AppColors.dangerRed,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(inventoryCategoriesProvider),
+                        child: const Text('Coba lagi'),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_errors['category'] case final String error)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: Text(
+                    error,
+                    style: AppTypography.footnote.copyWith(
+                      color: AppColors.dangerRed,
+                    ),
+                  ),
+                ),
               const SizedBox(height: AppSpacing.md),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,8 +455,9 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
     required List<T> items,
     required ValueChanged<T> onChanged,
     IconData Function(T)? iconBuilder,
+    bool enabled = true,
   }) => InkWell(
-    onTap: _locked
+    onTap: _locked || !enabled
         ? null
         : () => _openPickerSheet<T>(
             title: modalTitle,

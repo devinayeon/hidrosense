@@ -15,6 +15,7 @@ import 'package:hidrosense_mobile/views/pages/add_form_inventaris_page.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:hidrosense_mobile/views/widgets/inventory_illustration.dart';
 import 'package:http/testing.dart';
+import 'support/inventory_fixtures.dart';
 
 InventoryRecord item(
   String id,
@@ -77,7 +78,12 @@ Future<TestInventory> pumpInventory(
   });
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [connectedInventoryProvider.overrideWith((_) => model)],
+      overrides: [
+        connectedInventoryProvider.overrideWith((_) => model),
+        inventoryCategoriesProvider.overrideWith(
+          (_) async => inventoryCategories,
+        ),
+      ],
       child: MaterialApp(
         theme: dark ? ThemeData.dark(useMaterial3: true) : AppTheme.lightTheme,
         builder: (context, child) => MediaQuery(

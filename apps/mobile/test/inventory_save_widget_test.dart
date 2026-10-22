@@ -14,6 +14,7 @@ import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'support/inventory_fixtures.dart';
 
 Map<String, dynamic> master(
   String id, {
@@ -159,6 +160,9 @@ void main() {
           overrides: [
             apiClientProvider.overrideWithValue(api),
             inventoryCacheProvider.overrideWithValue(Future.value(cache)),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -245,6 +249,9 @@ void main() {
         ProviderScope(
           overrides: [
             apiClientProvider.overrideWithValue(api),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -295,6 +302,9 @@ void main() {
         overrides: [
           connectedInventoryProvider.overrideWith((_) => vm),
           apiClientProvider.overrideWithValue(api),
+          inventoryCategoriesProvider.overrideWith(
+            (_) async => inventoryCategories,
+          ),
           sessionProvider.overrideWith(
             (_) => SessionViewModel(
               api,
