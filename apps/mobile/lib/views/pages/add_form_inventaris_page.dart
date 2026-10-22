@@ -98,11 +98,19 @@ class _AddFormInventarisPageState extends ConsumerState<AddFormInventarisPage> {
 
   Future<void> _saveForm({bool withoutStock = false}) async {
     if (_saving) return;
+    final selectedUnit = _selectedUnit ?? 'Pcs';
+    final originalUnit = widget.initialRecord?.unit;
+    final unit =
+        originalUnit != null &&
+            selectedUnit.trim().toLowerCase() ==
+                originalUnit.trim().toLowerCase()
+        ? originalUnit
+        : selectedUnit;
     final draft = InventoryDraft(
       id: widget.itemId,
       name: _nameController.text.trim(),
       categoryId: _categoryMap[_selectedCategory ?? 'Benih'] ?? '1',
-      unit: _selectedUnit ?? 'Pcs',
+      unit: unit,
       minimum: _minimumController.text.trim(),
       initialStock: _stockController.text.trim(),
     );

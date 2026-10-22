@@ -143,6 +143,10 @@
   "195": "iOS Human Interface Guidelines Patterns",
   "196": "SQLite Security Examples",
   "197": "SQLite Advanced Patterns",
+<<<<<<< HEAD
+=======
+  "199": "card_icon_box.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "200": "item_image_placeholder.dart",
   "201": "meja_nft_model.dart",
   "203": "Animation Audit Playbook",
@@ -164,12 +168,20 @@
   "229": "win32_window.cpp",
   "235": "Core Concepts",
   "237": "inventory_repository.dart",
+<<<<<<< HEAD
+=======
+  "238": "custom_dropdown_field.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "240": "inventory_cache.dart",
   "241": "penjualan_model.dart",
   "242": "header.dart",
   "243": "Android Mobile Design",
   "245": "Temuan yang diverifikasi",
   "248": "Database backend HidroSense",
+<<<<<<< HEAD
+=======
+  "249": "row_button.dart",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "251": "Core Concepts",
   "252": "add_form_inventaris_page.dart",
   "253": "4. State Management (Library-Agnostic)",
@@ -208,6 +220,10 @@
   "295": "The report",
   "296": "Scoping rules",
   "297": "Searching Mobbin",
+<<<<<<< HEAD
+=======
+  "299": "VoidCallback?",
+>>>>>>> 83869f9 (fix: update inventaris fake notif)
   "300": "2. Peningkatan Nyata pada Layar Aplikasi",
   "301": "The report",
   "302": "Scoping rules",

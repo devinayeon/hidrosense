@@ -53,7 +53,10 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     const input = parseInput(updateInventarisSchema, request.body);
     return inventoryWrite(db, request, clock, 'inventaris.update', { id, input }, async (tx) => {
       const current = await getInventaris(tx, id);
-      if (input.satuan !== undefined && input.satuan !== current.satuan) {
+      const normalizeUnit = (value: string) => value.trim().toLowerCase();
+      const unitChanged = input.satuan !== undefined
+        && normalizeUnit(input.satuan) !== normalizeUnit(current.satuan);
+      if (unitChanged) {
         const history = await tx.execute({ sql: 'SELECT 1 FROM detail_stok WHERE id_inventaris=? LIMIT 1', args: [id] });
         if (history.rows.length) throw new ApiError(409, 'UNIT_LOCKED', 'Satuan barang sudah digunakan dalam histori stok.');
       }
@@ -62,12 +65,14 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       const assignments: string[] = [];
       const args: InValue[] = [];
       for (const field of ['id_jenis_inventaris', 'id_obat', 'nama_barang', 'satuan', 'stok_minimum'] as const) {
+        if (field === 'satuan' && !unitChanged) continue;
         if (field in input) { assignments.push(`${field}=?`); args.push(input[field] ?? null); }
       }
       if ('stok_minimum' in input) {
         assignments.push('stok_minimum_minor=?');
         args.push(input.stok_minimum == null ? null : toMinor(input.stok_minimum));
       }
+      if (assignments.length === 0) return current;
       args.push(id);
       await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
       return getInventaris(tx, id);

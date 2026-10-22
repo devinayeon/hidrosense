@@ -166,6 +166,24 @@ test('whole reversal appends opposite lines once, preserves original and locks u
   expectError(patch, 409, 'UNIT_LOCKED');
 });
 
+test('stock history locks only real unit changes, not case or unrelated edits', async (t) => {
+  const f = await stockFixture(t);
+  assert.equal((await f.post(f.movement('masuk', '1'))).statusCode, 201);
+  const url = `/api/v1/inventaris/${f.items[0].id_inventaris}`;
+  const unrelatedEdit = await f.app.inject({ method: 'PATCH', url,
+    headers: f.headers, payload: { nama_barang: 'A renamed', satuan: 'KG', stok_minimum: '0.25' } });
+  assert.equal(unrelatedEdit.statusCode, 200, unrelatedEdit.body);
+  assert.equal(unrelatedEdit.json().data.nama_barang, 'A renamed');
+  assert.equal(unrelatedEdit.json().data.satuan, 'kg');
+  assert.equal(unrelatedEdit.json().data.stok_minimum, '0.25');
+  const caseOnlyUnit = await f.app.inject({ method: 'PATCH', url,
+    headers: f.headers, payload: { satuan: 'KG' } });
+  assert.equal(caseOnlyUnit.statusCode, 200, caseOnlyUnit.body);
+  assert.equal(caseOnlyUnit.json().data.satuan, 'kg');
+  expectError(await f.app.inject({ method: 'PATCH', url,
+    headers: f.headers, payload: { satuan: 'ml' } }), 409, 'UNIT_LOCKED');
+});
+
 test('reversing incoming stock requires full current balance and multiitem deduction is atomic', async (t) => {
   const f = await stockFixture(t);
   const receipt = await f.post(f.movement('masuk', '2'));
