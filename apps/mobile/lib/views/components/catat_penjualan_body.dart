@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/business_date.dart';
+import '../../core/formatting.dart';
 import '../../models/penjualan_model.dart';
 import '../../viewmodels/catat_penjualan_viewmodel.dart';
 import '../../viewmodels/penjualan_viewmodel.dart';
@@ -17,11 +19,7 @@ class CatatPenjualanBody extends ConsumerStatefulWidget {
   final bool isModal;
   final PenjualanItem? itemToEdit;
 
-  const CatatPenjualanBody({
-    super.key,
-    this.isModal = false,
-    this.itemToEdit,
-  });
+  const CatatPenjualanBody({super.key, this.isModal = false, this.itemToEdit});
 
   /// Static helper untuk menampilkan form dalam format Apple HIG Modal Bottom Sheet
   static Future<bool?> show(BuildContext context, {PenjualanItem? itemToEdit}) {
@@ -29,10 +27,8 @@ class CatatPenjualanBody extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CatatPenjualanBody(
-        isModal: true,
-        itemToEdit: itemToEdit,
-      ),
+      builder: (context) =>
+          CatatPenjualanBody(isModal: true, itemToEdit: itemToEdit),
     );
   }
 
@@ -46,85 +42,72 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
   late final TextEditingController _beratController;
   late final TextEditingController _hargaController;
   late final TextEditingController _catatanController;
+  bool _batchSyncScheduled = false;
 
   bool get isEdit => widget.itemToEdit != null;
+
+  PenjualanLine? get _editLine {
+    final item = widget.itemToEdit;
+    return item != null && item.details.length == 1
+        ? item.details.single
+        : null;
+  }
 
   @override
   void initState() {
     super.initState();
     final item = widget.itemToEdit;
+    final line = _editLine;
+    final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
+
     _pembeliController = TextEditingController(text: item?.pembeli ?? '');
 
-    double initBerat = 0.0;
-    if (item != null) {
-      final match = RegExp(r'^([0-9.,]+)').firstMatch(item.kuantitas);
-      if (match != null) {
-        initBerat =
-            double.tryParse(match.group(1)!.replaceAll(',', '.')) ?? 0.0;
-      }
-    }
+    final initBerat = line?.jumlahKg ?? 0.0;
     _beratController = TextEditingController(
       text: initBerat > 0 ? formatAngka(initBerat) : '',
     );
 
-    double initHargaPerKg = 0.0;
-    if (item != null && initBerat > 0) {
-      initHargaPerKg = (item.totalHarga / initBerat).roundToDouble();
-    }
+    final initHargaPerKg = line == null ? 0.0 : line.hargaPerKg.roundToDouble();
     _hargaController = TextEditingController(
       text: initHargaPerKg > 0 ? initHargaPerKg.toInt().toString() : '',
     );
 
     _catatanController = TextEditingController(text: item?.catatan ?? '');
 
-    final defaultTanggal =
-        ref.read(catatPenjualanViewModelProvider).tanggal ?? DateTime.now();
+    final defaultTanggal = item?.tanggalTransaksi ?? jakartaToday();
     _tanggalController = TextEditingController(
-      text: item?.tanggal ?? formatTanggalIndo(defaultTanggal),
+      text: formatTanggalIndo(defaultTanggal),
     );
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
+      formVm.setPembeli(item?.pembeli ?? '');
+      formVm.setTanggal(defaultTanggal);
+      if (initBerat > 0) formVm.setBerat(initBerat);
+      if (initHargaPerKg > 0) formVm.setHargaPerKg(initHargaPerKg);
+      formVm.setCatatan(item?.catatan ?? '');
+      if (item != null) formVm.setStatus(item.status);
+      if (item != null && line != null) formVm.setBatch(_fallbackBatch(line));
+    });
+
     _pembeliController.addListener(() {
-      ref
-          .read(catatPenjualanViewModelProvider.notifier)
-          .setPembeli(_pembeliController.text);
+      formVm.setPembeli(_pembeliController.text);
     });
 
     _beratController.addListener(() {
       // Terima "2,5" maupun "2.5"
       final text = _beratController.text.replaceAll(',', '.');
       final val = double.tryParse(text) ?? 0.0;
-      ref.read(catatPenjualanViewModelProvider.notifier).setBerat(val);
+      formVm.setBerat(val);
     });
 
     _hargaController.addListener(() {
       // Ambil hanya digit supaya "20.000" tidak terbaca 20.0
       final digits = _hargaController.text.replaceAll(RegExp(r'[^0-9]'), '');
       final val = double.tryParse(digits) ?? 0.0;
-      ref.read(catatPenjualanViewModelProvider.notifier).setHargaPerKg(val);
+      formVm.setHargaPerKg(val);
     });
-
-    if (item != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
-        formVm.setPembeli(item.pembeli);
-        if (initBerat > 0) formVm.setBerat(initBerat);
-        if (initHargaPerKg > 0) formVm.setHargaPerKg(initHargaPerKg);
-        formVm.setStatus(item.status);
-        if (item.catatan != null) formVm.setCatatan(item.catatan!);
-
-        final batchList = ref.read(availableBatchPanenProvider);
-        final matchedBatch = batchList.firstWhere(
-          (b) =>
-              b.id == item.batchPanenId ||
-              item.kuantitas.toLowerCase().contains(
-                    b.nama.split('-').last.trim().toLowerCase(),
-                  ),
-          orElse: () => batchList.first,
-        );
-        formVm.setBatch(matchedBatch);
-      });
-    }
   }
 
   @override
@@ -137,16 +120,85 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     super.dispose();
   }
 
+  BatchPanen _fallbackBatch(PenjualanLine line) {
+    final date = DateTime.parse(line.tanggalPanen);
+    return BatchPanen(
+      id: line.idPanen,
+      nama:
+          'Panen #${line.idPanen} · '
+          '${formatTanggalIndo(date, singkat: true)}',
+      stokTersedia: line.jumlahKg,
+      tanggalPanen: line.tanggalPanen,
+    );
+  }
+
+  List<BatchPanen> _batchesForForm(List<BatchPanen> allBatches) {
+    final item = widget.itemToEdit;
+    final line = _editLine;
+    if (item == null || line == null) {
+      final available = allBatches
+          .where((batch) => batch.stokTersedia > 0)
+          .toList();
+      final selected = ref.read(catatPenjualanViewModelProvider).selectedBatch;
+      if (selected != null &&
+          !available.any((batch) => batch.id == selected.id)) {
+        available.insert(0, selected);
+      }
+      return List.unmodifiable(available);
+    }
+
+    final matched = allBatches.where((batch) => batch.id == line.idPanen);
+    final current = matched.isEmpty
+        ? _fallbackBatch(line)
+        : matched.first.copyWith(
+            stokTersedia: _roundKg(matched.first.stokTersedia + line.jumlahKg),
+          );
+    return List.unmodifiable([
+      current,
+      ...allBatches.where(
+        (batch) => batch.id != line.idPanen && batch.stokTersedia > 0,
+      ),
+    ]);
+  }
+
+  void _scheduleEditBatchSync(List<BatchPanen> batches) {
+    final line = _editLine;
+    if (line == null || batches.isEmpty) return;
+    final selected = ref.read(catatPenjualanViewModelProvider).selectedBatch;
+    if (selected != null && selected.id != line.idPanen) return;
+    final target = batches.firstWhere(
+      (batch) => batch.id == line.idPanen,
+      orElse: () => batches.first,
+    );
+    if (selected != null &&
+        selected.id == target.id &&
+        selected.nama == target.nama &&
+        (selected.stokTersedia - target.stokTersedia).abs() < 0.001) {
+      return;
+    }
+    if (_batchSyncScheduled) return;
+    _batchSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _batchSyncScheduled = false;
+      if (!mounted) return;
+      ref.read(catatPenjualanViewModelProvider.notifier).setBatch(target);
+    });
+  }
+
+  double _roundKg(double weight) => double.parse(weight.toStringAsFixed(2));
+
   Future<void> _pickTanggal() async {
     FocusScope.of(context).unfocus();
     final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
     final current = ref.read(catatPenjualanViewModelProvider).tanggal;
+    final today = jakartaToday();
+    final initial = current == null || current.isAfter(today) ? today : current;
 
     final picked = await showDatePicker(
       context: context,
-      initialDate: current ?? DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: today,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -179,71 +231,44 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     formVm.setPembeli(_pembeliController.text);
     formVm.setCatatan(_catatanController.text);
 
-    if (isEdit) {
-      if (!formVm.validateForm()) {
-        messenger.hideCurrentSnackBar();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              formVm.validationMessage() ?? 'Form belum lengkap.',
-            ),
-            backgroundColor: AppColors.dangerRed,
-          ),
-        );
-        return;
-      }
-      final formState = ref.read(catatPenjualanViewModelProvider);
-      final komoditasNama =
-          formState.selectedBatch?.nama.split('-').last.trim() ?? 'Selada';
-      final updatedItem = widget.itemToEdit!.copyWith(
-        pembeli: formState.pembeli.trim(),
-        tanggal: _tanggalController.text.trim().isEmpty
-            ? widget.itemToEdit!.tanggal
-            : _tanggalController.text.trim(),
-        kuantitas: '${formatAngka(formState.beratKg)} Kg $komoditasNama',
-        totalHarga: formState.totalEstimasi,
-        status: formState.status!,
-        catatan: formState.catatan,
-        batchPanenId: formState.selectedBatch?.id,
-      );
-      ref
-          .read(penjualanViewModelProvider.notifier)
-          .updatePenjualan(updatedItem);
-      HapticFeedback.mediumImpact();
+    if (isEdit && !widget.itemToEdit!.canEdit) {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Penjualan berhasil diperbarui!'),
-          backgroundColor: AppColors.primaryMint,
+          content: Text(
+            'Transaksi multi-batch belum dapat diedit dari aplikasi.',
+          ),
+          backgroundColor: AppColors.dangerRed,
         ),
       );
-      Navigator.pop(context, true);
       return;
     }
 
-    final success = await formVm.submitPenjualan(ref);
+    final success = await formVm.submitPenjualan(ref, edit: widget.itemToEdit);
     if (!mounted) return;
 
     if (success) {
       HapticFeedback.mediumImpact();
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Penjualan berhasil dicatat!'),
+        SnackBar(
+          content: Text(
+            isEdit
+                ? 'Penjualan berhasil diperbarui!'
+                : 'Penjualan berhasil dicatat!',
+          ),
           backgroundColor: AppColors.primaryMint,
         ),
       );
       Navigator.pop(context, true);
     } else {
+      final message =
+          ref.read(catatPenjualanViewModelProvider).saveError ??
+          formVm.validationMessage() ??
+          'Gagal menyimpan penjualan. Coba lagi.';
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            formVm.validationMessage() ??
-                'Gagal menyimpan penjualan. Coba lagi.',
-          ),
-          backgroundColor: AppColors.dangerRed,
-        ),
+        SnackBar(content: Text(message), backgroundColor: AppColors.dangerRed),
       );
     }
   }
@@ -258,7 +283,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     }
     final formState = ref.watch(catatPenjualanViewModelProvider);
     final formVm = ref.read(catatPenjualanViewModelProvider.notifier);
-    final batchList = ref.watch(availableBatchPanenProvider);
+    final batchList = _batchesForForm(ref.watch(batchPanenListProvider));
+    _scheduleEditBatchSync(batchList);
 
     return Container(
       width: double.infinity,
@@ -355,16 +381,36 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
                     label: 'Pilih Hasil Panen',
                     hintText: 'Pilih batch panen yang tersedia di gudang',
                     value: formState.selectedBatch?.nama,
-                    items: batchList.map((b) => b.nama).toList(),
+                    items: batchList.map((batch) => batch.nama).toList(),
                     onChanged: (val) {
                       if (val == null) return;
                       final selected = batchList.firstWhere(
-                        (b) => b.nama == val,
+                        (batch) => batch.nama == val,
                         orElse: () => batchList.first,
                       );
                       formVm.setBatch(selected);
                     },
                   ),
+                  if (formState.selectedBatch != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Stok tersedia: '
+                      '${formatAngka(formState.selectedBatch!.stokTersedia)} Kg',
+                      style: AppTypography.footnote.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                  if (isEdit && !widget.itemToEdit!.canEdit) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Transaksi ini terdiri dari beberapa batch panen dan '
+                      'belum dapat diedit dari aplikasi.',
+                      style: AppTypography.footnote.copyWith(
+                        color: AppColors.dangerRed,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.md),
 
                   // 4. Baris Berat Jual (Kg) & Harga Per Kg (Rp)
@@ -448,16 +494,18 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
             color: AppColors.canvasWarm,
             child: SafeArea(
               child: RowButton(
-                label: isEdit
-                    ? 'Simpan Perubahan'
-                    : (formState.isLoading
-                        ? 'Menyimpan...'
-                        : 'Simpan Penjualan'),
+                label: formState.isLoading
+                    ? 'Menyimpan...'
+                    : (isEdit ? 'Simpan Perubahan' : 'Simpan Penjualan'),
                 backgroundColor: AppColors.primaryMint,
                 textColor: Colors.white,
                 borderRadius: AppRadius.pill,
                 height: 52,
-                onTap: formState.isLoading ? null : _handleSave,
+                onTap:
+                    formState.isLoading ||
+                        (isEdit && !widget.itemToEdit!.canEdit)
+                    ? null
+                    : _handleSave,
               ),
             ),
           ),

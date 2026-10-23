@@ -152,11 +152,37 @@ class _PenjualanBodyState extends ConsumerState<PenjualanBody> {
     }
 
     final penjualanList = ref.watch(filteredPenjualanListProvider);
-    final allItems = ref.watch(penjualanViewModelProvider);
+    final state = ref.watch(penjualanViewModelProvider);
+    final allItems = state.items;
     final totalPendapatan = ref.watch(totalPendapatanBulanIniProvider);
     final query = ref.watch(penjualanSearchQueryProvider);
     final filter = ref.watch(penjualanFilterCategoryProvider);
     final colors = AppSurfaceColors.of(context);
+
+    if (state.isInitialLoading) {
+      return ColoredBox(
+        color: colors.canvas,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (state.error != null && !state.salesLoaded) {
+      return ColoredBox(
+        color: colors.canvas,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: SurfaceEmptyState(
+              illustration: FeatureIllustration.noResults,
+              title: 'Gagal memuat penjualan.',
+              message: state.error!,
+              actionLabel: 'Coba lagi',
+              onAction: () =>
+                  ref.read(penjualanViewModelProvider.notifier).refresh(),
+            ),
+          ),
+        ),
+      );
+    }
 
     final allCount = allItems.length;
     final paidCount = allItems.where((item) => item.isLunas).length;
@@ -181,165 +207,211 @@ class _PenjualanBodyState extends ConsumerState<PenjualanBody> {
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(bottom: actionSpace),
-              child: CustomScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      insets.top + AppSpacing.sm,
-                      AppSpacing.lg,
-                      0,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FeatureOverviewCard(
-                            eyebrow: 'Total Pendapatan Bulan Ini',
-                            title: currencyFormatter.format(totalPendapatan),
-                            subtitle:
-                                'Dari total $allCount transaksi penjualan '
-                                'terlaksana',
-                            detail:
-                                '$paidCount lunas · '
-                                '${allCount - paidCount} belum lunas',
-                            titleStyle: AppTypography.title1.copyWith(
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                            illustration: FeatureIllustration.sales,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: SurfaceSearchField(
-                                  controller: _searchController,
-                                  label: 'Cari pembeli...',
-                                  query: query,
-                                  onChanged: (value) {
-                                    ref
-                                            .read(
-                                              penjualanSearchQueryProvider
-                                                  .notifier,
-                                            )
-                                            .state =
-                                        value;
-                                  },
-                                  onClear: () {
-                                    _searchController.clear();
-                                    ref
-                                            .read(
-                                              penjualanSearchQueryProvider
-                                                  .notifier,
-                                            )
-                                            .state =
-                                        '';
-                                  },
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(penjualanViewModelProvider.notifier).refresh(),
+                color: AppColors.primaryMint,
+                child: CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        insets.top + AppSpacing.sm,
+                        AppSpacing.lg,
+                        0,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (state.refreshing) ...[
+                              const LinearProgressIndicator(minHeight: 2),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                            if (state.error != null) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(AppSpacing.sm),
+                                decoration: BoxDecoration(
+                                  color: colors.warning.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.input,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        state.error!,
+                                        style: AppTypography.footnote.copyWith(
+                                          color: colors.ink,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => ref
+                                          .read(
+                                            penjualanViewModelProvider.notifier,
+                                          )
+                                          .refresh(),
+                                      child: const Text('Coba lagi'),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.xs),
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: colors.ink,
-                                  minimumSize: const Size(0, 56),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                            FeatureOverviewCard(
+                              eyebrow: 'Total Pendapatan Bulan Ini',
+                              title: currencyFormatter.format(totalPendapatan),
+                              subtitle:
+                                  'Dari total $allCount transaksi penjualan '
+                                  'terlaksana',
+                              detail:
+                                  '$paidCount lunas · '
+                                  '${allCount - paidCount} belum lunas',
+                              titleStyle: AppTypography.title1.copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                              illustration: FeatureIllustration.sales,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: SurfaceSearchField(
+                                    controller: _searchController,
+                                    label: 'Cari pembeli...',
+                                    query: query,
+                                    onChanged: (value) {
+                                      ref
+                                              .read(
+                                                penjualanSearchQueryProvider
+                                                    .notifier,
+                                              )
+                                              .state =
+                                          value;
+                                    },
+                                    onClear: () {
+                                      _searchController.clear();
+                                      ref
+                                              .read(
+                                                penjualanSearchQueryProvider
+                                                    .notifier,
+                                              )
+                                              .state =
+                                          '';
+                                    },
                                   ),
-                                  side: BorderSide(color: colors.controlBorder),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.input,
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: colors.ink,
+                                    minimumSize: const Size(0, 56),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.sm,
+                                    ),
+                                    side: BorderSide(
+                                      color: colors.controlBorder,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.input,
+                                      ),
+                                    ),
+                                    textStyle: AppTypography.caption1.copyWith(
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  textStyle: AppTypography.caption1.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    _showFilterBottomSheet();
+                                  },
+                                  icon: Icon(
+                                    Icons.tune_rounded,
+                                    size: 18,
+                                    color: hasFilter
+                                        ? colors.teal
+                                        : colors.secondary,
+                                  ),
+                                  label: Text(
+                                    'Filter',
+                                    style: TextStyle(
+                                      color: hasFilter
+                                          ? colors.teal
+                                          : colors.ink,
+                                    ),
                                   ),
                                 ),
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  _showFilterBottomSheet();
-                                },
-                                icon: Icon(
-                                  Icons.tune_rounded,
-                                  size: 18,
-                                  color: hasFilter
-                                      ? colors.teal
-                                      : colors.secondary,
-                                ),
-                                label: Text(
-                                  'Filter',
-                                  style: TextStyle(
-                                    color: hasFilter ? colors.teal : colors.ink,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          SurfaceSectionHeader(
-                            title: 'Riwayat penjualan',
-                            trailing: '${penjualanList.length} transaksi',
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (penjualanList.isEmpty)
-                    SliverToBoxAdapter(
-                      child: SurfaceEmptyState(
-                        illustration: hasFilter
-                            ? FeatureIllustration.noResults
-                            : FeatureIllustration.sales,
-                        title: hasFilter
-                            ? 'Penjualan tidak ditemukan.'
-                            : 'Tidak ada data penjualan.',
-                        message: hasFilter
-                            ? 'Coba nama pembeli lain atau ubah filter status.'
-                            : 'Catat transaksi pertama untuk melihat rekap '
-                                  'omzet di sini.',
-                        actionLabel: hasFilter ? 'Hapus filter' : null,
-                        onAction: hasFilter ? _clearFilters : null,
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      sliver: SliverList.separated(
-                        itemCount: penjualanList.length,
-                        separatorBuilder: (context, index) =>
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            SurfaceSectionHeader(
+                              title: 'Riwayat penjualan',
+                              trailing: '${penjualanList.length} transaksi',
+                            ),
                             const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final item = penjualanList[index];
-                          return PenjualanCard(
-                            key: ValueKey(item.id),
-                            item: item,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      CatatPenjualanPage(itemToEdit: item),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                          ],
+                        ),
                       ),
                     ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: insets.bottom + AppSpacing.sm),
-                  ),
-                ],
+                    if (penjualanList.isEmpty)
+                      SliverToBoxAdapter(
+                        child: SurfaceEmptyState(
+                          illustration: hasFilter
+                              ? FeatureIllustration.noResults
+                              : FeatureIllustration.sales,
+                          title: hasFilter
+                              ? 'Penjualan tidak ditemukan.'
+                              : 'Tidak ada data penjualan.',
+                          message: hasFilter
+                              ? 'Coba nama pembeli lain atau ubah filter status.'
+                              : 'Catat transaksi pertama untuk melihat rekap '
+                                    'omzet di sini.',
+                          actionLabel: hasFilter ? 'Hapus filter' : null,
+                          onAction: hasFilter ? _clearFilters : null,
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        sliver: SliverList.separated(
+                          itemCount: penjualanList.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: AppSpacing.sm),
+                          itemBuilder: (context, index) {
+                            final item = penjualanList[index];
+                            return PenjualanCard(
+                              key: ValueKey(item.id),
+                              item: item,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CatatPenjualanPage(itemToEdit: item),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: insets.bottom + AppSpacing.sm),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
