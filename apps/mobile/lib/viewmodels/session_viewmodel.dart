@@ -6,7 +6,8 @@ import '../data/services/api_client.dart';
 export '../data/services/api_client.dart' show SessionUser;
 
 Uri resolveApiBaseUri([String? customAddress]) {
-  final raw = (customAddress ?? const String.fromEnvironment('API_BASE_URL')).trim();
+  final raw = (customAddress ?? const String.fromEnvironment('API_BASE_URL'))
+      .trim();
   if (raw.isNotEmpty) {
     var uri = Uri.tryParse(raw) ?? Uri();
     if (uri.hasScheme && uri.hasAuthority) {
@@ -18,7 +19,9 @@ Uri resolveApiBaseUri([String? customAddress]) {
       final pathWithoutSlash = uri.path.replaceAll(RegExp(r'/+$'), '');
       if (!pathWithoutSlash.endsWith('/api/v1')) {
         uri = uri.replace(
-          path: pathWithoutSlash.isEmpty ? '/api/v1' : '$pathWithoutSlash/api/v1',
+          path: pathWithoutSlash.isEmpty
+              ? '/api/v1'
+              : '$pathWithoutSlash/api/v1',
         );
       }
       return uri;
@@ -105,6 +108,23 @@ class SessionViewModel extends StateNotifier<SessionState> {
         );
       }
     }
+  }
+
+  /// Menyelaraskan nama/username tampilan setelah profil sendiri diperbarui.
+  void updateIdentity({required String name, required String username}) {
+    final user = state.user;
+    if (user == null) return;
+    state = SessionState(
+      user: SessionUser(
+        id: user.id,
+        name: name,
+        username: username,
+        role: user.role,
+        permissions: user.permissions,
+      ),
+      busy: state.busy,
+      error: state.error,
+    );
   }
 
   @override

@@ -45,6 +45,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
   bool _batchSyncScheduled = false;
 
   bool get isEdit => widget.itemToEdit != null;
+  bool get _headerOnly =>
+      widget.itemToEdit != null && widget.itemToEdit!.details.length != 1;
 
   PenjualanLine? get _editLine {
     final item = widget.itemToEdit;
@@ -67,10 +69,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
       text: initBerat > 0 ? formatAngka(initBerat) : '',
     );
 
-    final initHargaPerKg = line == null ? 0.0 : line.hargaPerKg.roundToDouble();
-    _hargaController = TextEditingController(
-      text: initHargaPerKg > 0 ? initHargaPerKg.toInt().toString() : '',
-    );
+    final initHargaPerKg = line?.hargaPerKgWire ?? '';
+    _hargaController = TextEditingController(text: initHargaPerKg);
 
     _catatanController = TextEditingController(text: item?.catatan ?? '');
 
@@ -85,7 +85,9 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
       formVm.setPembeli(item?.pembeli ?? '');
       formVm.setTanggal(defaultTanggal);
       if (initBerat > 0) formVm.setBerat(initBerat);
-      if (initHargaPerKg > 0) formVm.setHargaPerKg(initHargaPerKg);
+      if (initHargaPerKg.isNotEmpty) {
+        formVm.setHargaPerKgText(initHargaPerKg);
+      }
       formVm.setCatatan(item?.catatan ?? '');
       if (item != null) formVm.setStatus(item.status);
       if (item != null && line != null) formVm.setBatch(_fallbackBatch(line));
@@ -103,10 +105,8 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     });
 
     _hargaController.addListener(() {
-      // Ambil hanya digit supaya "20.000" tidak terbaca 20.0
-      final digits = _hargaController.text.replaceAll(RegExp(r'[^0-9]'), '');
-      final val = double.tryParse(digits) ?? 0.0;
-      formVm.setHargaPerKg(val);
+      // Simpan teks asli agar dua angka desimal tidak hilang saat dikirim.
+      formVm.setHargaPerKgText(_hargaController.text);
     });
   }
 
@@ -230,13 +230,14 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
     // Sync data teks sebelum submit
     formVm.setPembeli(_pembeliController.text);
     formVm.setCatatan(_catatanController.text);
+    formVm.setHargaPerKgText(_hargaController.text);
 
     if (isEdit && !widget.itemToEdit!.canEdit) {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Transaksi multi-batch belum dapat diedit dari aplikasi.',
+            'Transaksi ini belum dapat diedit. Muat ulang daftar penjualan.',
           ),
           backgroundColor: AppColors.dangerRed,
         ),
@@ -271,6 +272,59 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
         SnackBar(content: Text(message), backgroundColor: AppColors.dangerRed),
       );
     }
+  }
+
+  Widget _buildMultiBatchNotice(PenjualanItem item) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.accentMintSoft,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.layers_outlined,
+            size: 20,
+            color: AppColors.primaryDarkTeal,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Transaksi ${item.details.length} batch panen',
+                  style: AppTypography.subheadline.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Rincian batch, berat, dan harga tidak diubah. '
+                  'Hanya data transaksi di atas yang diperbarui.',
+                  style: AppTypography.footnote.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total ${item.kuantitas} · ${formatRupiah(item.totalHarga)}',
+                  style: AppTypography.footnote.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -376,36 +430,39 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // 3. Pilih Hasil Panen
-                  CustomDropdownField(
-                    label: 'Pilih Hasil Panen',
-                    hintText: 'Pilih batch panen yang tersedia di gudang',
-                    value: formState.selectedBatch?.nama,
-                    items: batchList.map((batch) => batch.nama).toList(),
-                    onChanged: (val) {
-                      if (val == null) return;
-                      final selected = batchList.firstWhere(
-                        (batch) => batch.nama == val,
-                        orElse: () => batchList.first,
-                      );
-                      formVm.setBatch(selected);
-                    },
-                  ),
-                  if (formState.selectedBatch != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Stok tersedia: '
-                      '${formatAngka(formState.selectedBatch!.stokTersedia)} Kg',
-                      style: AppTypography.footnote.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  // 3. Pilih Hasil Panen — hanya untuk transaksi satu batch.
+                  if (!_headerOnly) ...[
+                    CustomDropdownField(
+                      label: 'Pilih Hasil Panen',
+                      hintText: 'Pilih batch panen yang tersedia di gudang',
+                      value: formState.selectedBatch?.nama,
+                      items: batchList.map((batch) => batch.nama).toList(),
+                      onChanged: (val) {
+                        if (val == null) return;
+                        final selected = batchList.firstWhere(
+                          (batch) => batch.nama == val,
+                          orElse: () => batchList.first,
+                        );
+                        formVm.setBatch(selected);
+                      },
                     ),
-                  ],
+                    if (formState.selectedBatch != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Stok tersedia: '
+                        '${formatAngka(formState.selectedBatch!.stokTersedia)} Kg',
+                        style: AppTypography.footnote.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ] else
+                    _buildMultiBatchNotice(widget.itemToEdit!),
                   if (isEdit && !widget.itemToEdit!.canEdit) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Transaksi ini terdiri dari beberapa batch panen dan '
-                      'belum dapat diedit dari aplikasi.',
+                      'Data versi transaksi tidak tersedia. Muat ulang daftar '
+                      'sebelum mengedit.',
                       style: AppTypography.footnote.copyWith(
                         color: AppColors.dangerRed,
                       ),
@@ -414,43 +471,52 @@ class _CatatPenjualanBodyState extends ConsumerState<CatatPenjualanBody> {
                   const SizedBox(height: AppSpacing.md),
 
                   // 4. Baris Berat Jual (Kg) & Harga Per Kg (Rp)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: CustomInputField(
-                          label: 'Berat Jual (Kg)',
-                          hintText: '0.0',
-                          controller: _beratController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[0-9.,]'),
+                  if (!_headerOnly)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Berat Jual (Kg)',
+                            hintText: '0.0',
+                            controller: _beratController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
                             ),
-                          ],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.,]'),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: CustomInputField(
-                          label: 'Harga Per Kg (Rp)',
-                          hintText: 'Rp 20000',
-                          controller: _hargaController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: CustomInputField(
+                            label: 'Harga Per Kg (Rp)',
+                            hintText: 'Rp 20000.50',
+                            controller: _hargaController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.,]'),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    )
+                  else
+                    const SizedBox.shrink(),
                   const SizedBox(height: AppSpacing.md),
 
                   // 5. Card Estimasi Total (Otomatis)
-                  EstimasiTotalCard(totalAmount: formState.totalEstimasi),
-                  const SizedBox(height: AppSpacing.md),
+                  if (!_headerOnly) ...[
+                    EstimasiTotalCard(totalAmount: formState.totalEstimasi),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // 6. Status Pembayaran
                   CustomDropdownField(

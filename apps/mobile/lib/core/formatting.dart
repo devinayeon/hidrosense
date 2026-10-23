@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 const List<String> _namaBulan = [
   'Januari',
   'Februari',
@@ -27,4 +29,14 @@ String formatTanggalIndo(DateTime d, {bool singkat = false}) {
 String formatAngka(double v) {
   if (v == v.roundToDouble()) return v.toStringAsFixed(0);
   return v.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+}
+
+/// Rupiah tanpa menghilangkan sen: Rp 20.000 atau Rp 20.000,50.
+String formatRupiah(double value) {
+  final hasCents = ((value * 100).round() % 100) != 0;
+  return NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: hasCents ? 2 : 0,
+  ).format(value);
 }

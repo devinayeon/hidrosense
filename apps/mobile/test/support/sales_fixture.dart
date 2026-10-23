@@ -149,8 +149,10 @@ class FakeSalesRepository extends SalesRepository {
   Object? loadError, writeError;
   Future<List<SaleRecord>> Function()? onList;
   final drafts = <SalesDraft>[];
+  final headerDrafts = <SalesHeaderDraft>[];
   final keys = <String>[];
   final updateKeys = <String>[];
+  final headerUpdateKeys = <String>[];
   int listReads = 0;
 
   @override
@@ -227,6 +229,32 @@ class FakeSalesRepository extends SalesRepository {
           ),
         ],
       ),
+    );
+    records = [record, ...records.where((sale) => sale.id != id)];
+    return record;
+  }
+
+  @override
+  Future<SaleRecord> updateSaleHeader(
+    String id,
+    SalesHeaderDraft draft,
+    String expectedVersion,
+    String key,
+  ) async {
+    if (writeError != null) throw writeError!;
+    headerDrafts.add(draft);
+    headerUpdateKeys.add(key);
+    final previous = records.firstWhere((record) => record.id == id);
+    final record = SaleRecord(
+      id: previous.id,
+      userId: previous.userId,
+      date: draft.date,
+      buyer: draft.buyer,
+      status: draft.status,
+      note: draft.note,
+      version: '${BigInt.parse(expectedVersion) + BigInt.one}',
+      publicId: previous.publicId,
+      details: previous.details,
     );
     records = [record, ...records.where((sale) => sale.id != id)];
     return record;

@@ -315,7 +315,7 @@ void main() {
       await session(LaporanPanenPage(harvestId: harvestId));
       await _wait(
         tester,
-        () => find.text('Layak jual: 4.00 kg').evaluate().isNotEmpty,
+        () => find.text('Berat layak panen: 4.00 kg (sebelum penjualan)').evaluate().isNotEmpty,
       );
       expect(find.text('30 tanaman'), findsOneWidget);
       expect(find.text('Catatan: Panen dua meja'), findsOneWidget);
@@ -372,7 +372,7 @@ void main() {
       await session(LaporanPanenPage(harvestId: harvestId));
       await _wait(
         tester,
-        () => find.text('Layak jual: 4.50 kg').evaluate().isNotEmpty,
+        () => find.text('Berat layak panen: 4.50 kg (sebelum penjualan)').evaluate().isNotEmpty,
       );
       expect(find.text('Catatan: Sortasi diperiksa'), findsOneWidget);
       await _tap(tester, find.text('Koreksi Sortasi atau Catatan'));
@@ -413,7 +413,7 @@ void main() {
       await session(LaporanPanenPage(harvestId: harvestId));
       await _wait(
         tester,
-        () => find.text('Layak jual: 4.50 kg').evaluate().isNotEmpty,
+        () => find.text('Berat layak panen: 4.50 kg (sebelum penjualan)').evaluate().isNotEmpty,
       );
       expect(find.text('Catatan: Tidak ada catatan.'), findsOneWidget);
       expect(

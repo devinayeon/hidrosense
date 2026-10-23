@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../viewmodels/session_viewmodel.dart';
 import '../../viewmodels/weather_viewmodel.dart';
 import '../pages/rekomendasi_cuaca_page.dart';
 import '../theme/app_theme.dart';
@@ -12,24 +13,28 @@ class CuacaBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weatherState = ref.watch(weatherViewModelProvider);
+    final canRead = ref.watch(
+      sessionProvider.select(
+        (state) => state.user?.permissions.contains('cuaca:read') == true,
+      ),
+    );
+    if (!canRead) {
+      return _buildAccessDenied();
+    }
 
-    if (weatherState.isLoading) {
+    final weatherState = ref.watch(weatherViewModelProvider);
+    final data = weatherState.data;
+
+    if (weatherState.isLoading && data == null) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primaryMint),
       );
     }
 
-    if (weatherState.errorMessage != null) {
-      return Center(
-        child: Text(
-          weatherState.errorMessage!,
-          style: AppTypography.body.copyWith(color: AppColors.dangerRed),
-        ),
-      );
+    if (weatherState.errorMessage != null && data == null) {
+      return _buildErrorState(ref, weatherState.errorMessage!);
     }
 
-    final data = weatherState.data;
     if (data == null) return const SizedBox.shrink();
 
     return Container(
@@ -42,6 +47,18 @@ class CuacaBody extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (weatherState.isLoading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: LinearProgressIndicator(
+                  color: AppColors.primaryMint,
+                  backgroundColor: AppColors.borderLight,
+                ),
+              ),
+            if (weatherState.errorMessage != null) ...[
+              _buildInlineError(ref, weatherState.errorMessage!),
+              const SizedBox(height: AppSpacing.sm),
+            ],
             // 1. Header Banner Lokasi Apple HIG Squircle
             Container(
               width: double.infinity,
@@ -242,7 +259,7 @@ class CuacaBody extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // 4. Status Indicator API BMKG
+            // 4. Status Data Cuaca
             BaseColCard(
               backgroundColor: Colors.white,
               borderColor: AppColors.borderLight,
@@ -257,7 +274,7 @@ class CuacaBody extends ConsumerWidget {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: AppColors.primaryMint,
+                      color: AppColors.warningOrange,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -276,6 +293,131 @@ class CuacaBody extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccessDenied() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.lock_outline_rounded,
+              size: 40,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Akses cuaca tidak diizinkan.',
+              textAlign: TextAlign.center,
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(WidgetRef ref, String message) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: AppColors.dangerBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: AppColors.dangerRed,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Data cuaca belum dapat dimuat',
+              textAlign: TextAlign.center,
+              style: AppTypography.title3.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTypography.footnote.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            OutlinedButton.icon(
+              key: const ValueKey('weather-retry'),
+              onPressed: () => ref
+                  .read(weatherViewModelProvider.notifier)
+                  .fetchWeatherData(),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Coba Lagi'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryDarkTeal,
+                side: const BorderSide(
+                  color: AppColors.primaryDarkTeal,
+                  width: 1.2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineError(WidgetRef ref, String message) {
+    return BaseColCard(
+      backgroundColor: AppColors.dangerBg,
+      borderColor: AppColors.dangerRed.withValues(alpha: 0.35),
+      borderRadius: AppRadius.card,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.dangerRed,
+            size: 20,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.footnote.copyWith(
+                color: AppColors.dangerRed,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('weather-retry-inline'),
+            onPressed: () =>
+                ref.read(weatherViewModelProvider.notifier).fetchWeatherData(),
+            child: const Text('Coba Lagi'),
+          ),
+        ],
       ),
     );
   }

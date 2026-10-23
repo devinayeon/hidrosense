@@ -102,6 +102,35 @@ class SalesRepository {
     return record;
   }
 
+  Future<SaleRecord> updateSaleHeader(
+    String id,
+    SalesHeaderDraft draft,
+    String expectedVersion,
+    String key,
+  ) async {
+    saleId(id);
+    saleId(expectedVersion);
+    final record = _record(
+      await _api.patch(
+        'penjualan/$id',
+        body: draft.toJson(expectedVersion),
+        headers: {'Idempotency-Key': key},
+      ),
+    );
+    if (record.id != id ||
+        record.version == null ||
+        BigInt.parse(record.version!) <= BigInt.parse(expectedVersion)) {
+      throw const FormatException('Respons pembaruan penjualan tidak valid.');
+    }
+    if (record.date != draft.date ||
+        record.buyer != draft.buyer.trim() ||
+        record.status != draft.status ||
+        record.note != draft.note) {
+      throw const FormatException('Respons penjualan tidak sesuai isian.');
+    }
+    return record;
+  }
+
   void _matchesDraft(SaleRecord record, SalesDraft draft) {
     final detail = record.details.length == 1 ? record.details.single : null;
     if (record.date != draft.date ||
@@ -111,7 +140,7 @@ class SalesRepository {
         detail == null ||
         detail.harvestId != draft.harvestId ||
         detail.quantity.wire != draft.quantityWire ||
-        detail.price.toStringAsFixed(2) != draft.priceWire) {
+        detail.priceWire != draft.priceWire) {
       throw const FormatException('Respons penjualan tidak sesuai isian.');
     }
   }

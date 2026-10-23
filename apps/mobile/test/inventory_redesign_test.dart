@@ -92,7 +92,18 @@ Future<TestInventory> pumpInventory(
           ).copyWith(disableAnimations: reduceMotion),
           child: child!,
         ),
-        home: const Scaffold(appBar: Header(), body: InventarisBody()),
+        home: Scaffold(
+          appBar: Header(
+            actions: [
+              IconButton(
+                tooltip: 'Perbarui inventaris',
+                onPressed: model.refresh,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ],
+          ),
+          body: const InventarisBody(),
+        ),
       ),
     ),
   );

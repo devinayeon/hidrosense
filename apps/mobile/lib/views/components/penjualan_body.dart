@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../core/formatting.dart';
 import '../../viewmodels/penjualan_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../pages/catat_penjualan_page.dart';
@@ -189,12 +189,6 @@ class _PenjualanBodyState extends ConsumerState<PenjualanBody> {
     final hasFilter =
         query.trim().isNotEmpty || filter != PenjualanFilterCategory.all;
 
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
-
     final insets = MediaQuery.paddingOf(context);
     final showAction = View.of(context).viewInsets.bottom == 0;
     final buttonHeight = 52 * MediaQuery.textScalerOf(context).scale(1);
@@ -266,7 +260,7 @@ class _PenjualanBodyState extends ConsumerState<PenjualanBody> {
                             ],
                             FeatureOverviewCard(
                               eyebrow: 'Total Pendapatan Bulan Ini',
-                              title: currencyFormatter.format(totalPendapatan),
+                              title: formatRupiah(totalPendapatan),
                               subtitle:
                                   'Dari total $allCount transaksi penjualan '
                                   'terlaksana',
