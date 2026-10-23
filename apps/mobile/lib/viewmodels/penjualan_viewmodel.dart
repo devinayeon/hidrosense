@@ -121,12 +121,34 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
     SalesDraft draft,
   ) async {
     final version = existing.version;
-    if (!existing.canEdit || version == null) {
+    if (!existing.canEditDetails || version == null) {
       throw const FormatException(
-        'Transaksi multi-batch belum dapat diedit dari aplikasi.',
+        'Rincian transaksi ini belum dapat diedit dari aplikasi.',
       );
     }
     final record = await _sales.updateSale(
+      existing.id,
+      draft,
+      version,
+      generateUuidV4(),
+    );
+    final item = _toItem(record);
+    if (mounted) _merge(oldItem: existing, newItem: item);
+    await refresh(force: true);
+    return item;
+  }
+
+  Future<PenjualanItem> updateSaleHeader(
+    PenjualanItem existing,
+    SalesHeaderDraft draft,
+  ) async {
+    final version = existing.version;
+    if (!existing.canEdit || version == null) {
+      throw const FormatException(
+        'Transaksi ini belum dapat diedit dari aplikasi.',
+      );
+    }
+    final record = await _sales.updateSaleHeader(
       existing.id,
       draft,
       version,
@@ -210,6 +232,7 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
           tanggalPanen: detail.harvestDate,
           jumlahKg: _minorToDouble(detail.quantity.minor),
           hargaPerKg: detail.price,
+          hargaPerKgWire: detail.priceWire,
           totalHarga: detail.total,
           beratLayak: detail.saleable == null
               ? null

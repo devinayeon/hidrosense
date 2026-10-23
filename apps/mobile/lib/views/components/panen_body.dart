@@ -160,7 +160,8 @@ class _PanenBodyState extends ConsumerState<PanenBody> {
                             ? initialLoading
                                   ? 'Menyiapkan data dari layanan.'
                                   : 'Memuat data panen terbaru...'
-                            : 'Total layak jual dari ${state.records.length} '
+                            : 'Akumulasi berat layak panen (belum dikurangi '
+                                  'penjualan) dari ${state.records.length} '
                                   'laporan panen',
                         detail: !state.loading
                             ? '${state.upcoming.length} batch menunggu panen · '
@@ -304,7 +305,7 @@ class _PanenBodyState extends ConsumerState<PanenBody> {
                                 '${record.date} • '
                                 '${record.details.map((detail) => detail.tableCode).toSet().join(', ')}',
                             result:
-                                'Layak jual ${record.saleable.wire} kg • '
+                                'Layak panen ${record.saleable.wire} kg • '
                                 'Total ${record.total?.wire ?? 'belum tercatat'}'
                                 '${record.total == null ? '' : ' kg'}',
                             completed: true,

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../views/theme/app_theme.dart';
 import '../../data/models/employee_model.dart';
+import '../viewmodels/employee_viewmodel.dart';
 
-class EmployeeFormSheet extends StatefulWidget {
-  const EmployeeFormSheet({
-    super.key,
-    this.employee,
-    required this.onSubmit,
-  });
+class EmployeeFormSheet extends ConsumerStatefulWidget {
+  const EmployeeFormSheet({super.key, this.employee, required this.onSubmit});
 
   final EmployeeModel? employee;
   final Future<bool> Function({
@@ -19,7 +17,8 @@ class EmployeeFormSheet extends StatefulWidget {
     String? alamat,
     required Duration duration,
     int retryCount,
-  }) onSubmit;
+  })
+  onSubmit;
 
   static Future<bool?> show(
     BuildContext context, {
@@ -33,24 +32,23 @@ class EmployeeFormSheet extends StatefulWidget {
       String? alamat,
       required Duration duration,
       int retryCount,
-    }) onSubmit,
+    })
+    onSubmit,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => EmployeeFormSheet(
-        employee: employee,
-        onSubmit: onSubmit,
-      ),
+      builder: (ctx) =>
+          EmployeeFormSheet(employee: employee, onSubmit: onSubmit),
     );
   }
 
   @override
-  State<EmployeeFormSheet> createState() => _EmployeeFormSheetState();
+  ConsumerState<EmployeeFormSheet> createState() => _EmployeeFormSheetState();
 }
 
-class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
+class _EmployeeFormSheetState extends ConsumerState<EmployeeFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _namaController;
   late final TextEditingController _usernameController;
@@ -98,14 +96,21 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
 
     setState(() => _isSubmitting = true);
     final duration = DateTime.now().difference(_openedAt);
+    final email = _emailController.text.trim();
+    final noTelepon = _noTeleponController.text.trim();
+    final alamat = _alamatController.text.trim();
 
     final success = await widget.onSubmit(
       nama: _namaController.text,
       username: _usernameController.text,
-      password: _passwordController.text.isEmpty ? null : _passwordController.text,
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      noTelepon: _noTeleponController.text.trim().isEmpty ? null : _noTeleponController.text.trim(),
-      alamat: _alamatController.text.trim().isEmpty ? null : _alamatController.text.trim(),
+      password: _passwordController.text.isEmpty
+          ? null
+          : _passwordController.text,
+      // Saat mengedit, string kosong berarti "hapus nilai", sedangkan null
+      // berarti "jangan ubah field". Repository mengubah string kosong ke null.
+      email: isEditing ? email : (email.isEmpty ? null : email),
+      noTelepon: isEditing ? noTelepon : (noTelepon.isEmpty ? null : noTelepon),
+      alamat: isEditing ? alamat : (alamat.isEmpty ? null : alamat),
       duration: duration,
       retryCount: _retryCount,
     );
@@ -121,11 +126,16 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final saveError = ref.watch(
+      employeeViewModelProvider.select((state) => state.saveError),
+    );
 
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.modal)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.modal),
+        ),
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
@@ -243,6 +253,40 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
                   hint: 'Alamat domisili atau catatan penempatan',
                   maxLines: 2,
                 ),
+                if (saveError != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerBg,
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                      border: Border.all(
+                        color: AppColors.dangerRed.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.dangerRed,
+                          size: 18,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            saveError,
+                            style: AppTypography.footnote.copyWith(
+                              color: AppColors.dangerRed,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 SizedBox(
                   width: double.infinity,
@@ -311,7 +355,10 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
+            hintStyle: const TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: 14,
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.sm,
@@ -324,11 +371,17 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
-              borderSide: const BorderSide(color: AppColors.dangerRed, width: 1),
+              borderSide: const BorderSide(
+                color: AppColors.dangerRed,
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
-              borderSide: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primaryDarkTeal,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -352,7 +405,9 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
             const SizedBox(width: AppSpacing.xs),
             Text(
               '(Min. 12 karakter)',
-              style: AppTypography.caption2.copyWith(color: AppColors.textSecondary),
+              style: AppTypography.caption2.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -374,7 +429,10 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
             hintText: isEditing
                 ? 'Kosongkan jika tidak ingin mengubah password'
                 : 'Minimal 12 karakter kombinasi',
-            hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
+            hintStyle: const TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: 13,
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.sm,
@@ -387,7 +445,10 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
-              borderSide: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primaryDarkTeal,
+                width: 1.5,
+              ),
             ),
             suffixIcon: IconButton(
               icon: Icon(
@@ -397,7 +458,8 @@ class _EmployeeFormSheetState extends State<EmployeeFormSheet> {
                 color: AppColors.textTertiary,
                 size: 20,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
         ),

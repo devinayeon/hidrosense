@@ -38,6 +38,37 @@ double _amount(Object? value, {bool positive = true}) {
   return parsed;
 }
 
+String _moneyWire(Object? value) {
+  if (value is! String || !RegExp(r'^[0-9]{1,20}\.[0-9]{2}$').hasMatch(value)) {
+    throw const FormatException('Nilai rupiah penjualan tidak valid.');
+  }
+  if (value == '0.00') {
+    throw const FormatException('Nilai rupiah penjualan tidak valid.');
+  }
+  return value;
+}
+
+String _normalizePriceWire(String value) {
+  final normalized = value.trim().replaceAll(',', '.');
+  final match = RegExp(
+    r'^([0-9]{1,10})(?:\.([0-9]{1,2}))?$',
+  ).firstMatch(normalized);
+  if (match == null) {
+    throw const FormatException(
+      'Harga per Kg harus lebih dari 0 dengan maksimal dua desimal.',
+    );
+  }
+  final whole = BigInt.parse(match.group(1)!);
+  final fraction = (match.group(2) ?? '').padRight(2, '0');
+  final minor = whole * BigInt.from(100) + BigInt.parse(fraction);
+  if (minor <= BigInt.zero || minor > BigInt.parse('999999999999')) {
+    throw const FormatException(
+      'Harga per Kg harus lebih dari 0 dengan maksimal dua desimal.',
+    );
+  }
+  return '${whole == BigInt.zero ? '0' : whole.toString()}.$fraction';
+}
+
 class SaleDetail {
   const SaleDetail({
     required this.id,
@@ -45,6 +76,7 @@ class SaleDetail {
     required this.harvestDate,
     required this.quantity,
     required this.price,
+    required this.priceWire,
     required this.total,
     this.saleable,
   });
@@ -54,6 +86,7 @@ class SaleDetail {
   final String harvestDate;
   final HarvestWeight quantity;
   final double price;
+  final String priceWire;
   final double total;
   final HarvestWeight? saleable;
 
@@ -62,12 +95,14 @@ class SaleDetail {
     if (quantity.minor <= BigInt.zero) {
       throw const FormatException('Berat penjualan tidak valid.');
     }
+    final priceWire = _moneyWire(json['harga_per_kg']);
     return SaleDetail(
       id: saleId(json['id_detail_penjualan']),
       harvestId: saleId(json['id_panen']),
       harvestDate: saleDate(json['tanggal_panen']),
       quantity: quantity,
-      price: _amount(json['harga_per_kg']),
+      price: double.parse(priceWire),
+      priceWire: priceWire,
       total: _amount(json['total_harga'], positive: false),
       saleable: json['berat_layak'] == null
           ? null
@@ -146,11 +181,13 @@ class SalesDraft {
     required this.quantity,
     required this.price,
     this.note,
+    this.priceWireInput,
   });
 
   final String date, buyer, status, harvestId;
   final double quantity, price;
   final String? note;
+  final String? priceWireInput;
 
   String get quantityWire {
     final scaled = quantity * 100;
@@ -165,6 +202,8 @@ class SalesDraft {
   }
 
   String get priceWire {
+    final exact = priceWireInput;
+    if (exact != null) return _normalizePriceWire(exact);
     final scaled = price * 100;
     if (!price.isFinite ||
         price <= 0 ||
@@ -184,5 +223,26 @@ class SalesDraft {
     'id_panen': harvestId,
     'jumlah_kg': quantityWire,
     'harga_per_kg': priceWire,
+  };
+}
+
+/// Perubahan header saja, dipakai untuk transaksi multi-batch.
+class SalesHeaderDraft {
+  const SalesHeaderDraft({
+    required this.date,
+    required this.buyer,
+    required this.status,
+    this.note,
+  });
+
+  final String date, buyer, status;
+  final String? note;
+
+  Map<String, dynamic> toJson(String expectedVersion) => {
+    'tanggal_penjualan': date,
+    'pembeli': buyer,
+    'status_pembayaran': status,
+    'keterangan': note,
+    'expected_version': expectedVersion,
   };
 }

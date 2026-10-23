@@ -25,7 +25,9 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
   }
 
   void _openAddSheet() {
-    ref.read(employeeViewModelProvider.notifier).startOnboarding();
+    final notifier = ref.read(employeeViewModelProvider.notifier);
+    notifier.clearSaveError();
+    notifier.startOnboarding();
     EmployeeFormSheet.show(
       context,
       onSubmit:
@@ -56,6 +58,7 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
   }
 
   void _openEditSheet(EmployeeModel employee) {
+    ref.read(employeeViewModelProvider.notifier).clearSaveError();
     EmployeeFormSheet.show(
       context,
       employee: employee,
@@ -108,29 +111,30 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
     }
   }
 
+  void _showSnackBar(String message, Color color) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(employeeViewModelProvider);
 
     ref.listen<EmployeeListState>(employeeViewModelProvider, (prev, next) {
-      if (next.errorMessage != null &&
-          next.errorMessage != prev?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.dangerRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      final error = next.actionError ?? next.errorMessage;
+      final previousError = prev?.actionError ?? prev?.errorMessage;
+      if (error != null && error != previousError) {
+        _showSnackBar(error, AppColors.dangerRed);
       } else if (next.actionSuccessMessage != null &&
           next.actionSuccessMessage != prev?.actionSuccessMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.actionSuccessMessage!),
-            backgroundColor: AppColors.primaryDarkTeal,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showSnackBar(next.actionSuccessMessage!, AppColors.primaryDarkTeal);
       }
     });
 
@@ -248,14 +252,18 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
               color: AppColors.primaryDarkTeal,
               onRefresh: () =>
                   ref.read(employeeViewModelProvider.notifier).loadEmployees(),
-              child: state.isLoading && state.employees.isEmpty
+              child: state.isLoading && !state.hasAnyEmployees
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.primaryDarkTeal,
                       ),
                     )
-                  : state.employees.isEmpty
+                  : state.errorMessage != null && !state.hasAnyEmployees
+                  ? _buildErrorState(state.errorMessage!)
+                  : !state.hasAnyEmployees
                   ? _buildEmptyState()
+                  : state.employees.isEmpty
+                  ? _buildNoResultsState()
                   : ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(
                         parent: BouncingScrollPhysics(),
@@ -315,6 +323,86 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
   }
 
   Widget _buildEmptyState() {
+    return _buildStateMessage(
+      icon: Icons.people_outline_rounded,
+      title: 'Belum Ada Pegawai',
+      message:
+          'Tambahkan akun pegawai untuk membantu operasional perkebunan hidroponik Anda.',
+      action: OutlinedButton.icon(
+        onPressed: _openAddSheet,
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text('Tambah Pegawai Pertama'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryDarkTeal,
+          side: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState() {
+    return _buildStateMessage(
+      icon: Icons.search_off_rounded,
+      title: 'Pegawai tidak ditemukan',
+      message:
+          'Tidak ada pegawai yang cocok dengan pencarian atau filter yang dipilih.',
+      action: OutlinedButton.icon(
+        onPressed: _resetFilters,
+        icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+        label: const Text('Tampilkan Semua Pegawai'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryDarkTeal,
+          side: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return _buildStateMessage(
+      icon: Icons.cloud_off_rounded,
+      iconColor: AppColors.dangerRed,
+      iconBackground: AppColors.dangerBg,
+      title: 'Data pegawai belum dapat dimuat',
+      message: message,
+      action: OutlinedButton.icon(
+        onPressed: () =>
+            ref.read(employeeViewModelProvider.notifier).loadEmployees(),
+        icon: const Icon(Icons.refresh_rounded, size: 18),
+        label: const Text('Coba Lagi'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryDarkTeal,
+          side: const BorderSide(color: AppColors.primaryDarkTeal, width: 1.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  void _resetFilters() {
+    _searchController.clear();
+    ref.read(employeeViewModelProvider.notifier).resetFilters();
+  }
+
+  Widget _buildStateMessage({
+    required IconData icon,
+    required String title,
+    required String message,
+    required Widget action,
+    Color? iconColor,
+    Color? iconBackground,
+  }) {
     return Center(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -325,19 +413,20 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
-                color: AppColors.accentMintSoft,
+              decoration: BoxDecoration(
+                color: iconBackground ?? AppColors.accentMintSoft,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.people_outline_rounded,
-                color: AppColors.primaryDarkTeal,
+              child: Icon(
+                icon,
+                color: iconColor ?? AppColors.primaryDarkTeal,
                 size: 38,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Belum Ada Pegawai',
+              title,
+              textAlign: TextAlign.center,
               style: AppTypography.title2.copyWith(
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
@@ -345,32 +434,14 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Tambahkan akun pegawai untuk membantu operasional perkebunan hidroponik Anda.',
+              message,
               textAlign: TextAlign.center,
               style: AppTypography.footnote.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: _openAddSheet,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Tambah Pegawai Pertama'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDarkTeal,
-                side: const BorderSide(
-                  color: AppColors.primaryDarkTeal,
-                  width: 1.2,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-            ),
+            action,
           ],
         ),
       ),

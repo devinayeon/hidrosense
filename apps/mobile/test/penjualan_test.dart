@@ -157,6 +157,58 @@ void main() {
       },
     );
 
+    test('updateSaleHeader updates a multi-batch header only', () async {
+      harvest.records = [
+        saleHarvest(id: '1', layak: '100.00'),
+        saleHarvest(id: '2', layak: '80.00'),
+      ];
+      sales.records = [
+        saleRecord(
+          id: '1',
+          date: '2026-09-25',
+          details: [
+            saleDetailJson(
+              id: '1',
+              harvestId: '1',
+              quantity: '5.00',
+              price: '20000.55',
+            ),
+            saleDetailJson(
+              id: '2',
+              harvestId: '2',
+              quantity: '10.00',
+              price: '19000.25',
+            ),
+          ],
+        ),
+      ];
+      final vm = PenjualanViewModel(sales, harvest, autoLoad: false);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      final existing = vm.state.items.single;
+      expect(existing.canEdit, isTrue);
+      expect(existing.canEditDetails, isFalse);
+
+      final updated = await vm.updateSaleHeader(
+        existing,
+        const SalesHeaderDraft(
+          date: '2026-09-26',
+          buyer: 'Pembeli Baru',
+          status: 'belum_lunas',
+          note: 'Header saja',
+        ),
+      );
+
+      expect(updated.pembeli, 'Pembeli Baru');
+      expect(updated.status, StatusPenjualan.belumLunas);
+      expect(updated.details, hasLength(2));
+      expect(updated.details.first.hargaPerKgWire, '20000.55');
+      expect(sales.headerDrafts.single.buyer, 'Pembeli Baru');
+      expect(sales.headerUpdateKeys.single.length, 36);
+      expect(sales.drafts, isEmpty);
+      expect(vm.state.items.single.pembeli, 'Pembeli Baru');
+    });
+
     test('write refresh supersedes an older in-flight list response', () async {
       harvest.records = [saleHarvest(id: '1', layak: '100.00')];
       final vm = PenjualanViewModel(sales, harvest, autoLoad: false);
@@ -386,6 +438,25 @@ void main() {
       vm.setTanggal(today);
       vm.setBerat(1.001);
       expect(vm.validationMessage(), 'Berat jual maksimal dua angka desimal.');
+    });
+
+    test('preserves decimal price text and skips line fields for headers', () {
+      final today = jakartaToday();
+      final vm = CatatPenjualanViewModel(initialDate: today);
+      addTearDown(vm.dispose);
+      vm.setPembeli('Pembeli');
+      vm.setStatus(StatusPenjualan.lunas);
+      vm.setHargaPerKgText('20000,55');
+      expect(vm.state.hargaPerKg, 20000.55);
+      expect(vm.validationMessage(headerOnly: true), isNull);
+      expect(vm.validationMessage(), 'Pilih hasil panen terlebih dahulu.');
+
+      vm.setHargaPerKgText('20000.555');
+      expect(
+        vm.validationMessage(headerOnly: true),
+        isNull,
+        reason: 'header-only tidak memvalidasi harga batch',
+      );
     });
   });
 
@@ -646,6 +717,71 @@ void main() {
       expect(find.text('Toko Sayur Segar (Lunas)'), findsOneWidget);
       expect(find.text('Rp 300.000'), findsOneWidget);
       expect(sales.updateKeys.length, 1);
+    });
+
+    testWidgets('mengedit header penjualan multi-batch tanpa mengubah batch', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+      final today = jakartaToday();
+      sales.records = [
+        ...sales.records,
+        saleRecord(
+          id: '3',
+          buyer: 'Pembeli Multi Batch',
+          date: apiDate(today.subtract(const Duration(days: 3))),
+          status: 'lunas',
+          details: [
+            saleDetailJson(
+              id: '3',
+              harvestId: '1',
+              harvestDate: harvestDate,
+              quantity: '5.00',
+              price: '20000.55',
+            ),
+            saleDetailJson(
+              id: '4',
+              harvestId: '2',
+              harvestDate: harvestDate,
+              quantity: '10.00',
+              price: '19000.25',
+            ),
+          ],
+        ),
+      ];
+
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pembeli Multi Batch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Penjualan'), findsOneWidget);
+      expect(find.text('Transaksi 2 batch panen'), findsOneWidget);
+      expect(find.text('Pilih Hasil Panen'), findsNothing);
+      expect(find.text('Berat Jual (Kg)'), findsNothing);
+
+      await tester.enterText(
+        find.ancestor(
+          of: find.text('Nama Pembeli / Klien'),
+          matching: find.byType(TextFormField),
+        ),
+        'Pembeli Multi Batch Baru',
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Simpan Perubahan'));
+      await tester.tap(find.text('Simpan Perubahan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Penjualan berhasil diperbarui!'), findsOneWidget);
+      expect(find.text('Pembeli Multi Batch Baru'), findsOneWidget);
+      expect(sales.headerUpdateKeys.length, 1);
+      expect(sales.updateKeys, isEmpty);
+      expect(
+        sales.records.firstWhere((r) => r.id == '3').details,
+        hasLength(2),
+      );
     });
   });
 }

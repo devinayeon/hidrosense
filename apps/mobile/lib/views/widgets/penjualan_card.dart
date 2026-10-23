@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../core/formatting.dart';
 import '../../models/penjualan_model.dart';
 import '../theme/app_theme.dart';
 import 'app_surface_colors.dart';
@@ -18,11 +18,6 @@ class PenjualanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppSurfaceColors.of(context);
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
 
     final statusText = item.isLunas ? 'LUNAS' : 'BELUM LUNAS';
     final badgeBg = item.isLunas
@@ -115,7 +110,7 @@ class PenjualanCard extends StatelessWidget {
                     ],
                   );
                   final amount = Text(
-                    currencyFormatter.format(item.totalHarga),
+                    formatRupiah(item.totalHarga),
                     style: AppTypography.tabular(
                       AppTypography.title3.copyWith(
                         color: colors.ink,

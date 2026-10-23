@@ -32,6 +32,7 @@ class PenjualanLine {
   final String tanggalPanen;
   final double jumlahKg;
   final double hargaPerKg;
+  final String hargaPerKgWire;
   final double totalHarga;
   final double? beratLayak;
 
@@ -40,6 +41,7 @@ class PenjualanLine {
     required this.tanggalPanen,
     required this.jumlahKg,
     required this.hargaPerKg,
+    required this.hargaPerKgWire,
     required this.totalHarga,
     this.beratLayak,
   });
@@ -79,8 +81,9 @@ class PenjualanItem {
     return value == null ? null : DateTime.tryParse(value);
   }
 
-  bool get canEdit =>
-      details.length == 1 && version != null && tanggalIso != null;
+  bool get canEdit => version != null && tanggalIso != null;
+
+  bool get canEditDetails => canEdit && details.length == 1;
 
   PenjualanItem copyWith({
     String? id,

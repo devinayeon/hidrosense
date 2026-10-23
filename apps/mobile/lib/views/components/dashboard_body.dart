@@ -326,16 +326,17 @@ class DashboardBody extends ConsumerWidget {
                           ),
                         ),
                       ),
-                    _BusinessModuleCard(
-                      title: 'Kondisi & Cuaca Kebun',
-                      subtitle: 'Kondisi mikroklimat kebun & debit nutrisi',
-                      icon: Icons.wb_sunny_outlined,
-                      accentColor: AppColors.darkNavy,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CuacaPage()),
+                    if (user?.permissions.contains('cuaca:read') == true)
+                      _BusinessModuleCard(
+                        title: 'Kondisi & Cuaca Kebun',
+                        subtitle: 'Kondisi mikroklimat kebun & debit nutrisi',
+                        icon: Icons.wb_sunny_outlined,
+                        accentColor: AppColors.darkNavy,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CuacaPage()),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

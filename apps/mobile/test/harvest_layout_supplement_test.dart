@@ -97,7 +97,10 @@ void main() {
             expect(tester.takeException(), isNull);
             if (screen.endsWith('loading')) {
               expect(find.textContaining('Memuat'), findsWidgets);
-              expect(find.text('Layak jual: 2.25 kg'), findsNothing);
+              expect(
+                find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'),
+                findsNothing,
+              );
             } else if (screen.endsWith('error')) {
               expect(find.text('Laporan gagal dimuat.'), findsOneWidget);
               final retry = find.widgetWithText(TextButton, 'Coba lagi');
@@ -108,7 +111,10 @@ void main() {
               await tester.pumpAndSettle();
               expect(find.text('Laporan gagal dimuat.'), findsNothing);
             } else if (screen == 'detail') {
-              expect(find.text('Layak jual: 2.25 kg'), findsOneWidget);
+              expect(
+                find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'),
+                findsOneWidget,
+              );
               final correction = find.widgetWithText(
                 FilledButton,
                 'Koreksi Sortasi atau Catatan',
@@ -118,6 +124,7 @@ void main() {
                 180,
                 scrollable: find.byType(Scrollable).first,
               );
+              await tester.pumpAndSettle();
               expect(
                 tester.getSize(correction).height,
                 greaterThanOrEqualTo(48),
@@ -140,10 +147,7 @@ void main() {
               await tester.tap(toggle);
               await tester.pumpAndSettle();
               expect(tester.widget<Switch>(toggle).value, isTrue);
-              expect(
-                find.widgetWithText(TextField, 'Jumlah'),
-                findsNothing,
-              );
+              expect(find.widgetWithText(TextField, 'Jumlah'), findsNothing);
               expect(
                 find.byType(DropdownButtonFormField<String>),
                 findsNothing,
