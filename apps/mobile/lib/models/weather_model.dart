@@ -15,9 +15,9 @@ class TindakanRekomendasi {
 }
 
 class PrakiraanHarian {
-  final String waktu; // Contoh: "Pagi (07:00 - 11:00)"
-  final String status; // Contoh: "Cerah Berawan"
-  final int suhu; // Contoh: 26
+  final String waktu; // Contoh: "Hari Ini • 25 Okt 2026"
+  final String status; // Kondisi dominan, contoh: "Hujan Ringan"
+  final int suhu; // Suhu maksimum harian, contoh: 29
   final String ringkasanSaran;
   final List<TindakanRekomendasi> rekomendasiList;
 

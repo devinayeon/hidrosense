@@ -1194,9 +1194,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/models/weather_model.dart": {
-    "mtime": 1792544793.0541565,
-    "seen": 1792653118.9517598,
-    "ast_hash": "1cc144c5c0bce821e1d2fb5599a01381",
+    "mtime": 1792894337.2878091,
+    "seen": 1792895429.5482244,
+    "ast_hash": "d292dd6bed77718eb4fbf12b65ba42e7",
     "semantic_hash": ""
   },
   "apps/mobile/lib/viewmodels/catat_penjualan_viewmodel.dart": {
@@ -1260,9 +1260,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/viewmodels/weather_viewmodel.dart": {
-    "mtime": 1792796383.7174835,
-    "seen": 1792797762.0418434,
-    "ast_hash": "febc454ce6669dcabf5b549a8b558169",
+    "mtime": 1792893862.3635561,
+    "seen": 1792895429.5485325,
+    "ast_hash": "df5fd438f608fa1da4273ace2f69b4db",
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/components/account_body.dart": {
@@ -1278,9 +1278,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/components/cuaca_body.dart": {
-    "mtime": 1792797055.249215,
-    "seen": 1792797762.0418475,
-    "ast_hash": "7af01f4be5d1ea2b39f7ecf47bd5319d",
+    "mtime": 1792893733.5009732,
+    "seen": 1792895429.5485985,
+    "ast_hash": "16c553607b0bdff3a8e9e119ca938a62",
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/components/custom_bottom_navigation_bar.dart": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/components/rekomendasi_cuaca_body.dart": {
-    "mtime": 1792652881.1913235,
-    "seen": 1792653118.9518068,
-    "ast_hash": "b824857a09c75fb97358f7caa57c61b0",
+    "mtime": 1792893798.72367,
+    "seen": 1792895429.5490527,
+    "ast_hash": "bb8ad12065ea6e7ccc7d83a210bbcd43",
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/pages/account_page.dart": {
@@ -1410,9 +1410,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/pages/cuaca_page.dart": {
-    "mtime": 1792544793.0559576,
-    "seen": 1792653118.9518197,
-    "ast_hash": "21fe5800a947a5ed39bcc0d926ae5bcf",
+    "mtime": 1792893737.9130204,
+    "seen": 1792895429.5493615,
+    "ast_hash": "0199ef6545f8495678f22e755021224b",
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/pages/detail_tanaman_meja_page.dart": {
@@ -1482,9 +1482,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/pages/rekomendasi_cuaca_page.dart": {
-    "mtime": 1792544793.0559576,
-    "seen": 1792653118.951843,
-    "ast_hash": "acb97e534405552288f5b95dbeee739c",
+    "mtime": 1792893742.9035385,
+    "seen": 1792895429.5497608,
+    "ast_hash": "57e42b844453b4335746945826e259ed",
     "semantic_hash": ""
   },
   "apps/mobile/lib/views/pages/seeding_form_page.dart": {
@@ -3318,9 +3318,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/README.md": {
-    "mtime": 1792544793.0332031,
-    "seen": 1792653118.952199,
-    "ast_hash": "e7803266a2a42de62dd35e607a18ae53",
+    "mtime": 1792895495.440886,
+    "seen": 1792895516.7711115,
+    "ast_hash": "907d5434b2eb529c80cc1452543be81a",
     "semantic_hash": ""
   },
   "apps/mobile/analysis_options.yaml": {
@@ -4194,9 +4194,45 @@
     "semantic_hash": ""
   },
   "apps/mobile/test/weather_test.dart": {
-    "mtime": 1792797055.4473343,
-    "seen": 1792797762.0457273,
-    "ast_hash": "82dcf938df81114861d6ce541e419cb1",
+    "mtime": 1792893791.3042612,
+    "seen": 1792895429.5555544,
+    "ast_hash": "ccf7273f341e7bee75e6cc96df0d8631",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/core/weather_rules.dart": {
+    "mtime": 1792894257.4340038,
+    "seen": 1792895429.5469947,
+    "ast_hash": "3197aafc19991cff8e3b296cd2e7d721",
+    "semantic_hash": ""
+  },
+  "apps/mobile/lib/data/services/bmkg_weather_service.dart": {
+    "mtime": 1792893857.1692946,
+    "seen": 1792895429.5475404,
+    "ast_hash": "09f4a588fcca1f28ca5b6578ca2fbe54",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/bmkg_weather_service_test.dart": {
+    "mtime": 1792893798.7316701,
+    "seen": 1792895429.5530374,
+    "ast_hash": "a5a88cbb70db883e10d07ed36e2b8e8d",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/support/bmkg_weather_fixture.dart": {
+    "mtime": 1792893769.4823577,
+    "seen": 1792895429.5551257,
+    "ast_hash": "f735bfb5cb116f9e7edefadc3110284c",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/weather_rules_test.dart": {
+    "mtime": 1792894385.5409396,
+    "seen": 1792895429.5555372,
+    "ast_hash": "3a61ceb15ddc21f27cf26a9b680a0e43",
+    "semantic_hash": ""
+  },
+  "apps/mobile/docs/bmkg-weather-integration.md": {
+    "mtime": 1792895485.8236566,
+    "seen": 1792895516.7711585,
+    "ast_hash": "fae49ec2cf4e90d0512859e4098c2e7d",
     "semantic_hash": ""
   }
 }

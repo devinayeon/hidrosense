@@ -11,8 +11,8 @@ class RekomendasiCuacaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Header(
-        titleText: 'Rekomendasi ${prakiraanItem.waktu.split(' ').first}',
+      appBar: const Header(
+        titleText: 'Rekomendasi Cuaca',
         showBackButton: true,
       ),
       body: RekomendasiCuacaBody(item: prakiraanItem),
