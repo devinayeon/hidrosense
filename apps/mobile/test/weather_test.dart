@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
+import 'package:hidrosense_mobile/data/services/bmkg_weather_service.dart';
+import 'package:hidrosense_mobile/models/weather_model.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/weather_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/cuaca_body.dart';
 import 'package:hidrosense_mobile/views/components/dashboard_body.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:http/testing.dart';
+
+import 'support/bmkg_weather_fixture.dart';
 
 const _weatherUser = SessionUser(
   id: '1',
@@ -23,6 +27,11 @@ const _userWithoutWeather = SessionUser(
   username: 'pegawai',
   role: 'pegawai',
   permissions: ['inventaris:read'],
+);
+
+Future<WeatherData> _fixtureWeather() async => parseBmkgWeather(
+  bmkgWeatherFixture(),
+  fetchedAt: DateTime.utc(2026, 10, 25, 1, 30),
 );
 
 ApiClient _api() => ApiClient(
@@ -54,13 +63,13 @@ Widget _app({
 
 void main() {
   group('WeatherViewModel', () {
-    test('demo data never claims a live BMKG connection', () async {
-      final data = await loadDemoWeather();
+    test('live data identifies BMKG as its source', () async {
+      final data = await _fixtureWeather();
 
-      expect(data.sumber.toLowerCase(), contains('data contoh'));
-      expect(data.sumber.toLowerCase(), isNot(contains('bmkg api terkoneksi')));
-      expect(data.lastUpdated.toLowerCase(), contains('bukan'));
+      expect(data.sumber.toLowerCase(), contains('bmkg'));
+      expect(data.lastUpdated, contains('WIB'));
       expect(data.prakiraanHarian, isNotEmpty);
+      expect(data.prakiraanHarian.first.rekomendasiList, isNotEmpty);
     });
 
     test('a failed load can be retried without stale data', () async {
@@ -68,20 +77,20 @@ void main() {
       final vm = WeatherViewModel(
         loader: () async {
           if (fail) throw StateError('offline');
-          return loadDemoWeather();
+          return _fixtureWeather();
         },
       );
 
       await pumpEventQueue();
       expect(vm.state.isLoading, isFalse);
       expect(vm.state.data, isNull);
-      expect(vm.state.errorMessage, isNotNull);
+      expect(vm.state.errorMessage, contains('BMKG'));
 
       fail = false;
       await vm.fetchWeatherData();
       expect(vm.state.isLoading, isFalse);
       expect(vm.state.errorMessage, isNull);
-      expect(vm.state.data?.kota, 'Ambulu, Jember');
+      expect(vm.state.data?.kota, 'Sabrang, Ambulu, Jember');
       vm.dispose();
     });
   });
@@ -97,7 +106,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Akses cuaca tidak diizinkan.'), findsOneWidget);
-      expect(find.text('Ambulu, Jember'), findsNothing);
+      expect(find.textContaining('Ambulu'), findsNothing);
     });
 
     testWidgets('shows a retry state and recovers after retry', (tester) async {
@@ -105,7 +114,7 @@ void main() {
       final weather = WeatherViewModel(
         loader: () async {
           if (fail) throw StateError('offline');
-          return loadDemoWeather();
+          return _fixtureWeather();
         },
       );
       await tester.pumpWidget(_app(user: _weatherUser, weather: weather));
@@ -120,8 +129,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Data cuaca belum dapat dimuat'), findsNothing);
-      expect(find.text('Ambulu, Jember'), findsOneWidget);
-      expect(find.textContaining('bukan pembaruan BMKG'), findsOneWidget);
+      expect(find.text('Sabrang, Ambulu, Jember'), findsOneWidget);
+      expect(find.textContaining('Data BMKG diperbarui'), findsOneWidget);
     });
   });
 

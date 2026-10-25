@@ -274,14 +274,14 @@ class CuacaBody extends ConsumerWidget {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: AppColors.warningOrange,
+                      color: AppColors.successGreen,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Data Diperbarui: ${data.lastUpdated}',
+                      'Data BMKG diperbarui: ${data.lastUpdated}',
                       style: AppTypography.caption2.copyWith(
                         fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,

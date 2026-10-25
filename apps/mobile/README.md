@@ -1,7 +1,25 @@
 # hidrosense_mobile
 
+Aplikasi Flutter HidroSense.
 
-A new Flutter project.
+## Integrasi cuaca BMKG
+
+Halaman **Cuaca & Iklim** mengambil prakiraan langsung dari
+`https://api.bmkg.go.id/publik/prakiraan-cuaca` memakai kode wilayah `adm4`
+Desa Sabrang, Kecamatan Ambulu, Kabupaten Jember: `35.09.12.2002`.
+
+Kode wilayah bisa diganti saat build tanpa mengubah kode:
+
+```bash
+flutter run --dart-define=BMKG_ADM4=35.09.12.2002
+```
+
+Data dipetakan ke suhu, kelembapan, curah hujan, angin, dan prakiraan harian.
+Aturan rekomendasi perawatan berada di `lib/core/weather_rules.dart`. Jika BMKG
+tidak dapat dihubungi, halaman menampilkan status gagal dan tombol coba lagi
+(tidak memakai data contoh).
+
+Dokumentasi lengkap: [`docs/bmkg-weather-integration.md`](docs/bmkg-weather-integration.md).
 
 ## Getting Started
 
