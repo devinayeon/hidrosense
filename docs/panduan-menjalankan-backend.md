@@ -1,7 +1,6 @@
 # Panduan Menjalankan Backend HidroSense
 
-Panduan ini mencakup migrasi database, seeder data uji, menjalankan API, dan
-memverifikasi fitur backend.
+Panduan ini mencakup konfigurasi database, migrasi, seeder data uji, dan startup API.
 
 ## Prasyarat
 
@@ -122,99 +121,4 @@ Invoke-RestMethod http://127.0.0.1:3000/health/ready
 dan kesiapan skema. Jika startup gagal, pastikan `.env` valid, database dapat
 dibuka, dan `npm run db:status` tidak lagi menampilkan migrasi `pending`.
 
-## 5. Menguji fitur
-
-### Pemeriksaan lengkap
-
-Perintah berikut menjalankan typecheck, pemeriksaan batas ukuran file, dan
-seluruh test suite:
-
-```powershell
-npm run check
-```
-
-Atau jalankan test saja:
-
-```powershell
-npm test
-```
-
-Test menggunakan database SQLite/libSQL lokal sementara dan tidak menggantikan
-verifikasi koneksi remote Turso.
-
-### Test berdasarkan area fitur
-
-Jalankan satu area untuk iterasi cepat:
-
-```powershell
-npm test -- test/http.test.js
-npm test -- test/auth.test.js
-npm test -- test/profile.test.js
-npm test -- test/inventory.test.js
-npm test -- test/stock.test.js
-npm test -- test/nursery.test.js
-npm test -- test/transfers.test.js
-npm test -- test/seed.test.js
-npm test -- test/migrations.test.js
-```
-
-Test migrasi dan seeder berguna setelah perubahan SQL atau data awal. Test
-`http`, `auth`, dan `profile` memverifikasi fondasi API dan autentikasi.
-Test `inventory`, `stock`, `nursery`, dan `transfers` memverifikasi alur fitur
-domain.
-
-### Verifikasi manual alur fitur
-
-1. Jalankan migrasi dan seeder.
-2. Jalankan API dengan `npm run dev`.
-3. Pastikan kedua endpoint health berstatus siap.
-4. Login menggunakan kredensial yang dicetak oleh seeder melalui endpoint
-   autentikasi sesuai [kontrak API](backend-api.md).
-5. Jalankan request fitur yang sedang dikerjakan menggunakan akun dan data
-   hasil seeder.
-6. Setelah perubahan, ulangi test area terkait lalu `npm run check`.
-
-Untuk operasi penulisan stok, sertakan `Idempotency-Key` sesuai kontrak stock
-ledger. Jangan menguji operasi destruktif pada database yang berisi data
-penting; gunakan database lokal atau salinan backup.
-
-## Urutan cepat dari database kosong
-
-```powershell
-cd apps/backend
-npm ci
-Copy-Item .env.example .env
-npm run db:status
-npm run db:migrate
-npm run db:seed
-npm run check
-npm run dev
-```
-
-Biarkan `npm run dev` berjalan, lalu jalankan pemeriksaan health atau test
-fitur dari terminal lain.
-
-## Ganti target lokal vs Turso
-
-Default harian adalah SQLite lokal. Semua script hanya membaca `.env`,
-jadi ganti target berarti ganti isi `.env` dari file template yang sudah
-disiapkan di `apps/backend` (semuanya di-ignore git kecuali `.example`):
-
-```powershell
-cd apps/backend
-Copy-Item .env.local .env -Force  # kerja harian (lokal)
-Copy-Item .env.turso .env -Force  # verifikasi remote (sekali jalan)
-```
-
-- `.env.local` — SQLite lokal `file:./data/hidrosense.db`.
-- `.env.turso` — Turso remote hasil `turso db show --url` +
-  `turso db tokens create` (pakai token full-access, bukan read-only).
-- `.env.turso.example` — template tanpa token asli untuk anggota tim baru.
-
-Jangan develop harian langsung ke Turso: reset-nya mahal (harus
-`destroy/create` atau `DROP TABLE`) dan rollback `0006` memblokir DB yang
-sudah di-seed. Alurnya: `npm run check` hijau di lokal dulu, baru switch
-ke Turso, lalu `npm run db:status` (di DB baru harusnya semua `pending`;
-kalau `applied`, berarti salah URL — STOP), `npm run db:migrate`,
-`npm run db:seed`, dan cek `/health/live` + `/health/ready`. Selesai
-verifikasi, kembali dengan `Copy-Item .env.local .env -Force`.
+Untuk menyiapkan akun petani pertama tanpa data seeder, ikuti [setup akun backend](../apps/backend/README.md#akun-petani-pertama).
