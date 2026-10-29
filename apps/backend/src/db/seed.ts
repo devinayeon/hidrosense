@@ -50,12 +50,18 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     `);
 
     // 3. Test Users across all active roles (petani & pegawai)
+    // Existing accounts keep their password and activation state: re-seeding must
+    // never restore a known default credential or revive a deactivated account.
+    const existingUsernames = new Set((await tx.execute({
+      sql: 'SELECT username FROM users WHERE username IN (?,?)',
+      args: [SEED_CREDENTIALS.petani.username, SEED_CREDENTIALS.pegawai.username],
+    })).rows.map((row) => String(row.username)));
     await tx.execute({
       sql: `INSERT INTO users (id_user, id_role, nama, username, password, email, no_telepon, alamat, status_aktif)
         VALUES (1, 1, ?, ?, ?, ?, ?, ?, 1)
         ON CONFLICT(username) DO UPDATE SET
-          nama=excluded.nama, password=excluded.password, email=excluded.email,
-          no_telepon=excluded.no_telepon, alamat=excluded.alamat, status_aktif=1`,
+          nama=excluded.nama, email=excluded.email,
+          no_telepon=excluded.no_telepon, alamat=excluded.alamat`,
       args: [
         SEED_CREDENTIALS.petani.nama, SEED_CREDENTIALS.petani.username, petaniHash,
         SEED_CREDENTIALS.petani.email, SEED_CREDENTIALS.petani.no_telepon, SEED_CREDENTIALS.petani.alamat,
@@ -65,8 +71,8 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
       sql: `INSERT INTO users (id_user, id_role, nama, username, password, email, no_telepon, alamat, status_aktif)
         VALUES (2, 2, ?, ?, ?, ?, ?, ?, 1)
         ON CONFLICT(username) DO UPDATE SET
-          nama=excluded.nama, password=excluded.password, email=excluded.email,
-          no_telepon=excluded.no_telepon, alamat=excluded.alamat, status_aktif=1`,
+          nama=excluded.nama, email=excluded.email,
+          no_telepon=excluded.no_telepon, alamat=excluded.alamat`,
       args: [
         SEED_CREDENTIALS.pegawai.nama, SEED_CREDENTIALS.pegawai.username, pegawaiHash,
         SEED_CREDENTIALS.pegawai.email, SEED_CREDENTIALS.pegawai.no_telepon, SEED_CREDENTIALS.pegawai.alamat,
@@ -215,6 +221,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     return {
       success: true,
       seededUsers: [SEED_CREDENTIALS.petani.username, SEED_CREDENTIALS.pegawai.username],
+      keptExisting: [...existingUsernames],
     };
   } catch (error) {
     if (!tx.closed) await tx.rollback();

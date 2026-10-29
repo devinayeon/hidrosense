@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 export const backendRoot = fileURLToPath(new URL('../../', import.meta.url));
 
+/** True when the URL points at a remote libSQL/Turso database. */
+export const isRemoteUrl = (url) => /^(libsql|https):\/\//.test(url ?? '');
+
 export async function openDatabase({
   url = process.env.DATABASE_URL ?? 'file:./data/hidrosense.db',
   authToken = process.env.DATABASE_AUTH_TOKEN,
