@@ -1,7 +1,6 @@
 # Panduan Menjalankan Backend HidroSense
 
-Panduan ini mencakup migrasi database, seeder data uji, menjalankan API, dan
-memverifikasi fitur backend.
+Panduan ini mencakup konfigurasi database, migrasi, seeder data uji, dan startup API.
 
 ## Prasyarat
 
@@ -85,7 +84,9 @@ menampilkan kredensial akun uji `petani` dan `pegawai`; gunakan nilai tersebut
 untuk login selama pengujian. Seeder dirancang idempoten sehingga dapat
 dijalankan ulang tanpa membuat duplikasi data uji.
 
-Seeder diblokir pada `NODE_ENV=production` kecuali `ALLOW_PROD_SEED=1`.
+Seeder diblokir pada `NODE_ENV=production` **dan** pada `DATABASE_URL` remote
+(`libsql://`/`https://`) kecuali `ALLOW_PROD_SEED=1`. Menjalankan ulang seeder
+tidak mengubah password maupun status aktif akun yang sudah ada.
 Jangan menggunakan akun atau data seeder di production.
 
 ## 4. Menjalankan backend
@@ -122,99 +123,29 @@ Invoke-RestMethod http://127.0.0.1:3000/health/ready
 dan kesiapan skema. Jika startup gagal, pastikan `.env` valid, database dapat
 dibuka, dan `npm run db:status` tidak lagi menampilkan migrasi `pending`.
 
-## 5. Menguji fitur
+Untuk menyiapkan akun petani pertama tanpa data seeder, ikuti [setup akun backend](../apps/backend/README.md#akun-petani-pertama).
 
-### Pemeriksaan lengkap
+## 5. Header wajib untuk endpoint tulis
 
-Perintah berikut menjalankan typecheck, pemeriksaan batas ukuran file, dan
-seluruh test suite:
+Setiap `POST`/`PATCH` yang menulis data domain mewajibkan header
+`Idempotency-Key` berisi UUID v4 unik per operasi. Tanpa header itu server
+membalas `400 VALIDATION_ERROR` dengan pesan `Header sinkronisasi tidak valid.`
+Tujuannya: percobaan ulang setelah timeout mengembalikan hasil tersimpan
+(`200`, `replayed: true`), bukan membuat catatan kedua.
 
-```powershell
-npm run check
-```
-
-Atau jalankan test saja:
-
-```powershell
-npm test
-```
-
-Test menggunakan database SQLite/libSQL lokal sementara dan tidak menggantikan
-verifikasi koneksi remote Turso.
-
-### Test berdasarkan area fitur
-
-Jalankan satu area untuk iterasi cepat:
+`X-Client-Id` opsional dan hanya dipakai pada operasi yang membuat catatan baru
+(`create`, termasuk `POST /stok/:id/reverse` yang membuat gerakan pembalik).
+Operasi yang mengubah catatan lama mengabaikannya.
 
 ```powershell
-npm test -- test/http.test.js
-npm test -- test/auth.test.js
-npm test -- test/profile.test.js
-npm test -- test/inventory.test.js
-npm test -- test/stock.test.js
-npm test -- test/nursery.test.js
-npm test -- test/transfers.test.js
-npm test -- test/seed.test.js
-npm test -- test/migrations.test.js
+$key = [guid]::NewGuid().ToString()
+$token = (Invoke-RestMethod http://127.0.0.1:3000/api/v1/auth/login -Method Post `
+  -ContentType 'application/json' -Body '{"username":"petani","password":"..."}').data.access_token
+
+Invoke-RestMethod http://127.0.0.1:3000/api/v1/meja-tanam -Method Post `
+  -Headers @{ Authorization = "Bearer $token"; 'Idempotency-Key' = $key } `
+  -ContentType 'application/json' -Body '{"kode_meja":"M-05","jumlah_lubang":250}'
 ```
 
-Test migrasi dan seeder berguna setelah perubahan SQL atau data awal. Test
-`http`, `auth`, dan `profile` memverifikasi fondasi API dan autentikasi.
-Test `inventory`, `stock`, `nursery`, dan `transfers` memverifikasi alur fitur
-domain.
-
-### Verifikasi manual alur fitur
-
-1. Jalankan migrasi dan seeder.
-2. Jalankan API dengan `npm run dev`.
-3. Pastikan kedua endpoint health berstatus siap.
-4. Login menggunakan kredensial yang dicetak oleh seeder melalui endpoint
-   autentikasi sesuai [kontrak API](backend-api.md).
-5. Jalankan request fitur yang sedang dikerjakan menggunakan akun dan data
-   hasil seeder.
-6. Setelah perubahan, ulangi test area terkait lalu `npm run check`.
-
-Untuk operasi penulisan stok, sertakan `Idempotency-Key` sesuai kontrak stock
-ledger. Jangan menguji operasi destruktif pada database yang berisi data
-penting; gunakan database lokal atau salinan backup.
-
-## Urutan cepat dari database kosong
-
-```powershell
-cd apps/backend
-npm ci
-Copy-Item .env.example .env
-npm run db:status
-npm run db:migrate
-npm run db:seed
-npm run check
-npm run dev
-```
-
-Biarkan `npm run dev` berjalan, lalu jalankan pemeriksaan health atau test
-fitur dari terminal lain.
-
-## Ganti target lokal vs Turso
-
-Default harian adalah SQLite lokal. Semua script hanya membaca `.env`,
-jadi ganti target berarti ganti isi `.env` dari file template yang sudah
-disiapkan di `apps/backend` (semuanya di-ignore git kecuali `.example`):
-
-```powershell
-cd apps/backend
-Copy-Item .env.local .env -Force  # kerja harian (lokal)
-Copy-Item .env.turso .env -Force  # verifikasi remote (sekali jalan)
-```
-
-- `.env.local` — SQLite lokal `file:./data/hidrosense.db`.
-- `.env.turso` — Turso remote hasil `turso db show --url` +
-  `turso db tokens create` (pakai token full-access, bukan read-only).
-- `.env.turso.example` — template tanpa token asli untuk anggota tim baru.
-
-Jangan develop harian langsung ke Turso: reset-nya mahal (harus
-`destroy/create` atau `DROP TABLE`) dan rollback `0006` memblokir DB yang
-sudah di-seed. Alurnya: `npm run check` hijau di lokal dulu, baru switch
-ke Turso, lalu `npm run db:status` (di DB baru harusnya semua `pending`;
-kalau `applied`, berarti salah URL — STOP), `npm run db:migrate`,
-`npm run db:seed`, dan cek `/health/live` + `/health/ready`. Selesai
-verifikasi, kembali dengan `Copy-Item .env.local .env -Force`.
+Kirim ulang dengan `$key` yang sama dan isi yang sama untuk menguji replay.
+Endpoint `employees` dan `profile` belum memakai mekanisme receipt ini.
