@@ -25,7 +25,10 @@ async function executeOperation<T extends Json>(
   effect: (publicId: string | null) => Promise<T>,
 ) {
   // Canonicalize at the transaction boundary too; old mappings keep their original spelling.
-  operation = { ...operation, ...(operation.client_id ? { client_id: operation.client_id.toLowerCase() } : {}) };
+  // The operation key is a UUID, so case never distinguishes two operations: a retry that
+  // upper-cases the header must replay the stored receipt instead of writing twice.
+  operation = { ...operation, operation_key: operation.operation_key.toLowerCase(),
+    ...(operation.client_id ? { client_id: operation.client_id.toLowerCase() } : {}) };
   const mappings = operation.resource_type && operation.client_id ? (await tx.execute({
     sql: `SELECT client_id,public_id FROM sync_id_maps
       WHERE id_user=? AND resource_type=? AND lower(client_id)=?`,
@@ -36,8 +39,12 @@ async function executeOperation<T extends Json>(
   }
   const payloadHash = hashPayload(operation);
   const existing = (await tx.execute({
+    // Receipts stored before key canonicalization may still be upper-case. Match either
+    // spelling so a retry after deploy replays instead of writing twice.
     sql: `SELECT operation_type,payload_hash,result_json FROM sync_operations
-      WHERE id_user=? AND operation_key=?`, args: [actorId, operation.operation_key],
+      WHERE id_user=? AND (operation_key=? OR lower(operation_key)=?)
+      ORDER BY (operation_key=?) DESC, id_change DESC LIMIT 1`,
+    args: [actorId, operation.operation_key, operation.operation_key, operation.operation_key],
   })).rows[0];
   if (existing) {
     const stored = JSON.parse(String(existing.result_json));
