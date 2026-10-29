@@ -16,7 +16,11 @@ export function registerLogin(app: FastifyInstance, db: Client, clock: () => num
     } },
   }, async (request, reply) => {
     const { username, password } = request.body;
-    await consumeLimit(db, `login:${username.toLowerCase()}`, 10, 15 * 60 * 1000, clock(), reply);
+    // Keyed per source IP and exact username: usernames are case-sensitive, so
+    // 'Petani' and 'petani' are two accounts and must not share a bucket.
+    // Accepted ceiling: an account has no cross-IP cap, so distributed guessing is bounded
+    // only by the 120/minute IP quota. An account-wide cap would bring back the lockout.
+    await consumeLimit(db, `login:${request.ip}:${username}`, 10, 15 * 60 * 1000, clock(), reply);
     const user = (await db.execute({
       // Preserve SQLite 64-bit IDs as strings throughout the authentication path.
       sql: 'SELECT CAST(id_user AS TEXT) AS id_user,username,password,status_aktif FROM users WHERE username=?', args: [username],
