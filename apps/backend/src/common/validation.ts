@@ -18,3 +18,13 @@ export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
   if (!result.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.');
   return result.data;
 }
+
+/**
+ * Every write carries a client-generated UUID so a retry replays the stored receipt
+ * instead of applying the same change twice. Required by all write endpoints.
+ */
+export function requireIdempotencyKey(headers: Record<string, string | string[] | undefined>): string {
+  const parsed = uuidSchema.safeParse(headers['idempotency-key']);
+  if (!parsed.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Header sinkronisasi tidak valid.');
+  return parsed.data;
+}

@@ -1,10 +1,9 @@
-import { randomUUID } from 'node:crypto';
 import type { Client, Transaction } from '@libsql/client';
 import type { FastifyRequest } from 'fastify';
 import { ApiError } from '../../common/errors.js';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { executeDomainMutation, type Json } from '../../common/sync.js';
-import { clientUuidSchema, uuidSchema } from '../../common/validation.js';
+import { clientUuidSchema, requireIdempotencyKey } from '../../common/validation.js';
 
 /**
  * Idempotent write wrapper for nursery operations.
@@ -19,16 +18,12 @@ export async function nurseryWrite<T extends Json & Record<string, Json>>(
   payload: Json,
   effect: (tx: Transaction, actorId: string, now: number) => Promise<T>,
 ) {
-  const operationKey = request.headers['idempotency-key'] ?? randomUUID();
-
-  if (!uuidSchema.safeParse(operationKey).success) {
-    throw new ApiError(400, 'VALIDATION_ERROR', 'Header sinkronisasi tidak valid.');
-  }
+  const operationKey = requireIdempotencyKey(request.headers);
 
   const rawClientId = request.headers['x-client-id'];
   const parsedClientId = clientUuidSchema.safeParse(rawClientId);
   if (rawClientId !== undefined && !parsedClientId.success) {
-    throw new ApiError(400, 'VALIDATION_ERROR', 'X-Client-Id tidak valid.');
+    throw new ApiError(400, 'VALIDATION_ERROR', 'Header sinkronisasi tidak valid.');
   }
 
   // Only create operations may carry a client UUID for public ID reservation.
@@ -38,7 +33,7 @@ export async function nurseryWrite<T extends Json & Record<string, Json>>(
     (tx, actor) => {
       const now = clock();
       return executeDomainMutation(tx, actor.id_user, {
-        operation_key: String(operationKey),
+        operation_key: operationKey,
         operation_type: operationType,
         payload,
         ...(withClient ? { resource_type: 'penyemaian', client_id: parsedClientId.data } : {}),
