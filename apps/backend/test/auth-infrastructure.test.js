@@ -86,10 +86,22 @@ test('database rate limits survive separate app instances and reset after their 
 test('account throttle returns 429 before deriving another password', async (t) => {
   const { app, db, clock } = await fixture(t);
   const reply = { header() { return this; } };
-  for (let i = 0; i < 10; i++) await consumeLimit(db, 'login:petani', 10, 900000, clock(), reply);
+  for (let i = 0; i < 10; i++) await consumeLimit(db, 'login:127.0.0.1:petani', 10, 900000, clock(), reply);
   const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username: 'petani', password } });
   assert.equal(response.statusCode, 429);
   assert.equal(response.headers['retry-after'], '900');
+});
+
+test('case-variant usernames do not share a login quota', async (t) => {
+  const { app, db } = await fixture(t);
+  await db.execute("INSERT INTO users (id_role,nama,username,password) SELECT id_role,'Kembar','Petani',password FROM users WHERE username='petani'");
+  const attempt = (username, supplied) => app.inject({
+    method: 'POST', url: '/api/v1/auth/login', payload: { username, password: supplied },
+  });
+  for (let i = 0; i < 10; i++) assert.equal((await attempt('Petani', 'wrong password')).statusCode, 401);
+  // The lookalike account is throttled on its own bucket; the owner keeps its quota.
+  assert.equal((await attempt('Petani', 'wrong password')).statusCode, 429);
+  assert.equal((await attempt('petani', password)).statusCode, 200);
 });
 
 test('production requires HTTPS and trusts forwarded protocol only from configured proxies', async (t) => {

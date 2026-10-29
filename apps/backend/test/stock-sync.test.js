@@ -9,7 +9,7 @@ test('stock requires caller operation keys and validates optional client UUID', 
   const f = await stockFixture(t);
   for (const extra of [{}, { 'idempotency-key': 'bad' },
     { 'idempotency-key': randomUUID(), 'x-client-id': 'bad' }]) {
-    const response = await f.app.inject({ method: 'POST', url: '/api/v1/stok',
+    const response = await f.app.inject({ method: 'POST', url: '/api/v1/stok', omitIdempotencyKey: true,
       headers: { ...f.headers, ...extra }, payload: f.movement() });
     expectError(response, 400, 'VALIDATION_ERROR');
   }
@@ -63,11 +63,12 @@ test('stock binds reserved UUID once and operation key rejects changed payload/t
   assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, 1);
 });
 
-test('stock operation keys retain exact casing and actor namespaces are independent', async (t) => {
+test('operation keys are canonical UUIDs and actor namespaces are independent', async (t) => {
   const f = await stockFixture(t);
   const key = 'abcdefab-abcd-4abc-8abc-abcdefabcdef';
   assert.equal((await f.post(f.movement(), { 'idempotency-key': key })).statusCode, 201);
-  assert.equal((await f.post(f.movement(), { 'idempotency-key': key.toUpperCase() })).statusCode, 201);
+  // A retry that only changes the casing is the same operation, not a second movement.
+  assert.equal((await f.post(f.movement(), { 'idempotency-key': key.toUpperCase() })).statusCode, 200);
   await f.db.execute("INSERT INTO users (id_role,nama,username,password) SELECT id_role,'Other','other',password FROM users WHERE id_user=2");
   const login = await f.login('other');
   assert.equal(login.statusCode, 200, login.body);
@@ -75,7 +76,55 @@ test('stock operation keys retain exact casing and actor namespaces are independ
     headers: { ...bearer(login.json().data.access_token), 'idempotency-key': key }, payload: f.movement() });
   assert.equal(response.statusCode, 201, response.body);
   assert.equal(response.json().data.id_user, '3');
-  assert.equal((await f.balance()).saldo, '3');
+  assert.equal((await f.balance()).saldo, '2');
+});
+
+test('a receipt stored with an upper-case key is still found after canonicalization', async (t) => {
+  const f = await stockFixture(t);
+  const key = 'abcdefab-abcd-4abc-8abc-abcdefabcdef';
+  await f.db.execute({
+    sql: `INSERT INTO sync_operations (id_user,operation_key,operation_type,payload_hash,result_json,created_at)
+      VALUES (2,?,?,?,?,0)`,
+    args: [key.toUpperCase(), 'stok.create', 'a'.repeat(64), '{}'],
+  });
+  const response = await f.post(f.movement(), { 'idempotency-key': key });
+  assert.equal(response.statusCode, 409, response.body);
+  assert.equal(response.json().error.code, 'OPERATION_CONFLICT');
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, 0);
+});
+
+test('an upper-case legacy receipt replays its stored result', async (t) => {
+  const f = await stockFixture(t);
+  const key = randomUUID();
+  const first = await f.post(f.movement(), { 'idempotency-key': key });
+  assert.equal(first.statusCode, 201, first.body);
+  await f.db.execute({
+    sql: 'UPDATE sync_operations SET operation_key=upper(operation_key) WHERE id_user=2 AND operation_key=?', args: [key],
+  });
+  const replay = await f.post(f.movement(), { 'idempotency-key': key });
+  const count = Number((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n);
+  t.diagnostic(`replay=${replay.statusCode} replayed=${replay.json().replayed} stok=${count}`);
+  assert.equal(replay.statusCode, 200, replay.body);
+  assert.equal(replay.json().replayed, true);
+  assert.equal(replay.json().data.id_stok, first.json().data.id_stok);
+  assert.equal(count, 1);
+});
+
+test('the canonical receipt wins over a case-variant decoy with the same payload hash', async (t) => {
+  const f = await stockFixture(t);
+  const key = randomUUID();
+  const first = await f.post(f.movement(), { 'idempotency-key': key });
+  assert.equal(first.statusCode, 201, first.body);
+  await f.db.execute({
+    sql: `INSERT INTO sync_operations (id_user,operation_key,operation_type,payload_hash,result_json,created_at)
+      SELECT id_user, upper(operation_key), operation_type, payload_hash, ?, created_at FROM sync_operations
+      WHERE id_user=2 AND operation_key=?`,
+    args: [JSON.stringify({ data: { id_stok: '999' }, operation: { revision: '1' } }), key],
+  });
+  const replay = await f.post(f.movement(), { 'idempotency-key': key });
+  t.diagnostic(`replay=${replay.statusCode} id=${replay.json().data?.id_stok}`);
+  assert.equal(replay.statusCode, 200, replay.body);
+  assert.equal(replay.json().data.id_stok, first.json().data.id_stok);
 });
 
 test('reversal retry returns saved identity and does not repeat balance effects', async (t) => {

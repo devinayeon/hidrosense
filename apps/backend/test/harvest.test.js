@@ -82,3 +82,10 @@ test('ambiguous legacy sold values block correction without changing version',as
  const f=await setup(t);await f.post();await f.db.executeMultiple("INSERT INTO penjualan(id_user,tanggal_penjualan) VALUES(1,'2026-09-20');INSERT INTO detail_penjualan(id_penjualan,id_panen,jumlah_kg,harga_per_kg) VALUES(1,1,0.30000000000000004,1)");
  check(await f.send('PATCH','/1',{expected_version:'1',keterangan:'updated'}),409,'HARVEST_SOLD_WEIGHT_INVALID');assert.equal((await f.send('GET','/1')).json().data.version,'1');
 });
+
+test('harvest without an idempotency key is refused before any write',async t=>{
+ const f=await setup(t); const headers=bearer((await f.login('pegawai')).json().data.access_token);
+ const res=await f.app.inject({method:'POST',url:'/api/v1/panen',headers,payload:f.payload(),omitIdempotencyKey:true});
+ check(res,400,'VALIDATION_ERROR'); assert.equal(res.json().error.message,'Header sinkronisasi tidak valid.');
+ assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM panen')).rows[0].n,0);
+});

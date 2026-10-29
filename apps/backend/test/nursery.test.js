@@ -250,15 +250,6 @@ test('N-10: Authorization matrix: petani and pegawai have write, invalid header 
   const created = await f.post(f.defaultPayload());
   assert.equal(created.statusCode, 201);
 
-  // Create without idempotency-key defaults to randomUUID -> 201 OK
-  const withoutKey = await f.app.inject({
-    method: 'POST',
-    url: '/api/v1/penyemaian',
-    headers: f.headers,
-    payload: f.defaultPayload(),
-  });
-  assert.equal(withoutKey.statusCode, 201, withoutKey.body);
-
   // Invalid idempotency-key -> 400 VALIDATION_ERROR
   const invalidKey = await f.app.inject({
     method: 'POST',
@@ -334,4 +325,19 @@ test('N-13: usia and siap_pindah use the injected Jakarta business clock', async
   assert.equal(detail.json().data.siap_pindah, true);
   const after = await f.list('siap_pindah=1', renewed);
   assert.equal(after.json().meta.total, 1);
+});
+
+test('sowing without an idempotency key is refused before any write', async (t) => {
+  const f = await nurseryFixture(t);
+  const token = (await f.login('pegawai')).json().data.access_token;
+  // The fixture already booked one opening stock movement; this request must not add one.
+  const stockBefore = (await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n;
+  const res = await f.app.inject({
+    method: 'POST', url: '/api/v1/penyemaian', headers: { authorization: `Bearer ${token}` },
+    payload: f.defaultPayload(2), omitIdempotencyKey: true,
+  });
+  assert.equal(res.statusCode, 400, res.body);
+  assert.equal(res.json().error.message, 'Header sinkronisasi tidak valid.');
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM penyemaian')).rows[0].n, 0);
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, stockBefore);
 });

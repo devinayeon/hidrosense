@@ -240,3 +240,16 @@ test('transfers permissions: petani can read, create and patch', async (t) => {
   check(patched, 200);
   assert.equal(patched.json().data.keterangan, 'Catatan petani');
 });
+
+test('transfer without an idempotency key is refused before any write', async (t) => {
+  const f = await setup(t);
+  const headers = bearer((await f.login('pegawai')).json().data.access_token);
+  const res = await f.app.inject({
+    method: 'POST', url: '/api/v1/pemindahan', headers,
+    payload: { id_penyemaian: '1', id_meja: '1', tanggal_pemindahan: '2026-09-16', jumlah_tanaman: 10 },
+    omitIdempotencyKey: true,
+  });
+  assert.equal(res.statusCode, 400, res.body);
+  assert.equal(res.json().error.message, 'Header sinkronisasi tidak valid.');
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM pemindahan')).rows[0].n, 0);
+});

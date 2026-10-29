@@ -139,11 +139,13 @@ test('seed is completely idempotent: multiple consecutive runs succeed and refre
   const { app, db, clock } = await setup(t);
 
   // Run 1
-  await seed(db, { clock });
+  const first = await seed(db, { clock });
+  assert.deepEqual(first.keptExisting, []);
 
   // Run 2 (immediate consecutive execution)
   const rerun = await seed(db, { clock });
   assert.equal(rerun.success, true);
+  assert.deepEqual([...rerun.keptExisting].sort(), ['pegawai', 'petani']);
 
   // Re-authenticating both users succeeds without conflict
   for (const role of ['petani', 'pegawai']) {
@@ -165,4 +167,19 @@ test('seed is completely idempotent: multiple consecutive runs succeed and refre
 
   const tablesCount = (await db.execute('SELECT COUNT(*) AS total FROM meja_tanam')).rows[0].total;
   assert.equal(Number(tablesCount), 4);
+});
+
+test('re-seeding keeps an existing password and never reactivates a deactivated account', async (t) => {
+  const { db, clock } = await setup(t);
+  await seed(db, { clock });
+
+  // A real deployment may rotate the credential and disable the account.
+  const rotated = `scrypt$32768$8$3$${'a'.repeat(32)}$${'b'.repeat(128)}`;
+  await db.execute({ sql: "UPDATE users SET password=?, status_aktif=0 WHERE username='petani'", args: [rotated] });
+
+  await seed(db, { clock });
+
+  const row = (await db.execute("SELECT password, status_aktif FROM users WHERE username='petani'")).rows[0];
+  assert.equal(String(row.password), rotated);
+  assert.equal(Number(row.status_aktif), 0);
 });

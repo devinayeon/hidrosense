@@ -125,3 +125,17 @@ test('authentication accepts a created account whose ID exceeds JavaScript safe 
   assert.equal(me.statusCode, 200, me.body);
   assert.equal(me.json().data.id_user, '9007199254740992');
 });
+
+test('a failing host cannot lock a known username out for the real client', async (t) => {
+  const { app, advance } = await fixture(t);
+  const attempt = (remoteAddress, supplied = 'wrong password') => app.inject({
+    method: 'POST', url: '/api/v1/auth/login', remoteAddress,
+    payload: { username: 'petani', password: supplied },
+  });
+  for (let i = 0; i < 10; i++) assert.equal((await attempt('10.0.0.9')).statusCode, 401);
+  assert.equal((await attempt('10.0.0.9')).statusCode, 429);
+  // The real client keeps its own quota, so the correct password still works.
+  assert.equal((await attempt('127.0.0.1', password)).statusCode, 200);
+  advance(15 * 60 * 1000 + 1);
+  assert.equal((await attempt('10.0.0.9')).statusCode, 401);
+});

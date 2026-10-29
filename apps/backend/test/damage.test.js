@@ -229,3 +229,16 @@ test('damage tanaman_aktif reflected in transfer response after recording damage
   assert.equal(transferDetail.statusCode, 200);
   assert.equal(transferDetail.json().data.tanaman_aktif, 170);
 });
+
+test('damage without an idempotency key is refused before any write', async (t) => {
+  const f = await setup(t);
+  const headers = bearer((await f.login('pegawai')).json().data.access_token);
+  const res = await f.app.inject({
+    method: 'POST', url: '/api/v1/kerusakan', headers,
+    payload: { id_pemindahan: '1', tanggal_kejadian: '2026-09-20', jumlah_tanaman: 1, jenis_kerusakan: 'Hama' },
+    omitIdempotencyKey: true,
+  });
+  assert.equal(res.statusCode, 400, res.body);
+  assert.equal(res.json().error.message, 'Header sinkronisasi tidak valid.');
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM kerusakan_tanaman')).rows[0].n, 0);
+});
