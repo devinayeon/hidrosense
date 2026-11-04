@@ -38,36 +38,30 @@ function exactPrice(row: Row) {
   }
 }
 
-export async function getSale(db: Executor, id: string) {
-  const row = (await db.execute({
-    sql: `SELECT ${headerColumns} FROM penjualan s ${linkJoin} WHERE s.id_penjualan = ?`,
-    args: [id],
-  })).rows[0];
-  if (!row) throw new ApiError(404, 'SALE_NOT_FOUND', 'Data penjualan tidak ditemukan.');
+function selectDetails(idCount: number) {
+  return `SELECT
+      CAST(d.id_penjualan AS TEXT) AS id_penjualan,
+      CAST(d.id_detail_penjualan AS TEXT) AS id_detail_penjualan,
+      CAST(d.id_panen AS TEXT) AS id_panen,
+      h.tanggal_panen,
+      CAST(hp.layak AS TEXT) AS berat_layak,
+      CAST(d.jumlah_kg_minor AS TEXT) AS jumlah_kg_minor,
+      CAST(d.harga_per_kg_minor AS TEXT) AS harga_per_kg_minor,
+      CAST(d.jumlah_kg AS TEXT) AS jumlah_kg,
+      CAST(d.harga_per_kg AS TEXT) AS harga_per_kg
+    FROM detail_penjualan d
+    JOIN panen h ON h.id_panen = d.id_panen
+    LEFT JOIN (
+      SELECT id_panen, SUM(berat_minor) AS layak
+      FROM detail_panen
+      GROUP BY id_panen
+    ) hp ON hp.id_panen = d.id_panen
+    WHERE d.id_penjualan IN (${Array(idCount).fill('?').join(',')})
+    ORDER BY d.id_detail_penjualan`;
+}
 
-  const details = (await db.execute({
-    sql: `SELECT
-        CAST(d.id_detail_penjualan AS TEXT) AS id_detail_penjualan,
-        CAST(d.id_panen AS TEXT) AS id_panen,
-        h.tanggal_panen,
-        CAST(hp.layak AS TEXT) AS berat_layak,
-        CAST(d.jumlah_kg_minor AS TEXT) AS jumlah_kg_minor,
-        CAST(d.harga_per_kg_minor AS TEXT) AS harga_per_kg_minor,
-        CAST(d.jumlah_kg AS TEXT) AS jumlah_kg,
-        CAST(d.harga_per_kg AS TEXT) AS harga_per_kg
-      FROM detail_penjualan d
-      JOIN panen h ON h.id_panen = d.id_panen
-      LEFT JOIN (
-        SELECT id_panen, SUM(berat_minor) AS layak
-        FROM detail_panen
-        GROUP BY id_panen
-      ) hp ON hp.id_panen = d.id_panen
-      WHERE d.id_penjualan = ?
-      ORDER BY d.id_detail_penjualan`,
-    args: [id],
-  })).rows;
+function saleResponse(row: Row, details: Row[]) {
   if (!details.length) throw new ApiError(409, 'SALE_DETAILS_MISSING', 'Transaksi penjualan tidak memiliki rincian.');
-
   return {
     id_penjualan: String(row.id_penjualan),
     id_user: String(row.id_user),
@@ -93,13 +87,32 @@ export async function getSale(db: Executor, id: string) {
   };
 }
 
+export async function getSale(db: Executor, id: string) {
+  const row = (await db.execute({
+    sql: `SELECT ${headerColumns} FROM penjualan s ${linkJoin} WHERE s.id_penjualan = ?`,
+    args: [id],
+  })).rows[0];
+  if (!row) throw new ApiError(404, 'SALE_NOT_FOUND', 'Data penjualan tidak ditemukan.');
+  return saleResponse(row, (await db.execute({ sql: selectDetails(1), args: [id] })).rows);
+}
+
 export async function listSales(db: Executor, query: ListSalesQuery) {
   const total = Number((await db.execute('SELECT COUNT(*) AS total FROM penjualan')).rows[0].total);
-  const ids = (await db.execute({
-    sql: 'SELECT CAST(id_penjualan AS TEXT) AS id FROM penjualan ORDER BY tanggal_penjualan DESC, id_penjualan DESC LIMIT ? OFFSET ?',
+  const headers = (await db.execute({
+    sql: `SELECT ${headerColumns} FROM penjualan s ${linkJoin}
+      ORDER BY s.tanggal_penjualan DESC, s.id_penjualan DESC LIMIT ? OFFSET ?`,
     args: [query.limit, (query.page - 1) * query.limit],
   })).rows;
-  const data = [];
-  for (const row of ids) data.push(await getSale(db, String(row.id)));
-  return { data, meta: { page: query.page, limit: query.limit, total, total_pages: Math.ceil(total / query.limit) } };
+  const details = new Map<string, Row[]>();
+  if (headers.length) {
+    const ids = headers.map((header) => String(header.id_penjualan));
+    for (const row of (await db.execute({ sql: selectDetails(ids.length), args: ids })).rows) {
+      const id = String(row.id_penjualan);
+      details.set(id, [...(details.get(id) ?? []), row]);
+    }
+  }
+  return {
+    data: headers.map((header) => saleResponse(header, details.get(String(header.id_penjualan)) ?? [])),
+    meta: { page: query.page, limit: query.limit, total, total_pages: Math.ceil(total / query.limit) },
+  };
 }

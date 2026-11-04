@@ -1,4 +1,4 @@
-import type { Client, Row } from '@libsql/client';
+import type { Client, Row, Transaction } from '@libsql/client';
 import { backfillHarvest } from './harvest-weights.js';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
@@ -31,6 +31,13 @@ export async function loadMigrations(directory = defaultDirectory): Promise<Migr
     versions.add(version);
     return { id: migration.id, up, down, checksum: createHash('sha256').update(up).update('\0').update(down).digest('hex') };
   });
+}
+
+// This migration moved to 0014 when two branches both claimed 0012. It only adds an index,
+// so undo it here and let the normal sequence apply 0012, 0013 and 0014 in order.
+async function forgetRenumberedMigration(tx: Transaction) {
+  const { rowsAffected } = await tx.execute("DELETE FROM _schema_migrations WHERE id='0012_operation_key_lower'");
+  if (rowsAffected) await tx.execute('DROP INDEX IF EXISTS idx_sync_operations_key_lower');
 }
 
 async function appliedMigrations(executor: Executor): Promise<Row[]> {
@@ -66,6 +73,7 @@ export async function migrate(client: Client, migrations: Migration[], { directi
       checksum TEXT NOT NULL,
       applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
+    await forgetRenumberedMigration(tx);
     const applied = await appliedMigrations(tx);
     validateHistory(applied, migrations);
     const pending = direction === 'up'
