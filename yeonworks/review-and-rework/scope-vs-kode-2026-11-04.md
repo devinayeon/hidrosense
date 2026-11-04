@@ -4,6 +4,8 @@ Tanggal: 2026-11-04
 Sumber scope: `hidrosense-plan-docs/Hidrosense Plan Document.md` (System Request, SRS, Product Backlog, Project Charter, WBS), ditambah `docs/rencana-backend.md` dan `docs/backend-b001-b002.md` yang dibaca dari git `HEAD`, karena sudah dihapus di working tree.
 Yang dibandingkan: kode `main` lokal dan `origin/main`. Tidak ada kode yang diubah untuk dokumen ini.
 
+> Pembaruan: cabang sudah disatukan, penjualan direview, B11, B17, dan B18 lokal selesai di branch `integrasi/backend-rework`. B12–B14 ditunda atas keputusan pemilik, dan Turso tidak diuji. Lihat [laporan integrasi](rework-2026-11-04-integrasi-b11-b17.md). Bagian di bawah adalah kondisi sebelum pekerjaan itu.
+
 ## 1. Kesimpulan
 
 1. **Dua cabang menyimpang dan belum bisa digabung apa adanya.** `main` lokal 9 commit di depan dan 24 commit di belakang `origin/main`. Penjualan dan BMKG ada di `origin/main`; semua perbaikan keamanan dan rework saya ada di lokal.
