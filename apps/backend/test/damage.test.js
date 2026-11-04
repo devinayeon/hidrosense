@@ -91,7 +91,7 @@ test('damage rejects invalid date and missing required fields', async (t) => {
 
   // Transfer not found
   const notFound = await f.create({ id_pemindahan: '999' });
-  check(notFound, 404, 'TRANSFER_NOT_FOUND');
+  check(notFound, 422, 'TRANSFER_NOT_FOUND');
 });
 
 test('damage enforces active plant limit: cannot exceed jumlah_tanaman on transfer', async (t) => {

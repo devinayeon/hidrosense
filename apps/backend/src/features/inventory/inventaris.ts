@@ -71,7 +71,7 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       args.push(id);
       await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
       return getInventaris(tx, id);
-    });
+    }, input.expected_version);
   });
 
   app.post('/api/v1/inventaris/:id/deactivate', { preHandler: writeGuard }, async (request) => {

@@ -86,7 +86,9 @@ dijalankan ulang tanpa membuat duplikasi data uji.
 
 Seeder diblokir pada `NODE_ENV=production` **dan** pada `DATABASE_URL` remote
 (`libsql://`/`https://`) kecuali `ALLOW_PROD_SEED=1`. Menjalankan ulang seeder
-tidak mengubah password maupun status aktif akun yang sudah ada.
+hanya mengisi baris yang belum ada; akun dan data domain yang sudah ada tidak
+berubah, termasuk tanggal semai. Untuk data uji dengan tanggal baru, hapus dulu
+file database lokal lalu jalankan migrasi dan seeder lagi.
 Jangan menggunakan akun atau data seeder di production.
 
 ## 4. Menjalankan backend
@@ -135,7 +137,50 @@ Tujuannya: percobaan ulang setelah timeout mengembalikan hasil tersimpan
 
 `X-Client-Id` opsional dan hanya dipakai pada operasi yang membuat catatan baru
 (`create`, termasuk `POST /stok/:id/reverse` yang membuat gerakan pembalik).
-Operasi yang mengubah catatan lama mengabaikannya.
+Operasi yang mengubah catatan lama menolaknya dengan `400 VALIDATION_ERROR`.
+
+`PATCH` domain menerima field `expected_version` di body, berisi `version` terakhir
+yang dibaca klien. Jika data sudah berubah, server membalas `409 VERSION_CONFLICT`
+dan tidak menulis apa pun. Tanpa field itu penulisan terakhir yang menang. `PATCH /panen/:id`
+tetap mewajibkan field ini dan membalas `409 HARVEST_VERSION_CONFLICT`.
+
+Kode status kesalahan: resource di URL tidak ada `404`; referensi di dalam body tidak ada
+`422`; tanggal di masa depan `400`.
+
+## 6. Sesi login
+
+Access token berlaku 15 menit. Sesi berakhir 7 hari setelah refresh terakhir dan paling
+lambat 30 hari setelah login. Refresh token sekali pakai; token lama dibalas `401` tanpa
+mencabut sesi yang sedang berjalan.
+
+## 7. Deploy serverless
+
+Entry point: `dist/serverless.js`, yang mengekspor handler Node `(req, res)`. File ini tidak
+memanggil `listen`.
+
+Sebelum deploy:
+
+1. Jalankan `npm run db:migrate` dari pipeline deploy dengan `DATABASE_URL` Turso. Function
+   tidak menjalankan migrasi.
+2. Sertakan folder `migrations/` di paket function; `/health/ready` membacanya. Jika dibundel,
+   jalur folder ini bisa berubah dan endpoint itu akan membalas `503`.
+
+Environment function:
+
+| Variabel | Nilai |
+|---|---|
+| `DATABASE_URL` | `libsql://...` atau `https://...`. Database file ditolak karena disk function tidak menetap. |
+| `DATABASE_AUTH_TOKEN` | Token Turso |
+| `NODE_ENV` | `production` |
+| `TRUST_PROXY_HOPS` | Jumlah proxy di depan function, biasanya `1` |
+| `CORS_ORIGINS` | Kosongkan kecuali ada klien browser |
+
+Periksa `TRUST_PROXY_HOPS` di platform yang dipakai: nilai yang terlalu kecil membuat semua
+pengguna berbagi satu kuota, dan nilai yang terlalu besar membuat kuota bisa dihindari dengan
+memalsukan `X-Forwarded-For`.
+
+Kuota request tersimpan di database supaya berlaku lintas instance. Sesi dan kuota kedaluwarsa
+dibersihkan saat login dan refresh, jadi tidak perlu cron.
 
 ```powershell
 $key = [guid]::NewGuid().ToString()

@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client';
 import { chmod, mkdir, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 export const backendRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 /** True when the URL points at a remote libSQL/Turso database. */
-export const isRemoteUrl = (url) => /^(libsql|https):\/\//.test(url ?? '');
+export const isRemoteUrl = (url: string | null | undefined) => /^(libsql|https):\/\//.test(url ?? '');
 
 export async function openDatabase({
   url = process.env.DATABASE_URL ?? 'file:./data/hidrosense.db',
   authToken = process.env.DATABASE_AUTH_TOKEN,
-} = {}) {
+}: { url?: string; authToken?: string } = {}): Promise<Client> {
   if (!url || !/^(file:|libsql:\/\/|https:\/\/|:memory:$)/.test(url)) {
     throw new Error('DATABASE_URL must use file:, :memory:, libsql:// or https://.');
   }
@@ -43,14 +43,14 @@ export async function openDatabase({
   }
 }
 
-export async function backupDatabase(client, destination) {
+export async function backupDatabase(client: Client, destination: string) {
   if (client.protocol !== 'file') throw new Error('This backup command supports local SQLite only. Use Turso backups for remote databases.');
   const path = resolve(destination);
   try {
     await stat(path);
     throw new Error('Backup destination already exists; choose a new path.');
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   // VACUUM INTO creates a consistent snapshot, including committed WAL contents.

@@ -1,3 +1,4 @@
+// Run with: node --import tsx scripts/deploy-turso-migrations.mjs (src/db is TypeScript).
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, open } from 'node:fs/promises';

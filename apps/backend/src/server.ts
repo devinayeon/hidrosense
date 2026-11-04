@@ -2,6 +2,7 @@ import { buildApp } from './app.js';
 import { readConfig } from './config.js';
 import { openDatabase } from './db/client.js';
 import { loadMigrations, migrationStatus } from './db/migrate.js';
+import { purgeExpiredAuthRecords } from './common/maintenance.js';
 
 let app: ReturnType<typeof buildApp> | undefined;
 let db: Awaited<ReturnType<typeof openDatabase>> | undefined;
@@ -9,10 +10,8 @@ try {
   const config = readConfig();
   db = await openDatabase();
   const status = await migrationStatus(db, await loadMigrations());
-  if (status.some((item: { status: string }) => item.status !== 'applied')) throw new Error('Run db:migrate before starting the API.');
-  // Remove only expired infrastructure records, never domain data.
-  await db.execute({ sql: 'DELETE FROM auth_sessions WHERE refresh_expires_at<=?', args: [Date.now()] });
-  await db.execute({ sql: 'DELETE FROM auth_rate_limits WHERE resets_at<=?', args: [Date.now()] });
+  if (status.some((item) => item.status !== 'applied')) throw new Error('Run db:migrate before starting the API.');
+  await purgeExpiredAuthRecords(db, Date.now());
   app = buildApp({ db, config });
   let stopping = false;
   const shutdown = async () => {

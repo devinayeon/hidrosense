@@ -1,4 +1,5 @@
 import type { Client, Row, Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
 import type { CreateTransferInput, ListTransferQuery, UpdateTransferInput } from './contracts.js';
 
@@ -6,7 +7,6 @@ type Executor = Pick<Client, 'execute'>;
 
 const dayMs = 24 * 60 * 60 * 1000;
 const HARVEST_STANDARD_DAYS = 45;
-const jakartaDate = (now: number) => new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 const nullableId = (value: Row[string]) => (value == null ? null : String(value));
 
 const batchActive = `p.jumlah_tanaman

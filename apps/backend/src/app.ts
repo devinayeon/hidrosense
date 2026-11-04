@@ -18,7 +18,12 @@ import { registerTransfers } from './features/transfers/index.js';
 import { registerHarvest } from './features/harvest/index.js';
 import { registerDamage } from './features/damage/index.js';
 
-interface AppOptions { db: Client; config?: AppConfig; clock?: () => number }
+interface AppOptions {
+  db: Client;
+  config?: AppConfig;
+  clock?: () => number;
+  loadMigrationFiles?: typeof loadMigrations;
+}
 
 function requestPath(url: string) {
   try {
@@ -28,7 +33,19 @@ function requestPath(url: string) {
   }
 }
 
-export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOptions) {
+// A hop count reads the address the platform's proxy saw, so a forged X-Forwarded-For entry is ignored.
+function trustedProxy({ proxyHops, proxies }: AppConfig) {
+  if (proxyHops !== undefined) return (_address: string, hop: number) => hop < proxyHops;
+  return proxies.length ? proxies : false;
+}
+
+export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigrationFiles = loadMigrations }: AppOptions) {
+  // Files do not change while the process runs; readiness is public and unthrottled, so read them once.
+  let migrationFiles: ReturnType<typeof loadMigrations> | undefined;
+  const readMigrationFiles = () => migrationFiles ??= loadMigrationFiles().catch((error) => {
+    migrationFiles = undefined;
+    throw error;
+  });
   const app = Fastify({
     logger: {
       level: config.logLevel,
@@ -37,7 +54,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
     logController: new LogController({ disableRequestLogging: true }),
     requestIdHeader: false,
     genReqId: () => randomUUID(),
-    trustProxy: config.proxies.length ? config.proxies : false,
+    trustProxy: trustedProxy(config),
     bodyLimit: 16 * 1024,
     requestTimeout: 15000,
     connectionTimeout: 15000,
@@ -82,8 +99,8 @@ export function buildApp({ db, config = readConfig(), clock = Date.now }: AppOpt
   app.get('/health/live', async () => ({ data: { status: 'alive' } }));
   app.get('/health/ready', async () => {
     try {
-      const status = await migrationStatus(db, await loadMigrations());
-      if (!status.length || status.some((item: { status: string }) => item.status !== 'applied')) throw new Error('Pending migrations');
+      const status = await migrationStatus(db, await readMigrationFiles());
+      if (!status.length || status.some((item) => item.status !== 'applied')) throw new Error('Pending migrations');
       await db.execute('SELECT id_session FROM auth_sessions LIMIT 0');
       return { data: { status: 'ready' } };
     } catch {

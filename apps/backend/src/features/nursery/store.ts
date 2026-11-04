@@ -1,4 +1,5 @@
 import type { Client, Row, Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
 import { fromMinor } from '../../common/quantities.js';
 
@@ -7,7 +8,6 @@ type Executor = Pick<Client, 'execute'>;
 const nullableId = (value: Row[string]) => (value == null ? null : String(value));
 
 const dayMs = 24 * 60 * 60 * 1000;
-const jakartaDate = (now: number) => new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 function sowingRow(row: Row, today: string) {
   const sowingDate = Date.parse(`${String(row.tanggal_semai)}T00:00:00Z`);

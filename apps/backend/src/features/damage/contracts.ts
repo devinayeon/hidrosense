@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { activeListQuerySchema, integerIdSchema } from '../../common/validation.js';
+import { activeListQuerySchema, expectedVersionSchema, hasChanges, integerIdSchema } from '../../common/validation.js';
 
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
@@ -23,12 +23,13 @@ export const createDamageSchema = z.strictObject({
 });
 
 export const updateDamageSchema = z.strictObject({
+  expected_version: expectedVersionSchema,
   tanggal_kejadian: dateSchema.optional(),
   jumlah_tanaman: z.number().int().positive().max(1_000_000).optional(),
   jenis_kerusakan: z.string().trim().min(1).max(100).optional(),
   keterangan: z.string().trim().max(1000).nullable().optional(),
 }).refine(
-  (v) => Object.keys(v).length > 0,
+  hasChanges,
   { message: 'Minimal satu field harus diperbarui.' },
 );
 

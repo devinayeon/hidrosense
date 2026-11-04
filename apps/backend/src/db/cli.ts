@@ -1,10 +1,11 @@
+import type { Client } from '@libsql/client';
 import { openDatabase, backupDatabase } from './client.js';
 import { loadMigrations, migrate, migrationStatus } from './migrate.js';
 
 const [command, ...args] = process.argv.slice(2);
-let client;
+let client: Client | undefined;
 try {
-  if (!['up', 'down', 'status', 'backup'].includes(command)) throw new Error('Usage: cli.js up|status|down --allow-data-loss|backup <destination>');
+  if (!['up', 'down', 'status', 'backup'].includes(command ?? '')) throw new Error('Usage: cli.js up|status|down --allow-data-loss|backup <destination>');
   if (command === 'down' && (args.length !== 1 || args[0] !== '--allow-data-loss')) throw new Error('Rollback removes schema/data. Back up first, then explicitly pass --allow-data-loss.');
   if (['up', 'status'].includes(command) && args.length) throw new Error('This command takes no arguments.');
   if (command === 'backup' && args.length !== 1) throw new Error('Usage: npm run db:backup -- <new-backup-file>');
@@ -20,7 +21,7 @@ try {
   }
 } catch (error) {
   // CLI diagnostics only: do not print credentials, connection strings or stack traces.
-  const message = String(error.message)
+  const message = String((error as Error).message)
     .replace(/(?:libsql|https?):\/\/[^\s]+/g, '[remote database]');
   console.error(message);
   process.exitCode = 1;

@@ -46,6 +46,7 @@ export function damageWrite(
         {
           resourceType: 'kerusakan_tanaman',
           domainId: command.action === 'update' ? command.id : undefined,
+          expectedVersion: command.action === 'update' ? command.input.expected_version : undefined,
           idField: 'id_kerusakan',
           effect: () =>
             command.action === 'create'

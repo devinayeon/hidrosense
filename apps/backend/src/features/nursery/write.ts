@@ -17,17 +17,16 @@ export async function nurseryWrite<T extends Json & Record<string, Json>>(
   operationType: 'penyemaian.create' | 'penyemaian.update',
   payload: Json,
   effect: (tx: Transaction, actorId: string, now: number) => Promise<T>,
+  update?: { id: string; expectedVersion?: string },
 ) {
   const operationKey = requireIdempotencyKey(request.headers);
 
   const rawClientId = request.headers['x-client-id'];
   const parsedClientId = clientUuidSchema.safeParse(rawClientId);
-  if (rawClientId !== undefined && !parsedClientId.success) {
+  // Only create operations may carry a client UUID for public ID reservation.
+  if (rawClientId !== undefined && (!parsedClientId.success || operationType !== 'penyemaian.create')) {
     throw new ApiError(400, 'VALIDATION_ERROR', 'Header sinkronisasi tidak valid.');
   }
-
-  // Only create operations may carry a client UUID for public ID reservation.
-  const withClient = parsedClientId.success && operationType === 'penyemaian.create';
 
   return authenticatedWrite(db, request.headers.authorization, 'penyemaian:write', clock,
     (tx, actor) => {
@@ -36,9 +35,11 @@ export async function nurseryWrite<T extends Json & Record<string, Json>>(
         operation_key: operationKey,
         operation_type: operationType,
         payload,
-        ...(withClient ? { resource_type: 'penyemaian', client_id: parsedClientId.data } : {}),
+        ...(parsedClientId.success ? { resource_type: 'penyemaian', client_id: parsedClientId.data } : {}),
       }, now, {
         resourceType: 'penyemaian',
+        domainId: update?.id,
+        expectedVersion: update?.expectedVersion,
         idField: 'id_penyemaian',
         effect: () => effect(tx, actor.id_user, now),
       });

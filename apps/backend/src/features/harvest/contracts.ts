@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { activeListQuerySchema, integerIdSchema } from '../../common/validation.js';
-import { parseWeight } from '../../db/harvest-weights.js';
+import { parseWeight } from '../../common/weights.js';
 export { idParamSchema, parseInput } from '../../common/validation.js';
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => {
   const ms = Date.parse(v + 'T00:00:00Z');

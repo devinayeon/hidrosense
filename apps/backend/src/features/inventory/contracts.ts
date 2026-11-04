@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { integerIdSchema as intId } from '../../common/validation.js';
+import { expectedVersionSchema, hasChanges, integerIdSchema as intId } from '../../common/validation.js';
 import { positiveDecimalSchema as positiveDecimal } from '../../common/quantities.js';
 export { idParamSchema, activeListQuerySchema as listQuerySchema, parseInput } from '../../common/validation.js';
 
@@ -7,7 +7,7 @@ export const createJenisSchema = z.strictObject({
   nama_jenis: z.string().trim().min(1).max(50),
 });
 
-export const updateJenisSchema = createJenisSchema;
+export const updateJenisSchema = createJenisSchema.extend({ expected_version: expectedVersionSchema });
 
 export const createObatSchema = z.strictObject({
   nama_obat: z.string().trim().min(1).max(100),
@@ -18,7 +18,7 @@ export const createObatSchema = z.strictObject({
 });
 
 export const updateObatSchema = createObatSchema.partial()
-  .refine((v) => Object.keys(v).length > 0);
+  .extend({ expected_version: expectedVersionSchema }).refine(hasChanges);
 
 export const createInventarisSchema = z.strictObject({
   id_jenis_inventaris: intId,
@@ -29,4 +29,4 @@ export const createInventarisSchema = z.strictObject({
 });
 
 export const updateInventarisSchema = createInventarisSchema.partial()
-  .refine((v) => Object.keys(v).length > 0);
+  .extend({ expected_version: expectedVersionSchema }).refine(hasChanges);

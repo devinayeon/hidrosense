@@ -55,7 +55,7 @@ export function registerObat(app: FastifyInstance, db: Client, clock: () => numb
       args.push(id);
       await tx.execute({ sql: `UPDATE obat SET ${assignments.join(',')} WHERE id_obat=?`, args });
       return getObat(tx, id);
-    });
+    }, input.expected_version);
   });
 
   app.post('/api/v1/obat/:id/deactivate', { preHandler: writeGuard }, async (request) => {

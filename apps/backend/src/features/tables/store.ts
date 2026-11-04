@@ -16,22 +16,26 @@ const joins = `LEFT JOIN sync_resource_links l ON l.resource_type='meja-tanam' A
 function tableRow(row: Row) {
   const capacity = Number(row.jumlah_lubang);
   const active = Number(row.tanaman_aktif);
-  if (!Number.isSafeInteger(capacity) || capacity <= 0 || !Number.isSafeInteger(active)
-    || active < 0 || active > capacity || Number(row.invalid_balance)) {
-    throw new ApiError(409, 'TABLE_BALANCE_INVALID', 'Data kapasitas atau tanaman aktif tidak konsisten.');
-  }
+  const valid = Number.isSafeInteger(capacity) && capacity > 0 && Number.isSafeInteger(active)
+    && active >= 0 && active <= capacity && !Number(row.invalid_balance);
   return {
     id_meja: String(row.id_meja), public_id: row.public_id == null ? null : String(row.public_id),
     version: row.version == null ? null : String(row.version), kode_meja: String(row.kode_meja),
     jumlah_lubang: capacity, status_meja: String(row.status_meja),
     keterangan: row.keterangan == null ? null : String(row.keterangan),
-    tanaman_aktif: active, kapasitas_tersedia: capacity - active,
+    tanaman_aktif: active, kapasitas_tersedia: valid ? capacity - active : 0, saldo_valid: valid,
   };
 }
-export async function getTable(db: Executor, id: string) {
+/** Reads a table even when its balance is inconsistent, so a correction can still reach it. */
+export async function readTable(db: Executor, id: string) {
   const row = (await db.execute({ sql: `SELECT ${columns} FROM meja_tanam m ${joins} WHERE m.id_meja=?`, args: [id] })).rows[0];
   if (!row) throw new ApiError(404, 'TABLE_NOT_FOUND', 'Meja tanam tidak ditemukan.');
   return tableRow(row);
+}
+export async function getTable(db: Executor, id: string) {
+  const table = await readTable(db, id);
+  if (!table.saldo_valid) throw new ApiError(409, 'TABLE_BALANCE_INVALID', 'Data kapasitas atau tanaman aktif tidak konsisten.');
+  return table;
 }
 export async function listTables(db: Executor, query: ListTableInput) {
   const filter = query.status_meja ?? null;

@@ -113,10 +113,14 @@ export async function initializeStockIdentity(tx: Transaction, domainId: string,
   return { public_id: publicId, version };
 }
 
+const versionConflict = () => new ApiError(409, 'VERSION_CONFLICT', 'Data sudah berubah. Muat ulang lalu coba lagi.');
+
 type DomainMutation<T extends Json> = {
   resourceType: string;
   domainId?: string;
   idField: string;
+  /** The version the client last read. Absent means last write wins. */
+  expectedVersion?: string;
   effect: () => Promise<T>;
 };
 
@@ -128,12 +132,23 @@ export function executeDomainMutation<T extends Json & Record<string, Json>>(
       const existing = await tx.execute({ sql: 'SELECT 1 FROM sync_resource_links WHERE public_id=?', args: [reservedId] });
       if (existing.rows.length) throw new ApiError(409, 'RESOURCE_ALREADY_EXISTS', 'Identitas klien sudah terikat ke resource.');
     }
+    if (mutation.expectedVersion !== undefined && mutation.domainId) {
+      const current = (await tx.execute({
+        sql: `SELECT CAST(v.version AS TEXT) AS version FROM sync_resource_links l
+          LEFT JOIN sync_resource_versions v ON v.resource_type=l.resource_type AND v.public_id=l.public_id
+          WHERE l.resource_type=? AND l.domain_id=?`,
+        args: [mutation.resourceType, mutation.domainId],
+      })).rows[0];
+      if (current && current.version !== mutation.expectedVersion) throw versionConflict();
+    }
     const data = await mutation.effect();
     const domainId = mutation.domainId ?? String(data[mutation.idField]);
     const linked = (await tx.execute({
       sql: 'SELECT public_id FROM sync_resource_links WHERE resource_type=? AND domain_id=?',
       args: [mutation.resourceType, domainId],
     })).rows[0];
+    // A row without identity has never published a version, so no expected value can match.
+    if (!linked && mutation.expectedVersion !== undefined) throw versionConflict();
     const publicId = linked ? String(linked.public_id) : reservedId ?? randomUUID();
     if (!linked) await tx.execute({
       sql: 'INSERT INTO sync_resource_links (resource_type,domain_id,public_id) VALUES (?,?,?)',

@@ -1,4 +1,5 @@
 import type { Client } from '@libsql/client';
+import { jakartaDate } from '../common/dates.js';
 import { hashPassword } from '../common/passwords.js';
 
 export const SEED_CREDENTIALS = {
@@ -27,7 +28,7 @@ const dayMs = 24 * 60 * 60 * 1000;
 export async function seed(db: Client, options: { clock?: () => number } = {}) {
   const clock = options.clock ?? Date.now;
   const now = clock();
-  const today = new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const today = jakartaDate(now);
   const dateOffset = (days: number) =>
     new Date(Date.parse(`${today}T00:00:00Z`) + days * dayMs).toISOString().slice(0, 10);
 
@@ -50,8 +51,8 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     `);
 
     // 3. Test Users across all active roles (petani & pegawai)
-    // Existing accounts keep their password and activation state: re-seeding must
-    // never restore a known default credential or revive a deactivated account.
+    // Existing rows always win: re-seeding fills gaps and never restores a default credential,
+    // revives a deactivated account, or overwrites what a user has edited.
     const existingUsernames = new Set((await tx.execute({
       sql: 'SELECT username FROM users WHERE username IN (?,?)',
       args: [SEED_CREDENTIALS.petani.username, SEED_CREDENTIALS.pegawai.username],
@@ -59,9 +60,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     await tx.execute({
       sql: `INSERT INTO users (id_user, id_role, nama, username, password, email, no_telepon, alamat, status_aktif)
         VALUES (1, 1, ?, ?, ?, ?, ?, ?, 1)
-        ON CONFLICT(username) DO UPDATE SET
-          nama=excluded.nama, email=excluded.email,
-          no_telepon=excluded.no_telepon, alamat=excluded.alamat`,
+        ON CONFLICT(username) DO NOTHING`,
       args: [
         SEED_CREDENTIALS.petani.nama, SEED_CREDENTIALS.petani.username, petaniHash,
         SEED_CREDENTIALS.petani.email, SEED_CREDENTIALS.petani.no_telepon, SEED_CREDENTIALS.petani.alamat,
@@ -70,9 +69,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     await tx.execute({
       sql: `INSERT INTO users (id_user, id_role, nama, username, password, email, no_telepon, alamat, status_aktif)
         VALUES (2, 2, ?, ?, ?, ?, ?, ?, 1)
-        ON CONFLICT(username) DO UPDATE SET
-          nama=excluded.nama, email=excluded.email,
-          no_telepon=excluded.no_telepon, alamat=excluded.alamat`,
+        ON CONFLICT(username) DO NOTHING`,
       args: [
         SEED_CREDENTIALS.pegawai.nama, SEED_CREDENTIALS.pegawai.username, pegawaiHash,
         SEED_CREDENTIALS.pegawai.email, SEED_CREDENTIALS.pegawai.no_telepon, SEED_CREDENTIALS.pegawai.alamat,
@@ -86,16 +83,13 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
         (2, 'Nutrisi', 1),
         (3, 'Obat & Pestisida', 1),
         (4, 'Perlengkapan', 1)
-        ON CONFLICT(id_jenis_inventaris) DO UPDATE SET
-          nama_jenis=excluded.nama_jenis, status_aktif=excluded.status_aktif;
+        ON CONFLICT(id_jenis_inventaris) DO NOTHING;
 
       INSERT INTO obat (id_obat, nama_obat, jenis_obat, dosis, aturan_penggunaan, deskripsi, status_aktif) VALUES
         (1, 'Abamectin 18 EC', 'Insektisida', '0.5 ml/L', 'Semprot daun sore hari', 'Pengendali thrips dan kutu daun', 1),
         (2, 'Imidakloprid 200 SL', 'Insektisida', '0.75 ml/L', 'Semprot saat ada kutu', 'Pengendali wereng dan kutu kebul', 1),
         (3, 'Mancozeb 80 WP', 'Fungisida', '1.5 g/L', 'Semprot saat lembap tinggi', 'Pencegah busuk daun dan bercak daun', 1)
-        ON CONFLICT(id_obat) DO UPDATE SET
-          nama_obat=excluded.nama_obat, jenis_obat=excluded.jenis_obat, dosis=excluded.dosis,
-          aturan_penggunaan=excluded.aturan_penggunaan, deskripsi=excluded.deskripsi, status_aktif=excluded.status_aktif;
+        ON CONFLICT(id_obat) DO NOTHING;
 
       INSERT INTO inventaris (id_inventaris, id_jenis_inventaris, id_obat, nama_barang, satuan, stok_minimum, stok_minimum_minor, status_aktif) VALUES
         (1, 1, NULL, 'Benih Selada Romaine', 'gram', 100, 10000, 1),
@@ -103,10 +97,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
         (3, 2, NULL, 'Nutrisi AB Mix Sayuran Daun', 'liter', 20, 2000, 1),
         (4, 3, 1, 'Insektisida Abamectin', 'botol', 5, 500, 1),
         (5, 4, NULL, 'Rockwool Semai Standar', 'lembar', 10, 1000, 1)
-        ON CONFLICT(id_inventaris) DO UPDATE SET
-          id_jenis_inventaris=excluded.id_jenis_inventaris, id_obat=excluded.id_obat,
-          nama_barang=excluded.nama_barang, satuan=excluded.satuan, stok_minimum=excluded.stok_minimum,
-          stok_minimum_minor=excluded.stok_minimum_minor, status_aktif=excluded.status_aktif;
+        ON CONFLICT(id_inventaris) DO NOTHING;
     `);
 
     // 5. B006 Initial Incoming Stock Ledger (Sealed) - Guard against immutable re-insert
@@ -130,7 +121,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
         UPDATE stok SET sealed = 1 WHERE id_stok = 1;
         INSERT INTO stok_saldo (id_inventaris, saldo_minor) VALUES
           (1, 100000), (2, 80000), (3, 10000), (4, 2000), (5, 5000)
-          ON CONFLICT(id_inventaris) DO UPDATE SET saldo_minor=excluded.saldo_minor;
+          ON CONFLICT(id_inventaris) DO UPDATE SET saldo_minor=saldo_minor+excluded.saldo_minor;
       `);
     }
 
@@ -142,10 +133,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
       sql: `INSERT INTO penyemaian (id_penyemaian, id_user, tanggal_semai, jumlah_benih, status_penyemaian, keterangan) VALUES
         (1, 2, ?, 600, 'aktif', 'Semai Selada Romaine Batch A'),
         (2, 2, ?, 400, 'aktif', 'Semai Butterhead Batch B')
-        ON CONFLICT(id_penyemaian) DO UPDATE SET
-          id_user=excluded.id_user, tanggal_semai=excluded.tanggal_semai,
-          jumlah_benih=excluded.jumlah_benih, status_penyemaian=excluded.status_penyemaian,
-          keterangan=excluded.keterangan`,
+        ON CONFLICT(id_penyemaian) DO NOTHING`,
       args: [semai1Date, semai2Date],
     });
 
@@ -156,9 +144,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
         (2, 'M-02', 250, 'tersedia', 'Meja NFT Blok A2'),
         (3, 'M-03', 250, 'tersedia', 'Meja NFT Blok B1'),
         (4, 'M-04', 200, 'perbaikan', 'Meja NFT Blok B2 dalam perbaikan')
-        ON CONFLICT(id_meja) DO UPDATE SET
-          kode_meja=excluded.kode_meja, jumlah_lubang=excluded.jumlah_lubang,
-          status_meja=excluded.status_meja, keterangan=excluded.keterangan;
+        ON CONFLICT(id_meja) DO NOTHING;
     `);
 
     // 8. B009 Seedling Transfer (Pemindahan Bibit)
@@ -167,10 +153,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     await tx.execute({
       sql: `INSERT INTO pemindahan (id_pemindahan, id_penyemaian, id_meja, tanggal_pemindahan, jumlah_tanaman, keterangan)
         VALUES (1, 1, 1, ?, 200, 'Pindah 200 bibit Romaine ke Meja M-01')
-        ON CONFLICT(id_pemindahan) DO UPDATE SET
-          id_penyemaian=excluded.id_penyemaian, id_meja=excluded.id_meja,
-          tanggal_pemindahan=excluded.tanggal_pemindahan, jumlah_tanaman=excluded.jumlah_tanaman,
-          keterangan=excluded.keterangan`,
+        ON CONFLICT(id_pemindahan) DO NOTHING`,
       args: [pindah1Date],
     });
 
@@ -212,7 +195,7 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
       await tx.execute({
         sql: `INSERT INTO sync_resource_versions (resource_type, public_id, version, changed_at)
           VALUES (?, ?, 1, ?)
-          ON CONFLICT(resource_type, public_id) DO UPDATE SET changed_at=excluded.changed_at`,
+          ON CONFLICT(resource_type, public_id) DO NOTHING`,
         args: [resourceType, resolvedPublicId, now],
       });
     }

@@ -1,52 +1,58 @@
+import type { Client, Row } from '@libsql/client';
 import { backfillHarvest } from './harvest-weights.js';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+export interface Migration { id: string; up: string; down: string; checksum: string }
+type Executor = Pick<Client, 'execute'>;
+
 const defaultDirectory = fileURLToPath(new URL('../../migrations/', import.meta.url));
 
-export async function loadMigrations(directory = defaultDirectory) {
+export async function loadMigrations(directory = defaultDirectory): Promise<Migration[]> {
   const files = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
-  const pairs = new Map();
+  const pairs = new Map<string, Partial<Migration> & { id: string }>();
   for (const file of files) {
     const match = file.match(/^(\d{4}_[a-z0-9_]+)\.(up|down)\.sql$/);
     if (!match) throw new Error(`Invalid migration filename: ${file}`);
-    const [, id, direction] = match;
+    const id = match[1];
+    const direction = match[2] as 'up' | 'down';
     const pair = pairs.get(id) ?? { id };
     pair[direction] = (await readFile(join(directory, file), 'utf8')).replaceAll('\r\n', '\n');
     pairs.set(id, pair);
   }
   const versions = new Set();
   return [...pairs.values()].map((migration) => {
-    if (!migration.up?.trim() || !migration.down?.trim()) throw new Error(`Migration ${migration.id} requires a nonempty up/down pair.`);
+    const { up, down } = migration;
+    if (!up?.trim() || !down?.trim()) throw new Error(`Migration ${migration.id} requires a nonempty up/down pair.`);
     const version = migration.id.slice(0, 4);
     if (versions.has(version)) throw new Error(`Duplicate migration version: ${version}`);
     versions.add(version);
-    return { ...migration, checksum: createHash('sha256').update(migration.up).update('\0').update(migration.down).digest('hex') };
+    return { id: migration.id, up, down, checksum: createHash('sha256').update(up).update('\0').update(down).digest('hex') };
   });
 }
 
-async function appliedMigrations(executor) {
+async function appliedMigrations(executor: Executor): Promise<Row[]> {
   const exists = await executor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='_schema_migrations'");
   if (!exists.rows.length) return [];
   return (await executor.execute('SELECT id, checksum, applied_at FROM _schema_migrations ORDER BY id')).rows;
 }
 
-function validateHistory(applied, migrations) {
+function validateHistory(applied: Row[], migrations: Migration[]) {
   for (let i = 0; i < applied.length; i++) {
     if (applied[i].id !== migrations[i]?.id) throw new Error('Migration history differs from local files: an applied migration is missing or out of order.');
     if (applied[i].checksum !== migrations[i].checksum) throw new Error(`Applied migration ${applied[i].id} has changed (checksum mismatch). Create a new migration instead.`);
   }
 }
 
-export async function migrationStatus(client, migrations) {
+export async function migrationStatus(client: Executor, migrations: Migration[]) {
   const applied = await appliedMigrations(client);
   validateHistory(applied, migrations);
   return migrations.map((migration, i) => ({ id: migration.id, status: i < applied.length ? 'applied' : 'pending', applied_at: applied[i]?.applied_at ?? null }));
 }
 
-export async function migrate(client, migrations, { direction = 'up', allowDataLoss = false } = {}) {
+export async function migrate(client: Client, migrations: Migration[], { direction = 'up', allowDataLoss = false }: { direction?: string; allowDataLoss?: boolean } = {}) {
   if (!['up', 'down'].includes(direction)) throw new Error('Migration direction must be up or down.');
   if (direction === 'down' && !allowDataLoss) throw new Error('Rollback may delete data; allowDataLoss must be explicitly enabled after taking a backup.');
   const tx = await client.transaction('write');
@@ -69,7 +75,7 @@ export async function migrate(client, migrations, { direction = 'up', allowDataL
       current = migration.id;
       // SQL is trusted, reviewed migration code; runtime values use bound parameters.
       // Do not put BEGIN/COMMIT or foreign_keys=OFF in migration files.
-      await tx.executeMultiple(migration[direction]);
+      await tx.executeMultiple(direction === 'up' ? migration.up : migration.down);
       if (direction === 'up' && migration.id === '0011_harvest_weights') await backfillHarvest(tx);
       if (direction === 'up') {
         await tx.execute({ sql: 'INSERT INTO _schema_migrations (id, checksum) VALUES (?, ?)', args: [migration.id, migration.checksum] });
@@ -82,7 +88,7 @@ export async function migrate(client, migrations, { direction = 'up', allowDataL
     return pending.map((migration) => migration.id);
   } catch (error) {
     if (!tx.closed) await tx.rollback();
-    throw new Error(`Migration ${direction} failed at ${current}: ${error.message}`, { cause: error });
+    throw new Error(`Migration ${direction} failed at ${current}: ${(error as Error).message}`, { cause: error });
   } finally {
     tx.close();
   }

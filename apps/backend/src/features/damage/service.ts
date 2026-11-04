@@ -1,12 +1,12 @@
 import type { Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
 import { countTableActive } from '../transfers/store.js';
 import { insertDamage, patchDamage, sumDamageForTransfer } from './store.js';
 import type { CreateDamageInput, UpdateDamageInput } from './contracts.js';
 
 function validateFutureDate(date: string | undefined, now: number) {
-  const today = new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  if (date !== undefined && date > today) {
+  if (date !== undefined && date > jakartaDate(now)) {
     throw new ApiError(400, 'VALIDATION_ERROR', 'Tanggal kerusakan tidak boleh di masa depan.');
   }
 }
@@ -19,7 +19,7 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput, no
     args: [input.id_pemindahan],
   })).rows[0];
   if (!transferRow) {
-    throw new ApiError(404, 'TRANSFER_NOT_FOUND', 'Data pemindahan tidak ditemukan.');
+    throw new ApiError(422, 'TRANSFER_NOT_FOUND', 'Data pemindahan tidak ditemukan.');
   }
 
   if (input.tanggal_kejadian < String(transferRow.tanggal_pemindahan)) {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hidrosense_mobile/core/uuid.dart';
 import 'package:hidrosense_mobile/data/models/table_record.dart';
 import 'package:hidrosense_mobile/data/repositories/damage_repository.dart';
 import 'package:hidrosense_mobile/data/repositories/inventory_repository.dart';
@@ -192,6 +193,7 @@ process.on('SIGTERM', async () => { for (const cleanup of cleanups.reverse()) aw
         final category = await inventoryApi.post(
           'jenis-inventaris',
           body: {'nama_jenis': 'Benih'},
+          headers: {'Idempotency-Key': generateUuidV4()},
         );
         return repo.createItem(
           categoryId:

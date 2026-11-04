@@ -8,6 +8,7 @@ const environmentSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   CORS_ORIGINS: z.string().default(''),
   TRUSTED_PROXIES: z.string().default(''),
+  TRUST_PROXY_HOPS: z.string().regex(/^[1-9]$/).transform(Number).optional(),
 });
 
 export function readConfig(env: Record<string, string | undefined> = process.env) {
@@ -34,9 +35,12 @@ export function readConfig(env: Record<string, string | undefined> = process.env
       throw new Error('Invalid configuration: TRUSTED_PROXIES requires IP addresses or CIDRs.');
     }
   }
+  if (parsed.TRUST_PROXY_HOPS !== undefined && proxies.length) {
+    throw new Error('Invalid configuration: set TRUST_PROXY_HOPS or TRUSTED_PROXIES, not both.');
+  }
   return {
     environment: parsed.NODE_ENV, host: parsed.HOST, port: parsed.PORT,
-    logLevel: parsed.LOG_LEVEL, origins, proxies,
+    logLevel: parsed.LOG_LEVEL, origins, proxies, proxyHops: parsed.TRUST_PROXY_HOPS,
   };
 }
 

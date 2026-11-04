@@ -27,7 +27,7 @@ test('harvest validates calendar, bounds, strict payload, duplicate batches and 
  for(const value of [' 1','1 ','1e2','NaN','Infinity','1.001','100000000','-1','1\n'])check(await f.post(f.payload([f.detail('1',10,value)])),400);
  for(const d of [f.detail('1',0),f.detail('1',1000001),f.detail('1',1,'0','0'),f.detail('1',1,'1','2'),{...f.detail(),extra:true},{...f.detail(),id_pemindahan:1}])check(await f.post(f.payload([d])),400);
  check(await f.post({...f.payload(),extra:true}),400);check(await f.post(f.payload([f.detail(),f.detail()])),400);check(await f.post(f.payload([])),400);
- check(await f.post(f.payload([f.detail('999')])),404);check(await f.post(f.payload([f.detail('1',1,'1','1')])),201);
+ check(await f.post(f.payload([f.detail('999')])),422);check(await f.post(f.payload([f.detail('1',1,'1','1')])),201);
 });
 test('Jakarta today accepts tomorrow UTC at midnight boundary',async t=>{
  const f=await setup(t);f.advance(17*3600000);Object.assign(f.headers,bearer((await f.login('pegawai')).json().data.access_token));check(await f.post({...f.payload(),tanggal_panen:'2026-10-01'}),201);check(await f.post({...f.payload(),tanggal_panen:'2026-10-02'}),400);

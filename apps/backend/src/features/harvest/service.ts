@@ -1,13 +1,14 @@
 import type { Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
-import { formatWeight, parseWeight } from '../../db/harvest-weights.js';
+import { formatWeight, parseWeight } from '../../common/weights.js';
 import { getHarvest } from './store.js';
 import type { CreateHarvestInput, UpdateHarvestInput } from './contracts.js';
 export async function createHarvest(tx: Transaction, input: CreateHarvestInput, actor: string, now: number) {
-  if (input.tanggal_panen > new Date(now + 7 * 3600000).toISOString().slice(0, 10)) throw new ApiError(400, 'VALIDATION_ERROR', 'Tanggal panen tidak boleh di masa depan.');
+  if (input.tanggal_panen > jakartaDate(now)) throw new ApiError(400, 'VALIDATION_ERROR', 'Tanggal panen tidak boleh di masa depan.');
   for (const d of input.details) {
     const row = (await tx.execute({ sql: `SELECT tanggal_pemindahan,jumlah_tanaman-(SELECT COALESCE(SUM(jumlah_tanaman),0) FROM kerusakan_tanaman WHERE id_pemindahan=p.id_pemindahan)-(SELECT COALESCE(SUM(jumlah_tanaman),0) FROM detail_panen WHERE id_pemindahan=p.id_pemindahan) AS remaining FROM pemindahan p WHERE id_pemindahan=?`, args: [d.id_pemindahan] })).rows[0];
-    if (!row) throw new ApiError(404, 'TRANSFER_NOT_FOUND', 'Data pemindahan tidak ditemukan.');
+    if (!row) throw new ApiError(422, 'TRANSFER_NOT_FOUND', 'Data pemindahan tidak ditemukan.');
     if (input.tanggal_panen < String(row.tanggal_pemindahan)) throw new ApiError(400, 'INVALID_HARVEST_DATE', 'Tanggal panen mendahului pemindahan.');
     if (d.jumlah_tanaman > Number(row.remaining)) throw new ApiError(409, 'HARVEST_EXCEEDS_ACTIVE_PLANTS', 'Jumlah panen melebihi tanaman aktif.');
   }

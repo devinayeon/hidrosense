@@ -1,4 +1,5 @@
 import type { Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
 import {
   countMovedSeedlings,
@@ -22,7 +23,7 @@ export async function createTransfer(
     args: [input.id_penyemaian],
   })).rows[0];
   if (!sowingRow) {
-    throw new ApiError(404, 'PENYEMAIAN_NOT_FOUND', 'Data penyemaian tidak ditemukan.');
+    throw new ApiError(422, 'PENYEMAIAN_NOT_FOUND', 'Data penyemaian tidak ditemukan.');
   }
   if (sowingRow.status_penyemaian !== 'aktif') {
     throw new ApiError(409, 'SOWING_INACTIVE', 'Data penyemaian tidak aktif atau sudah selesai.');
@@ -33,8 +34,7 @@ export async function createTransfer(
   const pindahMs = Date.parse(`${input.tanggal_pemindahan}T00:00:00Z`);
   const umurSemaiHari = Math.floor((pindahMs - semaiMs) / dayMs);
 
-  const today = new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  if (input.tanggal_pemindahan > today) {
+  if (input.tanggal_pemindahan > jakartaDate(now)) {
     throw new ApiError(400, 'INVALID_TRANSFER_DATE', 'Tanggal pemindahan tidak boleh di masa depan.');
   }
 
@@ -58,7 +58,7 @@ export async function createTransfer(
     args: [input.id_meja],
   })).rows[0];
   if (!tableRow) {
-    throw new ApiError(404, 'TABLE_NOT_FOUND', 'Meja tanam tidak ditemukan.');
+    throw new ApiError(422, 'TABLE_NOT_FOUND', 'Meja tanam tidak ditemukan.');
   }
   const statusMeja = String(tableRow.status_meja).toLowerCase();
   if (statusMeja !== 'tersedia') {

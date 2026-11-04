@@ -49,7 +49,7 @@ export function registerJenisInventaris(app: FastifyInstance, db: Client, clock:
       await assertJenisNameAvailable(tx, input.nama_jenis, id);
       await tx.execute({ sql: 'UPDATE jenis_inventaris SET nama_jenis=? WHERE id_jenis_inventaris=?', args: [input.nama_jenis, id] });
       return getJenis(tx, id);
-    });
+    }, input.expected_version);
   });
 
   app.post('/api/v1/jenis-inventaris/:id/deactivate', { preHandler: writeGuard }, async (request) => {

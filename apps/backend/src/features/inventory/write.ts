@@ -11,7 +11,7 @@ const resources = {
 
 export function inventoryWrite<T extends Json & Record<string, Json>>(
   db: Client, request: FastifyRequest, clock: () => number,
-  operationType: string, payload: unknown, effect: (tx: Transaction) => Promise<T>,
+  operationType: string, payload: unknown, effect: (tx: Transaction) => Promise<T>, expectedVersion?: string,
 ) {
   const operationKey = requireIdempotencyKey(request.headers);
   const clientId = request.headers['x-client-id'];
@@ -26,7 +26,7 @@ export function inventoryWrite<T extends Json & Record<string, Json>>(
       operation_key: operationKey, operation_type: operationType, payload: normalizedPayload,
       ...(parsedClientId.success ? { resource_type: resourceType, client_id: parsedClientId.data } : {}),
     }, clock(), {
-      resourceType, domainId: action === 'create' ? undefined : normalizedPayload.id,
+      resourceType, domainId: action === 'create' ? undefined : normalizedPayload.id, expectedVersion,
       idField: resources[resourceType], effect: () => effect(tx),
     }));
 }

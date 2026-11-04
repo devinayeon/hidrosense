@@ -1,21 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 import type { Client } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { sweepExpiredAuthRecords } from '../../common/maintenance.js';
 import { verifyPassword } from '../../common/passwords.js';
 import { createSession } from '../../common/sessions.js';
 import { consumeLimit } from '../../common/rate-limit.js';
+import { parseInput } from '../../common/validation.js';
+import { loginSchema } from './contracts.js';
 
 export function registerLogin(app: FastifyInstance, db: Client, clock: () => number) {
-  app.post<{ Body: { username: string; password: string } }>('/api/v1/auth/login', {
-    schema: { body: {
-      type: 'object', additionalProperties: false, required: ['username', 'password'],
-      properties: {
-        username: { type: 'string', minLength: 1, maxLength: 50, pattern: '\\S' },
-        password: { type: 'string', minLength: 1, maxLength: 128 },
-      },
-    } },
-  }, async (request, reply) => {
-    const { username, password } = request.body;
+  app.post('/api/v1/auth/login', async (request, reply) => {
+    const { username, password } = parseInput(loginSchema, request.body);
     // Keyed per source IP and exact username: usernames are case-sensitive, so
     // 'Petani' and 'petani' are two accounts and must not share a bucket.
     // Accepted ceiling: an account has no cross-IP cap, so distributed guessing is bounded
@@ -29,6 +24,8 @@ export function registerLogin(app: FastifyInstance, db: Client, clock: () => num
     if (!valid || !user || user.status_aktif !== 1) {
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'Username atau password tidak valid.');
     }
-    return { data: await createSession(db, user, clock()) };
+    const session = await createSession(db, user, clock());
+    await sweepExpiredAuthRecords(db, clock(), request.log);
+    return { data: session };
   });
 }

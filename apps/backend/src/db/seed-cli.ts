@@ -15,7 +15,7 @@ try {
 
   db = await openDatabase();
   const status = await migrationStatus(db, await loadMigrations());
-  if (status.some((item: { status: string }) => item.status !== 'applied')) {
+  if (status.some((item) => item.status !== 'applied')) {
     throw new Error('Migrasi database belum lengkap. Jalankan "npm run db:migrate" terlebih dahulu.');
   }
 

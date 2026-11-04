@@ -23,6 +23,7 @@ export function tableWrite(db: Client, request: FastifyRequest, clock: () => num
       ...(parsed.success ? { resource_type: 'meja-tanam', client_id: parsed.data } : {}),
     }, clock(), {
       resourceType: 'meja-tanam', domainId: command.action === 'update' ? command.id : undefined,
+      expectedVersion: command.action === 'update' ? command.input.expected_version : undefined,
       idField: 'id_meja', effect: () => command.action === 'create'
         ? createTable(tx, command.input) : updateTable(tx, command.id, command.input),
     }));
