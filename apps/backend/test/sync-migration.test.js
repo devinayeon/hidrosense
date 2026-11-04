@@ -25,10 +25,12 @@ test('sync identity upgrade preserves legacy records and rollback preserves doma
   assert.equal((await db.execute('SELECT COUNT(*) AS n FROM sync_resource_versions')).rows[0].n, 0);
 });
 
-test('0012 builds the canonical-key index even with case-variant receipts and drops it on rollback', async (t) => {
+test('0014 builds the canonical-key index even with case-variant receipts and drops it on rollback', async (t) => {
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());
-  const all = await loadMigrations();
+  const loaded = await loadMigrations();
+  // Later migrations roll back first, so stop the list at the one under test.
+  const all = loaded.slice(0, loaded.findIndex((migration) => migration.id === '0014_operation_key_lower') + 1);
   await migrate(db, all);
   await db.execute("INSERT INTO roles (nama_role) VALUES ('petani')");
   await db.execute("INSERT INTO users (id_role,nama,username,password) VALUES (1,'A','a','x')");

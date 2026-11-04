@@ -1,6 +1,7 @@
 import type { Client, Row, Transaction } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
 import { fromMinor, toMinor } from '../../common/quantities.js';
+import { recordDerivedChange } from '../../common/sync.js';
 import type { StockLine } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -119,6 +120,7 @@ export async function appendMovement(tx: Transaction, actorId: string, now: numb
       throw new ApiError(409, delta < 0n ? 'INSUFFICIENT_STOCK' : 'STOCK_LIMIT_EXCEEDED',
         delta < 0n ? 'Saldo stok tidak mencukupi.' : 'Saldo stok melebihi batas.');
     }
+    await recordDerivedChange(tx, 'inventaris', line.id_inventaris, now);
     await tx.execute({ sql: `INSERT INTO detail_stok(id_stok,id_inventaris,jumlah,jumlah_minor,satuan)
       VALUES (?,?,?,?,?)`, args: [id, line.id_inventaris, line.jumlah, minor, line.satuan] });
   }

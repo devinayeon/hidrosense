@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { recordDerivedChange } from '../../common/sync.js';
 import {
   countMovedSeedlings,
   countTableActive,
@@ -76,6 +77,8 @@ export async function createTransfer(
   // 6. Insert transfer and derive the table status from its new occupancy
   const result = await insertTransfer(tx, input, now);
   await syncTableStatus(tx, input.id_meja);
+  await recordDerivedChange(tx, 'penyemaian', input.id_penyemaian, now);
+  await recordDerivedChange(tx, 'meja-tanam', input.id_meja, now);
 
   // 7. Auto-mark sowing as 'selesai' if all seedlings moved
   if (alreadyMoved + input.jumlah_tanaman >= Number(sowingRow.jumlah_benih)) {

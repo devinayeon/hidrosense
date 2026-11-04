@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { recordDerivedChange } from '../../common/sync.js';
 import { formatWeight, parseWeight } from '../../common/weights.js';
 import { syncTableStatus } from '../tables/store.js';
 import { getHarvest } from './store.js';
@@ -20,7 +21,11 @@ export async function createHarvest(tx: Transaction, input: CreateHarvestInput, 
     const reject = parseWeight(d.berat_reject), layak = parseWeight(d.berat_total) - reject;
     await tx.execute({ sql: 'INSERT INTO detail_panen(id_panen,id_pemindahan,jumlah_tanaman,berat,berat_minor,berat_reject_minor) VALUES (?,?,?,?,?,?)', args: [id, d.id_pemindahan, d.jumlah_tanaman, formatWeight(layak), layak, reject] });
   }
-  for (const tableId of affectedTables) await syncTableStatus(tx, tableId);
+  for (const d of input.details) await recordDerivedChange(tx, 'pemindahan', d.id_pemindahan, now);
+  for (const tableId of affectedTables) {
+    await syncTableStatus(tx, tableId);
+    await recordDerivedChange(tx, 'meja-tanam', tableId, now);
+  }
   return getHarvest(tx, id);
 }
 export async function updateHarvest(tx: Transaction, id: string, input: UpdateHarvestInput) {

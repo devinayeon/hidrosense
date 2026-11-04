@@ -92,6 +92,17 @@ async function executeOperation<T extends Json>(
   return { ...result, replayed: false };
 }
 
+/**
+ * Announces a record whose derived values moved (saldo, tanaman aktif, kapasitas) while its own
+ * fields did not. Its version stays put, so an unrelated edit cannot cause a false conflict.
+ */
+export async function recordDerivedChange(tx: Transaction, resourceType: string, domainId: string, now: number) {
+  await tx.execute({
+    sql: 'INSERT INTO sync_changes (resource_type,domain_id,changed_at) VALUES (?,?,?)',
+    args: [resourceType, domainId, now],
+  });
+}
+
 async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
   const result = await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
     ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at

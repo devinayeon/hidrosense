@@ -18,6 +18,7 @@ import { registerTransfers } from './features/transfers/index.js';
 import { registerHarvest } from './features/harvest/index.js';
 import { registerDamage } from './features/damage/index.js';
 import { registerSales } from './features/sales/index.js';
+import { registerDetections } from './features/detections/index.js';
 
 interface AppOptions {
   db: Client;
@@ -119,5 +120,6 @@ export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigr
   registerDamage(app, db, clock);
   registerHarvest(app, db, clock);
   registerSales(app, db, clock);
+  registerDetections(app, db, clock);
   return app;
 }

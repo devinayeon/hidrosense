@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { recordDerivedChange } from '../../common/sync.js';
 import { countTableActive } from '../transfers/store.js';
 import { syncTableStatus } from '../tables/store.js';
 import { insertDamage, patchDamage, sumDamageForTransfer } from './store.js';
@@ -51,6 +52,8 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput, no
 
   const damage = await insertDamage(tx, input);
   await syncTableStatus(tx, String(transferRow.id_meja));
+  await recordDerivedChange(tx, 'pemindahan', input.id_pemindahan, now);
+  await recordDerivedChange(tx, 'meja-tanam', String(transferRow.id_meja), now);
   return damage;
 }
 
@@ -113,5 +116,7 @@ export async function updateDamage(tx: Transaction, id: string, input: UpdateDam
 
   const damage = await patchDamage(tx, id, input);
   await syncTableStatus(tx, String(existing.id_meja));
+  await recordDerivedChange(tx, 'pemindahan', String(existing.id_pemindahan), now);
+  await recordDerivedChange(tx, 'meja-tanam', String(existing.id_meja), now);
   return damage;
 }

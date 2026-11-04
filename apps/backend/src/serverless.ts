@@ -13,9 +13,11 @@ type App = Awaited<ReturnType<typeof buildApp>>;
  */
 export async function openServerlessApp(): Promise<App> {
   const url = process.env.DATABASE_URL;
-  // A function's filesystem does not persist, so a local database would silently lose data.
-  if (!isRemoteUrl(url)) throw new Error('DATABASE_URL must be a remote libsql:// or https:// URL.');
   const config = readConfig();
+  // A function's filesystem does not persist, so a local database in production would lose data.
+  if (config.environment === 'production' && !isRemoteUrl(url)) {
+    throw new Error('DATABASE_URL must be a remote libsql:// or https:// URL in production.');
+  }
   // Without proxy trust every production request would be refused as plain HTTP.
   if (config.environment === 'production' && config.proxyHops === undefined && !config.proxies.length) {
     throw new Error('Production requires TRUST_PROXY_HOPS or TRUSTED_PROXIES.');

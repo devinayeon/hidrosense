@@ -92,6 +92,13 @@ test('a function refuses a local database: its filesystem does not persist', asy
   }
 });
 
+test('a local database is allowed while developing', async (t) => {
+  withEnv(t, { NODE_ENV: 'development', DATABASE_URL: ':memory:', LOG_LEVEL: 'silent' });
+  const app = await openServerlessApp();
+  t.after(() => app.close());
+  assert.equal((await app.inject({ url: '/health/live' })).statusCode, 200);
+});
+
 test('production refuses to start without knowing its proxy, instead of answering 426 forever', async (t) => {
   withEnv(t, { NODE_ENV: 'production', DATABASE_URL: 'libsql://contoh.invalid' });
   await assert.rejects(openServerlessApp(), /TRUST_PROXY_HOPS/);
