@@ -1,0 +1,28 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": ["src/**", "scripts/**", "test/**", "test-support/**"]
+	},
+	"formatter": { "enabled": false },
+	"assist": { "enabled": false },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "none",
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error",
+				"noUndeclaredVariables": "off"
+			},
+			"suspicious": {
+				"noDoubleEquals": {
+					"level": "error",
+					"options": { "ignoreNull": true }
+				},
+				"noAsyncPromiseExecutor": "error",
+				"noDuplicateObjectKeys": "error"
+			},
+			"nursery": { "noFloatingPromises": "error" }
+		}
+	}
+}

@@ -17,7 +17,6 @@ const readPermissions: Readonly<Record<string, string>> = {
   kerusakan_tanaman: 'budidaya:read',
   panen: 'panen:read',
   penjualan: 'penjualan:read',
-  deteksi: 'deteksi:read',
 };
 
 const querySchema = z.strictObject({

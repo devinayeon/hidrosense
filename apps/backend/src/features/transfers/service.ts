@@ -5,7 +5,6 @@ import { recordDerivedChange } from '../../common/sync.js';
 import {
   countMovedSeedlings,
   countTableActive,
-  getTransfer,
   insertTransfer,
   patchTransfer,
 } from './store.js';

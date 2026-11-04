@@ -1,4 +1,6 @@
-# Integrasi Cabang, Review Penjualan, B11, B17, dan B18 Lokal
+# Integrasi Cabang, Review Penjualan, B17, dan B18 Lokal
+
+> Pembaruan: fitur AI tidak dimulai dulu atas keputusan pemilik, jadi B11 **dikeluarkan** sebelum push. Kodenya tetap ada di branch lokal `simpan/b11-deteksi` (`a4bff83`). Migrasi perubahan kini `0015_sync_changes`. Bagian yang menyebut `/deteksi` hanya berlaku untuk branch itu. Lihat bagian 10.
 
 Tanggal: 2026-11-04
 Dasar kerja: keputusan pemilik: B12–B14 bukan fokus sekarang, tidak ada pengujian di Turso, pengembangan memakai database lokal.
@@ -117,3 +119,27 @@ Hasil build di port asli, database file sementara yang sudah dihapus:
 - Dua proses menulis serentak lewat `/sync/changes`: urutan kursor mengandalkan SQLite yang hanya punya satu penulis.
 - Perangkat Android nyata dan alur offline.
 - Pertumbuhan tabel `sync_changes`: belum ada pembersihan. Tiap perubahan menambah satu sampai beberapa baris.
+
+## 10. Sebelum push ke `main`
+
+Keputusan pemilik: fitur AI belum dimulai, database tidak disentuh, sisanya diselesaikan dari sisi backend.
+
+| Pekerjaan | Hasil |
+|---|---|
+| B11 dikeluarkan | Rute, migrasi, test, dan panduan dihapus; disimpan di `simpan/b11-deteksi` |
+| Kontrak API | `apps/backend/API.md`, menggantikan dokumen yang dihapus origin |
+| Linter (T-09) | Biome di `npm run check`. `noFloatingPromises` terbukti aktif pada file probe; kode nyata 0 temuan. Satu import tak terpakai dihapus |
+
+Sengaja tidak dikerjakan:
+
+| Item | Alasan |
+|---|---|
+| T-07 rehash saat login | Mengubah `users.password` akan mencabut sesi lain karena sesi terikat `credential_hash`. Belum ada rencana menaikkan parameter |
+| F8 replay akun | Sistem resi menyimpan hash isi permintaan, yang di sini memuat password. Perlu desain sendiri |
+| T-08 test ke TypeScript | Besar, tidak mengubah perilaku |
+| Refactor `write.ts`, baris padat harvest, kait `0011` | Kosmetik atau baru berguna saat migrasi data berikutnya |
+| B19 BMKG di backend | Sudah berjalan di mobile. Memindahkannya perlu keputusan dan perubahan mobile |
+
+**Database:** tidak ada koneksi ke database dev maupun Turso pada tahap ini. Semua test memakai `:memory:` atau file sementara.
+
+Hasil akhir yang di-push: `npm run check` **319/319** (angka 331 di bagian 1 masih memuat test B11), `flutter test` **364/364**, `npm run build` lulus.

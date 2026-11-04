@@ -144,18 +144,15 @@ test('a retried write adds no second change, and a failed write adds none', asyn
   assert.equal(await count(), after);
 });
 
-test('pegawai never learns about sales or detections through the feed', async (t) => {
+test('pegawai never learns about sales through the feed', async (t) => {
   const f = await setup(t);
   const { transfer } = await batch(f);
   assertOk(await f.write(f.petani, 'POST', '/panen', { tanggal_panen: '2026-09-28', details: [{ id_pemindahan: transfer, jumlah_tanaman: 3, berat_total: '1.00', berat_reject: '0.00' }] }), 201);
   assertOk(await f.write(f.petani, 'POST', '/penjualan', { tanggal_penjualan: '2026-09-29', pembeli: 'Toko', status_pembayaran: 'lunas', id_panen: '1', jumlah_kg: '0.50', harga_per_kg: '1000.00' }), 201);
-  assertOk(await f.write(f.petani, 'POST', '/deteksi', { id_pemindahan: transfer, tanggal_deteksi: '2026-09-29T00:00:00Z', status_deteksi: 'tanpa_deteksi', model_versi: 'm', hasil: [] }), 201);
   const owner = assertOk(await f.changes(f.petani)).json().data.map((row) => row.resource_type);
   assert.ok(owner.includes('penjualan'));
-  assert.ok(owner.includes('deteksi'));
   const worker = assertOk(await f.changes(f.pegawai)).json().data.map((row) => row.resource_type);
   assert.equal(worker.includes('penjualan'), false);
-  assert.equal(worker.includes('deteksi'), false);
   assert.ok(worker.includes('panen'));
 });
 

@@ -109,14 +109,8 @@ test('the whole farm cycle holds together over HTTP on a local database', async 
   expectStatus(await pegawai.send('POST', '/pemindahan', { id_penyemaian: sowingRetry.data.id_penyemaian, id_meja: table.id_meja, tanggal_pemindahan: dateAgo(20), jumlah_tanaman: 151 }), 409, 'TABLE_CAPACITY_EXCEEDED');
   const transfer = expectStatus(await pegawai.send('POST', '/pemindahan', { id_penyemaian: sowing.id_penyemaian, id_meja: table.id_meja, tanggal_pemindahan: dateAgo(20), jumlah_tanaman: 100 }), 201).data;
 
-  // Damage and detection against the batch.
+  // Damage against the batch.
   expectStatus(await pegawai.send('POST', '/kerusakan', { id_pemindahan: transfer.id_pemindahan, tanggal_kejadian: dateAgo(5), jumlah_tanaman: 5, jenis_kerusakan: 'busuk' }), 201);
-  const detection = expectStatus(await petani.send('POST', '/deteksi', {
-    id_pemindahan: transfer.id_pemindahan, tanggal_deteksi: new Date(Date.now() - DAY).toISOString(), status_deteksi: 'terdeteksi',
-    model_versi: 'yolo11n-1', ambang_confidence: '0.25', hasil: [{ nama_hama: 'aphids', confidence: '0.81' }],
-  }), 201).data;
-  assert.equal(detection.hasil[0].nama_hama, 'aphids');
-  expectStatus(await pegawai.get('/deteksi'), 403);
 
   // Harvest: 100 moved - 5 damaged - 20 harvested leaves 75 active, so 150 - 75 = 75 holes free.
   const harvest = expectStatus(await pegawai.send('POST', '/panen', {
@@ -143,7 +137,6 @@ test('the whole farm cycle holds together over HTTP on a local database', async 
   const types = feed.data.map((row) => row.resource_type);
   for (const type of ['penyemaian', 'meja-tanam', 'pemindahan', 'kerusakan_tanaman', 'panen', 'stok', 'inventaris']) assert.ok(types.includes(type), type);
   assert.equal(types.includes('penjualan'), false);
-  assert.equal(types.includes('deteksi'), false);
   const version = tableAfter.version;
   expectStatus(await petani.send('PATCH', `/meja-tanam/${table.id_meja}`, { keterangan: 'perangkat A', expected_version: version }), 200);
   expectStatus(await pegawai.send('PATCH', `/meja-tanam/${table.id_meja}`, { keterangan: 'perangkat B', expected_version: version }), 409, 'VERSION_CONFLICT');
@@ -166,7 +159,7 @@ test('the whole farm cycle holds together over HTTP on a local database', async 
   assert.ok((await migrationStatus(restored, await loadMigrations())).every((item) => item.status === 'applied'));
   assert.equal((await reconcileStock(restored)).consistent, true);
   const count = async (database, table) => Number((await database.execute(`SELECT COUNT(*) AS n FROM ${table}`)).rows[0].n);
-  for (const name of ['penjualan', 'panen', 'deteksi', 'hasil_deteksi', 'sync_changes', 'sync_operations']) {
+  for (const name of ['penjualan', 'panen', 'sync_changes', 'sync_operations']) {
     assert.equal(await count(restored, name), await count(db, name), name);
   }
 });

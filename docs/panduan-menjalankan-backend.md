@@ -153,44 +153,7 @@ Access token berlaku 15 menit. Sesi berakhir 7 hari setelah refresh terakhir dan
 lambat 30 hari setelah login. Refresh token sekali pakai; token lama dibalas `401` tanpa
 mencabut sesi yang sedang berjalan.
 
-## 7. Hasil deteksi
-
-Inferensi YOLO berjalan di perangkat; server hanya mencatat hasilnya. Hanya role petani yang
-dapat mengakses endpoint ini. Endpoint tulisnya mengikuti aturan header pada bagian 5.
-
-```http
-POST /api/v1/deteksi
-```
-
-```json
-{
-  "id_pemindahan": "1",
-  "tanggal_deteksi": "2026-09-29T02:00:00+07:00",
-  "status_deteksi": "terdeteksi",
-  "model_versi": "yolo11n-1",
-  "ambang_confidence": "0.25",
-  "gambar": { "public_id": "hidrosense/scan-1", "url": "https://res.cloudinary.com/demo/image/upload/v1/hidrosense/scan-1.jpg" },
-  "keterangan": null,
-  "hasil": [{ "nama_hama": "thrips", "confidence": "0.9123", "jumlah_objek": 3 }]
-}
-```
-
-- `status_deteksi`: `terdeteksi`, `tanpa_deteksi`, atau `gagal`. `hasil` wajib terisi hanya untuk
-  `terdeteksi`. `tanpa_deteksi` berarti model tidak menemukan hama, bukan tanaman bebas hama.
-- `nama_hama`: `thrips`, `whitefly`, atau `aphids`, masing-masing paling banyak sekali per deteksi.
-- `confidence`: string 0 sampai 1, paling banyak 4 desimal.
-- `tanggal_deteksi`: boleh lebih maju paling banyak 5 menit dari jam server, dan tidak boleh
-  mendahului tanggal pemindahan.
-- `gambar`: opsional, wajib HTTPS di `res.cloudinary.com`. Bila unggahan menunggu koneksi, kirim
-  `null` lalu lengkapi lewat `PATCH`.
-
-| Endpoint | Fungsi |
-|---|---|
-| `GET /api/v1/deteksi` | Daftar. Filter opsional: `id_pemindahan`, `status_deteksi`, `page`, `limit` |
-| `GET /api/v1/deteksi/:id` | Detail |
-| `PATCH /api/v1/deteksi/:id` | Mengubah `gambar` dan `keterangan`, dengan `expected_version` opsional. Gambar yang sudah tersimpan tidak bisa diganti (`409 DETECTION_IMAGE_LOCKED`). Hasil model tidak bisa diubah |
-
-## 8. Mengambil perubahan untuk perangkat lain
+## 7. Mengambil perubahan untuk perangkat lain
 
 ```http
 GET /api/v1/sync/changes?cursor=0&limit=100
@@ -220,26 +183,25 @@ Cara memakainya:
 4. Bila server membalas `409 SYNC_CURSOR_RESET`, mulai lagi dari `cursor=0`.
 
 Satu catatan muncul sekali per halaman pada perubahan terbarunya. `limit` paling besar 200.
-Daftar ini tersaring menurut izin, jadi pegawai tidak melihat `penjualan` dan `deteksi`.
+Daftar ini tersaring menurut izin, jadi pegawai tidak melihat `penjualan`.
 
 `resource_type`: `jenis-inventaris`, `obat`, `inventaris`, `stok`, `penyemaian`, `meja-tanam`,
-`pemindahan`, `kerusakan_tanaman`, `panen`, `penjualan`, `deteksi`.
+`pemindahan`, `kerusakan_tanaman`, `panen`, `penjualan`.
 
 Perubahan nilai turunan ikut diumumkan tanpa menaikkan `version`, misalnya saldo `inventaris`,
 serta tanaman aktif dan kapasitas pada `pemindahan` dan `meja-tanam`. Karena `inventaris`
 menampilkan nama jenis dan obat, baca ulang daftarnya bila `jenis-inventaris` atau `obat` berubah.
 Akun pegawai dan profil tidak termasuk daftar ini.
 
-## 9. Pengembangan lokal
+## 8. Pengembangan lokal
 
 Pengembangan memakai database file lokal. `dist/serverless.js` juga menerima database lokal selama
 `NODE_ENV` bukan `production`.
 
-Database yang pernah memakai `0012_operation_key_lower` tetap bisa ditingkatkan dengan
-`npm run db:migrate`. Sampai perintah itu dijalankan, API menolak start karena riwayat migrasinya
-berbeda.
+API menolak start selama ada migrasi yang belum diterapkan, termasuk pada database yang pernah memakai
+`0012_operation_key_lower`. Jalankan `npm run db:migrate` saat database siap ditingkatkan.
 
-## 10. Deploy serverless
+## 9. Deploy serverless
 
 Entry point: `dist/serverless.js`, yang mengekspor handler Node `(req, res)`. File ini tidak
 memanggil `listen`.
@@ -247,7 +209,7 @@ memanggil `listen`.
 Sebelum deploy:
 
 1. Jalankan `npm run db:migrate` dari pipeline deploy dengan `DATABASE_URL` Turso. Function
-   tidak menjalankan migrasi. Migrasi `0015` dan `0016` belum pernah dijalankan di Turso.
+   tidak menjalankan migrasi. Migrasi `0015_sync_changes` belum pernah dijalankan di Turso.
 2. Sertakan folder `migrations/` di paket function; `/health/ready` membacanya. Jika dibundel,
    jalur folder ini bisa berubah dan endpoint itu akan membalas `503`.
 
