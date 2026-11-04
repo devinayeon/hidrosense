@@ -236,7 +236,7 @@ void main() {
     await tester.tap(find.text('Cek Stok'));
     await tester.pumpAndSettle();
     expect(find.byType(MainPage), findsOneWidget);
-    expect(find.byType(InventoryHeader), findsOneWidget);
+    expect(find.byType(Header), findsOneWidget);
     expect(find.byType(InventarisBody), findsOneWidget);
     api.close();
   });

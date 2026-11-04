@@ -5,6 +5,7 @@ import 'package:hidrosense_mobile/data/repositories/nursery_repository.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/catat_penjualan_body.dart';
+import 'package:hidrosense_mobile/views/components/custom_bottom_navigation_bar.dart';
 import 'package:hidrosense_mobile/views/components/penjualan_body.dart';
 import 'package:hidrosense_mobile/views/pages/main_page.dart';
 import 'package:hidrosense_mobile/views/pages/penjualan_page.dart';
@@ -44,7 +45,9 @@ void main() {
       expect(find.text('Penjualan & Kasir'), findsNothing);
       expect(
         tester
-            .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+            .widget<CustomBottomNavigationBar>(
+              find.byType(CustomBottomNavigationBar),
+            )
             .currentIndex,
         0,
       );
@@ -103,7 +106,9 @@ void main() {
     expect(find.text('Penjualan & Kasir'), findsNothing);
     expect(
       tester
-          .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+          .widget<CustomBottomNavigationBar>(
+            find.byType(CustomBottomNavigationBar),
+          )
           .currentIndex,
       0,
     );
@@ -142,7 +147,9 @@ void main() {
     expect(find.text('Penjualan & Kasir'), findsOneWidget);
     expect(
       tester
-          .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+          .widget<CustomBottomNavigationBar>(
+            find.byType(CustomBottomNavigationBar),
+          )
           .currentIndex,
       0,
     );

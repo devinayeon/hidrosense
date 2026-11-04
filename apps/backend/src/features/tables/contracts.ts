@@ -4,7 +4,7 @@ export { idParamSchema, parseInput } from '../../common/validation.js';
 
 const fields = {
   kode_meja: z.string().trim().min(1).max(30),
-  jumlah_lubang: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  jumlah_lubang: z.number().int().positive().max(1000),
   status_meja: z.string().trim().min(1).max(30),
   keterangan: z.string().trim().max(1000).nullable(),
 };

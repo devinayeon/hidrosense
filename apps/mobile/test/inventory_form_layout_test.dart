@@ -18,6 +18,7 @@ import 'package:http/testing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'inventory_save_widget_test.dart' show user, response, drain;
 import 'inventory_repository_test.dart' show master;
+import 'support/inventory_fixtures.dart';
 import 'support/remediation_capture.dart';
 
 void main() {
@@ -47,6 +48,9 @@ void main() {
             overrides: [
               apiClientProvider.overrideWithValue(api),
               connectedInventoryProvider.overrideWith((_) => vm),
+              inventoryCategoriesProvider.overrideWith(
+                (_) async => inventoryCategories,
+              ),
               sessionProvider.overrideWith(
                 (_) => SessionViewModel(
                   api,
@@ -191,6 +195,9 @@ void main() {
           overrides: [
             connectedInventoryProvider.overrideWith((_) => vm),
             apiClientProvider.overrideWithValue(api),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -268,6 +275,9 @@ void main() {
           overrides: [
             connectedInventoryProvider.overrideWith((_) => vm),
             apiClientProvider.overrideWithValue(api),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -302,6 +312,62 @@ void main() {
       );
       expect(reads, 1);
       expect(find.text('Barang tersimpan tanpa saldo awal.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'edit shows the stored category and hides categories missing from the server',
+    (tester) async {
+      final api = ApiClient(
+        MockClient((_) async => throw StateError('No requests expected')),
+        baseUri: Uri.parse('https://test.example/api/v1'),
+      );
+      addTearDown(api.close);
+      final vm = ConnectedInventoryViewModel(
+        InventoryRepository(
+          api,
+          Completer<InventoryCache>().future,
+          userId: '1',
+        ),
+        autoLoad: false,
+      );
+      final record = InventoryRecord.fromJson({
+        ...master('1'),
+        'id_jenis_inventaris': '2',
+        'nama_jenis': 'Nutrisi',
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiClientProvider.overrideWithValue(api),
+            connectedInventoryProvider.overrideWith((_) => vm),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
+            sessionProvider.overrideWith(
+              (_) => SessionViewModel(
+                api,
+                initialState: const SessionState(user: user),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: AddFormInventarisPage(initialRecord: record),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Nutrisi'), findsOneWidget);
+      await tester.tap(find.text('Nutrisi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Benih'), findsOneWidget);
+      expect(find.text('Obat & Pestisida'), findsOneWidget);
+      expect(find.text('Perlengkapan'), findsOneWidget);
+      expect(find.text('Media Tanam'), findsNothing);
+      expect(find.text('Pupuk'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },

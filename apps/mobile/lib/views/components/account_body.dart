@@ -8,6 +8,7 @@ import '../widgets/capsule_badge.dart';
 import '../widgets/card_icon_box.dart';
 import '../widgets/row_info_card_md.dart';
 import '../../features/accounts/presentation/pages/employee_list_page.dart';
+import '../../features/accounts/presentation/pages/profile_page.dart';
 
 class AccountBody extends ConsumerWidget {
   const AccountBody({super.key});
@@ -98,6 +99,10 @@ class AccountBody extends ConsumerWidget {
                 ],
               ),
             ),
+            if (user.permissions.contains('profil:write')) ...[
+              const SizedBox(height: AppSpacing.md),
+              _buildProfileTile(context),
+            ],
             if (user.role == 'petani') ...[
               const SizedBox(height: AppSpacing.md),
               _buildEmployeeManagementTile(context, ref),
@@ -133,7 +138,8 @@ class AccountBody extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Terhubung dengan otentikasi JWT backend.',
+                          'Sesi hanya tersimpan di memori perangkat dan '
+                          'berakhir saat aplikasi ditutup.',
                           style: AppTypography.footnote.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -218,6 +224,65 @@ class AccountBody extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  static Widget _buildProfileTile(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
+      },
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: BaseColCard(
+        backgroundColor: Colors.white,
+        borderColor: AppColors.borderLight,
+        borderRadius: AppRadius.card,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            const CardIconBox(
+              iconData: Icons.manage_accounts_outlined,
+              backgroundColor: AppColors.warningBg,
+              iconColor: AppColors.warningOrange,
+              width: 44,
+              height: 44,
+              borderRadius: AppRadius.input,
+              iconSize: 22,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Edit Profil',
+                    style: AppTypography.headline.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Perbarui nama, email, telepon, dan alamat',
+                    style: AppTypography.footnote.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

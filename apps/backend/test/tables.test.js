@@ -54,9 +54,13 @@ test('tables unique code, pagination and status filter', async (t) => {
 test('tables reject invalid bodies, parameters and headers', async (t) => {
   const f = await setup(t);
   for (const body of [{ jumlah_lubang: 0 }, { jumlah_lubang: -1 }, { jumlah_lubang: 1.5 }, { jumlah_lubang: '250' },
-    { jumlah_lubang: 9007199254740992 }, { kode_meja: ' ' }, { status_meja: '' }, { kode_meja: 'a'.repeat(31) }, { unknown: 1 }]) check(await f.create(body), 400);
+    { jumlah_lubang: 1001 }, { jumlah_lubang: 9007199254740992 }, { kode_meja: ' ' }, { status_meja: '' }, { kode_meja: 'a'.repeat(31) }, { unknown: 1 }]) check(await f.create(body), 400);
+  check(await f.create({ status_meja: 'penuh' }), 400, 'TABLE_STATUS_DERIVED');
+  check(await f.create({ kode_meja: 'M-MAX', jumlah_lubang: 1000 }), 201);
   const d = (await f.create()).json().data;
   check(await f.send('PATCH', `/${d.id_meja}`, {}), 400);
+  check(await f.send('PATCH', `/${d.id_meja}`, { jumlah_lubang: 1001 }), 400);
+  check(await f.send('PATCH', `/${d.id_meja}`, { status_meja: 'Penuh' }), 400, 'TABLE_STATUS_DERIVED');
   check(await f.send('PATCH', `/${d.id_meja}`, { status_meja: 'rusak' }, { 'x-client-id': randomUUID() }), 400);
   check(await f.create({}, { 'idempotency-key': 'bad' }), 400);
   for (const path of ['?limit=101', '?foo=1', '/0', '/9223372036854775808', '/1?foo=1']) check(await f.send('GET', path), 400);
@@ -91,6 +95,12 @@ test('tables active count avoids join multiplication; capacity failure rolls bac
   assert.equal((await f.db.execute({ sql: 'SELECT 1 FROM sync_operations WHERE operation_key=?', args: [headers['idempotency-key']] })).rows.length, 0);
   const exact = await f.send('PATCH', `/${id}`, { jumlah_lubang: 100 }, headers); check(exact, 200);
   assert.equal(exact.json().data.kapasitas_tersedia, 0);
+  assert.equal(exact.json().data.status_meja, 'penuh');
+  const expanded = await f.send('PATCH', `/${id}`, { jumlah_lubang: 150 }); check(expanded, 200);
+  assert.equal(expanded.json().data.status_meja, 'tersedia');
+  const maintained = await f.send('PATCH', `/${id}`, { status_meja: 'pemeliharaan' }); check(maintained, 200);
+  const fullMaintenance = await f.send('PATCH', `/${id}`, { jumlah_lubang: 100 }); check(fullMaintenance, 200);
+  assert.equal(fullMaintenance.json().data.status_meja, 'pemeliharaan');
 });
 test('tables reject negative per-batch balance hidden by another batch', async (t) => {
   const f = await setup(t); const id = (await f.create()).json().data.id_meja; await plants(f.db, id);

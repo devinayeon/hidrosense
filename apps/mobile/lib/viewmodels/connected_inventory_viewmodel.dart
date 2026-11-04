@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/inventory_record.dart';
+import '../data/models/jenis_inventaris_record.dart';
 import '../data/repositories/inventory_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/inventory_cache.dart';
@@ -40,6 +41,17 @@ class ConnectedInventoryState {
   final InventoryDraft? pendingDraft;
   final String? saveError;
   final bool canFinishWithoutStock;
+
+  /// Records yang aktif (tidak diarsipkan).
+  List<InventoryRecord> get activeRecords =>
+      records.where((item) => item.active).toList();
+
+  /// Daftar kategori unik dari records aktif, sudah diurutkan.
+  List<String> get activeCategories =>
+      (activeRecords.map((item) => item.category).toSet().toList()..sort());
+
+  /// True hanya saat pertama kali memuat dan belum ada data sama sekali.
+  bool get isInitialLoading => loading && activeRecords.isEmpty;
 
   ConnectedInventoryState withSave({
     required bool saving,
@@ -308,4 +320,13 @@ final connectedInventoryProvider =
         ),
         commands: ref.watch(inventoryCommandsProvider),
       );
+    });
+
+final inventoryCategoriesProvider =
+    FutureProvider.autoDispose<List<JenisInventarisRecord>>((ref) async {
+      final user = ref.watch(sessionProvider.select((state) => state.user));
+      if (user == null) {
+        throw StateError('Kategori inventaris memerlukan sesi.');
+      }
+      return fetchInventoryCategories(ref.watch(apiClientProvider));
     });

@@ -14,6 +14,7 @@ import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'support/inventory_fixtures.dart';
 
 Map<String, dynamic> master(
   String id, {
@@ -65,9 +66,11 @@ void main() {
     'with_stock',
     'with_stock_100',
     'edit',
+    'edit_lowercase_unit',
   ]) {
     final stock = mode.startsWith('with_stock');
-    final edit = mode == 'edit';
+    final edit = mode.startsWith('edit');
+    final unit = mode == 'edit_lowercase_unit' ? 'gram' : 'Pcs';
     testWidgets('request count mode=$mode', (tester) async {
       final db = await tester.runAsync(
         () => databaseFactoryFfi.openDatabase(
@@ -81,7 +84,10 @@ void main() {
       final cache = InventoryCache(db!);
       addTearDown(cache.close);
       final count = mode.endsWith('100') ? 100 : 10;
-      final rows = List.generate(count, (i) => master((i + 1).toString()));
+      final rows = List.generate(
+        count,
+        (i) => master((i + 1).toString(), unit: unit),
+      );
       final trace = <String>[];
       final api = ApiClient(
         MockClient((r) async {
@@ -154,6 +160,9 @@ void main() {
           overrides: [
             apiClientProvider.overrideWithValue(api),
             inventoryCacheProvider.overrideWithValue(Future.value(cache)),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -214,6 +223,9 @@ void main() {
       expect(lists, (rows.length / 20).ceil());
       expect(balances, 0);
       expect(rows.length, edit ? count : count + 1);
+      if (mode == 'edit_lowercase_unit') {
+        expect(rows.first['satuan'], 'gram');
+      }
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -237,6 +249,9 @@ void main() {
         ProviderScope(
           overrides: [
             apiClientProvider.overrideWithValue(api),
+            inventoryCategoriesProvider.overrideWith(
+              (_) async => inventoryCategories,
+            ),
             sessionProvider.overrideWith(
               (_) => SessionViewModel(
                 api,
@@ -287,6 +302,9 @@ void main() {
         overrides: [
           connectedInventoryProvider.overrideWith((_) => vm),
           apiClientProvider.overrideWithValue(api),
+          inventoryCategoriesProvider.overrideWith(
+            (_) async => inventoryCategories,
+          ),
           sessionProvider.overrideWith(
             (_) => SessionViewModel(
               api,

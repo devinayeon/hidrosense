@@ -9,11 +9,13 @@ import 'package:hidrosense_mobile/data/repositories/inventory_repository.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
 import 'package:hidrosense_mobile/data/services/inventory_cache.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_inventory_viewmodel.dart';
+import 'package:hidrosense_mobile/views/components/header.dart';
 import 'package:hidrosense_mobile/views/components/inventaris_body.dart';
 import 'package:hidrosense_mobile/views/pages/add_form_inventaris_page.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 import 'package:hidrosense_mobile/views/widgets/inventory_illustration.dart';
 import 'package:http/testing.dart';
+import 'support/inventory_fixtures.dart';
 
 InventoryRecord item(
   String id,
@@ -76,7 +78,12 @@ Future<TestInventory> pumpInventory(
   });
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [connectedInventoryProvider.overrideWith((_) => model)],
+      overrides: [
+        connectedInventoryProvider.overrideWith((_) => model),
+        inventoryCategoriesProvider.overrideWith(
+          (_) async => inventoryCategories,
+        ),
+      ],
       child: MaterialApp(
         theme: dark ? ThemeData.dark(useMaterial3: true) : AppTheme.lightTheme,
         builder: (context, child) => MediaQuery(
@@ -85,7 +92,18 @@ Future<TestInventory> pumpInventory(
           ).copyWith(disableAnimations: reduceMotion),
           child: child!,
         ),
-        home: const Scaffold(appBar: InventoryHeader(), body: InventarisBody()),
+        home: Scaffold(
+          appBar: Header(
+            actions: [
+              IconButton(
+                tooltip: 'Perbarui inventaris',
+                onPressed: model.refresh,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ],
+          ),
+          body: const InventarisBody(),
+        ),
       ),
     ),
   );

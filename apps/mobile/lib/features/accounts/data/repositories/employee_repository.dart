@@ -4,12 +4,9 @@ import '../../../../viewmodels/session_viewmodel.dart';
 import '../models/employee_model.dart';
 
 abstract class EmployeeRepository {
-  Future<List<EmployeeModel>> getEmployees({
-    int page = 1,
-    int limit = 50,
-    int? statusAktif,
-    String? query,
-  });
+  /// Memuat seluruh halaman daftar pegawai agar hitungan filter tidak
+  /// bergantung pada halaman yang sedang tampil.
+  Future<List<EmployeeModel>> getEmployees({int? statusAktif, String? query});
 
   Future<EmployeeModel> getEmployeeDetail(String id);
 
@@ -41,29 +38,75 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
   EmployeeRepositoryImpl(this._api);
   final ApiClient _api;
 
+  static const int _pageSize = 100;
+
   @override
   Future<List<EmployeeModel>> getEmployees({
-    int page = 1,
-    int limit = 50,
     int? statusAktif,
     String? query,
   }) async {
-    final queryParams = <String, String>{
-      'page': page.toString(),
-      'limit': limit.toString(),
-      if (statusAktif != null) 'status_aktif': statusAktif.toString(),
-      if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
-    };
+    final rows = <EmployeeModel>[];
+    final ids = <String>{};
+    int? total, totalPages;
+    var page = 1;
 
-    final response = await _api.get('employees', query: queryParams);
-    final data = response['data'];
-    if (data is! List) {
-      throw const FormatException('Format data pegawai tidak valid.');
+    do {
+      final response = await _api.get(
+        'employees',
+        query: {
+          'page': page.toString(),
+          'limit': _pageSize.toString(),
+          if (statusAktif != null) 'status_aktif': statusAktif.toString(),
+          if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+        },
+      );
+      final data = response['data'], meta = response['meta'];
+      if (data is! List ||
+          meta is! Map ||
+          meta['page'] != page ||
+          meta['limit'] != _pageSize ||
+          meta['total'] is! int ||
+          (meta['total'] as int) < 0 ||
+          meta['total_pages'] is! int ||
+          meta['total_pages'] !=
+              (((meta['total'] as int) + _pageSize - 1) ~/ _pageSize) ||
+          (total != null && total != meta['total']) ||
+          (totalPages != null && totalPages != meta['total_pages'])) {
+        throw const FormatException(
+          'Halaman data pegawai berubah. Muat ulang.',
+        );
+      }
+
+      total = meta['total'] as int;
+      totalPages = meta['total_pages'] as int;
+      final expected = total == 0
+          ? 0
+          : page < totalPages
+          ? _pageSize
+          : total - (page - 1) * _pageSize;
+      if (data.length != expected) {
+        throw const FormatException('Daftar pegawai tidak lengkap.');
+      }
+
+      for (final item in data) {
+        if (item is! Map<String, dynamic>) {
+          throw const FormatException('Format data pegawai tidak valid.');
+        }
+        final employee = EmployeeModel.fromJson(item);
+        if (employee.id.isEmpty || !ids.add(employee.id)) {
+          throw const FormatException(
+            'Data pegawai tidak valid atau berulang.',
+          );
+        }
+        rows.add(employee);
+      }
+      page++;
+    } while (page <= totalPages);
+
+    if (rows.length != total) {
+      throw const FormatException('Jumlah data pegawai tidak sesuai.');
     }
-
-    return data
-        .map((item) => EmployeeModel.fromJson(item as Map<String, dynamic>))
-        .toList();
+    return List.unmodifiable(rows);
   }
 
   @override

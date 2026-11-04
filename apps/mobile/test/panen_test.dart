@@ -167,8 +167,24 @@ void main() {
       await pump(tester, const PanenPage(), repo, vm: vm);
       expect(find.text('Mendatang (1)'), findsOneWidget);
       expect(find.text('Selesai (1)'), findsOneWidget);
-      expect(find.text('Panen #1'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Batch #1'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Batch #1'), findsOneWidget);
       expect(find.textContaining('Estimasi 2026-10-10'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Panen #1'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Panen #1'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Batch #1'),
+        -250,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Batch #1'));
       await tester.pumpAndSettle();
       expect(find.text('Tambah Hasil Panen'), findsOneWidget);
@@ -182,7 +198,7 @@ void main() {
       final repo = await loadedRepo();
       repo.records = [HarvestRecord.fromJson(harvestJson())];
       await pump(tester, const LaporanPanenPage(harvestId: '1'), repo);
-      expect(find.text('Layak jual: 2.25 kg'), findsOneWidget);
+      expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsOneWidget);
       expect(find.textContaining('PDF'), findsNothing);
       expect(find.textContaining('Grand Rapids'), findsNothing);
     },
@@ -782,14 +798,14 @@ void main() {
           vm: vm,
         );
         expect(find.text('Memuat laporan panen...'), findsOneWidget);
-        expect(find.text('Layak jual: 2.25 kg'), findsNothing);
+        expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsNothing);
         detail.completeError(
           ApiException(status, 'READ', 'Detail gagal dimuat.'),
         );
         await tester.pumpAndSettle();
         expect(find.text('Detail gagal dimuat.'), findsOneWidget);
         expect(find.text('Coba lagi'), findsOneWidget);
-        expect(find.text('Layak jual: 2.25 kg'), findsNothing);
+        expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsNothing);
       },
     );
   }

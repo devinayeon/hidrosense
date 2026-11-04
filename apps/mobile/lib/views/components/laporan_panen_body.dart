@@ -65,7 +65,9 @@ class _LaporanState extends ConsumerState<LaporanPanenBody> {
         Text(
           'Berat total: ${record.total?.wire ?? 'belum tercatat'}${record.total == null ? '' : ' kg'}',
         ),
-        Text('Layak jual: ${record.saleable.wire} kg'),
+        Text(
+          'Berat layak panen: ${record.saleable.wire} kg (sebelum penjualan)',
+        ),
         Text(
           'Reject: ${record.reject?.wire ?? 'belum tercatat'}${record.reject == null ? '' : ' kg'}',
         ),

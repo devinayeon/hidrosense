@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../core/formatting.dart';
 import '../theme/app_theme.dart';
 
 class EstimasiTotalCard extends StatelessWidget {
@@ -9,12 +9,6 @@ class EstimasiTotalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -24,10 +18,7 @@ class EstimasiTotalCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: 1.2,
-        ),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -40,13 +31,11 @@ class EstimasiTotalCard extends StatelessWidget {
             ),
           ),
           Text(
-            currencyFormatter.format(totalAmount),
+            formatRupiah(totalAmount),
             style: AppTypography.headline.copyWith(
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
-              fontFeatures: const [
-                FontFeature.tabularFigures(),
-              ],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

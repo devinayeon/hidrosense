@@ -1,238 +1,367 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/seeding_form_page.dart';
 import '../theme/app_theme.dart';
-import '../widgets/custom_search_bar.dart';
-import '../widgets/row_info_card_md.dart';
+import '../widgets/app_surface_colors.dart';
+import '../widgets/feature_illustration.dart';
+import '../widgets/feature_overview_card.dart';
 import '../widgets/row_button.dart';
-import '../widgets/seeding_card_content.dart';
+import '../widgets/seeding_batch_card.dart';
+import '../widgets/surface_empty_state.dart';
+import '../widgets/surface_notice.dart';
+import '../widgets/surface_placeholder.dart';
+import '../widgets/surface_search_field.dart';
+import '../widgets/surface_section_header.dart';
 import '../widgets/transfer_seedling_bottom_sheet.dart';
 
-class PenyemaianBody extends ConsumerWidget {
+class PenyemaianBody extends ConsumerStatefulWidget {
   const PenyemaianBody({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PenyemaianBody> createState() => _PenyemaianBodyState();
+}
+
+class _PenyemaianBodyState extends ConsumerState<PenyemaianBody> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _resetFilters(ConnectedNurseryViewModel notifier) {
+    FocusScope.of(context).unfocus();
+    _searchController.clear();
+    notifier.setSearchQuery('');
+    notifier.setFilterStatus(null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(sessionProvider.select((state) => state.user));
     if (user == null || !user.permissions.contains('penyemaian:read')) {
       return const Center(child: Text('Penyemaian memerlukan izin baca.'));
     }
+
     final canWrite = user.permissions.contains('penyemaian:write');
     final state = ref.watch(connectedNurseryProvider);
-    final refresh = ref.read(connectedNurseryProvider.notifier).refresh;
+    final notifier = ref.read(connectedNurseryProvider.notifier);
+    final refresh = notifier.refresh;
     final items = state.filteredRecords;
+    final colors = AppSurfaceColors.of(context);
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: AppColors.canvasWarm,
-      child: Column(
+    final insets = MediaQuery.paddingOf(context);
+    final initialLoading = state.loading && state.records.isEmpty;
+    final showAction = canWrite && View.of(context).viewInsets.bottom == 0;
+    final buttonHeight = 52 * MediaQuery.textScalerOf(context).scale(1);
+    final actionSpace = showAction ? buttonHeight + AppSpacing.xl : 0.0;
+
+    final activeCount = state.records
+        .where((item) => item.status == 'aktif')
+        .length;
+    final readyCount = state.records.where((item) => item.canTransfer).length;
+    final finishedCount = state.records
+        .where((item) => item.status == 'selesai')
+        .length;
+
+    final countLabel = initialLoading ? 'Memuat...' : '${items.length} batch';
+
+    final failed = state.error != null && state.records.isEmpty;
+
+    return ColoredBox(
+      color: colors.canvas,
+      child: Stack(
         children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: refresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (state.error != null)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: AppColors.dangerBg,
-                          borderRadius: BorderRadius.circular(AppRadius.input),
-                          border: Border.all(
-                            color: AppColors.dangerRed.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Row(
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: actionSpace),
+              child: RefreshIndicator(
+                color: colors.teal,
+                edgeOffset: insets.top,
+                onRefresh: refresh,
+                child: CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        insets.top + AppSpacing.sm,
+                        AppSpacing.lg,
+                        0,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 18,
-                              color: AppColors.dangerRed,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                state.error!,
-                                style: AppTypography.caption1.copyWith(
-                                  color: AppColors.textPrimary,
+                            if (state.records.isNotEmpty || initialLoading) ...[
+                              FeatureOverviewCard(
+                                eyebrow: 'PENYEMAIAN',
+                                title: initialLoading
+                                    ? 'Memuat batch...'
+                                    : 'Ruang semai',
+                                subtitle: initialLoading
+                                    ? 'Menyiapkan data dari layanan.'
+                                    : '$activeCount batch aktif · '
+                                          '$readyCount siap pindah',
+                                detail: !initialLoading && finishedCount > 0
+                                    ? '$finishedCount batch selesai'
+                                    : null,
+                                illustration: FeatureIllustration.nursery,
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                            ],
+                            if (state.error != null)
+                              SurfaceNotice(
+                                icon: CupertinoIcons.exclamationmark_circle,
+                                text: state.error!,
+                                error: true,
+                                onRetry: state.loading ? null : refresh,
+                              ),
+                            if (state.loading && state.records.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Semantics(
+                                  label: 'Memperbarui penyemaian',
+                                  liveRegion: true,
+                                  child: LinearProgressIndicator(
+                                    color: colors.teal,
+                                    backgroundColor: colors.mintSurface,
+                                    minHeight: 2,
+                                  ),
                                 ),
                               ),
+                            SurfaceSearchField(
+                              controller: _searchController,
+                              label: 'Cari batch semaian...',
+                              query: state.searchQuery,
+                              onChanged: notifier.setSearchQuery,
+                              onClear: () {
+                                _searchController.clear();
+                                notifier.setSearchQuery('');
+                              },
                             ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _StatusChips(
+                              selected: state.filterStatus,
+                              colors: colors,
+                              onSelect: notifier.setFilterStatus,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            SurfaceSectionHeader(
+                              title: 'Daftar semaian',
+                              trailing: countLabel,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
                           ],
                         ),
                       ),
-                    CustomSearchBar(
-                      placeholder: 'Cari batch semaian...',
-                      onChanged: (value) {
-                        ref
-                            .read(connectedNurseryProvider.notifier)
-                            .setSearchQuery(value);
-                      },
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    if (state.loading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24.0),
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryMint,
-                          ),
+                    if (initialLoading)
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        sliver: SliverList.builder(
+                          itemCount: 3,
+                          itemBuilder: (_, _) => const SurfacePlaceholder(),
                         ),
                       )
                     else if (items.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 32.0),
-                        child: Center(
-                          child: Text(
-                            state.error != null && state.records.isEmpty
-                                ? 'Data penyemaian belum dapat ditampilkan.'
-                                : state.records.isEmpty
-                                ? 'Belum ada batch penyemaian.'
-                                : 'Penyemaian tidak ditemukan.',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                      SliverToBoxAdapter(
+                        child: SurfaceEmptyState(
+                          illustration: failed || state.records.isEmpty
+                              ? FeatureIllustration.emptyNursery
+                              : FeatureIllustration.noResults,
+                          title: failed
+                              ? 'Data penyemaian belum dapat ditampilkan.'
+                              : state.records.isEmpty
+                              ? 'Belum ada batch penyemaian.'
+                              : 'Penyemaian tidak ditemukan.',
+                          message: failed
+                              ? 'Periksa koneksi, lalu coba muat kembali.'
+                              : state.records.isEmpty
+                              ? 'Mulai batch pertama untuk mencatat umur dan '
+                                    'kesiapan pindah bibit.'
+                              : 'Coba nama batch lain atau hapus filter yang '
+                                    'sedang aktif.',
+                          actionLabel: failed
+                              ? 'Coba lagi'
+                              : state.records.isEmpty
+                              ? null
+                              : 'Hapus filter',
+                          onAction: failed
+                              ? refresh
+                              : state.records.isEmpty
+                              ? null
+                              : () => _resetFilters(notifier),
                         ),
                       )
                     else
-                      ...items.map((item) {
-                        final isReady = item.canTransfer;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: RowInfoCardMd(
-                            backgroundColor: Colors.white,
-                            borderColor: isReady
-                                ? AppColors.warningOrange.withValues(
-                                    alpha: 0.35,
-                                  )
-                                : AppColors.borderLight,
-                            onTap: () {
-                              Navigator.push(
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        sliver: SliverList.separated(
+                          itemCount: items.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: AppSpacing.sm),
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            return SeedingBatchCard(
+                              key: ValueKey(item.id),
+                              item: item,
+                              canWrite: canWrite,
+                              onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
+                                  builder: (_) =>
                                       InfoSeedingPage(sowingRecord: item),
                                 ),
-                              );
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SeedingCardContent(
-                                  batchName: item.batchName,
-                                  dateText: item.sowingDate,
-                                  seedCountText: item.seedCountText,
-                                  hssText: item.hssText,
-                                  statusLabel: item.statusLabel,
-                                  statusTextColor: AppColors.textPrimary,
-                                  statusBgColor: isReady
-                                      ? AppColors.warningBg
-                                      : AppColors.accentMintSoft,
-                                  statusBorderColor: isReady
-                                      ? AppColors.warningOrange.withValues(
-                                          alpha: 0.3,
-                                        )
-                                      : AppColors.primaryMint.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                  note: item.note,
-                                ),
-                                if (isReady && canWrite) ...[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size(44, 44),
-                                        side: const BorderSide(
-                                          color: AppColors.textPrimary,
-                                          width: 1.2,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.pill,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.sm,
-                                          vertical: AppSpacing.xxs,
-                                        ),
-                                        backgroundColor:
-                                            AppColors.accentMintSoft,
-                                      ),
-                                      onPressed: () {
-                                        TransferSeedlingBottomSheet.show(
-                                          context,
-                                          sowingRecord: item,
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 15,
-                                        color: AppColors.primaryDarkTeal,
-                                      ),
-                                      label: Text(
-                                        'Pindah ke Meja',
-                                        style: AppTypography.caption1.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    const SizedBox(height: AppSpacing.md),
+                              ),
+                              onTransfer: () {
+                                TransferSeedlingBottomSheet.show(
+                                  context,
+                                  sowingRecord: item,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: insets.bottom + AppSpacing.sm),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
+          if (showAction)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: insets.bottom,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      colors.canvas.withValues(alpha: 0),
+                      colors.canvas.withValues(alpha: 0.92),
+                    ],
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: RowButton(
+                    label: '+ Mulai Penyemaian Baru',
+                    backgroundColor: AppColors.accentLime,
+                    textColor: AppColors.darkNavy,
+                    borderRadius: AppRadius.pill,
+                    height: buttonHeight,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SeedingFormPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
-          // Sticky Bottom Action Container (Apple HIG 52pt pill button)
-          if (canWrite)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: const BoxDecoration(
-                color: AppColors.canvasWarm,
-                border: Border(
-                  top: BorderSide(color: AppColors.borderSubtle, width: 0.5),
+/// Chip filter status batch, mengikuti pola chip kategori inventaris.
+class _StatusChips extends StatelessWidget {
+  const _StatusChips({
+    required this.selected,
+    required this.colors,
+    required this.onSelect,
+  });
+
+  final String? selected;
+  final AppSurfaceColors colors;
+  final ValueChanged<String?> onSelect;
+
+  static const _options = <(String?, String)>[
+    (null, 'Semua'),
+    ('aktif', 'Aktif'),
+    ('selesai', 'Selesai tanam'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final chipAnimation = MediaQuery.disableAnimationsOf(context)
+        ? AnimationStyle.noAnimation
+        : const AnimationStyle(
+            duration: Duration(milliseconds: 140),
+            reverseDuration: Duration(milliseconds: 100),
+            curve: Curves.easeOutCubic,
+          );
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final option in _options)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xs),
+              child: ChoiceChip(
+                label: Text(option.$2),
+                selected: selected == option.$1,
+                showCheckmark: false,
+                selectedColor: AppColors.accentLime,
+                backgroundColor: colors.surface,
+                labelStyle: AppTypography.subheadline.copyWith(
+                  color: selected == option.$1
+                      ? AppColors.darkNavy
+                      : colors.ink,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: RowButton(
-                  label: '+ Mulai Penyemaian Baru',
-                  borderRadius: AppRadius.pill,
-                  height: 52 * MediaQuery.textScalerOf(context).scale(1),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SeedingFormPage(),
-                      ),
-                    );
-                  },
+                side: BorderSide(
+                  color: selected == option.$1
+                      ? colors.teal
+                      : colors.controlBorder,
                 ),
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+                chipAnimationStyle: ChipAnimationStyle(
+                  selectAnimation: chipAnimation,
+                  enableAnimation: chipAnimation,
+                ),
+                onSelected: (_) {
+                  if (selected != option.$1) {
+                    HapticFeedback.selectionClick();
+                  }
+                  onSelect(option.$1);
+                },
               ),
             ),
         ],

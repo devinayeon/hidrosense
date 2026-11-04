@@ -36,9 +36,10 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     _notesController = TextEditingController(
       text: rec?.notes ?? item?.notes ?? '',
     );
-    _selectedStatus =
-        rec?.status ??
-        (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia');
+    _selectedStatus = _normalizeStatus(
+      rec?.status ??
+          (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia'),
+    );
     final user = ref.read(sessionProvider).user;
     if (user?.permissions.contains('budidaya:write') == true) {
       final command = ref.read(connectedTableProvider.notifier).pendingCommand;
@@ -47,10 +48,17 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
         _codeController.text = command!.body['kode_meja'] as String? ?? '';
         _capacityController.text = '${command.body['jumlah_lubang']}';
         _notesController.text = command.body['keterangan'] as String? ?? '';
-        _selectedStatus =
-            command.body['status_meja'] as String? ?? _selectedStatus;
+        _selectedStatus = _normalizeStatus(
+          command.body['status_meja'] as String? ?? _selectedStatus,
+        );
       }
     }
+  }
+
+  String _normalizeStatus(String? status) {
+    final value = status?.trim() ?? '';
+    if (value.isEmpty) return 'tersedia';
+    return value.toLowerCase() == 'penuh' ? 'tersedia' : value;
   }
 
   @override
@@ -71,11 +79,11 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     if (code.isEmpty ||
         code.length > 30 ||
         capacity <= 0 ||
-        capacity > 9007199254740991 ||
+        capacity > 1000 ||
         notes.length > 1000) {
       setState(
         () => _error =
-            'Isi kode 1–30 karakter, kapasitas positif, dan catatan maksimal 1000 karakter.',
+            'Isi kode 1–30 karakter, kapasitas 1–1000, dan catatan maksimal 1000 karakter.',
       );
       return;
     }
@@ -135,13 +143,18 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
     }
     ref.watch(connectedTableProvider);
     final locked = ref.read(connectedTableProvider.notifier).payloadLocked;
+    final statusLocked = widget.tableRecord?.isFull ?? false;
     final statuses = <String, String>{
       'tersedia': 'Tersedia / Aktif',
       'pemeliharaan': 'Perawatan',
-      'penuh': 'Penuh',
       'nonaktif': 'Nonaktif',
     };
-    statuses.putIfAbsent(_selectedStatus, () => _selectedStatus);
+    if (statusLocked) {
+      statuses['penuh'] = 'Penuh (otomatis)';
+    } else {
+      statuses.putIfAbsent(_selectedStatus, () => _selectedStatus);
+    }
+    final displayedStatus = statusLocked ? 'penuh' : _selectedStatus;
     return PopScope(
       canPop: !_submitting,
       child: Container(
@@ -180,26 +193,31 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     CustomInputField(
-                      label: 'Kapasitas Lubang Default',
+                      label: 'Kapasitas Lubang (maks. 1000)',
                       hintText: '250',
                       controller: _capacityController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedStatus,
+                      initialValue: displayedStatus,
                       style: AppTypography.body,
                       dropdownColor: AppColors.cardSurface,
                       iconEnabledColor: AppColors.textSecondary,
                       isExpanded: true,
                       itemHeight: null,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Status Meja Utama',
                         labelStyle: AppTypography.subheadline,
+                        helperText: statusLocked
+                            ? 'Status Penuh tidak dapat diubah selama semua lubang terisi.'
+                            : 'Status Penuh diterapkan otomatis saat semua lubang terisi.',
+                        helperMaxLines: 2,
                         floatingLabelBehavior: FloatingLabelBehavior.always,
                         filled: true,
                         fillColor: AppColors.cardSurface,
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       items: statuses.entries
                           .map(
@@ -209,7 +227,7 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
                             ),
                           )
                           .toList(),
-                      onChanged: _submitting || locked
+                      onChanged: _submitting || locked || statusLocked
                           ? null
                           : (s) => setState(() => _selectedStatus = s!),
                     ),

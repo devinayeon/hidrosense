@@ -6,6 +6,7 @@ class CustomTextArea extends StatelessWidget {
   final String hintText;
   final TextEditingController controller;
   final int maxLines;
+  final String? errorText;
 
   const CustomTextArea({
     super.key,
@@ -13,6 +14,7 @@ class CustomTextArea extends StatelessWidget {
     required this.hintText,
     required this.controller,
     this.maxLines = 3,
+    this.errorText,
   });
 
   @override
@@ -62,6 +64,13 @@ class CustomTextArea extends StatelessWidget {
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText!,
+            style: AppTypography.caption2.copyWith(color: AppColors.dangerRed),
+          ),
+        ],
       ],
     );
   }

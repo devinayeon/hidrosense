@@ -99,6 +99,7 @@ class ConnectedNurseryState {
     String? error,
     String? searchQuery,
     String? filterStatus,
+    bool clearFilterStatus = false,
     bool? saving,
     SowingDraft? pendingDraft,
     String? saveError,
@@ -109,7 +110,9 @@ class ConnectedNurseryState {
       loading: loading ?? this.loading,
       error: error,
       searchQuery: searchQuery ?? this.searchQuery,
-      filterStatus: filterStatus ?? this.filterStatus,
+      filterStatus: clearFilterStatus
+          ? null
+          : filterStatus ?? this.filterStatus,
       saving: saving ?? this.saving,
       pendingDraft: clearPending ? null : pendingDraft ?? this.pendingDraft,
       saveError: saveError,
@@ -219,7 +222,10 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
   }
 
   void setFilterStatus(String? status) {
-    state = state.copyWith(filterStatus: status);
+    state = state.copyWith(
+      filterStatus: status,
+      clearFilterStatus: status == null,
+    );
   }
 
   Future<String?> saveSowing(SowingDraft draft) async {

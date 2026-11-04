@@ -47,6 +47,15 @@ class RekomendasiCuacaBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          item.waktu,
+                          style: AppTypography.caption1.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDarkTeal,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
                           'Rekomendasi Berbasis Cuaca',
                           style: AppTypography.headline.copyWith(
                             fontWeight: FontWeight.w700,
@@ -60,6 +69,14 @@ class RekomendasiCuacaBody extends StatelessWidget {
                             color: AppColors.textSecondary,
                             height: 1.35,
                           ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        CapsuleBadge(
+                          label: '${item.status} • ${item.suhu}°C',
+                          textColor: AppColors.primaryDarkTeal,
+                          backgroundColor: AppColors.accentMintSoft,
+                          borderColor: AppColors.primaryMint,
+                          size: CapsuleSize.medium,
                         ),
                       ],
                     ),
@@ -83,12 +100,15 @@ class RekomendasiCuacaBody extends StatelessWidget {
             // 3. List Cards Rekomendasi
             ...item.rekomendasiList.map((rec) {
               final isPenting = rec.isPenting;
-              final tagBgColor =
-                  isPenting ? AppColors.warningBg : AppColors.accentMintSoft;
-              final tagTextColor =
-                  isPenting ? AppColors.warningOrange : AppColors.primaryDarkTeal;
-              final tagBorderColor =
-                  isPenting ? AppColors.warningOrange : AppColors.primaryMint;
+              final tagBgColor = isPenting
+                  ? AppColors.warningBg
+                  : AppColors.accentMintSoft;
+              final tagTextColor = isPenting
+                  ? AppColors.warningOrange
+                  : AppColors.primaryDarkTeal;
+              final tagBorderColor = isPenting
+                  ? AppColors.warningOrange
+                  : AppColors.primaryMint;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
