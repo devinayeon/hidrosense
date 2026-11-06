@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/business_date.dart';
@@ -108,8 +110,38 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
     }
   }
 
+  // Kunci per perintah yang hasilnya belum pasti. Tanpa ini, percobaan ulang
+  // setelah respons hilang memakai kunci baru dan server mencatat dua penjualan.
+  final _pendingKeys = <String, String>{};
+
+  /// Menjalankan [send] dengan kunci yang sama untuk isian yang sama.
+  /// Kunci dibuang bila berhasil atau ditolak jelas oleh server; dipertahankan
+  /// bila jaringan putus atau server error (5xx), karena hasilnya tidak pasti.
+  Future<T> _withKey<T>(
+    String signature,
+    Future<T> Function(String key) send,
+  ) async {
+    final key = _pendingKeys.putIfAbsent(signature, generateUuidV4);
+    try {
+      final result = await send(key);
+      _pendingKeys.remove(signature);
+      return result;
+    } catch (error) {
+      final uncertain =
+          error is! ApiException ||
+          error.status == 0 ||
+          error.status >= 500 ||
+          error.code == 'SESSION_CHANGED';
+      if (!uncertain) _pendingKeys.remove(signature);
+      rethrow;
+    }
+  }
+
   Future<PenjualanItem> createSale(SalesDraft draft) async {
-    final record = await _sales.createSale(draft, generateUuidV4());
+    final record = await _withKey(
+      'buat|${jsonEncode(draft.toJson())}',
+      (key) => _sales.createSale(draft, key),
+    );
     final item = _toItem(record);
     if (mounted) _merge(oldItem: null, newItem: item);
     await refresh(force: true);
@@ -126,11 +158,9 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         'Rincian transaksi ini belum dapat diedit dari aplikasi.',
       );
     }
-    final record = await _sales.updateSale(
-      existing.id,
-      draft,
-      version,
-      generateUuidV4(),
+    final record = await _withKey(
+      'ubah|${existing.id}|$version|${jsonEncode(draft.toJson())}',
+      (key) => _sales.updateSale(existing.id, draft, version, key),
     );
     final item = _toItem(record);
     if (mounted) _merge(oldItem: existing, newItem: item);
@@ -148,11 +178,9 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         'Transaksi ini belum dapat diedit dari aplikasi.',
       );
     }
-    final record = await _sales.updateSaleHeader(
-      existing.id,
-      draft,
-      version,
-      generateUuidV4(),
+    final record = await _withKey(
+      'kepala|${existing.id}|$version|${jsonEncode(draft.toJson(version))}',
+      (key) => _sales.updateSaleHeader(existing.id, draft, version, key),
     );
     final item = _toItem(record);
     if (mounted) _merge(oldItem: existing, newItem: item);
