@@ -22,7 +22,7 @@ import 'package:hidrosense_mobile/viewmodels/damage_viewmodel.dart'
 void main() {
   final qaDarkTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
+    colorScheme: ColorScheme.fromSeed(  
       seedColor: const Color(0xff14675f),
       brightness: Brightness.dark,
     ),
