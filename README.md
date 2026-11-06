@@ -8,3 +8,16 @@ Sistem Manajemen Budidaya Selada Hidroponik NFT dengan Deteksi Hama dan Rekomend
 2. Ikuti [panduan mobile](apps/mobile/README.md) untuk menjalankan aplikasi Flutter dan menghubungkannya ke backend.
 
 Untuk menyiapkan akun petani pertama tanpa data uji, lihat [setup akun backend](apps/backend/README.md#akun-petani-pertama).
+
+## Cara memeriksa
+
+Jalankan dari folder utama (butuh Node 22.13 atau lebih baru, dan Flutter untuk pemeriksaan mobile):
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run setup` | Memasang dependensi backend |
+| `npm run check:backend` | Tipe, lint, batas baris, dan tes backend (database `:memory:`) |
+| `npm run check:mobile` | Analisis dan tes aplikasi Flutter |
+| `npm run check` | Keduanya berurutan |
+
+Pemeriksaan ini tidak menyentuh database pengembangan maupun Turso.

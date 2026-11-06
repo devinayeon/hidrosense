@@ -1,0 +1,14 @@
+{
+  "name": "hidrosense",
+  "private": true,
+  "description": "Monorepo HidroSense: apps/backend (API Node) dan apps/mobile (Flutter). Tidak ada dependensi di tingkat ini; tiap aplikasi punya lock file sendiri.",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "setup": "npm --prefix apps/backend ci",
+    "check:backend": "npm --prefix apps/backend run check",
+    "check:mobile": "cd apps/mobile && flutter analyze && flutter test --concurrency=1",
+    "check": "npm run check:backend && npm run check:mobile"
+  }
+}
