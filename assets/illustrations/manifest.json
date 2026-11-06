@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-08",
+  "generator": "built-in image_gen",
+  "masterRoot": "assets/illustrations",
+  "flutterRoot": "apps/mobile",
+  "styleReferences": [
+    "assets/logo/hidrosense-miaw.png",
+    "assets/side-ultility/Modern Hydroponic Greenhouse Row.png"
+  ],
+  "assets": [
+    {
+      "id": "category-seeds",
+      "group": "inventory",
+      "purpose": "Benih category fallback",
+      "master": "assets/illustrations/inventory/category-seeds.png",
+      "flutterAsset": "assets/illustrations/inventory/category-seeds.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "item-romaine-seeds",
+      "group": "inventory",
+      "purpose": "Benih Selada Romaine",
+      "master": "assets/illustrations/inventory/item-romaine-seeds.png",
+      "flutterAsset": "assets/illustrations/inventory/item-romaine-seeds.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "item-butterhead-seeds",
+      "group": "inventory",
+      "purpose": "Benih Selada Butterhead",
+      "master": "assets/illustrations/inventory/item-butterhead-seeds.png",
+      "flutterAsset": "assets/illustrations/inventory/item-butterhead-seeds.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "item-abmix-nutrients",
+      "group": "inventory",
+      "purpose": "Nutrisi category and Nutrisi AB Mix Sayuran Daun",
+      "master": "assets/illustrations/inventory/item-abmix-nutrients.png",
+      "flutterAsset": "assets/illustrations/inventory/item-abmix-nutrients.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "item-plant-care",
+      "group": "inventory",
+      "purpose": "Obat & Pestisida category and Insektisida Abamectin",
+      "master": "assets/illustrations/inventory/item-plant-care.png",
+      "flutterAsset": "assets/illustrations/inventory/item-plant-care.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "item-rockwool",
+      "group": "inventory",
+      "purpose": "Perlengkapan category and Rockwool Semai Standar",
+      "master": "assets/illustrations/inventory/item-rockwool.png",
+      "flutterAsset": "assets/illustrations/inventory/item-rockwool.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "inventory-stock",
+      "group": "features",
+      "purpose": "Inventaris and stock overview",
+      "master": "assets/illustrations/features/inventory-stock.png",
+      "flutterAsset": "assets/illustrations/features/inventory-stock.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "nursery-seedlings",
+      "group": "features",
+      "purpose": "Semaian and sowing",
+      "master": "assets/illustrations/features/nursery-seedlings.png",
+      "flutterAsset": "assets/illustrations/features/nursery-seedlings.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "nft-growing-table",
+      "group": "features",
+      "purpose": "Meja Tanam NFT and seedling transfer",
+      "master": "assets/illustrations/features/nft-growing-table.png",
+      "flutterAsset": "assets/illustrations/features/nft-growing-table.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "harvest-lettuce",
+      "group": "features",
+      "purpose": "Panen and harvest reports",
+      "master": "assets/illustrations/features/harvest-lettuce.png",
+      "flutterAsset": "assets/illustrations/features/harvest-lettuce.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "sales-produce",
+      "group": "features",
+      "purpose": "Penjualan and sales recording",
+      "master": "assets/illustrations/features/sales-produce.png",
+      "flutterAsset": "assets/illustrations/features/sales-produce.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "weather-greenhouse",
+      "group": "features",
+      "purpose": "Cuaca and weather recommendations",
+      "master": "assets/illustrations/features/weather-greenhouse.png",
+      "flutterAsset": "assets/illustrations/features/weather-greenhouse.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "mascot-avatar",
+      "group": "avatars",
+      "purpose": "Generic optional profile avatar",
+      "master": "assets/illustrations/avatars/mascot-avatar.png",
+      "flutterAsset": "assets/illustrations/avatars/mascot-avatar.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "empty-inventory",
+      "group": "states",
+      "purpose": "Empty inventory (add first item)",
+      "master": "assets/illustrations/states/empty-inventory.png",
+      "flutterAsset": "assets/illustrations/states/empty-inventory.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "empty-nursery",
+      "group": "states",
+      "purpose": "Empty nursery (start first sowing)",
+      "master": "assets/illustrations/states/empty-nursery.png",
+      "flutterAsset": "assets/illustrations/states/empty-nursery.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    },
+    {
+      "id": "no-search-results",
+      "group": "states",
+      "purpose": "No search or filter matches",
+      "master": "assets/illustrations/states/no-search-results.png",
+      "flutterAsset": "assets/illustrations/states/no-search-results.png",
+      "masterPixels": 1254,
+      "flutterPixels": 512,
+      "transparent": true
+    }
+  ],
+  "categoryFallbacks": {
+    "Benih": "assets/illustrations/inventory/category-seeds.png",
+    "Nutrisi": "assets/illustrations/inventory/item-abmix-nutrients.png",
+    "Obat & Pestisida": "assets/illustrations/inventory/item-plant-care.png",
+    "Perlengkapan": "assets/illustrations/inventory/item-rockwool.png"
+  },
+  "itemOverrides": {
+    "Benih Selada Romaine": "assets/illustrations/inventory/item-romaine-seeds.png",
+    "Benih Selada Butterhead": "assets/illustrations/inventory/item-butterhead-seeds.png",
+    "Nutrisi AB Mix Sayuran Daun": "assets/illustrations/inventory/item-abmix-nutrients.png",
+    "Insektisida Abamectin": "assets/illustrations/inventory/item-plant-care.png",
+    "Rockwool Semai Standar": "assets/illustrations/inventory/item-rockwool.png"
+  },
+  "unknownCategoryFallback": "assets/illustrations/features/inventory-stock.png",
+  "resolutionOrder": [
+    "Exact inventory item name override",
+    "Inventory category fallback",
+    "Unknown category fallback"
+  ],
+  "modules": {
+    "Inventaris": "assets/illustrations/features/inventory-stock.png",
+    "Semaian": "assets/illustrations/features/nursery-seedlings.png",
+    "Meja Tanam NFT": "assets/illustrations/features/nft-growing-table.png",
+    "Panen": "assets/illustrations/features/harvest-lettuce.png",
+    "Penjualan": "assets/illustrations/features/sales-produce.png",
+    "Cuaca": "assets/illustrations/features/weather-greenhouse.png"
+  },
+  "states": {
+    "emptyInventory": "assets/illustrations/states/empty-inventory.png",
+    "emptyNursery": "assets/illustrations/states/empty-nursery.png",
+    "noSearchResults": "assets/illustrations/states/no-search-results.png"
+  },
+  "avatar": "assets/illustrations/avatars/mascot-avatar.png",
+  "notes": [
+    "Artwork is contextual illustration, not a manufacturer product photograph.",
+    "The mascot is an optional generic avatar; retain uploaded user photos.",
+    "Stock status, dosage, price and weather values belong in live UI text."
+  ]
+}
