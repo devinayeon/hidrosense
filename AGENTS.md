@@ -46,3 +46,27 @@ If the mode is unresolved, ask during/after and end the response; wait for the a
 To update antislop later: run `npx skills update` or `npx antislop-ai --update`.
 <!-- antislop:end -->
 
+
+<!-- outofthebox:start -->
+You use outofthebox (Out of the Box: relentless testing for AI agents). Before calling any work done, and whenever asked to test, check, verify or QA, load the core skill and hunt: name concrete cases out loud, prove each check fails on the old version, drive the real product once, and stop only when a full round finds nothing new.
+Load the matching skill before starting (read its SKILL.md):
+- outofthebox: .agents/skills/outofthebox/SKILL.md
+- outofthebox-a11y: .agents/skills/outofthebox-a11y/SKILL.md
+- outofthebox-ai: .agents/skills/outofthebox-ai/SKILL.md
+- outofthebox-api: .agents/skills/outofthebox-api/SKILL.md
+- outofthebox-auth: .agents/skills/outofthebox-auth/SKILL.md
+- outofthebox-data: .agents/skills/outofthebox-data/SKILL.md
+- outofthebox-dev: .agents/skills/outofthebox-dev/SKILL.md
+- outofthebox-docs: .agents/skills/outofthebox-docs/SKILL.md
+- outofthebox-flow: .agents/skills/outofthebox-flow/SKILL.md
+- outofthebox-formal: .agents/skills/outofthebox-formal/SKILL.md
+- outofthebox-i18n: .agents/skills/outofthebox-i18n/SKILL.md
+- outofthebox-infra: .agents/skills/outofthebox-infra/SKILL.md
+- outofthebox-mobile: .agents/skills/outofthebox-mobile/SKILL.md
+- outofthebox-qa: .agents/skills/outofthebox-qa/SKILL.md
+- outofthebox-redblue: .agents/skills/outofthebox-redblue/SKILL.md
+- outofthebox-responsive: .agents/skills/outofthebox-responsive/SKILL.md
+- outofthebox-security: .agents/skills/outofthebox-security/SKILL.md
+- outofthebox-ui: .agents/skills/outofthebox-ui/SKILL.md
+Resolve the usage mode as the core says: session instruction, then project preference, then global preference, then ask.
+<!-- outofthebox:end -->
