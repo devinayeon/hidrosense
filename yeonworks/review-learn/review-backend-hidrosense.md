@@ -3,7 +3,7 @@
 Tanggal review: 2026-11-04
 Lokasi kode: `apps/backend`
 Cakupan: arsitektur, stack, keamanan auth, konsistensi data, kualitas kode, dan pengujian.
-> Koreksi: review ini hanya mencakup `main` lokal. `origin/main` berisi 24 commit lain, termasuk `features/sales`. Lihat [scope vs kode](review-and-rework/scope-vs-kode-2026-11-04.md).
+> Koreksi: review ini hanya mencakup `main` lokal. `origin/main` berisi 24 commit lain, termasuk `features/sales`. Lihat [scope vs kode](../review-and-rework/scope-vs-kode-2026-11-04.md).
 
 Metode: membaca kode sumber inti (`app.ts`, `config.ts`, `common/*`, `db/client.js`, `features/auth/*`, `features/transfers/*`, `features/stock/store.ts`, migrasi 0002) dan menjalankan `npm run check`.
 
