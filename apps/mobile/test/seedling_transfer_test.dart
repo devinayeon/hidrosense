@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/data/models/nursery_record.dart';
 import 'package:hidrosense_mobile/data/repositories/nursery_repository.dart';
 import 'package:hidrosense_mobile/data/services/api_client.dart';
-import 'package:hidrosense_mobile/models/seeding_batch_model.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
@@ -311,7 +310,7 @@ void main() {
       );
       expect(
         find.text(
-          'Estimasi panen (45 HSS): ${DateFormat('yyyy-MM-dd').format(DateTime.parse(readySowing.sowingDate).add(const Duration(days: 45)))}',
+          'Estimasi panen (45 hari setelah pindah): ${DateFormat('yyyy-MM-dd').format(today.add(const Duration(days: 45)))}',
         ),
         findsOneWidget,
       );
@@ -321,7 +320,7 @@ void main() {
   );
 
   testWidgets(
-    'date picker changes transfer date while harvest estimate stays sowing plus45 days',
+    'date picker changes transfer date while harvest estimate follows transfer date plus 45 days',
     (tester) async {
       String? sentDate;
       final api = apiFor((request) async {
@@ -351,7 +350,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Estimasi panen (45 HSS): ${DateFormat('yyyy-MM-dd').format(DateTime.parse(readySowing.sowingDate).add(const Duration(days: 45)))}',
+          'Estimasi panen (45 hari setelah pindah): ${DateFormat('yyyy-MM-dd').format(nextDay.add(const Duration(days: 45)))}',
         ),
         findsOneWidget,
       );
@@ -751,24 +750,5 @@ void main() {
       );
       await tester.pumpWidget(const SizedBox.shrink());
     }
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: InfoSeedingPage(
-            seedingItem: SeedingBatch(
-              id: 'legacy',
-              batchName: 'Batch #1',
-              variety: 'Selada',
-              dateText: '2026-09-01',
-              seedCount: 100,
-              hss: 20,
-              statusLabel: 'Siap pindah',
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Pindahkan ke Meja'), findsNothing);
   });
 }

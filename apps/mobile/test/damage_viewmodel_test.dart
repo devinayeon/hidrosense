@@ -62,6 +62,30 @@ void main() {
     },
   );
 
+  // 401, 403, dan 429 ditolak sebelum kunci diperiksa, jadi tidak menjawab
+  // apakah kiriman pertama yang hilang itu sudah tersimpan.
+  for (final status in [401, 403, 429]) {
+    test('respons hilang lalu $status: isian tetap terkunci', () async {
+      repo.onCreate = (_, _) async {
+        if (repo.keys.length == 1) throw TimeoutException('lost');
+        throw ApiException(status, 'X', 'Ditolak');
+      };
+      await vm.refresh();
+      expect(await vm.submit(draft), DamageSubmitResult.failed);
+      expect(await vm.submit(draft), DamageSubmitResult.failed);
+      expect(repo.keys, hasLength(2));
+      expect(vm.payloadLocked, isTrue);
+    });
+
+    test('kiriman pertama langsung $status: tidak terkunci', () async {
+      repo.onCreate = (_, _) async =>
+          throw ApiException(status, 'X', 'Ditolak');
+      await vm.refresh();
+      expect(await vm.submit(draft), DamageSubmitResult.failed);
+      expect(vm.payloadLocked, isFalse);
+    });
+  }
+
   test('concurrent submission creates only one report', () async {
     final pending = Completer<DamageRecord>();
     repo.onCreate = (_, _) => pending.future;

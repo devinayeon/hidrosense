@@ -4,7 +4,6 @@ import '../../viewmodels/connected_table_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../pages/detail_tanaman_meja_page.dart';
 import '../../data/models/table_record.dart';
-import '../../models/meja_nft_model.dart';
 import '../pages/form_meja_nft_page.dart';
 import '../theme/app_theme.dart';
 import '../widgets/row_info_card_md.dart';
@@ -12,11 +11,9 @@ import '../widgets/row_button.dart';
 import '../widgets/fluid_capacity_meter.dart';
 
 class InfoMejaBody extends ConsumerWidget {
-  final TableRecord? tableRecord;
-  final MejaNft? mejaItem;
+  final TableRecord tableRecord;
 
-  const InfoMejaBody({super.key, this.tableRecord, this.mejaItem})
-    : assert(tableRecord != null || mejaItem != null);
+  const InfoMejaBody({super.key, required this.tableRecord});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,23 +22,14 @@ class InfoMejaBody extends ConsumerWidget {
     if (!permissions.contains('budidaya:read')) {
       return const Center(child: Text('Akses meja tanam tidak diizinkan.'));
     }
-    final records = this.tableRecord == null
-        ? const <TableRecord>[]
-        : ref.watch(connectedTableProvider).records;
-    final current = records.where((r) => r.id == this.tableRecord?.id);
+    final records = ref.watch(connectedTableProvider).records;
+    final current = records.where((r) => r.id == this.tableRecord.id);
     final tableRecord = current.isEmpty ? this.tableRecord : current.first;
-    final title = tableRecord?.displayName ?? mejaItem!.name;
-    final totalCapacity = tableRecord?.holeCount ?? mejaItem!.capacityTotal;
-    final activePlants = tableRecord?.activePlants ?? mejaItem!.capacityUsed;
-    final isMaintenance =
-        tableRecord?.isMaintenance ??
-        (mejaItem!.status == MejaStatus.perawatan);
-    final statusLabel =
-        tableRecord?.statusLabel ?? (isMaintenance ? 'Perawatan' : 'Aktif');
-    final notes =
-        tableRecord?.notes ??
-        mejaItem?.notes ??
-        'Tidak ada catatan spesifikasi khusus.';
+    final title = tableRecord.displayName;
+    final totalCapacity = tableRecord.holeCount;
+    final activePlants = tableRecord.activePlants;
+    final statusLabel = tableRecord.statusLabel;
+    final notes = tableRecord.notes ?? 'Tidak ada catatan spesifikasi khusus.';
 
     return Container(
       width: double.infinity,
@@ -101,8 +89,7 @@ class InfoMejaBody extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            if (tableRecord != null &&
-                permissions.contains('budidaya:read')) ...[
+            if (permissions.contains('budidaya:read')) ...[
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
@@ -127,10 +114,8 @@ class InfoMejaBody extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => FormMejaNftPage(
-                        tableRecord: tableRecord,
-                        mejaItem: mejaItem,
-                      ),
+                      builder: (context) =>
+                          FormMejaNftPage(tableRecord: tableRecord),
                     ),
                   );
                 },

@@ -27,7 +27,6 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
   void _openAddSheet() {
     final notifier = ref.read(employeeViewModelProvider.notifier);
     notifier.clearSaveError();
-    notifier.startOnboarding();
     EmployeeFormSheet.show(
       context,
       onSubmit:
@@ -38,8 +37,6 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
             String? email,
             String? noTelepon,
             String? alamat,
-            required Duration duration,
-            int retryCount = 0,
           }) {
             return ref
                 .read(employeeViewModelProvider.notifier)
@@ -50,8 +47,6 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
                   email: email,
                   noTelepon: noTelepon,
                   alamat: alamat,
-                  duration: duration,
-                  retryCount: retryCount,
                 );
           },
     );
@@ -70,8 +65,6 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
             String? email,
             String? noTelepon,
             String? alamat,
-            required Duration duration,
-            int retryCount = 0,
           }) {
             return ref
                 .read(employeeViewModelProvider.notifier)
@@ -97,8 +90,6 @@ class _EmployeeListPageState extends ConsumerState<EmployeeListPage> {
       );
       if (confirmed) {
         await notifier.deactivateEmployee(employee.id, employee.nama);
-      } else {
-        notifier.cancelDeactivation(employee.id);
       }
     } else {
       final confirmed = await EmployeeDialogs.confirmActivation(

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/business_date.dart';
+import '../../core/growth_rules.dart';
 import '../../core/uuid.dart';
 import '../../data/models/nursery_record.dart';
 import '../../data/models/table_record.dart';
@@ -62,7 +63,9 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
     final sowingDate = DateTime.tryParse(widget.sowingRecord.sowingDate);
     return sowingDate == null
         ? null
-        : DateUtils.dateOnly(sowingDate).add(const Duration(days: 15));
+        : DateUtils.dateOnly(
+            sowingDate,
+          ).add(const Duration(days: minTransferAgeDays));
   }
 
   @override
@@ -227,7 +230,9 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
           _date.isBefore(firstDate) ||
           _date.isAfter(_today)) {
         setState(() {
-          _error = 'Pilih tanggal setelah 15 hari semai hingga hari ini.';
+          _error =
+              'Pilih tanggal setelah $minTransferAgeDays hari semai '
+              'hingga hari ini.';
         });
         return;
       }
@@ -453,7 +458,7 @@ class _SeedlingTransferSheetState extends ConsumerState<SeedlingTransferSheet> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Estimasi panen (45 HSS): ${_formatDate(DateTime.parse(widget.sowingRecord.sowingDate).add(const Duration(days: 45)))}',
+                    'Estimasi panen ($growthDaysOnTable hari setelah pindah): ${_formatDate(_date.add(const Duration(days: growthDaysOnTable)))}',
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

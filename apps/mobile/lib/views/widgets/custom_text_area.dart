@@ -7,6 +7,7 @@ class CustomTextArea extends StatelessWidget {
   final TextEditingController controller;
   final int maxLines;
   final String? errorText;
+  final bool readOnly;
 
   const CustomTextArea({
     super.key,
@@ -15,6 +16,7 @@ class CustomTextArea extends StatelessWidget {
     required this.controller,
     this.maxLines = 3,
     this.errorText,
+    this.readOnly = false,
   });
 
   @override
@@ -33,6 +35,7 @@ class CustomTextArea extends StatelessWidget {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
+          readOnly: readOnly,
           style: AppTypography.body.copyWith(
             fontWeight: FontWeight.w500,
             color: AppColors.textPrimary,

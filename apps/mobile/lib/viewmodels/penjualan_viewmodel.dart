@@ -2,17 +2,20 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/business_date.dart';
-import '../core/formatting.dart';
-import '../core/uuid.dart';
 import '../data/models/harvest_record.dart';
 import '../data/models/sale_record.dart';
 import '../data/repositories/harvest_repository.dart';
 import '../data/repositories/sales_repository.dart';
 import '../data/services/api_client.dart';
+import '../data/services/write_outcome.dart';
 import '../models/penjualan_model.dart';
 import 'panen_viewmodel.dart';
+import 'penjualan_mappers.dart';
+import 'sale_command.dart';
 import 'session_viewmodel.dart';
+
+// Provider daftar dan total ada di berkas sendiri; diekspor agar pemakai lama tetap jalan.
+export 'penjualan_list_providers.dart';
 
 enum PenjualanFilterCategory { all, lunas, belumLunas }
 
@@ -35,13 +38,22 @@ class PenjualanState {
 }
 
 class PenjualanViewModel extends StateNotifier<PenjualanState> {
-  PenjualanViewModel(this._sales, this._harvests, {bool autoLoad = true})
-    : super(const PenjualanState()) {
+  PenjualanViewModel(
+    this._sales,
+    this._harvests, {
+    bool autoLoad = true,
+    String userId = '',
+    Map<SaleCommandScope, SaleCommand>? commands,
+  }) : _commands = commands ?? {},
+       _scope = (_sales.serverOrigin, userId),
+       super(const PenjualanState()) {
     if (autoLoad) refresh();
   }
 
   final SalesRepository _sales;
   final HarvestRepository _harvests;
+  final Map<SaleCommandScope, SaleCommand> _commands;
+  final SaleCommandScope _scope;
   Future<void>? _refreshTask;
   int _generation = 0;
 
@@ -85,13 +97,13 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
       final records = salesResult;
       if (harvestResult is List<HarvestRecord>) {
         state = PenjualanState(
-          items: List.unmodifiable(records.map(_toItem)),
-          batches: _toBatches(harvestResult, records),
+          items: List.unmodifiable(records.map(toPenjualanItem)),
+          batches: toBatches(harvestResult, records),
           salesLoaded: true,
         );
       } else {
         state = PenjualanState(
-          items: List.unmodifiable(records.map(_toItem)),
+          items: List.unmodifiable(records.map(toPenjualanItem)),
           batches: state.batches,
           salesLoaded: true,
           error: serviceError(harvestResult),
@@ -110,42 +122,73 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
     }
   }
 
-  // Kunci per perintah yang hasilnya belum pasti. Tanpa ini, percobaan ulang
-  // setelah respons hilang memakai kunci baru dan server mencatat dua penjualan.
-  final _pendingKeys = <String, String>{};
+  /// Tulis yang sedang berjalan atau hasilnya belum pasti, milik pengguna ini.
+  SaleCommand? get pendingCommand => _commands[_scope];
 
-  /// Menjalankan [send] dengan kunci yang sama untuk isian yang sama.
-  /// Kunci dibuang bila berhasil atau ditolak jelas oleh server; dipertahankan
-  /// bila jaringan putus atau server error (5xx), karena hasilnya tidak pasti.
-  Future<T> _withKey<T>(
-    String signature,
-    Future<T> Function(String key) send,
-  ) async {
-    final key = _pendingKeys.putIfAbsent(signature, generateUuidV4);
+  /// Tulis yang gagal tanpa jawaban pasti. Hanya ini yang mengunci formulir;
+  /// kiriman yang masih berjalan belum tentu bermasalah.
+  SaleCommand? get uncertainCommand {
+    final pending = pendingCommand;
+    return pending?.uncertain == true ? pending : null;
+  }
+
+  /// Mengirim [fresh], atau perintah tertunda bila isinya sama. Selama ada
+  /// perintah tertunda, isian lain ditolak: yang pertama mungkin sudah tersimpan.
+  Future<SaleRecord> _run(SaleCommand fresh) async {
+    final pending = _commands[_scope];
+    if (pending != null &&
+        (pending.target != fresh.target || pending.payload != fresh.payload)) {
+      throw saleBlockedError(pending);
+    }
+    final command = pending ?? fresh;
+    final wasUncertain = command.uncertain;
+    _commands[_scope] = command;
     try {
-      final result = await send(key);
-      _pendingKeys.remove(signature);
-      return result;
+      final record = await command.write(_sales, command.key);
+      _commands.remove(_scope);
+      return record;
     } catch (error) {
-      final uncertain =
-          error is! ApiException ||
-          error.status == 0 ||
-          error.status >= 500 ||
-          error.code == 'SESSION_CHANGED';
-      if (!uncertain) _pendingKeys.remove(signature);
+      command.uncertain = writeStaysUncertain(
+        error,
+        wasUncertain: wasUncertain,
+      );
+      if (!command.uncertain) _commands.remove(_scope);
       rethrow;
     }
   }
 
-  Future<PenjualanItem> createSale(SalesDraft draft) async {
-    final record = await _withKey(
-      'buat|${jsonEncode(draft.toJson())}',
-      (key) => _sales.createSale(draft, key),
-    );
-    final item = _toItem(record);
-    if (mounted) _merge(oldItem: null, newItem: item);
+  /// Melepas isian yang terkunci atas keputusan pengguna, setelah diperingatkan.
+  /// Kiriman ulang bisa terus gagal, dan pengguna tidak boleh terkunci selamanya.
+  /// Kiriman yang masih berjalan tidak bisa dibuang.
+  void discardPending() {
+    if (uncertainCommand != null) _commands.remove(_scope);
+  }
+
+  Future<PenjualanItem> _finish(SaleRecord record, PenjualanItem? old) async {
+    final item = toPenjualanItem(record);
+    if (mounted) _merge(oldItem: old, newItem: item);
     await refresh(force: true);
     return item;
+  }
+
+  /// Mengirim ulang isi yang sama persis. Server mengenali kuncinya, jadi bila
+  /// kiriman pertama sudah tersimpan, tidak ada penjualan kedua.
+  Future<PenjualanItem> retryPending() async {
+    final command = pendingCommand;
+    if (command == null) throw StateError('Tidak ada penjualan tertunda.');
+    return _finish(await _run(command), command.oldItem);
+  }
+
+  Future<PenjualanItem> createSale(SalesDraft draft) async {
+    final record = await _run(
+      SaleCommand(
+        target: saleCreateTarget,
+        payload: jsonEncode(draft.toJson()),
+        draft: draft,
+        write: (sales, key) => sales.createSale(draft, key),
+      ),
+    );
+    return _finish(record, null);
   }
 
   Future<PenjualanItem> updateSale(
@@ -158,14 +201,19 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         'Rincian transaksi ini belum dapat diedit dari aplikasi.',
       );
     }
-    final record = await _withKey(
-      'ubah|${existing.id}|$version|${jsonEncode(draft.toJson())}',
-      (key) => _sales.updateSale(existing.id, draft, version, key),
+    // Versi tidak ikut payload: kiriman pertama yang tersimpan menaikkan versi,
+    // dan pengiriman ulang tetap harus memakai versi lama agar tiketnya cocok.
+    final record = await _run(
+      SaleCommand(
+        target: existing.id,
+        payload: jsonEncode(draft.toJson()),
+        draft: draft,
+        oldItem: existing,
+        write: (sales, key) =>
+            sales.updateSale(existing.id, draft, version, key),
+      ),
     );
-    final item = _toItem(record);
-    if (mounted) _merge(oldItem: existing, newItem: item);
-    await refresh(force: true);
-    return item;
+    return _finish(record, existing);
   }
 
   Future<PenjualanItem> updateSaleHeader(
@@ -178,14 +226,17 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         'Transaksi ini belum dapat diedit dari aplikasi.',
       );
     }
-    final record = await _withKey(
-      'kepala|${existing.id}|$version|${jsonEncode(draft.toJson(version))}',
-      (key) => _sales.updateSaleHeader(existing.id, draft, version, key),
+    final record = await _run(
+      SaleCommand(
+        target: existing.id,
+        payload: jsonEncode(draft.toJson('')),
+        headerDraft: draft,
+        oldItem: existing,
+        write: (sales, key) =>
+            sales.updateSaleHeader(existing.id, draft, version, key),
+      ),
     );
-    final item = _toItem(record);
-    if (mounted) _merge(oldItem: existing, newItem: item);
-    await refresh(force: true);
-    return item;
+    return _finish(record, existing);
   }
 
   void _merge({PenjualanItem? oldItem, required PenjualanItem newItem}) {
@@ -193,118 +244,13 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
       for (final item in state.items) item.id: item,
       newItem.id: newItem,
     };
-    final items = byId.values.toList()..sort(_compareItems);
+    final items = byId.values.toList()..sort(comparePenjualanItems);
     state = PenjualanState(
       items: List.unmodifiable(items),
-      batches: _adjustBatches(state.batches, oldItem, newItem),
+      batches: adjustBatches(state.batches, oldItem, newItem),
       salesLoaded: true,
     );
   }
-
-  List<BatchPanen> _adjustBatches(
-    List<BatchPanen> batches,
-    PenjualanItem? oldItem,
-    PenjualanItem newItem,
-  ) {
-    final deltas = <String, double>{};
-    for (final detail in oldItem?.details ?? const <PenjualanLine>[]) {
-      deltas[detail.idPanen] = (deltas[detail.idPanen] ?? 0) + detail.jumlahKg;
-    }
-    for (final detail in newItem.details) {
-      deltas[detail.idPanen] = (deltas[detail.idPanen] ?? 0) - detail.jumlahKg;
-    }
-    return List.unmodifiable(
-      batches.map((batch) {
-        final delta = deltas[batch.id];
-        if (delta == null) return batch;
-        final stock = _roundKg(batch.stokTersedia + delta);
-        return batch.copyWith(stokTersedia: stock < 0 ? 0 : stock);
-      }),
-    );
-  }
-
-  List<BatchPanen> _toBatches(
-    List<HarvestRecord> harvests,
-    List<SaleRecord> records,
-  ) {
-    final sold = <String, BigInt>{};
-    for (final record in records) {
-      for (final detail in record.details) {
-        sold[detail.harvestId] =
-            (sold[detail.harvestId] ?? BigInt.zero) + detail.quantity.minor;
-      }
-    }
-    return List.unmodifiable(
-      harvests.map((harvest) {
-        final remaining =
-            harvest.saleable.minor - (sold[harvest.id] ?? BigInt.zero);
-        final stock = remaining > BigInt.zero ? remaining : BigInt.zero;
-        final date = DateTime.parse(harvest.date);
-        return BatchPanen(
-          id: harvest.id,
-          nama:
-              'Panen #${harvest.id} · '
-              '${formatTanggalIndo(date, singkat: true)}',
-          stokTersedia: _minorToDouble(stock),
-          tanggalPanen: harvest.date,
-        );
-      }),
-    );
-  }
-
-  PenjualanItem _toItem(SaleRecord record) {
-    final lines = List<PenjualanLine>.unmodifiable(
-      record.details.map(
-        (detail) => PenjualanLine(
-          idPanen: detail.harvestId,
-          tanggalPanen: detail.harvestDate,
-          jumlahKg: _minorToDouble(detail.quantity.minor),
-          hargaPerKg: detail.price,
-          hargaPerKgWire: detail.priceWire,
-          totalHarga: detail.total,
-          beratLayak: detail.saleable == null
-              ? null
-              : _minorToDouble(detail.saleable!.minor),
-        ),
-      ),
-    );
-    final quantity = lines.fold(0.0, (sum, line) => sum + line.jumlahKg);
-    final date = DateTime.parse(record.date);
-    return PenjualanItem(
-      id: record.id,
-      pembeli: record.buyer,
-      tanggal: formatTanggalIndo(date, singkat: true),
-      tanggalIso: record.date,
-      kuantitas: '${formatAngka(quantity)} Kg',
-      totalHarga: lines.fold(0.0, (sum, line) => sum + line.totalHarga),
-      status: record.status == 'lunas'
-          ? StatusPenjualan.lunas
-          : StatusPenjualan.belumLunas,
-      catatan: record.note,
-      batchPanenId: lines.length == 1 ? lines.first.idPanen : null,
-      version: record.version,
-      details: lines,
-    );
-  }
-
-  int _compareItems(PenjualanItem a, PenjualanItem b) {
-    final aDate = a.tanggalIso, bDate = b.tanggalIso;
-    if (aDate != null && bDate != null) {
-      final byDate = bDate.compareTo(aDate);
-      if (byDate != 0) return byDate;
-    } else if (aDate != null) {
-      return -1;
-    } else if (bDate != null) {
-      return 1;
-    }
-    final aId = BigInt.tryParse(a.id) ?? BigInt.zero;
-    final bId = BigInt.tryParse(b.id) ?? BigInt.zero;
-    return bId.compareTo(aId);
-  }
-
-  double _minorToDouble(BigInt minor) => minor.toDouble() / 100;
-
-  double _roundKg(double weight) => double.parse(weight.toStringAsFixed(2));
 }
 
 final penjualanClockProvider = Provider<DateTime Function()>(
@@ -326,6 +272,8 @@ final penjualanViewModelProvider =
         ref.watch(salesRepositoryProvider),
         ref.watch(harvestRepositoryProvider),
         autoLoad: canRead,
+        userId: user?.id ?? '',
+        commands: ref.watch(saleCommandsProvider),
       );
     });
 
@@ -339,49 +287,3 @@ final availableBatchPanenProvider = Provider.autoDispose<List<BatchPanen>>(
     ref.watch(batchPanenListProvider).where((batch) => batch.stokTersedia > 0),
   ),
 );
-
-final penjualanSearchQueryProvider = StateProvider<String>((ref) => '');
-
-final penjualanFilterCategoryProvider = StateProvider<PenjualanFilterCategory>(
-  (ref) => PenjualanFilterCategory.all,
-);
-
-final filteredPenjualanListProvider = Provider.autoDispose<List<PenjualanItem>>(
-  (ref) {
-    final allList = ref.watch(
-      penjualanViewModelProvider.select((state) => state.items),
-    );
-    final query = ref.watch(penjualanSearchQueryProvider).toLowerCase();
-    final filter = ref.watch(penjualanFilterCategoryProvider);
-
-    return List.unmodifiable(
-      allList.where((item) {
-        final matchesSearch =
-            item.pembeli.toLowerCase().contains(query) ||
-            item.kuantitas.toLowerCase().contains(query);
-        final matchesFilter = switch (filter) {
-          PenjualanFilterCategory.lunas => item.isLunas,
-          PenjualanFilterCategory.belumLunas => !item.isLunas,
-          PenjualanFilterCategory.all => true,
-        };
-        return matchesSearch && matchesFilter;
-      }),
-    );
-  },
-);
-
-final totalPendapatanBulanIniProvider = Provider.autoDispose<double>((ref) {
-  final list = ref.watch(
-    penjualanViewModelProvider.select((state) => state.items),
-  );
-  final today = jakartaToday(ref.watch(penjualanClockProvider)());
-  return list
-      .where((item) {
-        if (!item.isLunas) return false;
-        final date = item.tanggalTransaksi;
-        return date != null &&
-            date.year == today.year &&
-            date.month == today.month;
-      })
-      .fold(0.0, (sum, item) => sum + item.totalHarga);
-});

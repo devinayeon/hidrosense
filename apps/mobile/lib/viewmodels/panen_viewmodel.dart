@@ -9,6 +9,7 @@ import '../data/models/harvest_record.dart';
 import '../data/models/transfer_record.dart';
 import '../data/repositories/harvest_repository.dart';
 import '../data/services/api_client.dart';
+import '../data/services/write_outcome.dart';
 import 'connected_table_viewmodel.dart';
 import 'damage_viewmodel.dart' show growthClockProvider;
 import 'session_viewmodel.dart';
@@ -372,6 +373,7 @@ class PanenViewModel extends StateNotifier<PanenState> {
       );
       _commands.pending[_scope] = command;
     }
+    final wasUncertain = command.uncertain;
     command.running = true;
     ++_generation;
     _set(submitting: true);
@@ -425,11 +427,7 @@ class PanenViewModel extends StateNotifier<PanenState> {
           ? HarvestSubmitResult.saved
           : HarvestSubmitResult.savedRefreshFailed;
     } catch (e) {
-      command.uncertain =
-          e is! ApiException ||
-          e.status == 0 ||
-          e.status >= 500 ||
-          e.code == 'SESSION_CHANGED';
+      command.uncertain = writeStaysUncertain(e, wasUncertain: wasUncertain);
       if (!command.uncertain) _commands.pending.remove(_scope);
       if (e is ApiException && e.status == 409) {
         await refresh();

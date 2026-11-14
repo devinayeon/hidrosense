@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hidrosense_mobile/data/models/nursery_record.dart';
+import 'package:hidrosense_mobile/data/services/api_client.dart';
+import 'package:hidrosense_mobile/viewmodels/connected_nursery_viewmodel.dart';
+import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/components/custom_bottom_navigation_bar.dart';
 import 'package:hidrosense_mobile/views/widgets/fluid_capacity_meter.dart';
 import 'package:hidrosense_mobile/views/pages/info_seeding_page.dart';
-import 'package:hidrosense_mobile/models/seeding_batch_model.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
+import 'package:http/testing.dart';
 
 void main() {
   group('AppColors HIG Palette Integrity', () {
@@ -141,19 +146,46 @@ void main() {
   testWidgets('seeding age progress animates over HIG duration', (
     tester,
   ) async {
-    final batch = SeedingBatch(
+    const record = SowingRecord(
       id: '1',
-      batchName: 'Batch 1',
-      variety: 'Selada',
-      dateText: '2026-10-01',
+      userId: '1',
+      sowingDate: '2026-10-01',
       seedCount: 100,
-      hss: 7,
-      totalHss: 15,
-      statusLabel: 'Aktif',
+      status: 'aktif',
+      ageDays: 7,
+      isReadyToMove: false,
     );
+    final api = ApiClient(
+      MockClient((_) async => throw StateError('Unexpected API request')),
+      baseUri: Uri.parse('https://example.test/api/v1'),
+    );
+    addTearDown(api.close);
     await tester.pumpWidget(
-      MaterialApp(home: InfoSeedingPage(seedingItem: batch)),
+      ProviderScope(
+        overrides: [
+          sessionProvider.overrideWith(
+            (ref) => SessionViewModel(
+              api,
+              initialState: const SessionState(
+                user: SessionUser(
+                  id: '1',
+                  name: 'Petani',
+                  username: 'petani',
+                  role: 'petani',
+                  permissions: ['penyemaian:read'],
+                ),
+              ),
+            ),
+          ),
+          sowingDetailProvider(
+            record.id,
+          ).overrideWith((ref) async => record),
+        ],
+        child: const MaterialApp(home: InfoSeedingPage(sowingRecord: record)),
+      ),
     );
+    // Satu pump untuk data detail tiba, baru animasi progres mulai berjalan.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 225));
     final progress = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),

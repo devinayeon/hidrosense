@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/growth_rules.dart';
 import '../../data/models/nursery_record.dart';
-import '../../models/seeding_batch_model.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../components/header.dart';
@@ -13,11 +13,9 @@ import '../widgets/seedling_transfer_sheet.dart';
 import 'seeding_form_page.dart';
 
 class InfoSeedingPage extends ConsumerStatefulWidget {
-  final SeedingBatch? seedingItem;
-  final SowingRecord? sowingRecord;
+  final SowingRecord sowingRecord;
 
-  const InfoSeedingPage({super.key, this.seedingItem, this.sowingRecord})
-    : assert(seedingItem != null || sowingRecord != null);
+  const InfoSeedingPage({super.key, required this.sowingRecord});
 
   @override
   ConsumerState<InfoSeedingPage> createState() => _InfoSeedingPageState();
@@ -29,66 +27,52 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
   @override
   Widget build(BuildContext context) {
     final original = widget.sowingRecord;
-    SowingRecord? sowingRecord;
-    var canWrite = false;
-    if (original != null) {
-      final user = ref.watch(sessionProvider).user;
-      if (user == null || !user.permissions.contains('penyemaian:read')) {
-        return const Scaffold(
-          body: SafeArea(
-            child: Center(child: Text('Anda tidak memiliki akses penyemaian.')),
-          ),
-        );
-      }
-      canWrite = user.permissions.contains('penyemaian:write');
-      final detail = ref.watch(sowingDetailProvider(original.id));
-      if (detail.isLoading) {
-        return const Scaffold(
-          appBar: Header(titleText: 'Detail Penyemaian', showBackButton: true),
-          body: Center(child: CircularProgressIndicator()),
-        );
-      }
-      if (detail.hasError) {
-        return Scaffold(
-          appBar: const Header(
-            titleText: 'Detail Penyemaian',
-            showBackButton: true,
-          ),
-          body: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(serviceError(detail.error!)),
-                TextButton(
-                  onPressed: () =>
-                      ref.invalidate(sowingDetailProvider(original.id)),
-                  child: const Text('Muat ulang penyemaian'),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      sowingRecord = detail.requireValue;
+    final user = ref.watch(sessionProvider).user;
+    if (user == null || !user.permissions.contains('penyemaian:read')) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(child: Text('Anda tidak memiliki akses penyemaian.')),
+        ),
+      );
     }
-    final seedingItem = widget.seedingItem;
-    final title = sowingRecord != null
-        ? sowingRecord.batchName
-        : 'Batch Penyemaian #${seedingItem!.batchNumber}';
-    final hssDays = sowingRecord != null
-        ? (sowingRecord.ageDays ?? 0)
-        : seedingItem!.hss;
-    final totalHss = sowingRecord == null ? seedingItem!.totalHss : 15;
+    final canWrite = user.permissions.contains('penyemaian:write');
+    final detail = ref.watch(sowingDetailProvider(original.id));
+    if (detail.isLoading) {
+      return const Scaffold(
+        appBar: Header(titleText: 'Detail Penyemaian', showBackButton: true),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (detail.hasError) {
+      return Scaffold(
+        appBar: const Header(
+          titleText: 'Detail Penyemaian',
+          showBackButton: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(serviceError(detail.error!)),
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(sowingDetailProvider(original.id)),
+                child: const Text('Muat ulang penyemaian'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final sowingRecord = detail.requireValue;
+    final title = sowingRecord.batchName;
+    final hssDays = sowingRecord.ageDays ?? 0;
+    const totalHss = minTransferAgeDays;
     final progress = (hssDays / totalHss).clamp(0.0, 1.0);
-    final count = sowingRecord != null
-        ? sowingRecord.remainingSeedCount
-        : seedingItem!.healthyCount;
-    final damagedCount = seedingItem?.damagedCount;
-    final materials = sowingRecord != null
-        ? sowingRecord.materials
-              .map((m) => '${m.inventoryId}: ${m.amount} ${m.unit}')
-              .toList()
-        : (seedingItem?.materials ?? const <String>[]);
+    final count = sowingRecord.remainingSeedCount;
+    final materials = sowingRecord.materials
+        .map((m) => '${m.inventoryId}: ${m.amount} ${m.unit}')
+        .toList();
 
     return Scaffold(
       appBar: Header(
@@ -121,18 +105,10 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxs),
-                      if (seedingItem != null)
-                        Text(
-                          'Varietas: ${seedingItem.variety}',
-                          style: AppTypography.subheadline.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
                     ],
                   ),
                 ),
-                if (canWrite && sowingRecord?.status == 'aktif')
+                if (canWrite && sowingRecord.status == 'aktif')
                   InkWell(
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     onTap: () {
@@ -273,40 +249,10 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                     ),
                   ),
                 ),
-                if (damagedCount != null) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: BaseColCard(
-                      backgroundColor: Colors.white,
-                      borderColor: AppColors.borderLight,
-                      borderRadius: AppRadius.modal,
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Bibit Rusak',
-                            style: AppTypography.caption1.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            '$damagedCount Bibit',
-                            style: AppTypography.title2.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
-            if (sowingRecord?.note case final String note) ...[
+            if (sowingRecord.note case final String note) ...[
               Text('Catatan Penyemaian', style: AppTypography.headline),
               Text(note, style: AppTypography.body),
               const SizedBox(height: AppSpacing.md),
@@ -373,7 +319,6 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                   ),
                 ),
                 if (canWrite &&
-                    sowingRecord != null &&
                     sowingRecord.status == 'aktif' &&
                     !sowingRecord.isReadyToMove) ...[
                   const SizedBox(width: AppSpacing.sm),
@@ -398,9 +343,9 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                   ),
                 ],
                 if (canWrite &&
-                    sowingRecord?.status == 'aktif' &&
-                    sowingRecord?.isReadyToMove == true &&
-                    (sowingRecord?.remainingSeedCount ?? 0) > 0 &&
+                    sowingRecord.status == 'aktif' &&
+                    sowingRecord.isReadyToMove &&
+                    sowingRecord.remainingSeedCount > 0 &&
                     !_transferred) ...[
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
@@ -419,7 +364,7 @@ class _InfoSeedingPageState extends ConsumerState<InfoSeedingPage> {
                           isDismissible: false,
                           enableDrag: false,
                           builder: (_) => SeedlingTransferSheet(
-                            sowingRecord: sowingRecord!,
+                            sowingRecord: sowingRecord,
                             onTransferred: () {
                               if (mounted) setState(() => _transferred = true);
                             },

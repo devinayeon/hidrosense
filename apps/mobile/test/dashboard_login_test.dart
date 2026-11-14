@@ -91,7 +91,7 @@ Future<void> pumpDashboard(WidgetTester tester, TestNursery nursery) =>
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
-          home: const Scaffold(body: DashboardBody()),
+          home: Scaffold(body: DashboardBody(onInventoryTap: () {})),
         ),
       ),
     );
@@ -180,7 +180,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
-            home: const Scaffold(body: DashboardBody()),
+            home: Scaffold(body: DashboardBody(onInventoryTap: () {})),
           ),
         ),
       );
@@ -205,7 +205,7 @@ void main() {
         tester
             .widget<InfoSeedingPage>(find.byType(InfoSeedingPage))
             .sowingRecord
-            ?.id,
+            .id,
         'ready-from-api',
       );
       await tester.pumpWidget(const SizedBox.shrink());
@@ -306,7 +306,7 @@ void main() {
                 ).copyWith(textScaler: TextScaler.linear(scenario.scale)),
                 child: child!,
               ),
-              home: const Scaffold(body: DashboardBody()),
+              home: Scaffold(body: DashboardBody(onInventoryTap: () {})),
             ),
           ),
         );

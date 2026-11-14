@@ -85,6 +85,82 @@ void main() {
     await vm.updateTable('1', code: 'M-01');
     expect(vm.state.records.single.activePlants, 5);
   });
+  for (final status in [401, 403, 429]) {
+    test('meja: respons hilang lalu $status: isian tetap terkunci', () async {
+      var writes = 0;
+      final api = apiFor((r) async {
+        if (r.url.path.endsWith('/auth/refresh')) {
+          return reply({
+            'error': {'code': 'UNAUTHENTICATED', 'message': 'Sesi berakhir'},
+          }, status: 401);
+        }
+        if (r.method == 'PATCH') {
+          writes++;
+          if (writes == 1) throw TimeoutException('lost');
+          return reply({
+            'error': {'code': 'X', 'message': 'Ditolak'},
+          }, status: status);
+        }
+        return reply({
+          'data': [],
+          'meta': {'page': 1, 'limit': 50, 'total': 0, 'total_pages': 0},
+        });
+      });
+      final vm = ConnectedTableNotifier(TableRepository(api));
+      addTearDown(vm.dispose);
+      addTearDown(api.close);
+      await expectLater(vm.updateTable('1', code: 'M-01'), throwsA(anything));
+      await expectLater(vm.updateTable('1', code: 'M-01'), throwsA(anything));
+      expect(writes, 2);
+      expect(vm.payloadLocked, isTrue);
+    });
+
+    test(
+      'pemindahan: respons hilang lalu $status: tidak dianggap ditolak',
+      () async {
+        var writes = 0;
+        final api = apiFor((r) async {
+          if (r.url.path.endsWith('/auth/refresh')) {
+            return reply({
+              'error': {'code': 'UNAUTHENTICATED', 'message': 'Sesi berakhir'},
+            }, status: 401);
+          }
+          if (r.method == 'POST') {
+            writes++;
+            if (writes == 1) throw TimeoutException('lost');
+            return reply({
+              'error': {'code': 'X', 'message': 'Ditolak'},
+            }, status: status);
+          }
+          return reply({
+            'data': [],
+            'meta': {'page': 1, 'limit': 50, 'total': 0, 'total_pages': 0},
+          });
+        });
+        final vm = ConnectedNurseryViewModel(
+          NurseryRepository(api),
+          autoLoad: false,
+        );
+        addTearDown(vm.dispose);
+        addTearDown(api.close);
+        final command = SeedlingTransferCommand((
+          idempotencyKey: '46375a8e-4687-4ff2-9ba0-28b51872bd10',
+          sowingId: '1',
+          tableId: '1',
+          transferDate: '2026-09-20',
+          plantCount: 1,
+          note: '',
+        ));
+        addTearDown(command.dispose);
+        await expectLater(vm.submitTransfer(command), throwsA(anything));
+        expect(command.rejected, isFalse);
+        await expectLater(vm.submitTransfer(command), throwsA(anything));
+        expect(writes, 2);
+        expect(command.rejected, isFalse);
+      },
+    );
+  }
+
   test(
     'wrong table receipt is not cached and retry sends same key again',
     () async {

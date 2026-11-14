@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/table_record.dart';
-import '../../models/meja_nft_model.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_input_field.dart';
 
 class FormMejaNftBody extends ConsumerStatefulWidget {
-  const FormMejaNftBody({super.key, this.tableRecord, this.mejaItem});
+  const FormMejaNftBody({super.key, this.tableRecord});
   final TableRecord? tableRecord;
-  final MejaNft? mejaItem;
   @override
   ConsumerState<FormMejaNftBody> createState() => _FormMejaNftBodyState();
 }
@@ -26,20 +24,13 @@ class _FormMejaNftBodyState extends ConsumerState<FormMejaNftBody> {
   @override
   void initState() {
     super.initState();
-    final rec = widget.tableRecord, item = widget.mejaItem;
-    _codeController = TextEditingController(
-      text: rec?.code ?? item?.name ?? '',
-    );
+    final rec = widget.tableRecord;
+    _codeController = TextEditingController(text: rec?.code ?? '');
     _capacityController = TextEditingController(
-      text: '${rec?.holeCount ?? item?.capacityTotal ?? 250}',
+      text: '${rec?.holeCount ?? 250}',
     );
-    _notesController = TextEditingController(
-      text: rec?.notes ?? item?.notes ?? '',
-    );
-    _selectedStatus = _normalizeStatus(
-      rec?.status ??
-          (item?.status == MejaStatus.perawatan ? 'pemeliharaan' : 'tersedia'),
-    );
+    _notesController = TextEditingController(text: rec?.notes ?? '');
+    _selectedStatus = _normalizeStatus(rec?.status);
     final user = ref.read(sessionProvider).user;
     if (user?.permissions.contains('budidaya:write') == true) {
       final command = ref.read(connectedTableProvider.notifier).pendingCommand;
