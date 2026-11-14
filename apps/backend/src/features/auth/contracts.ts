@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { tokenPattern } from '../../common/sessions.js';
+import { canonicalUsername } from '../../common/validation.js';
 
 export const loginSchema = z.strictObject({
-  username: z.string().min(1).max(50).regex(/\S/),
+  // Dibakukan, bukan ditolak: login tidak membedakan 'Budi' dan 'budi', dan tidak membocorkan aturan username.
+  username: z.string().min(1).max(50).regex(/\S/).transform(canonicalUsername),
   password: z.string().min(1).max(128),
 });
 

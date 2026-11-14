@@ -85,14 +85,18 @@ Access token berlaku 15 menit. Sesi berakhir 7 hari setelah refresh terakhir, da
 
 Endpoint ini tidak memakai `Idempotency-Key`. Pengiriman ulang `POST /employees` yang berhasil dibalas `409 USERNAME_TAKEN`.
 
+**Aturan username.** Username disimpan dan dikembalikan dalam bentuk baku: Unicode NFC dan huruf kecil. `Budi`, `budi`, dan `BUDI` satu akun, dan login menerima ejaan apa pun. Username 1–50 karakter, tanpa karakter kontrol, karakter tak terlihat (lebar nol, pembalik arah), spasi selain spasi biasa, spasi ganda, atau spasi di ujung. Selain itu `400 VALIDATION_ERROR`; username yang hanya beda huruf besar kecil atau susunan Unicode dari akun lain dibalas `409 USERNAME_TAKEN`.
+
+**Aturan lain.** `password` 12–128 karakter dan memuat minimal satu karakter yang terlihat. `no_telepon` memuat minimal satu angka. Query `q` mencari teks apa adanya; `%` dan `_` bukan wildcard.
+
 | Endpoint | Izin | Body atau query |
 |---|---|---|
 | `GET /employees` | `pegawai:manage` | Query: `status_aktif`, `q` |
 | `GET /employees/:id` | `pegawai:manage` | |
 | `POST /employees` | `pegawai:manage` | `nama`, `username`, `password` (12–128 karakter), `email?`, `no_telepon?`, `alamat?` |
 | `PATCH /employees/:id` | `pegawai:manage` | Field yang sama, semuanya opsional. Akun nonaktif: `409 ACCOUNT_DEACTIVATED` |
-| `POST /employees/:id/deactivate` | `pegawai:manage` | Tanpa body. `204`, dan sesi akun itu dicabut |
-| `POST /employees/:id/activate` | `pegawai:manage` | Tanpa body. `204` |
+| `POST /employees/:id/deactivate` | `pegawai:manage` | Tanpa body (body kosong atau `{}` juga diterima). `204`, dan sesi akun itu dicabut |
+| `POST /employees/:id/activate` | `pegawai:manage` | Tanpa body (body kosong atau `{}` juga diterima). `204` |
 | `GET /profile` | `profil:read` | |
 | `PATCH /profile` | `profil:write` | Field akun. Mengubah `username` atau `password` wajib menyertakan `current_password`, dan mencabut semua sesi |
 

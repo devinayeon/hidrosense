@@ -18,6 +18,30 @@ export const activeListQuerySchema = z.strictObject({
   status_aktif: z.enum(['0', '1']).optional(),
 });
 
+/**
+ * Satu bentuk baku untuk username: NFC, lalu huruf kecil. Daftar, ubah, bootstrap, dan login
+ * semuanya lewat sini, jadi 'Budi', 'budi', dan 'BUDI' satu akun, begitu juga é yang disusun
+ * satu kodepoin atau dua. Kolom `username` menyimpan bentuk baku itu; UNIQUE di database
+ * menjaga keunikannya dan migrasi 0017 menolak penulisan lain.
+ */
+export const canonicalUsername = (value: string) => value.normalize('NFC').toLowerCase().normalize('NFC');
+
+// Karakter kontrol, format (lebar nol, pembalik arah), pemisah baris, dan spasi selain ' ' membuat
+// dua username tampak sama di layar padahal berbeda, atau tak terlihat sama sekali.
+const hiddenCharacters = /[\p{C}\p{Zl}\p{Zp}]|[^\S ]/u;
+const isPlainUsername = (value: string) => !hiddenCharacters.test(value) && !value.includes('  ')
+  && value === value.trim();
+
+/** Username untuk penulisan: dibakukan dulu, baru dibatasi 1–50 karakter tanpa karakter tersembunyi. */
+export const usernameSchema = z.string().min(1).max(200).transform(canonicalUsername)
+  .pipe(z.string().min(1).max(50).refine(isPlainUsername));
+
+/** Password baru: 12–128 karakter dan memuat minimal satu karakter yang terlihat. */
+export const newPasswordSchema = z.string().min(12).max(128).refine((value) => /\S/u.test(value));
+
+/** Pola LIKE untuk pencarian "mengandung": % dan _ dari pengguna dicari apa adanya (pakai ESCAPE '\'). */
+export const likeContains = (text: string) => `%${text.replace(/[\\%_]/g, '\\$&')}%`;
+
 export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
   if (!result.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.');
