@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { expectedVersionSchema, hasChanges, integerIdSchema as intId } from '../../common/validation.js';
 import { positiveDecimalSchema as positiveDecimal } from '../../common/quantities.js';
-export { idParamSchema, activeListQuerySchema as listQuerySchema, parseInput } from '../../common/validation.js';
+export { idParamSchema, activeListQuerySchema as listQuerySchema, emptyQuerySchema, parseInput } from '../../common/validation.js';
 
 export const createJenisSchema = z.strictObject({
   nama_jenis: z.string().trim().min(1).max(50),

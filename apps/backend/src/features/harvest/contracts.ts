@@ -17,7 +17,7 @@ const patchDetail = z.strictObject({ id_detail_panen: integerIdSchema, ...weight
 export const createHarvestSchema = z.strictObject({ tanggal_panen: date, keterangan: note.optional().transform(v => v ?? null), details: z.array(createDetail).min(1).max(100) }).refine(v => new Set(v.details.map(d => d.id_pemindahan)).size === v.details.length);
 export const updateHarvestSchema = z.strictObject({ expected_version: integerIdSchema, keterangan: note.optional(), details: z.array(patchDetail).min(1).max(100).optional() }).refine(v => v.keterangan !== undefined || v.details !== undefined).refine(v => !v.details || new Set(v.details.map(d => d.id_detail_panen)).size === v.details.length);
 export const listHarvestQuerySchema = z.strictObject({ page: activeListQuerySchema.shape.page, limit: activeListQuerySchema.shape.limit });
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 export type CreateHarvestInput = z.infer<typeof createHarvestSchema>;
 export type UpdateHarvestInput = z.infer<typeof updateHarvestSchema>;
 export type ListHarvestQuery = z.infer<typeof listHarvestQuerySchema>;

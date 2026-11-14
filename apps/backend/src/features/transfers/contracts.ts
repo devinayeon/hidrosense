@@ -37,7 +37,7 @@ export const listTransferQuerySchema = z.strictObject({
   id_penyemaian: integerIdSchema.optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateTransferInput = z.infer<typeof createTransferSchema>;
 export type UpdateTransferInput = z.infer<typeof updateTransferSchema>;

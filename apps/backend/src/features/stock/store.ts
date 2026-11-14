@@ -94,6 +94,11 @@ async function isReversed(tx: Transaction, id: string) {
 type Origin = { id_penyemaian: string; id_perawatan?: never } | { id_perawatan: string; id_penyemaian?: never };
 export type StockOrigin = Origin;
 
+/**
+ * Menulis satu transaksi stok. Buku stok hanya bertambah: kepala dibuat sealed=0, baris ditambahkan,
+ * lalu sealed=1, dan hanya yang sealed=1 yang terbaca. stok_saldo adalah ringkasan yang harus selalu
+ * sama dengan jumlah semua baris. Gagal: 409 INSUFFICIENT_STOCK atau STOCK_LIMIT_EXCEEDED.
+ */
 export async function appendMovement(tx: Transaction, actorId: string, now: number,
   input: { jenis_stok: 'masuk' | 'keluar'; details: StockLine[]; keterangan: string | null },
   reversalOf: string | null = null, origin?: Origin) {
@@ -113,6 +118,8 @@ export async function appendMovement(tx: Transaction, actorId: string, now: numb
     const delta = input.jenis_stok === 'masuk' ? minor : -minor;
     await tx.execute({ sql: 'INSERT INTO stok_saldo(id_inventaris,saldo_minor) VALUES (?,0) ON CONFLICT DO NOTHING',
       args: [line.id_inventaris] });
+    // Aturan: saldo tidak boleh minus atau melewati batas. Syaratnya ada di WHERE supaya tetap aman
+    // saat dua tulis berjalan bersamaan; bila tidak ada baris berubah, seluruh transaksi dibatalkan.
     const update = await tx.execute({ sql: `UPDATE stok_saldo SET saldo_minor=saldo_minor+CAST(? AS INTEGER)
       WHERE id_inventaris=? AND saldo_minor+CAST(? AS INTEGER) BETWEEN 0 AND 999999999999`,
       args: [delta, line.id_inventaris, delta] });

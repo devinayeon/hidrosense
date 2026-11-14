@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// Jumlah stok disimpan sebagai bilangan bulat perseratus ("minor"), lihat common/money.ts.
 export const MAX_QUANTITY_MINOR = 999999999999n;
 const decimalPattern = /^\d{1,10}(\.\d{1,2})?$(?![\s\S])/;
 

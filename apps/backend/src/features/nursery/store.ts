@@ -1,6 +1,7 @@
 import type { Client, Row, Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { MIN_TRANSFER_AGE_DAYS } from '../../common/growth-rules.js';
 import { fromMinor } from '../../common/quantities.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -24,7 +25,7 @@ function sowingRow(row: Row, today: string) {
     keterangan: row.keterangan == null ? null : String(row.keterangan),
     /** Age in calendar days from tanggal_semai to today (Asia/Jakarta: UTC+7). */
     usia_hari: age,
-    siap_pindah: age !== null && age >= 15,
+    siap_pindah: age !== null && age >= MIN_TRANSFER_AGE_DAYS,
   };
 }
 
@@ -86,7 +87,7 @@ export async function listSowings(
   const args = [statusFilter, statusFilter, siapFilter, today];
   const filter = `
     (? IS NULL OR p.status_penyemaian=?)
-    AND (? IS NULL OR julianday(p.tanggal_semai) <= julianday(?) - 15)
+    AND (? IS NULL OR julianday(p.tanggal_semai) <= julianday(?) - ${MIN_TRANSFER_AGE_DAYS})
   `;
   const count = (await db.execute({
     sql: `SELECT COUNT(*) AS total FROM penyemaian p WHERE ${filter}`,

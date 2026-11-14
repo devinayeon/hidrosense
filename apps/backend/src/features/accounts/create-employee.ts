@@ -3,12 +3,13 @@ import type { Client } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
 import { hashPassword } from '../../common/passwords.js';
 import { ApiError } from '../../common/errors.js';
-import { createEmployeeSchema, parseInput } from './contracts.js';
+import { createEmployeeSchema, emptyQuerySchema, parseInput } from './contracts.js';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { assertUsernameAvailable, getAccount } from './store.js';
 
 export function registerCreateEmployee(app: FastifyInstance, db: Client, clock: () => number) {
   app.post('/api/v1/employees', { preHandler: requirePermission(db, 'pegawai:manage', clock) }, async (request, reply) => {
+    parseInput(emptyQuerySchema, request.query);
     const input = parseInput(createEmployeeSchema, request.body);
     const passwordHash = await hashPassword(input.password);
     const data = await authenticatedWrite(db, request.headers.authorization, 'pegawai:manage', clock, async (tx) => {

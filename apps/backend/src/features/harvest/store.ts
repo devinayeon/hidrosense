@@ -24,6 +24,7 @@ function selectDetails(idCount: number) {
     ORDER BY d.id_detail_panen`;
 }
 
+// Baris lama bisa tidak punya berat reject. Totalnya dikirim null, bukan angka yang keliru.
 function harvestResponse(header: Row, detailRows: Row[]) {
   let totalLayak = 0n;
   let totalReject = 0n;

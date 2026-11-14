@@ -25,6 +25,11 @@ const querySchema = z.strictObject({
     .refine((value) => value <= 200),
 });
 
+/**
+ * Daftar perubahan untuk perangkat. Perangkat mengirim kursor terakhirnya dan menerima nama record yang
+ * berubah (tanpa isinya), lalu membaca isinya lewat API biasa yang memeriksa izin. Kursor yang lebih besar
+ * dari data server dibalas 409 SYNC_CURSOR_RESET, artinya perangkat harus memuat ulang seluruh data.
+ */
 export function registerSyncChanges(app: FastifyInstance, db: Client, clock: () => number) {
   app.get('/api/v1/sync/changes', { preHandler: requirePermission(db, undefined, clock) }, async (request) => {
     const { cursor, limit } = parseInput(querySchema, request.query);

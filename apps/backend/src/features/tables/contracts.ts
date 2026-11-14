@@ -18,7 +18,7 @@ export const listTableSchema = z.strictObject({
   page: activeListQuerySchema.shape.page, limit: activeListQuerySchema.shape.limit,
   status_meja: fields.status_meja.optional(),
 });
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
 export type ListTableInput = z.infer<typeof listTableSchema>;

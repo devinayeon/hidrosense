@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { MIN_TRANSFER_AGE_DAYS } from '../../common/growth-rules.js';
 import { recordDerivedChange } from '../../common/sync.js';
 import {
   countMovedSeedlings,
@@ -13,6 +14,11 @@ import type { CreateTransferInput, UpdateTransferInput } from './contracts.js';
 
 const dayMs = 24 * 60 * 60 * 1000;
 
+/**
+ * Memindahkan bibit dari penyemaian ke meja tanam. Syarat: penyemaian masih aktif, tanggal tidak di
+ * masa depan, umur bibit cukup, jumlah tidak melebihi sisa bibit, meja berstatus tersedia, dan lubang
+ * meja cukup. Semua terjadi dalam satu transaksi: satu syarat gagal, tidak ada yang tersimpan.
+ */
 export async function createTransfer(
   tx: Transaction,
   input: CreateTransferInput,
@@ -42,8 +48,8 @@ export async function createTransfer(
   if (umurSemaiHari < 0) {
     throw new ApiError(400, 'INVALID_TRANSFER_DATE', 'Tanggal pemindahan tidak boleh lebih awal dari tanggal semai.');
   }
-  if (umurSemaiHari < 15) {
-    throw new ApiError(400, 'SEEDLING_NOT_READY', 'Bibit belum mencapai umur minimal 15 hari untuk dipindahkan.');
+  if (umurSemaiHari < MIN_TRANSFER_AGE_DAYS) {
+    throw new ApiError(400, 'SEEDLING_NOT_READY', `Bibit belum mencapai umur minimal ${MIN_TRANSFER_AGE_DAYS} hari untuk dipindahkan.`);
   }
 
   // 3. Validate available seedlings count
@@ -76,6 +82,7 @@ export async function createTransfer(
   // 6. Insert transfer and derive the table status from its new occupancy
   const result = await insertTransfer(tx, input, now);
   await syncTableStatus(tx, input.id_meja);
+  // Sisa bibit dan isi meja berubah walau baris induknya tidak, jadi perangkat lain perlu diberi tahu.
   await recordDerivedChange(tx, 'penyemaian', input.id_penyemaian, now);
   await recordDerivedChange(tx, 'meja-tanam', input.id_meja, now);
 

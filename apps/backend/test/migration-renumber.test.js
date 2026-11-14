@@ -36,6 +36,25 @@ test('a database from the old local numbering upgrades and keeps its data', asyn
   assert.deepEqual(await migrate(db, all), []);
 });
 
+test('rollback on the old local numbering undoes only the index, not 0011', async (t) => {
+  const db = await oldLocalDatabase(t);
+  const rolledBack = await migrate(db, all, { direction: 'down', allowDataLoss: true });
+  assert.deepEqual(rolledBack, ['0012_operation_key_lower']);
+  const last = (await db.execute('SELECT id FROM _schema_migrations ORDER BY id DESC LIMIT 1')).rows[0];
+  assert.equal(last.id, '0011_harvest_weights');
+  assert.equal(Number((await db.execute(index)).rows[0].n), 0);
+  // 0011 masih terpasang, jadi kolom berat panen tidak ikut hilang.
+  const columns = (await db.execute('PRAGMA table_info(detail_panen)')).rows.map((row) => row.name);
+  assert.ok(columns.includes('berat_minor'));
+  assert.deepEqual(await migrate(db, all.slice(0, 11)), []);
+});
+
+test('a second rollback after the old index is gone rolls back 0011 normally', async (t) => {
+  const db = await oldLocalDatabase(t);
+  await migrate(db, all, { direction: 'down', allowDataLoss: true });
+  assert.deepEqual(await migrate(db, all, { direction: 'down', allowDataLoss: true }), ['0011_harvest_weights']);
+});
+
 test('a database already on the new numbering is not touched by the renumbering step', async (t) => {
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());

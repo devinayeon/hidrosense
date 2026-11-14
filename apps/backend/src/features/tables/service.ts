@@ -1,5 +1,6 @@
 import type { Transaction } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 import { assertCodeAvailable, getTable, insertTable, patchTable, readTable, syncTableStatus } from './store.js';
 import type { CreateTableInput, UpdateTableInput } from './contracts.js';
 
@@ -23,5 +24,5 @@ export async function updateTable(tx: Transaction, id: string, input: UpdateTabl
   if (input.kode_meja !== undefined) await assertCodeAvailable(tx, input.kode_meja, id);
   await patchTable(tx, id, input);
   await syncTableStatus(tx, id);
-  return getTable(tx, id);
+  return keepVersionIfSame(existing, await getTable(tx, id));
 }

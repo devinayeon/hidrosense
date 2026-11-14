@@ -1,4 +1,5 @@
 const weightPattern = /^[0-9]{1,8}(?:\.[0-9]{1,2})?$(?![\s\S])/;
+// Berat panen disimpan dalam perseratus kilogram ("minor"), lihat common/money.ts.
 const MAX_WEIGHT_MINOR = 9999999999n;
 
 /** Parses an exact decimal harvest weight into scale-100 atoms without rounding. */

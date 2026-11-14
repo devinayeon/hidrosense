@@ -3,15 +3,17 @@ import type { Client } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
 import { sweepExpiredAuthRecords } from '../../common/maintenance.js';
 import { ACCESS_TTL_MS, newTokens, REFRESH_TTL_MS, SESSION_MAX_AGE_MS, tokenHash, tokenResponse } from '../../common/sessions.js';
-import { parseInput } from '../../common/validation.js';
+import { emptyQuerySchema, parseInput } from '../../common/validation.js';
 import { refreshSchema } from './contracts.js';
 
 export function registerRefresh(app: FastifyInstance, db: Client, clock: () => number) {
   app.post('/api/v1/auth/refresh', async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { refresh_token: refreshToken } = parseInput(refreshSchema, request.body);
     const now = clock();
     const tokens = newTokens();
     // One conditional write makes concurrent refresh single-use across processes.
+    // Sesi diperpanjang 7 hari dari refresh ini, tetapi tidak pernah lewat 30 hari sejak login (MIN).
     const result = await db.execute({
       sql: `UPDATE auth_sessions SET access_token_hash=?,refresh_token_hash=?,
           refresh_expires_at=MIN(?,created_at+?),

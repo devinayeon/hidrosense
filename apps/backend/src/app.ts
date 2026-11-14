@@ -26,9 +26,11 @@ interface AppOptions {
   loadMigrationFiles?: typeof loadMigrations;
 }
 
+// Ambil path lewat URL, bukan potongan teks. Bentuk absolut (GET http://host/api/... HTTP/1.1)
+// sah di HTTP/1.1 dan tetap sampai ke route API, jadi harus kena kuota dan aturan HTTPS juga.
 function requestPath(url: string) {
   try {
-    return decodeURIComponent(url.split('?', 1)[0]);
+    return decodeURIComponent(new URL(url, 'http://localhost').pathname);
   } catch {
     throw new ApiError(400, 'BAD_REQUEST', 'URL permintaan tidak valid.');
   }
@@ -78,6 +80,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigr
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id).header('cache-control', 'no-store');
     const path = requestPath(request.url);
+    // Aturan semua rute API: HTTPS wajib di produksi, dan paling banyak 120 permintaan per menit per IP.
     if (path.startsWith('/api/')) {
       if (config.environment === 'production' && request.protocol !== 'https') {
         throw new ApiError(426, 'HTTPS_REQUIRED', 'Gunakan HTTPS untuk mengakses API.');

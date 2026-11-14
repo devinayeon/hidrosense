@@ -2,7 +2,7 @@ import { buildApp } from './app.js';
 import { readConfig } from './config.js';
 import { openDatabase } from './db/client.js';
 import { loadMigrations, migrationStatus } from './db/migrate.js';
-import { purgeExpiredAuthRecords } from './common/maintenance.js';
+import { sweepExpiredAuthRecords } from './common/maintenance.js';
 
 let app: ReturnType<typeof buildApp> | undefined;
 let db: Awaited<ReturnType<typeof openDatabase>> | undefined;
@@ -11,8 +11,9 @@ try {
   db = await openDatabase();
   const status = await migrationStatus(db, await loadMigrations());
   if (status.some((item) => item.status !== 'applied')) throw new Error('Run db:migrate before starting the API.');
-  await purgeExpiredAuthRecords(db, Date.now());
   app = buildApp({ db, config });
+  // Pembersihan sesi kedaluwarsa tidak boleh menghalangi server menyala.
+  await sweepExpiredAuthRecords(db, Date.now(), app.log);
   let stopping = false;
   const shutdown = async () => {
     if (stopping) return;

@@ -6,6 +6,8 @@ export const integerIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$(?![\s\S])/)
 export const uuidSchema = z.string().uuid();
 export const clientUuidSchema = uuidSchema.transform((value) => value.toLowerCase());
 export const idParamSchema = z.strictObject({ id: integerIdSchema });
+/** Rute tanpa parameter query: yang tidak dikenal ditolak 400, sesuai kontrak di API.md. */
+export const emptyQuerySchema = z.strictObject({});
 export const expectedVersionSchema = integerIdSchema.optional();
 /** A PATCH body must change something; the version it was based on is not a change. */
 export const hasChanges = (value: object) => Object.keys(value).some((key) => key !== 'expected_version');

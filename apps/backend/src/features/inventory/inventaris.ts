@@ -1,17 +1,19 @@
 import type { FastifyInstance } from 'fastify';
 import type { Client, InValue } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
-import { createInventarisSchema, updateInventarisSchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
+import { createInventarisSchema, updateInventarisSchema, emptyQuerySchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
 import { assertJenisExists, assertObatExists, getInventaris, inventarisResponse, inventarisColumns } from './store.js';
 import { inventoryWrite } from './write.js';
 import { ApiError } from '../../common/errors.js';
 import { toMinor } from '../../common/quantities.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 
 export function registerInventaris(app: FastifyInstance, db: Client, clock: () => number) {
   const readGuard = requirePermission(db, 'inventaris:read', clock);
   const writeGuard = requirePermission(db, 'inventaris:write', clock);
 
   app.post('/api/v1/inventaris', { preHandler: writeGuard }, async (request, reply) => {
+    parseInput(emptyQuerySchema, request.query);
     const input = parseInput(createInventarisSchema, request.body);
     const result = await inventoryWrite(db, request, clock, 'inventaris.create', input, async (tx) => {
       await assertJenisExists(tx, input.id_jenis_inventaris);
@@ -44,11 +46,13 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
   });
 
   app.get('/api/v1/inventaris/:id', { preHandler: readGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     return { data: await getInventaris(db, id) };
   });
 
   app.patch('/api/v1/inventaris/:id', { preHandler: writeGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     const input = parseInput(updateInventarisSchema, request.body);
     return inventoryWrite(db, request, clock, 'inventaris.update', { id, input }, async (tx) => {
@@ -72,19 +76,21 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
         assignments.push('stok_minimum_minor=?');
         args.push(input.stok_minimum == null ? null : toMinor(input.stok_minimum));
       }
-      if (assignments.length === 0) return current;
-      args.push(id);
-      await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
-      return getInventaris(tx, id);
+      if (assignments.length) {
+        args.push(id);
+        await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
+      }
+      return keepVersionIfSame(current, await getInventaris(tx, id));
     }, input.expected_version);
   });
 
   app.post('/api/v1/inventaris/:id/deactivate', { preHandler: writeGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     return inventoryWrite(db, request, clock, 'inventaris.deactivate', { id }, async (tx) => {
-      await getInventaris(tx, id);
+      const current = await getInventaris(tx, id);
       await tx.execute({ sql: 'UPDATE inventaris SET status_aktif=0 WHERE id_inventaris=?', args: [id] });
-      return getInventaris(tx, id);
+      return keepVersionIfSame(current, await getInventaris(tx, id));
     });
   });
 }

@@ -54,7 +54,7 @@ export const listSalesQuerySchema = z.strictObject({
   limit: activeListQuerySchema.shape.limit,
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 export type UpdateSaleInput = z.infer<typeof updateSaleSchema>;

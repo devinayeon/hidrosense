@@ -1,6 +1,7 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 import { recordMovement } from '../stock/service.js';
 import { getSowing, countMoved } from './store.js';
 import type { CreateSowingInput, UpdateSowingInput } from './contracts.js';
@@ -84,5 +85,5 @@ export async function updateSowing(
     sql: `UPDATE penyemaian SET ${assignments.join(',')} WHERE id_penyemaian=?`,
     args,
   });
-  return getSowing(tx, id, now);
+  return keepVersionIfSame(current, await getSowing(tx, id, now));
 }

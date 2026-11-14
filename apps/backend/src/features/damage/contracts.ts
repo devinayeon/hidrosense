@@ -39,7 +39,7 @@ export const listDamageQuerySchema = z.strictObject({
   id_pemindahan: integerIdSchema.optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateDamageInput = z.infer<typeof createDamageSchema>;
 export type UpdateDamageInput = z.infer<typeof updateDamageSchema>;

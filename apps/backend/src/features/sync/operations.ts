@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requirePermission } from '../../common/authorization.js';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { reserveClientId } from '../../common/sync.js';
-import { clientUuidSchema, parseInput, uuidSchema } from '../../common/validation.js';
+import { clientUuidSchema, emptyQuerySchema, parseInput, uuidSchema } from '../../common/validation.js';
 
 const schema = z.strictObject({
   operation_key: uuidSchema,
@@ -16,6 +16,7 @@ const schema = z.strictObject({
 
 export function registerSyncOperations(app: FastifyInstance, db: Client, clock: () => number) {
   app.post('/api/v1/sync/operations', { preHandler: requirePermission(db, undefined, clock) }, async (request, reply) => {
+    parseInput(emptyQuerySchema, request.query);
     const input = parseInput(schema, request.body);
     const result = await authenticatedWrite(db, request.headers.authorization, undefined, clock,
       (tx, actor) => reserveClientId(tx, actor.id_user, input, clock()));

@@ -1,11 +1,16 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
-import { recordDerivedChange } from '../../common/sync.js';
+import { keepVersionIfSame, recordDerivedChange } from '../../common/sync.js';
 import { formatWeight, parseWeight } from '../../common/weights.js';
 import { syncTableStatus } from '../tables/store.js';
 import { getHarvest } from './store.js';
 import type { CreateHarvestInput, UpdateHarvestInput } from './contracts.js';
+/**
+ * Mencatat satu panen dengan satu baris per batch. Tiap baris: tanggal panen tidak mendahului
+ * pemindahan, dan jumlah tidak melebihi tanaman aktif (dipindahkan - rusak - dipanen).
+ * Status meja dihitung ulang karena lubangnya kosong kembali.
+ */
 export async function createHarvest(tx: Transaction, input: CreateHarvestInput, actor: string, now: number) {
   if (input.tanggal_panen > jakartaDate(now)) throw new ApiError(400, 'VALIDATION_ERROR', 'Tanggal panen tidak boleh di masa depan.');
   const affectedTables = new Set<string>();
@@ -18,6 +23,7 @@ export async function createHarvest(tx: Transaction, input: CreateHarvestInput, 
   }
   const id = String((await tx.execute({ sql: 'INSERT INTO panen(id_user,tanggal_panen,keterangan) VALUES (?,?,?) RETURNING CAST(id_panen AS TEXT) AS id', args: [actor, input.tanggal_panen, input.keterangan] })).rows[0].id);
   for (const d of input.details) {
+    // Berat layak = berat total - berat reject, keduanya dalam perseratus kilogram.
     const reject = parseWeight(d.berat_reject), layak = parseWeight(d.berat_total) - reject;
     await tx.execute({ sql: 'INSERT INTO detail_panen(id_panen,id_pemindahan,jumlah_tanaman,berat,berat_minor,berat_reject_minor) VALUES (?,?,?,?,?,?)', args: [id, d.id_pemindahan, d.jumlah_tanaman, formatWeight(layak), layak, reject] });
   }
@@ -41,11 +47,12 @@ export async function updateHarvest(tx: Transaction, id: string, input: UpdateHa
     try { if (Number(row.roundtrip) !== 1) throw new Error('Ambiguous float'); sold += parseWeight(String(row.weight)); }
     catch { throw new ApiError(409, 'HARVEST_SOLD_WEIGHT_INVALID', 'Berat penjualan lama tidak valid.'); }
   }
+  // Aturan: berat layak panen tidak boleh dikoreksi di bawah berat yang sudah terjual.
   if ([...details.values()].reduce((a, b) => a + b, 0n) < sold) throw new ApiError(409, 'HARVEST_WEIGHT_BELOW_SOLD', 'Berat layak kurang dari berat terjual.');
   for (const d of input.details ?? []) {
     const reject = parseWeight(d.berat_reject), layak = parseWeight(d.berat_total) - reject;
     await tx.execute({ sql: 'UPDATE detail_panen SET berat=?,berat_minor=?,berat_reject_minor=? WHERE id_detail_panen=? AND id_panen=?', args: [formatWeight(layak), layak, reject, d.id_detail_panen, id] });
   }
   if (input.keterangan !== undefined) await tx.execute({ sql: 'UPDATE panen SET keterangan=? WHERE id_panen=?', args: [input.keterangan, id] });
-  return getHarvest(tx, id);
+  return keepVersionIfSame(existing, await getHarvest(tx, id));
 }

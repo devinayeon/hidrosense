@@ -125,7 +125,7 @@ test('seed populates comprehensive domain data across B005–B009 features and s
   assert.equal(transfer1.id_meja, '1');
   assert.equal(transfer1.jumlah_tanaman, 200);
   assert.equal(transfer1.umur_semai_hari, 15);
-  // Harvest estimation: Sowing date (now - 20 days: 2026-09-17) + 45 days = 2026-11-01
+  // Harvest estimation: Transfer date (now - 5 days: 2026-10-02) + 45 days = 2026-11-16
   assert.ok(transfer1.estimasi_panen);
   assert.ok(transfer1.public_id);
   assert.equal(transfer1.version, '1');

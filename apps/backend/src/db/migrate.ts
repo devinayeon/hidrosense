@@ -33,11 +33,15 @@ export async function loadMigrations(directory = defaultDirectory): Promise<Migr
   });
 }
 
+const renumberedMigration = '0012_operation_key_lower';
+
 // This migration moved to 0014 when two branches both claimed 0012. It only adds an index,
 // so undo it here and let the normal sequence apply 0012, 0013 and 0014 in order.
+// Mengembalikan true bila baris lama ditemukan dan sudah dibatalkan.
 async function forgetRenumberedMigration(tx: Transaction) {
-  const { rowsAffected } = await tx.execute("DELETE FROM _schema_migrations WHERE id='0012_operation_key_lower'");
+  const { rowsAffected } = await tx.execute({ sql: 'DELETE FROM _schema_migrations WHERE id=?', args: [renumberedMigration] });
   if (rowsAffected) await tx.execute('DROP INDEX IF EXISTS idx_sync_operations_key_lower');
+  return rowsAffected > 0;
 }
 
 async function appliedMigrations(executor: Executor): Promise<Row[]> {
@@ -73,12 +77,13 @@ export async function migrate(client: Client, migrations: Migration[], { directi
       checksum TEXT NOT NULL,
       applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
-    await forgetRenumberedMigration(tx);
+    const forgotten = await forgetRenumberedMigration(tx);
     const applied = await appliedMigrations(tx);
     validateHistory(applied, migrations);
-    const pending = direction === 'up'
-      ? migrations.slice(applied.length)
-      : applied.length ? [migrations[applied.length - 1]] : [];
+    // Saat rollback, baris lama itulah yang dibatalkan. Berhenti di sini supaya
+    // migrasi di bawahnya (0011) tidak ikut terhapus beserta datanya.
+    const rollback = forgotten || !applied.length ? [] : [migrations[applied.length - 1]];
+    const pending = direction === 'up' ? migrations.slice(applied.length) : rollback;
     for (const migration of pending) {
       current = migration.id;
       // SQL is trusted, reviewed migration code; runtime values use bound parameters.
@@ -93,6 +98,7 @@ export async function migrate(client: Client, migrations: Migration[], { directi
     }
     if ((await tx.execute('PRAGMA foreign_key_check')).rows.length) throw new Error('Foreign key integrity check failed.');
     await tx.commit();
+    if (direction === 'down' && forgotten) return [renumberedMigration];
     return pending.map((migration) => migration.id);
   } catch (error) {
     if (!tx.closed) await tx.rollback();

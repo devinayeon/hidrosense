@@ -34,6 +34,12 @@ export async function assertUsernameAvailable(db: Executor, username: string, ex
 }
 
 export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash?: string) {
+  // Baca username lama sebelum UPDATE. Formulir mengirim ulang semua field, jadi field yang
+  // ikut terkirim belum tentu berubah; sesi hanya dicabut bila username benar-benar lain.
+  const stored = changes.username === undefined ? undefined : (await tx.execute({
+    sql: 'SELECT username FROM users WHERE id_user=?', args: [id],
+  })).rows[0]?.username;
+  const usernameChanged = changes.username !== undefined && changes.username !== stored;
   const assignments: string[] = [];
   const args: InValue[] = [];
   // Only server-owned column names enter SQL; all values are bound parameters.
@@ -43,7 +49,7 @@ export async function updateAccount(tx: Transaction, id: string, changes: Accoun
   if (passwordHash) { assignments.push('password=?'); args.push(passwordHash); }
   args.push(id);
   await tx.execute({ sql: `UPDATE users SET ${assignments.join(',')} WHERE id_user=?`, args });
-  if (passwordHash || changes.username !== undefined) {
+  if (passwordHash || usernameChanged) {
     await tx.execute({ sql: 'DELETE FROM auth_sessions WHERE id_user=?', args: [id] });
   }
 }

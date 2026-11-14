@@ -3,15 +3,17 @@ import type { Client } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
 import { hashPassword, verifyPassword } from '../../common/passwords.js';
 import { ApiError } from '../../common/errors.js';
-import { parseInput, updateProfileSchema } from './contracts.js';
+import { emptyQuerySchema, parseInput, updateProfileSchema } from './contracts.js';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { assertUsernameAvailable, getAccount, updateAccount } from './store.js';
 
 export function registerProfile(app: FastifyInstance, db: Client, clock: () => number) {
   app.get('/api/v1/profile', { preHandler: requirePermission(db, 'profil:read', clock) }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     return { data: await getAccount(db, request.principal!.id_user, 'petani') };
   });
   app.patch('/api/v1/profile', { preHandler: requirePermission(db, 'profil:write', clock) }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const input = parseInput(updateProfileSchema, request.body);
     const id = request.principal!.id_user;
     let verifiedHash: string | undefined;

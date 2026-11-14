@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { activeListQuerySchema, idParamSchema } from '../../common/validation.js';
-export { parseInput } from '../../common/validation.js';
+export { emptyQuerySchema, parseInput } from '../../common/validation.js';
 
 const fields = {
   nama: z.string().trim().min(1).max(100),

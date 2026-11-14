@@ -76,7 +76,7 @@ test('transfer updates remaining seedlings and table holes on list and detail wi
   assert.equal(completed.status_penyemaian, 'selesai');
 });
 
-test('transfers create calculates harvest date based on 45-day baseline, umur_semai, and active plants', async (t) => {
+test('transfers create calculates harvest date 45 days after transfer, umur_semai, and active plants', async (t) => {
   const f = await setup(t);
   const res = await f.create();
   check(res, 201);
@@ -93,8 +93,8 @@ test('transfers create calculates harvest date based on 45-day baseline, umur_se
 
   // 15 days seedling duration: 2026-09-16 - 2026-09-01 = 15
   assert.equal(d.umur_semai_hari, 15);
-  // Harvest calculation: 2026-09-01 + 45 days = 2026-10-16
-  assert.equal(d.estimasi_panen, '2026-10-16');
+  // Harvest calculation: transfer 2026-09-16 + 45 days growth = 2026-10-31
+  assert.equal(d.estimasi_panen, '2026-10-31');
   assert.equal(d.version, '1');
   assert.ok(d.public_id);
 });

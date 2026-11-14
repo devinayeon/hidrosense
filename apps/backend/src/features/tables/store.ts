@@ -13,6 +13,8 @@ const columns = `CAST(m.id_meja AS TEXT) AS id_meja,m.kode_meja,m.jumlah_lubang,
   EXISTS(SELECT 1 FROM pemindahan p WHERE p.id_meja=m.id_meja AND (${batchActive})<0) AS invalid_balance`;
 const joins = `LEFT JOIN sync_resource_links l ON l.resource_type='meja-tanam' AND l.domain_id=CAST(m.id_meja AS TEXT)
   LEFT JOIN sync_resource_versions v ON v.resource_type=l.resource_type AND v.public_id=l.public_id`;
+// Aturan: 'penuh' dan 'tersedia' dihitung dari isi meja (tanaman aktif dibanding jumlah lubang).
+// Status lain seperti pemeliharaan diisi manual dan tidak pernah ditimpa.
 const occupancyStatus = (status: unknown, active: number, capacity: number) => {
   const stored = String(status);
   if (!['tersedia', 'penuh'].includes(stored.toLowerCase())) return stored;
@@ -22,6 +24,8 @@ const effectiveStatusSql = `CASE
   WHEN lower(status_meja) IN ('tersedia','penuh')
   THEN CASE WHEN tanaman_aktif >= jumlah_lubang THEN 'penuh' ELSE 'tersedia' END
   ELSE status_meja END`;
+// saldo_valid false berarti angka meja tidak konsisten (misalnya tanaman aktif melebihi lubang).
+// Meja tetap tampil di daftar dengan kapasitas tersedia 0, supaya masih bisa dikoreksi.
 function tableRow(row: Row) {
   const capacity = Number(row.jumlah_lubang);
   const active = Number(row.tanaman_aktif);

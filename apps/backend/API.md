@@ -41,6 +41,7 @@ Respons tulis berbentuk `{ "data": {}, "operation": { "operation_key", "revision
 Setiap catatan membawa `version`. Kirim `expected_version` berisi versi terakhir yang dibaca:
 - Opsional pada meja tanam, penyemaian, pemindahan, kerusakan, inventaris, obat, dan jenis inventaris. Konflik dibalas `409 VERSION_CONFLICT`. Tanpa field ini, penulisan terakhir yang menang.
 - Wajib pada panen (`409 HARVEST_VERSION_CONFLICT`) dan penjualan (`409 SALE_VERSION_CONFLICT`).
+- `PATCH` atau nonaktifkan yang tidak mengubah apa pun tidak menaikkan `version` dan tidak muncul di `/sync/changes`.
 
 ### Kode status
 | Status | Arti |
@@ -161,6 +162,8 @@ Izin: `budidaya:read`, `budidaya:write`.
 | `GET /pemindahan` | Query: `id_meja`, `id_penyemaian` |
 | `GET /pemindahan/:id` | Termasuk `umur_semai_hari`, `estimasi_panen`, `hss`, `hst`, `sisa_hari_panen`, `tanaman_aktif` |
 | `PATCH /pemindahan/:id` | `keterangan?`, `expected_version?` |
+
+`estimasi_panen` adalah tanggal pemindahan ditambah 45 hari.
 
 Kesalahan: `400 SEEDLING_NOT_READY`, `409 SEEDLING_INSUFFICIENT`, `409 SOWING_INACTIVE`, `409 TABLE_NOT_AVAILABLE`, `409 TABLE_CAPACITY_EXCEEDED`.
 

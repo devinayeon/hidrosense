@@ -1,10 +1,10 @@
 import type { Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
-import { recordDerivedChange } from '../../common/sync.js';
+import { keepVersionIfSame, recordDerivedChange } from '../../common/sync.js';
 import { countTableActive } from '../transfers/store.js';
 import { syncTableStatus } from '../tables/store.js';
-import { insertDamage, patchDamage, sumDamageForTransfer } from './store.js';
+import { getDamage, insertDamage, patchDamage, sumDamageForTransfer } from './store.js';
 import type { CreateDamageInput, UpdateDamageInput } from './contracts.js';
 
 function validateFutureDate(date: string | undefined, now: number) {
@@ -13,6 +13,7 @@ function validateFutureDate(date: string | undefined, now: number) {
   }
 }
 
+/** Mencatat tanaman rusak. Aturan: tanggal tidak mendahului pemindahan, jumlah tidak melebihi tanaman aktif batch. */
 export async function createDamage(tx: Transaction, input: CreateDamageInput, now: number) {
   validateFutureDate(input.tanggal_kejadian, now);
   // 1. Fetch & validate transfer (pemindahan)
@@ -57,6 +58,10 @@ export async function createDamage(tx: Transaction, input: CreateDamageInput, no
   return damage;
 }
 
+/**
+ * Mengoreksi catatan kerusakan. Menurunkan jumlah rusak mengembalikan tanaman ke meja, jadi
+ * hasilnya harus tetap muat di lubang meja. Gagal: 409 DAMAGE_RESTORE_EXCEEDS_TABLE_CAPACITY.
+ */
 export async function updateDamage(tx: Transaction, id: string, input: UpdateDamageInput, now: number) {
   validateFutureDate(input.tanggal_kejadian, now);
   const existing = (await tx.execute({
@@ -114,7 +119,10 @@ export async function updateDamage(tx: Transaction, id: string, input: UpdateDam
     }
   }
 
+  const before = await getDamage(tx, id);
   const damage = await patchDamage(tx, id, input);
+  // Tanpa perubahan, angka turunan juga tetap, jadi tidak ada yang perlu diumumkan.
+  if (JSON.stringify(before) === JSON.stringify(damage)) return keepVersionIfSame(before, damage);
   await syncTableStatus(tx, String(existing.id_meja));
   await recordDerivedChange(tx, 'pemindahan', String(existing.id_pemindahan), now);
   await recordDerivedChange(tx, 'meja-tanam', String(existing.id_meja), now);

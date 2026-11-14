@@ -1,14 +1,17 @@
 import type { Client, Row, Transaction } from '@libsql/client';
 import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { GROWTH_DAYS_ON_TABLE } from '../../common/growth-rules.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 import type { CreateTransferInput, ListTransferQuery, UpdateTransferInput } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
 
 const dayMs = 24 * 60 * 60 * 1000;
-const HARVEST_STANDARD_DAYS = 45;
 const nullableId = (value: Row[string]) => (value == null ? null : String(value));
 
+// Tanaman aktif = dipindahkan - rusak - dipanen. Rumus yang sama ada di tables/store.ts,
+// harvest/service.ts, damage/service.ts, dan migrasi 0012; ubah semuanya bersamaan.
 const batchActive = `p.jumlah_tanaman
   - COALESCE((SELECT SUM(k.jumlah_tanaman) FROM kerusakan_tanaman k WHERE k.id_pemindahan=p.id_pemindahan), 0)
   - COALESCE((SELECT SUM(d.jumlah_tanaman) FROM detail_panen d WHERE d.id_pemindahan=p.id_pemindahan), 0)`;
@@ -40,7 +43,8 @@ function transferRow(row: Row, today: string) {
   const todayMs = Date.parse(`${today}T00:00:00Z`);
 
   const umurSemaiHari = Math.floor((pindahMs - semaiMs) / dayMs);
-  const estimasiPanen = new Date(semaiMs + HARVEST_STANDARD_DAYS * dayMs).toISOString().slice(0, 10);
+  const estimasiPanen = new Date(pindahMs + GROWTH_DAYS_ON_TABLE * dayMs).toISOString().slice(0, 10);
+  // HSS: hari sejak semai. HST: hari sejak pindah ke meja. Keduanya memakai tanggal Asia/Jakarta.
   const hss = Math.floor((todayMs - semaiMs) / dayMs);
   const hst = Math.floor((todayMs - pindahMs) / dayMs);
   const sisaHariPanen = Math.max(0, Math.floor((Date.parse(`${estimasiPanen}T00:00:00Z`) - todayMs) / dayMs));
@@ -143,12 +147,12 @@ export async function insertTransfer(tx: Transaction, input: CreateTransferInput
 }
 
 export async function patchTransfer(tx: Transaction, id: string, input: UpdateTransferInput, now: number) {
-  await getTransfer(tx, id, now);
+  const current = await getTransfer(tx, id, now);
   if ('keterangan' in input) {
     await tx.execute({
       sql: 'UPDATE pemindahan SET keterangan = ? WHERE id_pemindahan = ?',
       args: [input.keterangan ?? null, id],
     });
   }
-  return getTransfer(tx, id, now);
+  return keepVersionIfSame(current, await getTransfer(tx, id, now));
 }

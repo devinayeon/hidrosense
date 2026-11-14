@@ -5,11 +5,12 @@ import { sweepExpiredAuthRecords } from '../../common/maintenance.js';
 import { verifyPassword } from '../../common/passwords.js';
 import { createSession } from '../../common/sessions.js';
 import { consumeLimit } from '../../common/rate-limit.js';
-import { parseInput } from '../../common/validation.js';
+import { emptyQuerySchema, parseInput } from '../../common/validation.js';
 import { loginSchema } from './contracts.js';
 
 export function registerLogin(app: FastifyInstance, db: Client, clock: () => number) {
   app.post('/api/v1/auth/login', async (request, reply) => {
+    parseInput(emptyQuerySchema, request.query);
     const { username, password } = parseInput(loginSchema, request.body);
     // Keyed per source IP and exact username: usernames are case-sensitive, so
     // 'Petani' and 'petani' are two accounts and must not share a bucket.

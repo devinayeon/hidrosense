@@ -55,7 +55,7 @@ export const listSowingQuerySchema = z.strictObject({
   siap_pindah: z.enum(['1']).optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateSowingInput = z.infer<typeof createSowingSchema>;
 export type UpdateSowingInput = z.infer<typeof updateSowingSchema>;

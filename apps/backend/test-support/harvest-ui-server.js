@@ -10,7 +10,7 @@ const today = new Date(f.clock() + 7 * 3600000).toISOString().slice(0, 10);
 const dateOffset = (days) => new Date(Date.parse(`${today}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 const sowingDate = dateOffset(-20);
 const transferDate = dateOffset(-5);
-const estimateDate = dateOffset(25);
+const estimateDate = dateOffset(40);
 await f.db.execute({
   sql: "INSERT INTO penyemaian(id_user,tanggal_semai,jumlah_benih,status_penyemaian,keterangan) VALUES(1,?,500,'aktif','Fixture panen')",
   args: [sowingDate],
