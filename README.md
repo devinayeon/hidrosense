@@ -9,6 +9,8 @@ Sistem Manajemen Budidaya Selada Hidroponik NFT dengan Deteksi Hama dan Rekomend
 
 Untuk menyiapkan akun petani pertama tanpa data uji, lihat [setup akun backend](apps/backend/README.md#akun-petani-pertama).
 
+Untuk memahami susunan kode, peta MVC, lima alur utama, dan daftar istilah, baca [arsitektur](docs/ARCHITECTURE.md).
+
 ## Cara memeriksa
 
 Jalankan dari folder utama (butuh Node 22.13 atau lebih baru, dan Flutter untuk pemeriksaan mobile):
