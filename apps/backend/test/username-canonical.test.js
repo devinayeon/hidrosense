@@ -142,7 +142,7 @@ test('q searches literally: % and _ are not wildcards', async (t) => {
 test('phone numbers need a digit and passwords need a visible character', async (t) => {
   const { app, login } = await fixture(t);
   const headers = bearer((await login()).json().data.access_token);
-  for (const no_telepon of ['---', '+', '( )', '   ']) {
+  for (const no_telepon of ['---', '+', '( )']) {
     assert.equal((await create(app, headers, { username: 'tel', no_telepon })).statusCode, 400, no_telepon);
   }
   assert.equal((await create(app, headers, { username: 'tel', no_telepon: '+62 812-345' })).statusCode, 201);

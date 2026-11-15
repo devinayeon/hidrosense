@@ -33,6 +33,16 @@ export async function assertUsernameAvailable(db: Executor, username: string, ex
   if (result.rows.length) throw new ApiError(409, 'USERNAME_TAKEN', 'Username sudah digunakan.');
 }
 
+/** Email boleh kosong, tetapi bila terisi harus unik; akun nonaktif tetap memegang emailnya. */
+export async function assertEmailAvailable(db: Executor, email: string | null | undefined, exceptId?: string) {
+  if (!email) return;
+  const result = await db.execute({
+    sql: 'SELECT 1 FROM users WHERE lower(email)=? AND (? IS NULL OR id_user<>?)',
+    args: [email, exceptId ?? null, exceptId ?? null],
+  });
+  if (result.rows.length) throw new ApiError(409, 'EMAIL_TAKEN', 'Email sudah digunakan.');
+}
+
 export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash?: string) {
   // Baca username lama sebelum UPDATE. Formulir mengirim ulang semua field, jadi field yang
   // ikut terkirim belum tentu berubah; sesi hanya dicabut bila username benar-benar lain.

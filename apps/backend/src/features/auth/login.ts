@@ -22,8 +22,13 @@ export function registerLogin(app: FastifyInstance, db: Client, clock: () => num
       sql: 'SELECT CAST(id_user AS TEXT) AS id_user,username,password,status_aktif FROM users WHERE username=?', args: [username],
     })).rows[0];
     const valid = await verifyPassword(password, user ? String(user.password) : '');
-    if (!valid || !user || user.status_aktif !== 1) {
+    if (!valid || !user) {
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'Username atau password tidak valid.');
+    }
+    // Status akun baru disebut setelah password terbukti benar. Orang yang menebak password
+    // atau username tidak bisa memakai jawaban ini untuk mengetahui akun mana yang dinonaktifkan.
+    if (user.status_aktif !== 1) {
+      throw new ApiError(403, 'ACCOUNT_DEACTIVATED', 'Akun dinonaktifkan. Hubungi petani untuk mengaktifkannya kembali.');
     }
     const session = await createSession(db, user, clock());
     await sweepExpiredAuthRecords(db, clock(), request.log);

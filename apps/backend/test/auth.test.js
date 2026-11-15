@@ -21,10 +21,12 @@ test('login creates hashed server sessions and returns safe identity', async (t)
   assert.doesNotMatch(me.body, /password|token_hash/);
 });
 
-test('wrong, missing, inactive and injection credentials receive the same 401', async (t) => {
+// Akun nonaktif dengan password benar dijawab 403 ACCOUNT_DEACTIVATED (lihat account-rework.test.js).
+// Dengan password salah ia tetap 401 yang sama, jadi status akun tidak bocor ke penebak.
+test('wrong, missing, inactive-with-wrong-password and injection credentials receive the same 401', async (t) => {
   const { app, db } = await fixture(t);
   await db.execute("UPDATE users SET status_aktif=0 WHERE username='pegawai'");
-  for (const [username, supplied] of [['petani', 'wrong'], ['absent', password], ['pegawai', password], ["' OR 1=1 --", password]]) {
+  for (const [username, supplied] of [['petani', 'wrong'], ['absent', password], ['pegawai', 'wrong'], ["' OR 1=1 --", password]]) {
     const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username, password: supplied } });
     assert.equal(response.statusCode, 401);
     assert.equal(response.json().error.code, 'INVALID_CREDENTIALS');

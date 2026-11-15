@@ -74,7 +74,7 @@ Batas permintaan: 120 per menit per IP, dan 10 percobaan login per 15 menit per 
 
 | Endpoint | Body | Catatan |
 |---|---|---|
-| `POST /auth/login` | `username`, `password` | Membalas token dan `user`. Gagal: `401 INVALID_CREDENTIALS` |
+| `POST /auth/login` | `username`, `password` | Membalas token dan `user`. Gagal: `401 INVALID_CREDENTIALS`. Akun nonaktif dengan password benar: `403 ACCOUNT_DEACTIVATED`; dengan password salah tetap `401`, jadi status akun tidak bocor ke penebak |
 | `POST /auth/refresh` | `refresh_token` | Membalas token baru. Refresh token sekali pakai |
 | `GET /auth/me` | | Pengguna aktif |
 | `POST /auth/logout` | | `204` |
@@ -87,7 +87,15 @@ Endpoint ini tidak memakai `Idempotency-Key`. Pengiriman ulang `POST /employees`
 
 **Aturan username.** Username disimpan dan dikembalikan dalam bentuk baku: Unicode NFC dan huruf kecil. `Budi`, `budi`, dan `BUDI` satu akun, dan login menerima ejaan apa pun. Username 1–50 karakter, tanpa karakter kontrol, karakter tak terlihat (lebar nol, pembalik arah), spasi selain spasi biasa, spasi ganda, atau spasi di ujung. Selain itu `400 VALIDATION_ERROR`; username yang hanya beda huruf besar kecil atau susunan Unicode dari akun lain dibalas `409 USERNAME_TAKEN`.
 
-**Aturan lain.** `password` 12–128 karakter dan memuat minimal satu karakter yang terlihat. `no_telepon` memuat minimal satu angka. Query `q` mencari teks apa adanya; `%` dan `_` bukan wildcard.
+**Aturan lain.** `password` 12–128 karakter dan memuat minimal satu karakter yang terlihat. `no_telepon` memuat minimal satu angka.
+
+**Email.** Disimpan dan dikembalikan dalam huruf kecil. Harus unik di semua akun, tanpa membedakan huruf besar kecil; akun nonaktif tetap memegang emailnya. Bentrok dibalas `409 EMAIL_TAKEN` pada `POST /employees`, `PATCH /employees/:id`, dan `PATCH /profile`. Akun tanpa email boleh banyak.
+
+**Mengosongkan kolom.** `email`, `no_telepon`, dan `alamat` boleh `null`, string kosong, atau hanya spasi; ketiganya mengosongkan kolom dan disimpan sebagai `null`. `nama` tidak boleh kosong.
+
+**Teks.** `nama` satu baris tanpa karakter kontrol, tak terlihat, pembalik arah, atau spasi selain spasi biasa. `alamat` boleh beberapa baris (baris baru dan tab sah) dengan aturan yang sama untuk karakter lain. Pelanggaran dibalas `400 VALIDATION_ERROR`.
+
+**Daftar dan pencarian.** `GET /employees` memakai `page` dan `limit` seperti daftar lain dan membalas `meta`. Query `q` mencari teks apa adanya di `nama` dan `username`: `%` dan `_` bukan wildcard, huruf besar kecil tidak dibedakan (juga untuk é), dan é yang disusun satu atau dua kodepoin dianggap sama. Id yang bukan pegawai atau tidak ada dibalas `404 ACCOUNT_NOT_FOUND`.
 
 | Endpoint | Izin | Body atau query |
 |---|---|---|

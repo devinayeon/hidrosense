@@ -28,7 +28,9 @@ export const canonicalUsername = (value: string) => value.normalize('NFC').toLow
 
 // Karakter kontrol, format (lebar nol, pembalik arah), pemisah baris, dan spasi selain ' ' membuat
 // dua username tampak sama di layar padahal berbeda, atau tak terlihat sama sekali.
-const hiddenCharacters = /[\p{C}\p{Zl}\p{Zp}]|[^\S ]/u;
+// Huruf "kosong" (pengisi Hangul, braille kosong, grapheme joiner) bukan spasi dan bukan karakter
+// format menurut Unicode, tetapi di layar tampak sebagai ruang kosong, jadi daftarnya eksplisit.
+const hiddenCharacters = /[\p{C}\p{Zl}\p{Zp}]|[^\S ]|[͏ᅟᅠ⠀ㅤﾠ]/u;
 const isPlainUsername = (value: string) => !hiddenCharacters.test(value) && !value.includes('  ')
   && value === value.trim();
 
@@ -39,8 +41,25 @@ export const usernameSchema = z.string().min(1).max(200).transform(canonicalUser
 /** Password baru: 12–128 karakter dan memuat minimal satu karakter yang terlihat. */
 export const newPasswordSchema = z.string().min(12).max(128).refine((value) => /\S/u.test(value));
 
-/** Pola LIKE untuk pencarian "mengandung": % dan _ dari pengguna dicari apa adanya (pakai ESCAPE '\'). */
-export const likeContains = (text: string) => `%${text.replace(/[\\%_]/g, '\\$&')}%`;
+/** Satu baris teks tampak, misalnya nama: tanpa karakter kontrol, tak terlihat, atau spasi selain ' '. */
+export const plainLine = (max: number) => z.string().trim().min(1).max(max)
+  .refine((value) => !hiddenCharacters.test(value));
+
+/** Teks beberapa baris, misalnya alamat: baris baru dan tab sah, karakter tersembunyi lain tidak. */
+export const plainText = (max: number) => z.string().trim().min(1).max(max)
+  .refine((value) => !hiddenCharacters.test(value.replace(/[\n\r\t]/g, '')));
+
+/**
+ * Kolom pilihan: string kosong atau hanya spasi berarti "kosongkan" dan disimpan sebagai null,
+ * sama seperti mengirim null. Tanpa ini, formulir yang mengirim "" untuk kolom kosong ditolak.
+ */
+export const clearable = <T extends z.ZodType>(schema: T) => z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+  schema.nullable(),
+).optional();
+
+/** Email dibakukan huruf kecil supaya keunikannya tidak bergantung pada huruf besar kecil. */
+export const emailSchema = z.string().trim().max(100).email().transform((value) => value.toLowerCase());
 
 export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);

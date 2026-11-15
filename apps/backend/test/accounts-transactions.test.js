@@ -63,7 +63,8 @@ test('refresh racing deactivation never leaves a usable employee session', async
   if (refreshed.statusCode === 200) {
     assert.equal((await app.inject({ url: '/api/v1/auth/me', headers: bearer(refreshed.json().data.access_token) })).statusCode, 401);
   }
-  assert.equal((await login('pegawai')).statusCode, 401);
+  assert.equal((await login('pegawai')).statusCode, 403);
+  assert.equal((await db.execute('SELECT COUNT(*) AS n FROM auth_sessions WHERE id_user=2')).rows[0].n, 0);
 });
 
 test('SQL-like input remains data and cannot change another account', async (t) => {
