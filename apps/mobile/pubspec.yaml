@@ -70,6 +70,7 @@ flutter:
     - assets/illustrations/features/
     - assets/illustrations/avatars/
     - assets/illustrations/states/
+    - lib/views/v2/assets/illustrations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

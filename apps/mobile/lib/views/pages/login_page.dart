@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/widgets/login_header_hero.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
+import '../v2/pages/v2_onboarding_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -241,6 +242,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       ),
                                     ),
                                   ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextButton.icon(
+                                onPressed: () => Navigator.of(
+                                  context,
+                                ).push(V2OnboardingPage.route()),
+                                icon: const Icon(
+                                  Icons.auto_awesome_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('Coba tampilan v2'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: accent,
                                 ),
                               ),
                             ],
