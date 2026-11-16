@@ -12,6 +12,7 @@ import '../pages/panen_page.dart';
 import '../pages/penjualan_page.dart';
 import '../pages/seeding_form_page.dart';
 import '../theme/app_theme.dart';
+import '../v2/pages/v2_gallery_page.dart';
 import '../widgets/app_surface_colors.dart';
 import '../widgets/feature_illustration.dart';
 import '../widgets/feature_overview_card.dart';
@@ -276,6 +277,24 @@ class DashboardBody extends ConsumerWidget {
                               .toList(),
                         );
                       },
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => open(const V2GalleryPage()),
+                        icon: const Icon(
+                          Icons.auto_awesome_mosaic_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Review widget v2'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: colors.teal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.xl),
