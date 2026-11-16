@@ -86,10 +86,25 @@ test('database rate limits survive separate app instances and reset after their 
 test('account throttle returns 429 before deriving another password', async (t) => {
   const { app, db, clock } = await fixture(t);
   const reply = { header() { return this; } };
-  for (let i = 0; i < 10; i++) await consumeLimit(db, 'login:petani', 10, 900000, clock(), reply);
+  for (let i = 0; i < 10; i++) await consumeLimit(db, 'login:127.0.0.1:petani', 10, 900000, clock(), reply);
   const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username: 'petani', password } });
   assert.equal(response.statusCode, 429);
   assert.equal(response.headers['retry-after'], '900');
+});
+
+// Dulu username peka huruf besar kecil dan 'Petani' bisa menjadi akun kembar dengan kuota login
+// sendiri. Sekarang username satu bentuk baku (migrasi 0017): kembar itu tidak bisa ada, dan
+// semua ejaan memakai satu kuota (lihat username-canonical.test.js).
+test('a case-variant lookalike of an existing username cannot be created', async (t) => {
+  const { app, db } = await fixture(t);
+  await assert.rejects(
+    db.execute("INSERT INTO users (id_role,nama,username,password) SELECT id_role,'Kembar','Petani',password FROM users WHERE username='petani'"),
+    /lowercase/,
+  );
+  assert.equal((await db.execute("SELECT COUNT(*) AS n FROM users WHERE lower(username)='petani'")).rows[0].n, 1);
+  const owner = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username: 'Petani', password } });
+  assert.equal(owner.statusCode, 200);
+  assert.equal(owner.json().data.user.username, 'petani');
 });
 
 test('production requires HTTPS and trusts forwarded protocol only from configured proxies', async (t) => {

@@ -133,7 +133,7 @@ test('deactivation is repeatable, preserves referenced history, and revokes acce
   assert.deepEqual((await db.execute('SELECT * FROM penyemaian')).rows, history);
   assert.equal((await app.inject({ url: '/api/v1/auth/me', headers: bearer(token.access_token) })).statusCode, 401);
   assert.equal((await app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refresh_token: token.refresh_token } })).statusCode, 401);
-  assert.equal((await login('pegawai')).statusCode, 401);
+  assert.equal((await login('pegawai')).statusCode, 403);
   const list = await app.inject({ url: '/api/v1/employees?status_aktif=0', headers });
   assert.equal(list.json().data[0].status_aktif, 0);
   assert.equal((await app.inject({ url: '/api/v1/employees?status_aktif=1', headers })).json().meta.total, 0);

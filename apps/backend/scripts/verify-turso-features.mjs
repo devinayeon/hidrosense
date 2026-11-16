@@ -1,3 +1,4 @@
+// Run with: node --import tsx scripts/verify-turso-features.mjs (src/db is TypeScript).
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { openDatabase } from '../src/db/client.js';

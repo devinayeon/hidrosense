@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/uuid.dart';
-import '../data/services/api_client.dart';
+import '../data/services/write_outcome.dart';
 import '../data/models/table_record.dart';
 import '../data/repositories/table_repository.dart';
 import 'session_viewmodel.dart';
@@ -190,6 +190,7 @@ class ConnectedTableNotifier extends StateNotifier<TableState> {
       command = TableCommand(target, body);
       _commands[_scope] = command;
     }
+    final wasUncertain = command.uncertain;
     command.running = true;
     refreshWarning = null;
     ++_generation;
@@ -230,11 +231,7 @@ class ConnectedTableNotifier extends StateNotifier<TableState> {
       _commands.remove(_scope);
       return record;
     } catch (e) {
-      command.uncertain =
-          e is! ApiException ||
-          e.status == 0 ||
-          e.status >= 500 ||
-          e.code == 'SESSION_CHANGED';
+      command.uncertain = writeStaysUncertain(e, wasUncertain: wasUncertain);
       if (!command.uncertain) _commands.remove(_scope);
       rethrow;
     } finally {

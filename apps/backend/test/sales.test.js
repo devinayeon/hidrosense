@@ -199,7 +199,7 @@ test('sales rejects invalid payloads and unknown harvests', async (t) => {
     { ...f.body(), id_panen: undefined },
   ];
   for (const body of invalid) check(await f.post(body), 400);
-  check(await f.post(f.body({ id_panen: '999' })), 404, 'HARVEST_NOT_FOUND');
+  check(await f.post(f.body({ id_panen: '999' })), 422, 'HARVEST_NOT_FOUND');
   check(await f.post(f.body({ id_panen: '1', jumlah_kg: '1.80', harga_per_kg: '9999999999.99' })), 201);
 });
 

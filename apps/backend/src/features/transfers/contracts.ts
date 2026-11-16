@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { activeListQuerySchema, integerIdSchema } from '../../common/validation.js';
+import { activeListQuerySchema, expectedVersionSchema, hasChanges, integerIdSchema } from '../../common/validation.js';
 
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
@@ -23,9 +23,10 @@ export const createTransferSchema = z.strictObject({
 });
 
 export const updateTransferSchema = z.strictObject({
+  expected_version: expectedVersionSchema,
   keterangan: z.string().trim().max(1000).nullable().optional(),
 }).refine(
-  (v) => Object.keys(v).length > 0,
+  hasChanges,
   { message: 'Minimal satu field harus diperbarui.' },
 );
 
@@ -36,7 +37,7 @@ export const listTransferQuerySchema = z.strictObject({
   id_penyemaian: integerIdSchema.optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateTransferInput = z.infer<typeof createTransferSchema>;
 export type UpdateTransferInput = z.infer<typeof updateTransferSchema>;

@@ -21,10 +21,12 @@ test('login creates hashed server sessions and returns safe identity', async (t)
   assert.doesNotMatch(me.body, /password|token_hash/);
 });
 
-test('wrong, missing, inactive and injection credentials receive the same 401', async (t) => {
+// Akun nonaktif dengan password benar dijawab 403 ACCOUNT_DEACTIVATED (lihat account-rework.test.js).
+// Dengan password salah ia tetap 401 yang sama, jadi status akun tidak bocor ke penebak.
+test('wrong, missing, inactive-with-wrong-password and injection credentials receive the same 401', async (t) => {
   const { app, db } = await fixture(t);
   await db.execute("UPDATE users SET status_aktif=0 WHERE username='pegawai'");
-  for (const [username, supplied] of [['petani', 'wrong'], ['absent', password], ['pegawai', password], ["' OR 1=1 --", password]]) {
+  for (const [username, supplied] of [['petani', 'wrong'], ['absent', password], ['pegawai', 'wrong'], ["' OR 1=1 --", password]]) {
     const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username, password: supplied } });
     assert.equal(response.statusCode, 401);
     assert.equal(response.json().error.code, 'INVALID_CREDENTIALS');
@@ -124,4 +126,18 @@ test('authentication accepts a created account whose ID exceeds JavaScript safe 
   const me = await app.inject({ url: '/api/v1/auth/me', headers: bearer(loggedIn.json().data.access_token) });
   assert.equal(me.statusCode, 200, me.body);
   assert.equal(me.json().data.id_user, '9007199254740992');
+});
+
+test('a failing host cannot lock a known username out for the real client', async (t) => {
+  const { app, advance } = await fixture(t);
+  const attempt = (remoteAddress, supplied = 'wrong password') => app.inject({
+    method: 'POST', url: '/api/v1/auth/login', remoteAddress,
+    payload: { username: 'petani', password: supplied },
+  });
+  for (let i = 0; i < 10; i++) assert.equal((await attempt('10.0.0.9')).statusCode, 401);
+  assert.equal((await attempt('10.0.0.9')).statusCode, 429);
+  // The real client keeps its own quota, so the correct password still works.
+  assert.equal((await attempt('127.0.0.1', password)).statusCode, 200);
+  advance(15 * 60 * 1000 + 1);
+  assert.equal((await attempt('10.0.0.9')).statusCode, 401);
 });

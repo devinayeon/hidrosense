@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../pages/add_form_inventaris_page.dart';
-import '../pages/connected_inventory_page.dart';
 import '../pages/cuaca_page.dart';
 import '../pages/info_seeding_page.dart';
 import '../pages/meja_nft_page.dart';
@@ -20,9 +19,10 @@ import '../widgets/row_info_card_md.dart';
 import '../widgets/surface_section_header.dart';
 
 class DashboardBody extends ConsumerWidget {
-  const DashboardBody({super.key, this.onInventoryTap});
+  const DashboardBody({super.key, required this.onInventoryTap});
 
-  final VoidCallback? onInventoryTap;
+  /// Pindah ke tab inventaris milik halaman utama.
+  final VoidCallback onInventoryTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,34 +37,32 @@ class DashboardBody extends ConsumerWidget {
     final hasData = !nursery.loading && nursery.error == null;
     final colors = AppSurfaceColors.of(context);
 
-    final actions =
-        <({String title, IconData icon, Widget page, VoidCallback? onTap})>[
-          (
-            title: '+ Barang',
-            icon: Icons.inventory_2_outlined,
-            page: const AddFormInventarisPage(),
-            onTap: null,
-          ),
-          if (user?.permissions.contains('penyemaian:write') == true)
-            (
-              title: '+ Semai',
-              icon: Icons.eco_outlined,
-              page: const SeedingFormPage(),
-              onTap: null,
-            ),
-          (
-            title: 'Cek Stok',
-            icon: Icons.view_in_ar_outlined,
-            page: const ConnectedInventoryPage(),
-            onTap: onInventoryTap,
-          ),
-          (
-            title: 'Meja NFT',
-            icon: Icons.table_restaurant_outlined,
-            page: const MejaNftPage(),
-            onTap: null,
-          ),
-        ];
+    void open(Widget page) =>
+        Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+
+    final actions = <({String title, IconData icon, VoidCallback onTap})>[
+      (
+        title: '+ Barang',
+        icon: Icons.inventory_2_outlined,
+        onTap: () => open(const AddFormInventarisPage()),
+      ),
+      if (user?.permissions.contains('penyemaian:write') == true)
+        (
+          title: '+ Semai',
+          icon: Icons.eco_outlined,
+          onTap: () => open(const SeedingFormPage()),
+        ),
+      (
+        title: 'Cek Stok',
+        icon: Icons.view_in_ar_outlined,
+        onTap: onInventoryTap,
+      ),
+      (
+        title: 'Meja NFT',
+        icon: Icons.table_restaurant_outlined,
+        onTap: () => open(const MejaNftPage()),
+      ),
+    ];
 
     final insets = MediaQuery.paddingOf(context);
 
@@ -234,14 +232,7 @@ class DashboardBody extends ConsumerWidget {
                                       horizontal: AppSpacing.xs,
                                       vertical: 14,
                                     ),
-                                    onTap:
-                                        action.onTap ??
-                                        () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => action.page,
-                                          ),
-                                        ),
+                                    onTap: action.onTap,
                                     child: ConstrainedBox(
                                       constraints: const BoxConstraints(
                                         minHeight: 48,

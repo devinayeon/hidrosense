@@ -1,15 +1,17 @@
 import type { FastifyInstance } from 'fastify';
 import type { Client, InValue } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
-import { createObatSchema, updateObatSchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
+import { createObatSchema, updateObatSchema, emptyQuerySchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
 import { getObat, obatResponse, syncColumns } from './store.js';
 import { inventoryWrite } from './write.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 
 export function registerObat(app: FastifyInstance, db: Client, clock: () => number) {
   const readGuard = requirePermission(db, 'inventaris:read', clock);
   const writeGuard = requirePermission(db, 'inventaris:write', clock);
 
   app.post('/api/v1/obat', { preHandler: writeGuard }, async (request, reply) => {
+    parseInput(emptyQuerySchema, request.query);
     const input = parseInput(createObatSchema, request.body);
     const result = await inventoryWrite(db, request, clock, 'obat.create', input, async (tx) => {
       const inserted = await tx.execute({
@@ -38,15 +40,17 @@ export function registerObat(app: FastifyInstance, db: Client, clock: () => numb
   });
 
   app.get('/api/v1/obat/:id', { preHandler: readGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     return { data: await getObat(db, id) };
   });
 
   app.patch('/api/v1/obat/:id', { preHandler: writeGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     const input = parseInput(updateObatSchema, request.body);
     return inventoryWrite(db, request, clock, 'obat.update', { id, input }, async (tx) => {
-      await getObat(tx, id);
+      const current = await getObat(tx, id);
       const assignments: string[] = [];
       const args: InValue[] = [];
       for (const field of ['nama_obat', 'jenis_obat', 'dosis', 'aturan_penggunaan', 'deskripsi'] as const) {
@@ -54,16 +58,17 @@ export function registerObat(app: FastifyInstance, db: Client, clock: () => numb
       }
       args.push(id);
       await tx.execute({ sql: `UPDATE obat SET ${assignments.join(',')} WHERE id_obat=?`, args });
-      return getObat(tx, id);
-    });
+      return keepVersionIfSame(current, await getObat(tx, id));
+    }, input.expected_version);
   });
 
   app.post('/api/v1/obat/:id/deactivate', { preHandler: writeGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
     const { id } = parseInput(idParamSchema, request.params);
     return inventoryWrite(db, request, clock, 'obat.deactivate', { id }, async (tx) => {
-      await getObat(tx, id);
+      const current = await getObat(tx, id);
       await tx.execute({ sql: 'UPDATE obat SET status_aktif=0 WHERE id_obat=?', args: [id] });
-      return getObat(tx, id);
+      return keepVersionIfSame(current, await getObat(tx, id));
     });
   });
 }

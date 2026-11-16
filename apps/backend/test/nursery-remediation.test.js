@@ -48,7 +48,7 @@ test('Completed sowings reject edits/reopen but replay their committed completio
 test('Future Jakarta date is rejected atomically, then accepted at Jakarta midnight', async (t) => {
   const f = await nurseryFixture(t);
   const input = { ...f.defaultPayload(), tanggal_semai: '2026-10-01' };
-  expectError(await f.post(input, f.reader), 422, 'SOWING_DATE_IN_FUTURE');
+  expectError(await f.post(input, f.reader), 400, 'SOWING_DATE_IN_FUTURE');
   assert.equal((await f.list()).json().meta.total, 0);
   const balance = await f.app.inject({ url: `/api/v1/inventaris/${f.items[0].id_inventaris}/saldo`, headers: f.reader });
   assert.equal(balance.json().data.saldo, '500');

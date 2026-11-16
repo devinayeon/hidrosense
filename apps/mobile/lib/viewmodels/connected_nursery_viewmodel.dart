@@ -6,6 +6,7 @@ import '../data/models/nursery_record.dart';
 import '../data/models/transfer_record.dart';
 import '../data/repositories/nursery_repository.dart';
 import '../data/services/api_client.dart';
+import '../data/services/write_outcome.dart';
 import 'session_viewmodel.dart';
 import 'sowing_draft.dart';
 import 'connected_inventory_viewmodel.dart';
@@ -33,6 +34,7 @@ class SeedlingTransferCommand extends ChangeNotifier {
   bool submitting = false;
   bool saved = false;
   bool rejected = false;
+  bool uncertain = false;
   String? error;
   TransferRecord? receipt;
 
@@ -183,12 +185,11 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
       );
       command.complete(receipt);
     } catch (error) {
-      final definitivelyRejected =
-          error is ApiException &&
-          error.status >= 400 &&
-          error.status < 500 &&
-          error.code != 'SESSION_CHANGED';
-      command.fail(error, definitivelyRejected: definitivelyRejected);
+      command.uncertain = writeStaysUncertain(
+        error,
+        wasUncertain: command.uncertain,
+      );
+      command.fail(error, definitivelyRejected: !command.uncertain);
       rethrow;
     }
   }

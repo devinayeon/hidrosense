@@ -1,5 +1,7 @@
 import type { Client, Row, Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { MIN_TRANSFER_AGE_DAYS } from '../../common/growth-rules.js';
 import { fromMinor } from '../../common/quantities.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -7,7 +9,6 @@ type Executor = Pick<Client, 'execute'>;
 const nullableId = (value: Row[string]) => (value == null ? null : String(value));
 
 const dayMs = 24 * 60 * 60 * 1000;
-const jakartaDate = (now: number) => new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 function sowingRow(row: Row, today: string) {
   const sowingDate = Date.parse(`${String(row.tanggal_semai)}T00:00:00Z`);
@@ -24,7 +25,7 @@ function sowingRow(row: Row, today: string) {
     keterangan: row.keterangan == null ? null : String(row.keterangan),
     /** Age in calendar days from tanggal_semai to today (Asia/Jakarta: UTC+7). */
     usia_hari: age,
-    siap_pindah: age !== null && age >= 15,
+    siap_pindah: age !== null && age >= MIN_TRANSFER_AGE_DAYS,
   };
 }
 
@@ -86,7 +87,7 @@ export async function listSowings(
   const args = [statusFilter, statusFilter, siapFilter, today];
   const filter = `
     (? IS NULL OR p.status_penyemaian=?)
-    AND (? IS NULL OR julianday(p.tanggal_semai) <= julianday(?) - 15)
+    AND (? IS NULL OR julianday(p.tanggal_semai) <= julianday(?) - ${MIN_TRANSFER_AGE_DAYS})
   `;
   const count = (await db.execute({
     sql: `SELECT COUNT(*) AS total FROM penyemaian p WHERE ${filter}`,

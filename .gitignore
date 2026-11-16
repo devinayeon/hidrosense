@@ -494,11 +494,14 @@ ml/venv/
 ml/dataset/raw/
 *.pt
 
-graphify-out/cache/
-graphify-out/.graphify_root
-graphify-out/.graphify_python
-graphify-out/.graphify_analysis.json
-graphify-out/needs_update
-
-# Feature-local generated graphs; root graph remains project knowledge source.
+/.agent/
+/.agents/
+/agent/
+/.claude/
+/.codex/
+/.graphify/
+/graphify-out/
 apps/**/graphify-out/
+/.bob/
+/.vscode/
+/.worktrees/

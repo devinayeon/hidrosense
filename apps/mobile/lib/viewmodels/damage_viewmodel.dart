@@ -9,6 +9,7 @@ import '../data/models/damage_record.dart';
 import '../data/models/transfer_record.dart';
 import '../data/repositories/damage_repository.dart';
 import '../data/services/api_client.dart';
+import '../data/services/write_outcome.dart';
 import 'connected_table_viewmodel.dart';
 import 'session_viewmodel.dart';
 
@@ -205,6 +206,7 @@ class DamageViewModel extends StateNotifier<DamageState> {
       command = DamageCommand(target, payload, draft);
       _commands[_scope] = command;
     }
+    final wasUncertain = command.uncertain;
     command.running = true;
     ++_load;
     _set(submitting: true);
@@ -235,11 +237,10 @@ class DamageViewModel extends StateNotifier<DamageState> {
           ? DamageSubmitResult.saved
           : DamageSubmitResult.savedRefreshFailed;
     } catch (error) {
-      command.uncertain =
-          error is! ApiException ||
-          error.status == 0 ||
-          error.status >= 500 ||
-          error.code == 'SESSION_CHANGED';
+      command.uncertain = writeStaysUncertain(
+        error,
+        wasUncertain: wasUncertain,
+      );
       if (!command.uncertain) _commands.remove(_scope);
       if (error is ApiException &&
           [

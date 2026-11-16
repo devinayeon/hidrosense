@@ -2,11 +2,12 @@ import type { Client } from '@libsql/client';
 import { z } from 'zod';
 import { hashPassword } from '../../common/passwords.js';
 import { ApiError } from '../../common/errors.js';
+import { newPasswordSchema, usernameSchema } from '../../common/validation.js';
 
 const schema = z.object({
-  username: z.string().min(1).max(50).regex(/^\S+$/),
+  username: usernameSchema,
   nama: z.string().trim().min(1).max(100),
-  password: z.string().min(12).max(128),
+  password: newPasswordSchema,
 }).strict();
 
 export async function bootstrapPetani(db: Client, input: unknown) {

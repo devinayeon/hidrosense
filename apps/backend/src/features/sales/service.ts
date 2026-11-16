@@ -1,22 +1,21 @@
 import type { InValue, Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
-import { formatWeight, parseWeight } from '../../db/harvest-weights.js';
-import { formatMoney, parseMoney } from '../../db/sales-amounts.js';
+import { keepVersionIfSame } from '../../common/sync.js';
+import { formatWeight, parseWeight } from '../../common/weights.js';
+import { formatMoney, parseMoney } from '../../common/money.js';
 import { getSale } from './store.js';
 import type { CreateSaleInput, UpdateSaleInput } from './contracts.js';
 
 type SaleLineInput = { id_panen: string; jumlah_kg: string; harga_per_kg: string };
 
-function jakartaToday(now: number) {
-  return new Date(now + 7 * 3600000).toISOString().slice(0, 10);
-}
-
 function validateDate(date: string, now: number) {
-  if (date > jakartaToday(now)) {
+  if (date > jakartaDate(now)) {
     throw new ApiError(400, 'VALIDATION_ERROR', 'Tanggal penjualan tidak boleh di masa depan.');
   }
 }
 
+/** Panen hanya bisa dijual bila berat layak semua barisnya diketahui. Gagal: 409 HARVEST_NOT_SELLABLE. */
 async function harvestForSale(tx: Transaction, idPanen: string) {
   const row = (await tx.execute({
     sql: `SELECT CAST(p.id_panen AS TEXT) AS id_panen, p.tanggal_panen,
@@ -29,7 +28,7 @@ async function harvestForSale(tx: Transaction, idPanen: string) {
       GROUP BY p.id_panen`,
     args: [idPanen],
   })).rows[0];
-  if (!row) throw new ApiError(404, 'HARVEST_NOT_FOUND', 'Data panen tidak ditemukan.');
+  if (!row) throw new ApiError(422, 'HARVEST_NOT_FOUND', 'Data panen tidak ditemukan.');
   if (Number(row.detail_count) === 0
     || Number(row.known_count) !== Number(row.detail_count)
     || row.layak == null) {
@@ -38,6 +37,10 @@ async function harvestForSale(tx: Transaction, idPanen: string) {
   return { date: String(row.tanggal_panen), saleable: BigInt(String(row.layak)) };
 }
 
+/**
+ * Total berat terjual, dalam perseratus kilogram. Baris lama tanpa jumlah_kg_minor dibaca dari
+ * jumlah_kg hanya bila nilainya pasti; bila tidak, ditolak daripada menghitung stok secara keliru.
+ */
 async function soldForHarvest(tx: Transaction, idPanen: string, excludeSaleId?: string) {
   const rows = (await tx.execute({
     sql: `SELECT CAST(jumlah_kg_minor AS TEXT) AS minor,
@@ -65,6 +68,7 @@ async function soldForHarvest(tx: Transaction, idPanen: string, excludeSaleId?: 
   return total;
 }
 
+/** Aturan: tanggal jual tidak mendahului panen, dan berat tidak melebihi berat layak dikurangi yang terjual. */
 async function validateLine(tx: Transaction, line: SaleLineInput, date: string, excludeSaleId?: string) {
   const quantity = parseWeight(line.jumlah_kg);
   const harvest = await harvestForSale(tx, line.id_panen);
@@ -125,8 +129,15 @@ export async function updateSale(tx: Transaction, id: string, input: UpdateSaleI
     }
     const line = { id_panen: input.id_panen!, jumlah_kg: input.jumlah_kg, harga_per_kg: input.harga_per_kg };
     await validateLine(tx, line, date, id);
-    await tx.execute({ sql: 'DELETE FROM detail_penjualan WHERE id_penjualan = ?', args: [id] });
-    await insertLine(tx, id, line);
+    // Baris yang sama tidak ditulis ulang: id detail baru akan terbaca sebagai perubahan palsu.
+    const current = existing.details.length === 1 ? existing.details[0] : undefined;
+    const sameLine = current?.id_panen === line.id_panen
+      && current.jumlah_kg === formatWeight(parseWeight(line.jumlah_kg))
+      && current.harga_per_kg === formatMoney(parseMoney(line.harga_per_kg));
+    if (!sameLine) {
+      await tx.execute({ sql: 'DELETE FROM detail_penjualan WHERE id_penjualan = ?', args: [id] });
+      await insertLine(tx, id, line);
+    }
   } else {
     for (const detail of existing.details) {
       if (date < detail.tanggal_panen) {
@@ -144,5 +155,5 @@ export async function updateSale(tx: Transaction, id: string, input: UpdateSaleI
   if (fields.length) {
     await tx.execute({ sql: `UPDATE penjualan SET ${fields.join(', ')} WHERE id_penjualan = ?`, args: [...args, id] });
   }
-  return getSale(tx, id);
+  return keepVersionIfSame(existing, await getSale(tx, id));
 }

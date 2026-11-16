@@ -5,6 +5,8 @@ import '../core/formatting.dart';
 import '../data/models/sale_record.dart';
 import '../models/penjualan_model.dart';
 import 'penjualan_viewmodel.dart';
+import 'sale_command.dart';
+import 'sale_form_seed.dart';
 import 'session_viewmodel.dart';
 
 class CatatPenjualanState {
@@ -70,6 +72,16 @@ class CatatPenjualanState {
 class CatatPenjualanViewModel extends StateNotifier<CatatPenjualanState> {
   CatatPenjualanViewModel({DateTime? initialDate})
     : super(CatatPenjualanState(tanggal: initialDate ?? jakartaToday()));
+
+  /// Mengisi formulir dari nilai awal; batch diatur terpisah oleh pemanggil.
+  void applySeed(SaleFormSeed seed) {
+    setPembeli(seed.buyer);
+    setTanggal(seed.date);
+    if (seed.weight > 0) setBerat(seed.weight);
+    if (seed.priceText.isNotEmpty) setHargaPerKgText(seed.priceText);
+    setCatatan(seed.note);
+    if (seed.status != null) setStatus(seed.status);
+  }
 
   void setPembeli(String val) =>
       state = state.copyWith(pembeli: val, clearSaveError: true);
@@ -147,6 +159,12 @@ class CatatPenjualanViewModel extends StateNotifier<CatatPenjualanState> {
       validationMessage(headerOnly: headerOnly) == null;
 
   Future<bool> submitPenjualan(WidgetRef ref, {PenjualanItem? edit}) async {
+    // Isian yang tertunda dikirim apa adanya, tanpa validasi ulang: stok panen
+    // bisa sudah berkurang justru karena kiriman pertama berhasil tersimpan.
+    final notifier = ref.read(penjualanViewModelProvider.notifier);
+    if (notifier.uncertainCommand?.target == (edit?.id ?? saleCreateTarget)) {
+      return _send(notifier.retryPending);
+    }
     final headerOnly = edit != null && edit.details.length != 1;
     if (edit != null && !edit.canEdit) {
       state = state.copyWith(
@@ -195,20 +213,21 @@ class CatatPenjualanViewModel extends StateNotifier<CatatPenjualanState> {
           )
         : null;
 
+    return _send(() {
+      if (edit == null) return notifier.createSale(draft!);
+      if (headerOnly) return notifier.updateSaleHeader(edit, headerDraft!);
+      return notifier.updateSale(edit, draft!);
+    });
+  }
+
+  Future<bool> _send(Future<PenjualanItem> Function() write) async {
     state = state.copyWith(
       isLoading: true,
       saveError: null,
       clearSaveError: true,
     );
     try {
-      final notifier = ref.read(penjualanViewModelProvider.notifier);
-      if (edit == null) {
-        await notifier.createSale(draft!);
-      } else if (headerOnly) {
-        await notifier.updateSaleHeader(edit, headerDraft!);
-      } else {
-        await notifier.updateSale(edit, draft!);
-      }
+      await write();
       if (!mounted) return true;
       state = state.copyWith(
         isLoading: false,

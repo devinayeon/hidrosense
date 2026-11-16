@@ -473,7 +473,9 @@ void main() {
       );
       harvest = FakeHarvestRepository(harvestApi((_) async => harvestPage([])));
       final today = jakartaToday();
-      harvestDate = apiDate(today.subtract(const Duration(days: 10)));
+      // Counted from the 1st so both sales stay in this month on every day of the month.
+      final monthStart = DateTime(today.year, today.month);
+      harvestDate = apiDate(monthStart.subtract(const Duration(days: 10)));
       harvest.records = [
         saleHarvest(id: '1', date: harvestDate, layak: '100.00'),
         saleHarvest(
@@ -488,7 +490,7 @@ void main() {
         saleRecord(
           id: '1',
           buyer: 'Supermarket Jaya',
-          date: apiDate(today.subtract(const Duration(days: 5))),
+          date: apiDate(monthStart),
           status: 'lunas',
           details: [
             saleDetailJson(
@@ -503,7 +505,7 @@ void main() {
         saleRecord(
           id: '2',
           buyer: 'Toko Sayur Segar',
-          date: apiDate(today.subtract(const Duration(days: 7))),
+          date: apiDate(monthStart),
           status: 'belum_lunas',
           details: [
             saleDetailJson(

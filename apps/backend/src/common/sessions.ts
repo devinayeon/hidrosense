@@ -4,7 +4,10 @@ import { ApiError } from './errors.js';
 import { permissionsFor } from './permissions.js';
 
 export const ACCESS_TTL_MS = 15 * 60 * 1000;
+/** A session ends this long after its last refresh... */
 export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** ...and never later than this long after login, however active it stays. */
+export const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const tokenPattern = '^[A-Za-z0-9_-]{43}$';
 export const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 export const newTokens = () => ({ access: randomBytes(32).toString('base64url'), refresh: randomBytes(32).toString('base64url') });

@@ -15,8 +15,6 @@ class EmployeeFormSheet extends ConsumerStatefulWidget {
     String? email,
     String? noTelepon,
     String? alamat,
-    required Duration duration,
-    int retryCount,
   })
   onSubmit;
 
@@ -30,8 +28,6 @@ class EmployeeFormSheet extends ConsumerStatefulWidget {
       String? email,
       String? noTelepon,
       String? alamat,
-      required Duration duration,
-      int retryCount,
     })
     onSubmit,
   }) {
@@ -59,15 +55,12 @@ class _EmployeeFormSheetState extends ConsumerState<EmployeeFormSheet> {
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;
-  late final DateTime _openedAt;
-  int _retryCount = 0;
 
   bool get isEditing => widget.employee != null;
 
   @override
   void initState() {
     super.initState();
-    _openedAt = DateTime.now();
     final e = widget.employee;
     _namaController = TextEditingController(text: e?.nama ?? '');
     _usernameController = TextEditingController(text: e?.username ?? '');
@@ -89,13 +82,9 @@ class _EmployeeFormSheetState extends ConsumerState<EmployeeFormSheet> {
   }
 
   Future<void> _handleSave() async {
-    if (!_formKey.currentState!.validate()) {
-      _retryCount++;
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
-    final duration = DateTime.now().difference(_openedAt);
     final email = _emailController.text.trim();
     final noTelepon = _noTeleponController.text.trim();
     final alamat = _alamatController.text.trim();
@@ -111,8 +100,6 @@ class _EmployeeFormSheetState extends ConsumerState<EmployeeFormSheet> {
       email: isEditing ? email : (email.isEmpty ? null : email),
       noTelepon: isEditing ? noTelepon : (noTelepon.isEmpty ? null : noTelepon),
       alamat: isEditing ? alamat : (alamat.isEmpty ? null : alamat),
-      duration: duration,
-      retryCount: _retryCount,
     );
 
     if (mounted) {

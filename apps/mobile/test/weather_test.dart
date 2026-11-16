@@ -141,7 +141,7 @@ void main() {
         _app(
           user: _userWithoutWeather,
           weather: weather,
-          body: const DashboardBody(),
+          body: DashboardBody(onInventoryTap: () {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -152,7 +152,7 @@ void main() {
     testWidgets('is visible with cuaca:read', (tester) async {
       final weather = WeatherViewModel(autoLoad: false);
       await tester.pumpWidget(
-        _app(user: _weatherUser, weather: weather, body: const DashboardBody()),
+        _app(user: _weatherUser, weather: weather, body: DashboardBody(onInventoryTap: () {})),
       );
       await tester.pumpAndSettle();
 

@@ -198,7 +198,10 @@ void main() {
       final repo = await loadedRepo();
       repo.records = [HarvestRecord.fromJson(harvestJson())];
       await pump(tester, const LaporanPanenPage(harvestId: '1'), repo);
-      expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsOneWidget);
+      expect(
+        find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'),
+        findsOneWidget,
+      );
       expect(find.textContaining('PDF'), findsNothing);
       expect(find.textContaining('Grand Rapids'), findsNothing);
     },
@@ -581,6 +584,23 @@ void main() {
       },
     );
   }
+  for (final status in [401, 403, 429]) {
+    test('respons hilang lalu $status: isian panen tetap terkunci', () async {
+      final repo = await loadedRepo();
+      final vm = harvestVm(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      repo.onWrite = (_, _, _) async {
+        if (repo.keys.length == 1) throw TimeoutException('lost');
+        throw ApiException(status, 'X', 'Ditolak');
+      };
+      await vm.submit(harvestDraft);
+      await vm.submit(harvestDraft);
+      expect(repo.keys, hasLength(2));
+      expect(vm.payloadLocked, isTrue);
+    });
+  }
+
   testWidgets(
     'uncertain request form retains selected zero active batch and locked input; identical retry saves',
     (tester) async {
@@ -723,7 +743,12 @@ void main() {
       role: 'pegawai',
       permissions: [],
     );
-    await pump(tester, const Scaffold(body: DashboardBody()), repo, user: user);
+    await pump(
+      tester,
+      Scaffold(body: DashboardBody(onInventoryTap: () {})),
+      repo,
+      user: user,
+    );
     expect(find.text('Manajemen Panen'), findsNothing);
     expect(repo.harvestReads, 0);
   });
@@ -798,14 +823,20 @@ void main() {
           vm: vm,
         );
         expect(find.text('Memuat laporan panen...'), findsOneWidget);
-        expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsNothing);
+        expect(
+          find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'),
+          findsNothing,
+        );
         detail.completeError(
           ApiException(status, 'READ', 'Detail gagal dimuat.'),
         );
         await tester.pumpAndSettle();
         expect(find.text('Detail gagal dimuat.'), findsOneWidget);
         expect(find.text('Coba lagi'), findsOneWidget);
-        expect(find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'), findsNothing);
+        expect(
+          find.text('Berat layak panen: 2.25 kg (sebelum penjualan)'),
+          findsNothing,
+        );
       },
     );
   }

@@ -76,7 +76,7 @@ test('transfer updates remaining seedlings and table holes on list and detail wi
   assert.equal(completed.status_penyemaian, 'selesai');
 });
 
-test('transfers create calculates harvest date based on 45-day baseline, umur_semai, and active plants', async (t) => {
+test('transfers create calculates harvest date 45 days after transfer, umur_semai, and active plants', async (t) => {
   const f = await setup(t);
   const res = await f.create();
   check(res, 201);
@@ -93,8 +93,8 @@ test('transfers create calculates harvest date based on 45-day baseline, umur_se
 
   // 15 days seedling duration: 2026-09-16 - 2026-09-01 = 15
   assert.equal(d.umur_semai_hari, 15);
-  // Harvest calculation: 2026-09-01 + 45 days = 2026-10-16
-  assert.equal(d.estimasi_panen, '2026-10-16');
+  // Harvest calculation: transfer 2026-09-16 + 45 days growth = 2026-10-31
+  assert.equal(d.estimasi_panen, '2026-10-31');
   assert.equal(d.version, '1');
   assert.ok(d.public_id);
 });
@@ -299,4 +299,17 @@ test('transfers permissions: petani can read, create and patch', async (t) => {
   });
   check(patched, 200);
   assert.equal(patched.json().data.keterangan, 'Catatan petani');
+});
+
+test('transfer without an idempotency key is refused before any write', async (t) => {
+  const f = await setup(t);
+  const headers = bearer((await f.login('pegawai')).json().data.access_token);
+  const res = await f.app.inject({
+    method: 'POST', url: '/api/v1/pemindahan', headers,
+    payload: { id_penyemaian: '1', id_meja: '1', tanggal_pemindahan: '2026-09-16', jumlah_tanaman: 10 },
+    omitIdempotencyKey: true,
+  });
+  assert.equal(res.statusCode, 400, res.body);
+  assert.equal(res.json().error.message, 'Header sinkronisasi tidak valid.');
+  assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM pemindahan')).rows[0].n, 0);
 });

@@ -1,7 +1,6 @@
 # Panduan Menjalankan Backend HidroSense
 
-Panduan ini mencakup migrasi database, seeder data uji, menjalankan API, dan
-memverifikasi fitur backend.
+Panduan ini mencakup konfigurasi database, migrasi, seeder data uji, dan startup API.
 
 ## Prasyarat
 
@@ -85,7 +84,11 @@ menampilkan kredensial akun uji `petani` dan `pegawai`; gunakan nilai tersebut
 untuk login selama pengujian. Seeder dirancang idempoten sehingga dapat
 dijalankan ulang tanpa membuat duplikasi data uji.
 
-Seeder diblokir pada `NODE_ENV=production` kecuali `ALLOW_PROD_SEED=1`.
+Seeder diblokir pada `NODE_ENV=production` **dan** pada `DATABASE_URL` remote
+(`libsql://`/`https://`) kecuali `ALLOW_PROD_SEED=1`. Menjalankan ulang seeder
+hanya mengisi baris yang belum ada; akun dan data domain yang sudah ada tidak
+berubah, termasuk tanggal semai. Untuk data uji dengan tanggal baru, hapus dulu
+file database lokal lalu jalankan migrasi dan seeder lagi.
 Jangan menggunakan akun atau data seeder di production.
 
 ## 4. Menjalankan backend
@@ -122,99 +125,120 @@ Invoke-RestMethod http://127.0.0.1:3000/health/ready
 dan kesiapan skema. Jika startup gagal, pastikan `.env` valid, database dapat
 dibuka, dan `npm run db:status` tidak lagi menampilkan migrasi `pending`.
 
-## 5. Menguji fitur
+Untuk menyiapkan akun petani pertama tanpa data seeder, ikuti [setup akun backend](../apps/backend/README.md#akun-petani-pertama).
 
-### Pemeriksaan lengkap
+## 5. Header wajib untuk endpoint tulis
 
-Perintah berikut menjalankan typecheck, pemeriksaan batas ukuran file, dan
-seluruh test suite:
+Setiap `POST`/`PATCH` yang menulis data domain mewajibkan header
+`Idempotency-Key` berisi UUID v4 unik per operasi. Tanpa header itu server
+membalas `400 VALIDATION_ERROR` dengan pesan `Header sinkronisasi tidak valid.`
+Tujuannya: percobaan ulang setelah timeout mengembalikan hasil tersimpan
+(`200`, `replayed: true`), bukan membuat catatan kedua.
 
-```powershell
-npm run check
+`X-Client-Id` opsional dan hanya dipakai pada operasi yang membuat catatan baru
+(`create`, termasuk `POST /stok/:id/reverse` yang membuat gerakan pembalik).
+Operasi yang mengubah catatan lama menolaknya dengan `400 VALIDATION_ERROR`.
+
+`PATCH` domain menerima field `expected_version` di body, berisi `version` terakhir
+yang dibaca klien. Jika data sudah berubah, server membalas `409 VERSION_CONFLICT`
+dan tidak menulis apa pun. Tanpa field itu penulisan terakhir yang menang. `PATCH /panen/:id`
+tetap mewajibkan field ini dan membalas `409 HARVEST_VERSION_CONFLICT`.
+
+Kode status kesalahan: resource di URL tidak ada `404`; referensi di dalam body tidak ada
+`422`; tanggal di masa depan `400`.
+
+## 6. Sesi login
+
+Access token berlaku 15 menit. Sesi berakhir 7 hari setelah refresh terakhir dan paling
+lambat 30 hari setelah login. Refresh token sekali pakai; token lama dibalas `401` tanpa
+mencabut sesi yang sedang berjalan.
+
+## 7. Mengambil perubahan untuk perangkat lain
+
+```http
+GET /api/v1/sync/changes?cursor=0&limit=100
 ```
 
-Atau jalankan test saja:
-
-```powershell
-npm test
+```json
+{
+  "data": [
+    {
+      "cursor": "42",
+      "resource_type": "meja-tanam",
+      "domain_id": "1",
+      "public_id": "...",
+      "version": "3",
+      "changed_at": "2026-09-30T00:00:00.000Z"
+    }
+  ],
+  "meta": { "next_cursor": "42", "has_more": false }
+}
 ```
 
-Test menggunakan database SQLite/libSQL lokal sementara dan tidak menggantikan
-verifikasi koneksi remote Turso.
+Cara memakainya:
 
-### Test berdasarkan area fitur
+1. Simpan `next_cursor` setelah data halaman itu berhasil disimpan di perangkat.
+2. Baca ulang tiap catatan lewat endpoint biasa, misalnya `GET /api/v1/meja-tanam/1`.
+3. Ulangi selama `has_more` bernilai `true`.
+4. Bila server membalas `409 SYNC_CURSOR_RESET`, mulai lagi dari `cursor=0`.
 
-Jalankan satu area untuk iterasi cepat:
+Satu catatan muncul sekali per halaman pada perubahan terbarunya. `limit` paling besar 200.
+Daftar ini tersaring menurut izin, jadi pegawai tidak melihat `penjualan`.
 
-```powershell
-npm test -- test/http.test.js
-npm test -- test/auth.test.js
-npm test -- test/profile.test.js
-npm test -- test/inventory.test.js
-npm test -- test/stock.test.js
-npm test -- test/nursery.test.js
-npm test -- test/transfers.test.js
-npm test -- test/seed.test.js
-npm test -- test/migrations.test.js
-```
+`resource_type`: `jenis-inventaris`, `obat`, `inventaris`, `stok`, `penyemaian`, `meja-tanam`,
+`pemindahan`, `kerusakan_tanaman`, `panen`, `penjualan`.
 
-Test migrasi dan seeder berguna setelah perubahan SQL atau data awal. Test
-`http`, `auth`, dan `profile` memverifikasi fondasi API dan autentikasi.
-Test `inventory`, `stock`, `nursery`, dan `transfers` memverifikasi alur fitur
-domain.
+Perubahan nilai turunan ikut diumumkan tanpa menaikkan `version`, misalnya saldo `inventaris`,
+serta tanaman aktif dan kapasitas pada `pemindahan` dan `meja-tanam`. Karena `inventaris`
+menampilkan nama jenis dan obat, baca ulang daftarnya bila `jenis-inventaris` atau `obat` berubah.
+Akun pegawai dan profil tidak termasuk daftar ini.
 
-### Verifikasi manual alur fitur
+## 8. Pengembangan lokal
 
-1. Jalankan migrasi dan seeder.
-2. Jalankan API dengan `npm run dev`.
-3. Pastikan kedua endpoint health berstatus siap.
-4. Login menggunakan kredensial yang dicetak oleh seeder melalui endpoint
-   autentikasi sesuai [kontrak API](backend-api.md).
-5. Jalankan request fitur yang sedang dikerjakan menggunakan akun dan data
-   hasil seeder.
-6. Setelah perubahan, ulangi test area terkait lalu `npm run check`.
+Pengembangan memakai database file lokal. `dist/serverless.js` juga menerima database lokal selama
+`NODE_ENV` bukan `production`.
 
-Untuk operasi penulisan stok, sertakan `Idempotency-Key` sesuai kontrak stock
-ledger. Jangan menguji operasi destruktif pada database yang berisi data
-penting; gunakan database lokal atau salinan backup.
+API menolak start selama ada migrasi yang belum diterapkan, termasuk pada database yang pernah memakai
+`0012_operation_key_lower`. Jalankan `npm run db:migrate` saat database siap ditingkatkan.
 
-## Urutan cepat dari database kosong
+## 9. Deploy serverless
 
-```powershell
-cd apps/backend
-npm ci
-Copy-Item .env.example .env
-npm run db:status
-npm run db:migrate
-npm run db:seed
-npm run check
-npm run dev
-```
+Entry point: `dist/serverless.js`, yang mengekspor handler Node `(req, res)`. File ini tidak
+memanggil `listen`.
 
-Biarkan `npm run dev` berjalan, lalu jalankan pemeriksaan health atau test
-fitur dari terminal lain.
+Sebelum deploy:
 
-## Ganti target lokal vs Turso
+1. Jalankan `npm run db:migrate` dari pipeline deploy dengan `DATABASE_URL` Turso. Function
+   tidak menjalankan migrasi. Migrasi `0015_sync_changes` belum pernah dijalankan di Turso.
+2. Sertakan folder `migrations/` di paket function; `/health/ready` membacanya. Jika dibundel,
+   jalur folder ini bisa berubah dan endpoint itu akan membalas `503`.
 
-Default harian adalah SQLite lokal. Semua script hanya membaca `.env`,
-jadi ganti target berarti ganti isi `.env` dari file template yang sudah
-disiapkan di `apps/backend` (semuanya di-ignore git kecuali `.example`):
+Environment function:
+
+| Variabel | Nilai |
+|---|---|
+| `DATABASE_URL` | `libsql://...` atau `https://...`. Database file ditolak karena disk function tidak menetap. |
+| `DATABASE_AUTH_TOKEN` | Token Turso |
+| `NODE_ENV` | `production` |
+| `TRUST_PROXY_HOPS` | Jumlah proxy di depan function, biasanya `1` |
+| `CORS_ORIGINS` | Kosongkan kecuali ada klien browser |
+
+Periksa `TRUST_PROXY_HOPS` di platform yang dipakai: nilai yang terlalu kecil membuat semua
+pengguna berbagi satu kuota, dan nilai yang terlalu besar membuat kuota bisa dihindari dengan
+memalsukan `X-Forwarded-For`.
+
+Kuota request tersimpan di database supaya berlaku lintas instance. Sesi dan kuota kedaluwarsa
+dibersihkan saat login dan refresh, jadi tidak perlu cron.
 
 ```powershell
-cd apps/backend
-Copy-Item .env.local .env -Force  # kerja harian (lokal)
-Copy-Item .env.turso .env -Force  # verifikasi remote (sekali jalan)
+$key = [guid]::NewGuid().ToString()
+$token = (Invoke-RestMethod http://127.0.0.1:3000/api/v1/auth/login -Method Post `
+  -ContentType 'application/json' -Body '{"username":"petani","password":"..."}').data.access_token
+
+Invoke-RestMethod http://127.0.0.1:3000/api/v1/meja-tanam -Method Post `
+  -Headers @{ Authorization = "Bearer $token"; 'Idempotency-Key' = $key } `
+  -ContentType 'application/json' -Body '{"kode_meja":"M-05","jumlah_lubang":250}'
 ```
 
-- `.env.local` — SQLite lokal `file:./data/hidrosense.db`.
-- `.env.turso` — Turso remote hasil `turso db show --url` +
-  `turso db tokens create` (pakai token full-access, bukan read-only).
-- `.env.turso.example` — template tanpa token asli untuk anggota tim baru.
-
-Jangan develop harian langsung ke Turso: reset-nya mahal (harus
-`destroy/create` atau `DROP TABLE`) dan rollback `0006` memblokir DB yang
-sudah di-seed. Alurnya: `npm run check` hijau di lokal dulu, baru switch
-ke Turso, lalu `npm run db:status` (di DB baru harusnya semua `pending`;
-kalau `applied`, berarti salah URL — STOP), `npm run db:migrate`,
-`npm run db:seed`, dan cek `/health/live` + `/health/ready`. Selesai
-verifikasi, kembali dengan `Copy-Item .env.local .env -Force`.
+Kirim ulang dengan `$key` yang sama dan isi yang sama untuk menguji replay.
+Endpoint `employees` dan `profile` belum memakai mekanisme receipt ini.

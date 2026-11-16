@@ -49,3 +49,20 @@ test('reservation schema rejects missing or extra fields and documented invalid 
     assert.equal(response.json().error.request_id, response.headers['x-request-id']);
   }
 });
+
+// One wrapper per file here (inventory: jenis-inventaris, tables: meja-tanam). Stock,
+// nursery, transfers, harvest and damage each assert the same refusal in their own file.
+test('write endpoints reject a missing idempotency key', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  for (const [url, payload] of [
+    ['/api/v1/jenis-inventaris', { nama_jenis: 'Tanpa kunci' }],
+    ['/api/v1/meja-tanam', { kode_meja: 'M-01', jumlah_lubang: 10 }],
+  ]) {
+    const response = await app.inject({ method: 'POST', url, headers, payload, omitIdempotencyKey: true });
+    assert.equal(response.statusCode, 400, response.body);
+    assert.equal(response.json().error.message, 'Header sinkronisasi tidak valid.');
+  }
+  assert.equal((await db.execute('SELECT COUNT(*) AS n FROM jenis_inventaris')).rows[0].n, 0);
+  assert.equal((await db.execute('SELECT COUNT(*) AS n FROM meja_tanam')).rows[0].n, 0);
+});

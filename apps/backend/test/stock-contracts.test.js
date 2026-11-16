@@ -19,9 +19,10 @@ test('seed inventory initial stock requires a UUID and records the screenshot va
   const payload = { jenis_stok: 'masuk',
     details: [{ id_inventaris: item.id_inventaris, jumlah: '10', satuan: 'Pcs' }],
     keterangan: 'Saldo awal registrasi barang' };
-  const missing = await f.app.inject({ method: 'POST', url: '/api/v1/stok', headers: f.headers, payload });
+  const missing = await f.app.inject({ method: 'POST', url: '/api/v1/stok', omitIdempotencyKey: true,
+    headers: f.headers, payload });
   assert.equal(missing.statusCode, 400);
-  assert.equal(missing.json().error.message, 'Input tidak sesuai kontrak API.');
+  assert.equal(missing.json().error.message, 'Header sinkronisasi tidak valid.');
   assert.equal((await f.balance(item)).saldo, '0');
   const headers = { 'idempotency-key': randomUUID() };
   assert.equal((await f.post(payload, headers)).statusCode, 201);

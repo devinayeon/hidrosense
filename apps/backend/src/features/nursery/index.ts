@@ -49,7 +49,7 @@ export function registerNursery(app: FastifyInstance, db: Client, clock: () => n
     const input = parseInput(updateSowingSchema, request.body);
     parseInput(emptyQuerySchema, request.query);
     const result = await nurseryWrite(db, request, clock, 'penyemaian.update', { id, ...input },
-      (tx, _actorId, now) => updateSowing(tx, id, input, now));
+      (tx, _actorId, now) => updateSowing(tx, id, input, now), { id, expectedVersion: input.expected_version });
     return result;
   });
 }

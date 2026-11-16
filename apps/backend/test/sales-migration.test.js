@@ -36,7 +36,10 @@ test('sales migration adds buyer/status/amount columns and rolls back cleanly', 
   `);
   assert.equal((await db.execute('SELECT jumlah_kg_minor FROM detail_penjualan WHERE id_detail_penjualan=2')).rows[0].jumlah_kg_minor, 50);
 
-  await migrate(db, all, { direction: 'down', allowDataLoss: true });
+  // Later migrations roll back first; stop once 0013 itself is gone.
+  while ((await db.execute("SELECT COUNT(*) AS n FROM pragma_table_info('penjualan') WHERE name='pembeli'")).rows[0].n) {
+    await migrate(db, all, { direction: 'down', allowDataLoss: true });
+  }
   assert.equal((await db.execute('SELECT COUNT(*) AS n FROM penjualan')).rows[0].n, 2);
   assert.equal((await db.execute("SELECT COUNT(*) AS n FROM pragma_table_info('penjualan') WHERE name IN ('pembeli','status_pembayaran')")).rows[0].n, 0);
   assert.equal((await db.execute("SELECT COUNT(*) AS n FROM pragma_table_info('detail_penjualan') WHERE name IN ('jumlah_kg_minor','harga_per_kg_minor')")).rows[0].n, 0);

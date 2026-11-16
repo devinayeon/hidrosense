@@ -33,6 +33,6 @@ export const historyQuerySchema = z.strictObject({
   jenis_stok: directionSchema.optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 export type StockInput = z.infer<typeof createStockSchema>;
 export type StockLine = StockInput['details'][number];

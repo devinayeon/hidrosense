@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { activeListQuerySchema, integerIdSchema } from '../../common/validation.js';
+import { activeListQuerySchema, expectedVersionSchema, hasChanges, integerIdSchema } from '../../common/validation.js';
 
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
@@ -38,11 +38,12 @@ export const createSowingSchema = z.strictObject({
 });
 
 export const updateSowingSchema = z.strictObject({
+  expected_version: expectedVersionSchema,
   jumlah_benih: z.number().int().positive().max(1_000_000).optional(),
   status_penyemaian: z.enum(['aktif', 'selesai']).optional(),
   keterangan: z.string().trim().max(1000).nullable().optional(),
 }).refine(
-  (v) => Object.keys(v).length > 0,
+  hasChanges,
   { message: 'Minimal satu field harus diperbarui.' },
 );
 
@@ -54,7 +55,7 @@ export const listSowingQuerySchema = z.strictObject({
   siap_pindah: z.enum(['1']).optional(),
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateSowingInput = z.infer<typeof createSowingSchema>;
 export type UpdateSowingInput = z.infer<typeof updateSowingSchema>;

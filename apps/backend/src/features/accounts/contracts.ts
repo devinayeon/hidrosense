@@ -1,15 +1,20 @@
 import { z } from 'zod';
-import { activeListQuerySchema, idParamSchema } from '../../common/validation.js';
-export { parseInput } from '../../common/validation.js';
+import {
+  activeListQuerySchema, clearable, emailSchema, idParamSchema, newPasswordSchema, plainLine, plainText, usernameSchema,
+} from '../../common/validation.js';
+export { emptyQuerySchema, parseInput } from '../../common/validation.js';
 
 const fields = {
-  nama: z.string().trim().min(1).max(100),
-  username: z.string().min(1).max(50).regex(/^\S(?:.*\S)?$/u),
-  email: z.string().trim().max(100).email().nullable().optional(),
-  no_telepon: z.string().trim().min(1).max(20).regex(/^\+?[0-9 ()-]+$/).nullable().optional(),
-  alamat: z.string().trim().min(1).max(1000).nullable().optional(),
+  nama: plainLine(100),
+  username: usernameSchema,
+  email: clearable(emailSchema),
+  // Minimal satu angka: "---" atau "+" lolos pola karakter tetapi bukan nomor telepon.
+  no_telepon: clearable(z.string().trim().max(20).regex(/^\+?[0-9 ()-]+$/).regex(/[0-9]/)),
+  alamat: clearable(plainText(1000)),
 };
-const password = z.string().min(12).max(128);
+const password = newPasswordSchema;
+/** Aktivasi dan penonaktifan tidak punya body; klien HTTP umum tetap mengirim `{}` atau body kosong. */
+export const emptyBodySchema = z.strictObject({}).optional();
 export const createEmployeeSchema = z.strictObject({ ...fields, password });
 export const updateEmployeeSchema = z.strictObject({
   ...fields, password: password.optional(),

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { activeListQuerySchema, integerIdSchema } from '../../common/validation.js';
-import { parseWeight } from '../../db/harvest-weights.js';
-import { parseMoney } from '../../db/sales-amounts.js';
+import { parseWeight } from '../../common/weights.js';
+import { parseMoney } from '../../common/money.js';
 
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
@@ -54,7 +54,7 @@ export const listSalesQuerySchema = z.strictObject({
   limit: activeListQuerySchema.shape.limit,
 });
 
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 export type UpdateSaleInput = z.infer<typeof updateSaleSchema>;

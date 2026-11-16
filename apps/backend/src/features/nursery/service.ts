@@ -1,5 +1,7 @@
 import type { Transaction } from '@libsql/client';
+import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
+import { keepVersionIfSame } from '../../common/sync.js';
 import { recordMovement } from '../stock/service.js';
 import { getSowing, countMoved } from './store.js';
 import type { CreateSowingInput, UpdateSowingInput } from './contracts.js';
@@ -14,9 +16,8 @@ export async function createSowing(
   now: number,
   input: CreateSowingInput,
 ) {
-  const today = new Date(now + 7 * 3600 * 1000).toISOString().slice(0, 10);
-  if (input.tanggal_semai > today) {
-    throw new ApiError(422, 'SOWING_DATE_IN_FUTURE', 'Tanggal semai tidak boleh melewati hari ini.');
+  if (input.tanggal_semai > jakartaDate(now)) {
+    throw new ApiError(400, 'SOWING_DATE_IN_FUTURE', 'Tanggal semai tidak boleh melewati hari ini.');
   }
   // Insert penyemaian row first to obtain its ID for the stock origin FK.
   const inserted = (await tx.execute({
@@ -84,5 +85,5 @@ export async function updateSowing(
     sql: `UPDATE penyemaian SET ${assignments.join(',')} WHERE id_penyemaian=?`,
     args,
   });
-  return getSowing(tx, id, now);
+  return keepVersionIfSame(current, await getSowing(tx, id, now));
 }

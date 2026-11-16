@@ -2,7 +2,7 @@ import type { Client, Transaction } from '@libsql/client';
 import type { FastifyRequest } from 'fastify';
 import { authenticatedWrite } from '../../common/authenticated-write.js';
 import { executeDomainMutation, type Json } from '../../common/sync.js';
-import { clientUuidSchema, parseInput, uuidSchema } from '../../common/validation.js';
+import { clientUuidSchema, parseInput, requireIdempotencyKey } from '../../common/validation.js';
 import { ApiError } from '../../common/errors.js';
 import { stockUnavailable } from './errors.js';
 
@@ -11,7 +11,7 @@ export async function stockWrite<T extends Json & Record<string, Json>>(
   operationType: 'stok.create' | 'stok.reverse', payload: Json,
   effect: (tx: Transaction, actorId: string, now: number) => Promise<T>,
 ) {
-  const operationKey = parseInput(uuidSchema, request.headers['idempotency-key']);
+  const operationKey = requireIdempotencyKey(request.headers);
   const rawClientId = request.headers['x-client-id'];
   const clientId = rawClientId === undefined ? undefined : parseInput(clientUuidSchema, rawClientId);
   try {

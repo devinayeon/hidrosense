@@ -237,8 +237,8 @@ void main() {
         info['estimateDate'],
       ]);
       expect((seeded['transfers'] as List).map((t) => t['sisa_hari_panen']), [
-        25,
-        25,
+        40,
+        40,
       ]);
       await session(const PanenPage());
       await _wait(tester, () => find.text('Batch #1').evaluate().isNotEmpty);

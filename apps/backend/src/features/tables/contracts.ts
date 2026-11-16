@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { activeListQuerySchema } from '../../common/validation.js';
+import { activeListQuerySchema, expectedVersionSchema, hasChanges } from '../../common/validation.js';
 export { idParamSchema, parseInput } from '../../common/validation.js';
 
 const fields = {
@@ -12,13 +12,13 @@ export const createTableSchema = z.strictObject({
   ...fields, status_meja: fields.status_meja.default('tersedia'),
   keterangan: fields.keterangan.optional().transform((value) => value ?? null),
 });
-export const updateTableSchema = z.strictObject(fields).partial()
-  .refine((value) => Object.keys(value).length > 0);
+export const updateTableSchema = z.strictObject({ ...fields, expected_version: expectedVersionSchema }).partial()
+  .refine(hasChanges);
 export const listTableSchema = z.strictObject({
   page: activeListQuerySchema.shape.page, limit: activeListQuerySchema.shape.limit,
   status_meja: fields.status_meja.optional(),
 });
-export const emptyQuerySchema = z.strictObject({});
+export { emptyQuerySchema } from '../../common/validation.js';
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
 export type ListTableInput = z.infer<typeof listTableSchema>;

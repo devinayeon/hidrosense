@@ -33,7 +33,23 @@ export async function assertUsernameAvailable(db: Executor, username: string, ex
   if (result.rows.length) throw new ApiError(409, 'USERNAME_TAKEN', 'Username sudah digunakan.');
 }
 
+/** Email boleh kosong, tetapi bila terisi harus unik; akun nonaktif tetap memegang emailnya. */
+export async function assertEmailAvailable(db: Executor, email: string | null | undefined, exceptId?: string) {
+  if (!email) return;
+  const result = await db.execute({
+    sql: 'SELECT 1 FROM users WHERE lower(email)=? AND (? IS NULL OR id_user<>?)',
+    args: [email, exceptId ?? null, exceptId ?? null],
+  });
+  if (result.rows.length) throw new ApiError(409, 'EMAIL_TAKEN', 'Email sudah digunakan.');
+}
+
 export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash?: string) {
+  // Baca username lama sebelum UPDATE. Formulir mengirim ulang semua field, jadi field yang
+  // ikut terkirim belum tentu berubah; sesi hanya dicabut bila username benar-benar lain.
+  const stored = changes.username === undefined ? undefined : (await tx.execute({
+    sql: 'SELECT username FROM users WHERE id_user=?', args: [id],
+  })).rows[0]?.username;
+  const usernameChanged = changes.username !== undefined && changes.username !== stored;
   const assignments: string[] = [];
   const args: InValue[] = [];
   // Only server-owned column names enter SQL; all values are bound parameters.
@@ -43,7 +59,7 @@ export async function updateAccount(tx: Transaction, id: string, changes: Accoun
   if (passwordHash) { assignments.push('password=?'); args.push(passwordHash); }
   args.push(id);
   await tx.execute({ sql: `UPDATE users SET ${assignments.join(',')} WHERE id_user=?`, args });
-  if (passwordHash || changes.username !== undefined) {
+  if (passwordHash || usernameChanged) {
     await tx.execute({ sql: 'DELETE FROM auth_sessions WHERE id_user=?', args: [id] });
   }
 }

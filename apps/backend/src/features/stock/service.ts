@@ -4,6 +4,10 @@ import { initializeStockIdentity } from '../../common/sync.js';
 import { createStockSchema, parseInput, type StockInput } from './contracts.js';
 import { appendMovement, getMovement, type StockOrigin } from './store.js';
 
+/**
+ * Mencatat transaksi stok. Bila dipanggil fitur lain (origin terisi), hanya boleh stok keluar,
+ * dan origin mengaitkan transaksi itu ke pemiliknya (penyemaian atau perawatan).
+ */
 export async function recordMovement(tx: Transaction, actorId: string, now: number,
   input: StockInput, origin?: StockOrigin) {
   // Enforce the same rules for future domain callers, not only the HTTP boundary.
@@ -18,6 +22,10 @@ export async function recordMovement(tx: Transaction, actorId: string, now: numb
   return movement;
 }
 
+/**
+ * Koreksi stok berupa transaksi baru yang berlawanan; baris lama tidak pernah diubah. Transaksi
+ * pembalik dan transaksi milik penyemaian atau perawatan tidak bisa dibalik di sini (409).
+ */
 export async function reverseMovement(tx: Transaction, actorId: string, now: number,
   id: string, keterangan: string) {
   const original = await getMovement(tx, id);

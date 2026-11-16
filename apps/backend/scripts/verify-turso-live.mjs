@@ -1,3 +1,4 @@
+// Run with: node --import tsx scripts/verify-turso-live.mjs (src/db is TypeScript).
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';

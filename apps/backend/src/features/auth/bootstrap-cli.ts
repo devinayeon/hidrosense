@@ -13,7 +13,7 @@ try {
   delete process.env.BOOTSTRAP_PASSWORD;
   db = await openDatabase();
   const status = await migrationStatus(db, await loadMigrations());
-  if (status.some((item: { status: string }) => item.status !== 'applied')) throw new Error('Pending migrations');
+  if (status.some((item) => item.status !== 'applied')) throw new Error('Pending migrations');
   await bootstrapPetani(db, input);
   console.log('Akun petani dibuat. Password tidak ditampilkan.');
 } catch (error) {

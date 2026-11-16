@@ -1,3 +1,4 @@
+// Run with: node --import tsx scripts/reconcile-stock.mjs (src/db is TypeScript).
 import { openDatabase } from '../src/db/client.js';
 import { loadMigrations, migrationStatus } from '../src/db/migrate.js';
 import { reconcileStock } from '../src/features/stock/reconcile.ts';

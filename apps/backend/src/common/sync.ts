@@ -20,12 +20,25 @@ function hashPayload(operation: Operation) {
   })).digest('hex');
 }
 
+/**
+ * Inti anti-duplikat. Setiap tulis membawa kunci operasi (Idempotency-Key), dan hasilnya disimpan
+ * sebagai "tiket" di sync_operations dalam transaksi yang sama dengan datanya.
+ * - Kunci baru: efek dijalankan, tiket disimpan.
+ * - Kunci sama, isi sama: efek tidak dijalankan, hasil tersimpan dikembalikan dengan replayed: true.
+ * - Kunci sama, isi berbeda: 409 OPERATION_CONFLICT.
+ * X-Client-Id memberi record identitas publik yang stabil lewat sync_id_maps.
+ * legacyHash dan priorCasingMatches melayani tiket lama: dibuat sebelum hash memuat identitas klien,
+ * atau dengan ejaan huruf lain. Boleh dihapus setelah tidak ada lagi baris lama di semua database.
+ */
 async function executeOperation<T extends Json>(
   tx: Transaction, actorId: string, operation: Operation, now: number,
   effect: (publicId: string | null) => Promise<T>,
 ) {
   // Canonicalize at the transaction boundary too; old mappings keep their original spelling.
-  operation = { ...operation, ...(operation.client_id ? { client_id: operation.client_id.toLowerCase() } : {}) };
+  // The operation key is a UUID, so case never distinguishes two operations: a retry that
+  // upper-cases the header must replay the stored receipt instead of writing twice.
+  operation = { ...operation, operation_key: operation.operation_key.toLowerCase(),
+    ...(operation.client_id ? { client_id: operation.client_id.toLowerCase() } : {}) };
   const mappings = operation.resource_type && operation.client_id ? (await tx.execute({
     sql: `SELECT client_id,public_id FROM sync_id_maps
       WHERE id_user=? AND resource_type=? AND lower(client_id)=?`,
@@ -35,10 +48,17 @@ async function executeOperation<T extends Json>(
     throw new ApiError(409, 'CLIENT_ID_CONFLICT', 'UUID klien memiliki mapping lama yang bertentangan.');
   }
   const payloadHash = hashPayload(operation);
-  const existing = (await tx.execute({
+  // Receipts stored before key canonicalization may still be upper-case. Match either
+  // spelling so a retry after deploy replays instead of writing twice.
+  // Dua pencarian terpisah, bukan satu dengan OR: OR memaksa SQLite memindai semua tiket
+  // milik pengguna, padahal pencarian ini berjalan di dalam setiap transaksi tulis.
+  const findReceipt = (column: 'operation_key' | 'lower(operation_key)') => tx.execute({
     sql: `SELECT operation_type,payload_hash,result_json FROM sync_operations
-      WHERE id_user=? AND operation_key=?`, args: [actorId, operation.operation_key],
-  })).rows[0];
+      WHERE id_user=? AND ${column}=? ORDER BY id_change DESC LIMIT 1`,
+    args: [actorId, operation.operation_key],
+  });
+  const existing = (await findReceipt('operation_key')).rows[0]
+    ?? (await findReceipt('lower(operation_key)')).rows[0];
   if (existing) {
     const stored = JSON.parse(String(existing.result_json));
     const legacyHash = createHash('sha256').update(canonicalJson({
@@ -85,6 +105,17 @@ async function executeOperation<T extends Json>(
   return { ...result, replayed: false };
 }
 
+/**
+ * Announces a record whose derived values moved (saldo, tanaman aktif, kapasitas) while its own
+ * fields did not. Its version stays put, so an unrelated edit cannot cause a false conflict.
+ */
+export async function recordDerivedChange(tx: Transaction, resourceType: string, domainId: string, now: number) {
+  await tx.execute({
+    sql: 'INSERT INTO sync_changes (resource_type,domain_id,changed_at) VALUES (?,?,?)',
+    args: [resourceType, domainId, now],
+  });
+}
+
 async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
   const result = await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
     ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at
@@ -106,13 +137,33 @@ export async function initializeStockIdentity(tx: Transaction, domainId: string,
   return { public_id: publicId, version };
 }
 
+const versionConflict = () => new ApiError(409, 'VERSION_CONFLICT', 'Data sudah berubah. Muat ulang lalu coba lagi.');
+
+const unchangedResults = new WeakSet<object>();
+
+/**
+ * Dipanggil efek dengan isi baris sebelum dan sesudah perubahan. Bila sama persis, versi tidak
+ * dinaikkan, supaya klien lain yang memegang versi lama tidak mendapat konflik palsu.
+ */
+export function keepVersionIfSame<T extends object>(before: T, after: T): T {
+  if (JSON.stringify(before) === JSON.stringify(after)) unchangedResults.add(after);
+  return after;
+}
+
 type DomainMutation<T extends Json> = {
   resourceType: string;
   domainId?: string;
   idField: string;
+  /** The version the client last read. Absent means last write wins. */
+  expectedVersion?: string;
   effect: () => Promise<T>;
 };
 
+/**
+ * Tulis data domain lewat executeOperation, ditambah identitas publik (public_id) dan versi per record.
+ * expectedVersion kosong berarti penulis terakhir menang; bila diisi dan berbeda: 409 VERSION_CONFLICT.
+ * Versi naik setiap kali efek selesai, kecuali efek menandai hasilnya sama lewat keepVersionIfSame.
+ */
 export function executeDomainMutation<T extends Json & Record<string, Json>>(
   tx: Transaction, actorId: string, operation: Operation, now: number, mutation: DomainMutation<T>,
 ) {
@@ -121,18 +172,33 @@ export function executeDomainMutation<T extends Json & Record<string, Json>>(
       const existing = await tx.execute({ sql: 'SELECT 1 FROM sync_resource_links WHERE public_id=?', args: [reservedId] });
       if (existing.rows.length) throw new ApiError(409, 'RESOURCE_ALREADY_EXISTS', 'Identitas klien sudah terikat ke resource.');
     }
+    if (mutation.expectedVersion !== undefined && mutation.domainId) {
+      const current = (await tx.execute({
+        sql: `SELECT CAST(v.version AS TEXT) AS version FROM sync_resource_links l
+          LEFT JOIN sync_resource_versions v ON v.resource_type=l.resource_type AND v.public_id=l.public_id
+          WHERE l.resource_type=? AND l.domain_id=?`,
+        args: [mutation.resourceType, mutation.domainId],
+      })).rows[0];
+      if (current && current.version !== mutation.expectedVersion) throw versionConflict();
+    }
     const data = await mutation.effect();
     const domainId = mutation.domainId ?? String(data[mutation.idField]);
     const linked = (await tx.execute({
       sql: 'SELECT public_id FROM sync_resource_links WHERE resource_type=? AND domain_id=?',
       args: [mutation.resourceType, domainId],
     })).rows[0];
+    // A row without identity has never published a version, so no expected value can match.
+    if (!linked && mutation.expectedVersion !== undefined) throw versionConflict();
     const publicId = linked ? String(linked.public_id) : reservedId ?? randomUUID();
     if (!linked) await tx.execute({
       sql: 'INSERT INTO sync_resource_links (resource_type,domain_id,public_id) VALUES (?,?,?)',
       args: [mutation.resourceType, domainId, publicId],
     });
-    const version = await nextResourceVersion(tx, mutation.resourceType, publicId, now);
+    const kept = linked && unchangedResults.has(data) ? (await tx.execute({
+      sql: 'SELECT CAST(version AS TEXT) AS version FROM sync_resource_versions WHERE resource_type=? AND public_id=?',
+      args: [mutation.resourceType, publicId],
+    })).rows[0] : undefined;
+    const version = kept ? String(kept.version) : await nextResourceVersion(tx, mutation.resourceType, publicId, now);
     return { ...(data as Record<string, Json>), public_id: publicId, version } as T & { public_id: string; version: string };
   });
 }

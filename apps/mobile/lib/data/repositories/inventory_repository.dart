@@ -75,7 +75,8 @@ class InventoryRepository {
   }
 
   Future<void> deactivateItem(String id) async {
-    await _api.post('inventaris/$id/deactivate');
+    await _api.post('inventaris/$id/deactivate',
+        headers: {'Idempotency-Key': generateUuidV4()});
   }
 
   Future<StockMovementRecord> recordStockMovement({

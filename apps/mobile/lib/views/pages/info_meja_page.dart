@@ -3,17 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/connected_table_viewmodel.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../../data/models/table_record.dart';
-import '../../models/meja_nft_model.dart';
 import '../components/header.dart';
 import '../components/info_meja_body.dart';
 import '../theme/app_theme.dart';
 
 class InfoMejaPage extends ConsumerWidget {
-  final TableRecord? tableRecord;
-  final MejaNft? mejaItem;
+  final TableRecord tableRecord;
 
-  const InfoMejaPage({super.key, this.tableRecord, this.mejaItem})
-    : assert(tableRecord != null || mejaItem != null);
+  const InfoMejaPage({super.key, required this.tableRecord});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,18 +21,15 @@ class InfoMejaPage extends ConsumerWidget {
             ?.permissions
             .contains('budidaya:read') ==
         true;
-    final current = canRead && tableRecord != null
+    final current = canRead
         ? ref
               .watch(connectedTableProvider)
               .records
-              .where((r) => r.id == tableRecord!.id)
+              .where((r) => r.id == tableRecord.id)
               .firstOrNull
         : null;
     final title = canRead
-        ? current?.displayName ??
-              tableRecord?.displayName ??
-              mejaItem?.name ??
-              'Detail Meja'
+        ? current?.displayName ?? tableRecord.displayName
         : 'Detail Meja';
     return Scaffold(
       appBar: Header(
@@ -47,7 +41,7 @@ class InfoMejaPage extends ConsumerWidget {
         showBackButton: true,
       ),
       backgroundColor: AppColors.canvasWarm,
-      body: InfoMejaBody(tableRecord: tableRecord, mejaItem: mejaItem),
+      body: InfoMejaBody(tableRecord: tableRecord),
     );
   }
 }

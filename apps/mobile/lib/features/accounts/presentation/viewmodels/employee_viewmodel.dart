@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/services/api_client.dart';
-import '../../../../core/telemetry/ab_testing_service.dart';
 import '../../data/models/employee_model.dart';
 import '../../data/repositories/employee_repository.dart';
 
@@ -82,13 +81,11 @@ class EmployeeListState {
 }
 
 class EmployeeViewModel extends StateNotifier<EmployeeListState> {
-  EmployeeViewModel(this._repository, this._telemetry)
-    : super(const EmployeeListState()) {
+  EmployeeViewModel(this._repository) : super(const EmployeeListState()) {
     loadEmployees();
   }
 
   final EmployeeRepository _repository;
-  final AbTestingService _telemetry;
   int _loadGeneration = 0;
 
   Future<void> loadEmployees() async {
@@ -127,10 +124,6 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
     );
   }
 
-  void startOnboarding() {
-    _telemetry.logEvent('employee_onboarding_started');
-  }
-
   Future<bool> createEmployee({
     required String nama,
     required String username,
@@ -138,8 +131,6 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
     String? email,
     String? noTelepon,
     String? alamat,
-    required Duration duration,
-    int retryCount = 0,
   }) async {
     state = state.copyWith(
       isMutating: true,
@@ -156,12 +147,6 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
         noTelepon: noTelepon,
         alamat: alamat,
       );
-
-      _telemetry.logEvent('employee_created_success', {
-        'employee_id': created.id,
-        'duration_ms': duration.inMilliseconds,
-        'retry_count': retryCount,
-      });
 
       await loadEmployees();
       if (mounted) {
@@ -229,9 +214,6 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
     );
     try {
       await _repository.deactivateEmployee(id);
-      _telemetry.logEvent('employee_deactivation_triggered', {
-        'employee_id': id,
-      });
       await loadEmployees();
       if (mounted) {
         state = state.copyWith(
@@ -246,10 +228,6 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
       }
       return false;
     }
-  }
-
-  void cancelDeactivation(String id) {
-    _telemetry.logEvent('employee_deactivation_cancelled', {'employee_id': id});
   }
 
   Future<bool> activateEmployee(String id, String nama) async {
@@ -307,8 +285,5 @@ final employeeViewModelProvider =
     StateNotifierProvider.autoDispose<EmployeeViewModel, EmployeeListState>((
       ref,
     ) {
-      return EmployeeViewModel(
-        ref.watch(employeeRepositoryProvider),
-        ref.watch(abTestingServiceProvider),
-      );
+      return EmployeeViewModel(ref.watch(employeeRepositoryProvider));
     });

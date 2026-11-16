@@ -17,6 +17,26 @@ permissions:
   contents: read
 
 jobs:
+  # Pemeriksaan backend berdiri sendiri: tipe, lint, batas baris, dan tes.
+  # Memakai database :memory:, jadi tidak menyentuh Turso atau database dev.
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install backend dependencies
+        run: npm ci
+      - name: Typecheck, lint, line limit, and tests
+        run: npm run check
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
