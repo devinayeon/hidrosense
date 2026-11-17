@@ -17,7 +17,8 @@ class V2Pagination extends StatelessWidget {
         for (var dot = 0; dot < count; dot++) ...[
           if (dot > 0) const SizedBox(width: V2Space.sm),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
             width: dot == index ? 24 : 8,
             height: 8,
             decoration: BoxDecoration(

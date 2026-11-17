@@ -90,20 +90,34 @@ class _V2TextFieldState extends State<V2TextField> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  enabled: widget.enabled,
-                  obscureText: widget.obscure,
-                  keyboardType: widget.keyboardType,
-                  style: V2Type.body.copyWith(
-                    color: widget.enabled ? V2Colors.ink : V2Colors.muted,
-                  ),
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    hintText: widget.hint,
-                    hintStyle: V2Type.body.copyWith(color: V2Colors.muted),
+                // Kursor dan sorotan seleksi diambil dari DefaultSelectionStyle
+                // yang dibuat MaterialApp dari theme lama (teal), bukan dari
+                // Theme v2 terdekat, jadi keduanya di-set ulang di sini.
+                child: DefaultSelectionStyle(
+                  cursorColor: V2Colors.blue500,
+                  selectionColor: V2Colors.blue500.withValues(alpha: 0.4),
+                  child: TextField(
+                    controller: widget.controller,
+                    focusNode: _focusNode,
+                    enabled: widget.enabled,
+                    obscureText: widget.obscure,
+                    keyboardType: widget.keyboardType,
+                    style: V2Type.body.copyWith(
+                      color: widget.enabled ? V2Colors.ink : V2Colors.muted,
+                    ),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      hintText: widget.hint,
+                      hintStyle: V2Type.body.copyWith(color: V2Colors.muted),
+                    ),
                   ),
                 ),
               ),

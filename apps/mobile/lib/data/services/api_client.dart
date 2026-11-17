@@ -40,9 +40,20 @@ class SessionUser {
       permissions: List<String>.unmodifiable(json['permissions']),
     );
   }
+
+  /// Bentuk yang sama dengan `fromJson`, untuk disimpan bersama sesi lokal.
+  Map<String, dynamic> toJson() => {
+    'id_user': id,
+    'nama': name,
+    'username': username,
+    'role': role,
+    'permissions': permissions,
+  };
 }
 
-/// Tokens remain in memory; passwords and tokens never enter the local cache.
+/// Tokens are held in memory and, for [ApiClient.login] sessions that the app
+/// chooses to persist, copied into the on-device session store. Passwords are
+/// never stored; tokens are written only through `SessionStore`.
 class ApiClient {
   ApiClient(
     this._client, {
@@ -53,9 +64,19 @@ class ApiClient {
   final Uri baseUri;
   final bool allowInsecureLocalhost;
   String? _access, _refresh;
+  DateTime? _accessExpiresAt, _refreshExpiresAt;
   Future<void>? _refreshing;
   int _generation = 0;
   int get sessionGeneration => _generation;
+
+  /// Token yang sedang dipakai; `SessionStore` menyalinnya setelah login.
+  String? get accessToken => _access;
+  String? get refreshToken => _refresh;
+
+  /// Kedaluwarsa token menurut layanan. Dipakai `SessionViewModel` untuk
+  /// memutuskan sesi lama masih boleh dipakai tanpa login ulang.
+  DateTime? get accessExpiresAt => _accessExpiresAt;
+  DateTime? get refreshExpiresAt => _refreshExpiresAt;
   void requireSessionGeneration(int generation) {
     if (generation != _generation || _access == null) {
       throw const ApiException(401, 'SESSION_CHANGED', 'Sesi telah berubah.');
@@ -155,7 +176,12 @@ class ApiClient {
     }
     _access = data['access_token'];
     _refresh = data['refresh_token'];
+    _accessExpiresAt = _expiry(data['access_expires_at']);
+    _refreshExpiresAt = _expiry(data['refresh_expires_at']);
   }
+
+  static DateTime? _expiry(Object? value) =>
+      value is String ? DateTime.tryParse(value)?.toUtc() : null;
 
   Future<SessionUser> login(String username, String password) async {
     clearSession();
@@ -273,6 +299,11 @@ class ApiClient {
   Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) =>
       _authRequest('GET', path, query: query);
 
+  /// Identitas pemilik sesi yang sedang dipakai. Dipanggil saat memulihkan
+  /// sesi tersimpan untuk memastikan token masih berlaku di layanan.
+  Future<SessionUser> me() async =>
+      SessionUser.fromJson(_data(await _authRequest('GET', 'auth/me')));
+
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,
@@ -299,15 +330,24 @@ class ApiClient {
     if (token != null) await _request('POST', 'auth/logout', token: token);
   }
 
-  void setTokens({required String accessToken, required String refreshToken}) {
+  void setTokens({
+    required String accessToken,
+    required String refreshToken,
+    DateTime? accessExpiresAt,
+    DateTime? refreshExpiresAt,
+  }) {
     _access = accessToken;
     _refresh = refreshToken;
+    _accessExpiresAt = accessExpiresAt;
+    _refreshExpiresAt = refreshExpiresAt;
   }
 
   void clearSession() {
     _generation++;
     _access = null;
     _refresh = null;
+    _accessExpiresAt = null;
+    _refreshExpiresAt = null;
     _refreshing = null;
   }
 
