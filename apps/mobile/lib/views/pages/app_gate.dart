@@ -44,9 +44,12 @@ class _AppGateState extends ConsumerState<AppGate> {
             if (!useV2) return const MainPage();
             return V2BerandaPage(
               userName: user.name,
+              fullName: user.name,
+              username: user.username,
               role: user.role == 'pegawai'
                   ? V2BerandaRole.pegawai
                   : V2BerandaRole.petani,
+              onLogOut: () => ref.read(sessionProvider.notifier).logout(),
             );
           },
         ),

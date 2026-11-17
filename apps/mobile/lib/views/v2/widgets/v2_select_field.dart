@@ -97,7 +97,7 @@ class V2SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.only(left: V2Space.lg, right: V2Space.md),
+      padding: const EdgeInsets.symmetric(horizontal: V2Space.lg),
       decoration: BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.pill),
@@ -120,12 +120,10 @@ class V2SearchField extends StatelessWidget {
               ),
             ),
           ),
-          if (controller != null &&
-              controller!.text.isNotEmpty &&
-              onClear != null)
+          if (controller != null && controller!.text.isNotEmpty)
             IconButton(
               onPressed: onClear,
-              icon: const V2Icon(V2IconName.close, color: V2Colors.muted),
+              icon: const V2Icon(V2IconName.close, color: V2Colors.ink),
               visualDensity: VisualDensity.compact,
             ),
         ],

@@ -63,11 +63,40 @@ Catatan progress lengkap: [`progress-v2-beranda-notifikasi.md`](./progress-v2-be
 - [ ] Sambungkan beranda v2 ke data nyata (semaian, stok, lubang, cuaca BMKG).
 - [ ] Navigasi tab v2 dan tautan 5.16 / 4.9 / 6.11 / halaman cuaca 10.
 
-## 3. Dokumentasi
+## 3. Slice desain v2 — “03 Akun”
+
+Referensi: file FigCraft `HidroSense Mobile UI v2`, page `03 Akun`.
+Catatan progress lengkap: [`progress-v2-akun.md`](./progress-v2-akun.md).
+
+- [x] Pindahkan `V2BerandaRole` ke `v2_roles.dart` (hindari lingkaran impor),
+      tetap diekspor ulang dari `v2_beranda_page.dart`.
+- [x] Setel ulang widget shared: `V2ScreenHeader` (tinggi 48, judul 28/36
+      Bold), `V2Dialog` (`Type=Destructive`, shadow, jarak tombol 16),
+      `V2ErrorState` (judul `h1`, `actionType`), `V2TextField` (ikon error
+      `close`), `V2SearchField` (pad simetris, ✕ ink saat ada teks).
+- [x] Komponen halaman: model + baris pegawai, kartu Profil, kartu Info,
+      grup daftar, footer aksi + toast, aset maskot, dan `v2_roles`.
+- [x] Tab “Lainnya” Petani (3.1) dan “Profil” Pegawai (3.2) — Pegawai hanya
+      membaca data.
+- [x] Daftar akun pegawai: kosong (3.4), terisi (3.5), cari tanpa hasil (3.6).
+- [x] Form tambah/ubah pegawai (3.7/3.12), validasi (3.8), konfirmasi buang
+      perubahan (3.9), data sudah berubah (3.13).
+- [x] Detail pegawai aktif/nonaktif (3.11/3.17), dialog nonaktifkan (3.15),
+      toast tambah/ubah/nonaktif (3.10/3.14/3.16).
+- [x] Dialog Keluar + `onLogOut` yang menutup sesi (3.3); `AppGate` mengisi
+      identitas akun.
+- [x] `flutter analyze`, `flutter test` (424 tes), cek visual host 3.1–3.17,
+      dan skrip wiring alur 7 kasus.
+- [x] `graphify update .`.
+- [ ] Sambungkan daftar akun pegawai ke backend v2 (buat/ubah/nonaktifkan).
+- [ ] Alur Penjualan (page 08) dan Sinkron (page 11) dari menu 3.1/3.2.
+- [ ] Aktivasi ulang akun pegawai (di luar lingkup 3.x).
+
+## 4. Dokumentasi
 
 - [x] Folder `docs/` berisi task list dan progress (file ini + progress log).
 - [x] Catatan alur, masalah, dan rencana lanjutan untuk recovery konteks AI.
 
-## 4. Backend
+## 5. Backend
 
 Lihat [`panduan-menjalankan-backend.md`](./panduan-menjalankan-backend.md).

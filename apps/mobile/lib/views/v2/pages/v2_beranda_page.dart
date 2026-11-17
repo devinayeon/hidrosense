@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../components/v2_akun_employee.dart';
 import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
 import '../theme/v2_tokens.dart';
+import '../v2_roles.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_banner.dart';
 import '../widgets/v2_checklist.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_icon_button.dart';
 import '../widgets/v2_list_item.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_akun_tab_page.dart';
 import 'v2_cycle_detail_page.dart';
+import 'v2_employee_list_page.dart';
 import 'v2_notifications_page.dart';
+
+/// Peran pengguna dipakai lewat `v2_roles.dart`; di-ekspor ulang di sini supaya
+/// pemanggil lama (`app_gate.dart`) tetap menemukannya di halaman beranda.
+export '../v2_roles.dart' show V2BerandaRole;
 
 /// Keadaan beranda yang punya frame sendiri di page 02.
 enum V2BerandaState {
@@ -29,35 +38,48 @@ enum V2BerandaState {
   weatherUnavailable,
 }
 
-/// Peran pengguna: hanya Petani yang melihat kartu cuaca (2.1 vs 2.2).
-enum V2BerandaRole { petani, pegawai }
-
 /// Beranda dari frame `2.1 Beranda (Petani)` sampai `2.6 BMKG tidak tersedia`.
 ///
 /// Susunan siap: sapaan + bel (buka 2.4), kartu hero siklus (buka 2.7), baris
 /// "Siap pindah", dua petak statistik, lalu kartu cuaca (khusus Petani).
 /// Keadaan memuat, offline, dan BMKG gagal memakai susunan yang sama dengan
 /// penyesuaian sesuai catatan alur tiap frame.
+///
+/// Tab terakhir juga memuat alur page 03 "Akun": Petani membuka "Lainnya"
+/// (frame 3.1) dengan menu kelola akun pegawai, Pegawai membuka "Profil"
+/// (frame 3.2) yang hanya bisa dibaca. Tab lain masih placeholder.
 class V2BerandaPage extends StatefulWidget {
   const V2BerandaPage({
     super.key,
     this.userName = 'Budi',
+    this.fullName = 'Budi Santoso',
+    this.username = 'sari.dewi',
+    this.phone = '0812 3456 7890',
+    this.address = 'Jl. Melati 12, Malang',
     this.role = V2BerandaRole.petani,
     this.state = V2BerandaState.ready,
     this.siapPindahSubtitle = '1 semaian, HSS 17',
     this.lowStock = '2',
     this.filledHoles = '400',
+    this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onLogOut,
   });
 
   /// Frame `2.3 Beranda memuat`.
   const V2BerandaPage.loading({
     super.key,
     this.userName = 'Budi',
+    this.fullName = 'Budi Santoso',
+    this.username = 'sari.dewi',
+    this.phone = '0812 3456 7890',
+    this.address = 'Jl. Melati 12, Malang',
     this.role = V2BerandaRole.petani,
+    this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onLogOut,
   }) : state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -67,9 +89,15 @@ class V2BerandaPage extends StatefulWidget {
   const V2BerandaPage.offline({
     super.key,
     this.userName = 'Budi',
+    this.fullName = 'Budi Santoso',
+    this.username = 'sari.dewi',
+    this.phone = '0812 3456 7890',
+    this.address = 'Jl. Melati 12, Malang',
     this.role = V2BerandaRole.petani,
+    this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onLogOut,
   }) : state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -79,22 +107,43 @@ class V2BerandaPage extends StatefulWidget {
   const V2BerandaPage.weatherUnavailable({
     super.key,
     this.userName = 'Budi',
+    this.fullName = 'Budi Santoso',
+    this.username = 'sari.dewi',
+    this.phone = '0812 3456 7890',
+    this.address = 'Jl. Melati 12, Malang',
     this.role = V2BerandaRole.petani,
+    this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onLogOut,
   }) : state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
        filledHoles = '184';
 
   final String userName;
+
+  /// Nama lengkap untuk kartu Profil di tab "Lainnya"/"Profil".
+  final String fullName;
+  final String username;
+  final String phone;
+  final String address;
   final V2BerandaRole role;
   final V2BerandaState state;
   final String siapPindahSubtitle;
   final String lowStock;
   final String filledHoles;
+
+  /// Daftar akun pegawai (alur 03). Disimpan di sini supaya tetap utuh saat
+  /// berpindah tab, lalu diteruskan ke halaman daftar/ubah.
+  final List<V2Employee> initialEmployees;
+
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
+
+  /// Menutup sesi (frame 3.3); diisi oleh `AppGate`.
+  final Future<void> Function()? onLogOut;
+
 
   static const String _tableName = 'Meja A2';
 
@@ -119,14 +168,23 @@ class V2BerandaPage extends StatefulWidget {
 
 class _V2BerandaPageState extends State<V2BerandaPage> {
   late V2BerandaState _state = widget.state;
+  late List<V2Employee> _employees = widget.initialEmployees;
+  int _activeTab = 0;
 
   @override
   void didUpdateWidget(V2BerandaPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state != widget.state) _state = widget.state;
+    if (oldWidget.role != widget.role) _activeTab = 0;
   }
 
   bool get _petani => widget.role == V2BerandaRole.petani;
+
+  /// Index tab "Lainnya" (Petani) atau "Profil" (Pegawai): tab terakhir.
+  int get _akunIndex =>
+      (_petani ? V2BerandaPage._petaniTabs : V2BerandaPage._pegawaiTabs)
+          .length -
+      1;
 
   void _notice(String message) {
     if (!mounted) return;
@@ -136,8 +194,43 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _onTabTap(int index) {
-    if (index == 0) return;
+    if (index == _akunIndex || index == 0) {
+      setState(() => _activeTab = index);
+      return;
+    }
     _notice('Tab ${index + 1} alur v2 belum tersedia di halaman ini.');
+  }
+
+  void _openEmployees() {
+    Navigator.of(context).push(
+      V2EmployeeListPage.route(
+        initialEmployees: _employees,
+        onChanged: (employees) => setState(() => _employees = employees),
+      ),
+    );
+  }
+
+  void _openSales() =>
+      _notice('Alur Penjualan (page 08) belum tersedia di halaman ini.');
+
+  void _openSync() =>
+      _notice('Alur Sinkron (page 11) belum tersedia di halaman ini.');
+
+  Future<void> _confirmLogOut() async {
+    final confirmed = await showV2Dialog(
+      context,
+      title: 'Keluar dari akun?',
+      body: 'Anda perlu masuk lagi.',
+      primaryLabel: 'Keluar',
+      secondaryLabel: 'Batal',
+    );
+    if (confirmed != true || !mounted) return;
+    final onLogOut = widget.onLogOut;
+    if (onLogOut == null) {
+      _notice('Keluar akun belum terhubung di pratinjau ini.');
+      return;
+    }
+    await onLogOut();
   }
 
   void _openNotifications() {
@@ -170,6 +263,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   @override
   Widget build(BuildContext context) {
     final tabs = _petani ? V2BerandaPage._petaniTabs : V2BerandaPage._pegawaiTabs;
+    final akun = _activeTab == _akunIndex;
     return Theme(
       data: V2Theme.light,
       child: Scaffold(
@@ -179,17 +273,33 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           child: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    V2Space.xl,
-                    V2Space.lg,
-                    V2Space.xl,
-                    V2Space.lg,
-                  ),
-                  child: _content(),
-                ),
+                child: akun
+                    ? V2AkunTabView(
+                        role: widget.role,
+                        userName: widget.fullName,
+                        username: widget.username,
+                        phone: widget.phone,
+                        address: widget.address,
+                        onOpenEmployees: _petani ? _openEmployees : null,
+                        onOpenSales: _petani ? _openSales : null,
+                        onOpenSync: _openSync,
+                        onLogOut: _confirmLogOut,
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                          V2Space.xl,
+                          V2Space.lg,
+                          V2Space.xl,
+                          V2Space.lg,
+                        ),
+                        child: _content(),
+                      ),
               ),
-              V2TabBar(items: tabs, activeIndex: 0, onTap: _onTabTap),
+              V2TabBar(
+                items: tabs,
+                activeIndex: _activeTab,
+                onTap: _onTabTap,
+              ),
             ],
           ),
         ),
