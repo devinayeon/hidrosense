@@ -627,7 +627,6 @@ class _V2FoundationGalleryState extends State<V2FoundationGallery> {
               title: 'Panen',
               subtitle: 'Menunggu siap panen',
               state: V2TimelineState.pending,
-              isLast: true,
             ),
             const V2Checklist(
               title: 'Mulai kebun',

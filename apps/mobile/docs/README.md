@@ -15,6 +15,10 @@ dokumen di folder ini supaya konteks bisa dipulihkan tanpa riwayat percakapan.
 - [`progress-v2-login-session.md`](./progress-v2-login-session.md) — progress
   lanjutan: perbaikan logo maskot login v2, integrasi login v2 dengan login
   sungguhan, dan sesi tersimpan yang melewati login dalam masa berlaku.
+- [`progress-v2-beranda-notifikasi.md`](./progress-v2-beranda-notifikasi.md) —
+  progress slice desain v2 “02 Beranda & Notifikasi”: beranda Petani/Pegawai,
+  keadaan memuat/offline/BMKG gagal, notifikasi, detail siklus, penyetelan widget
+  shared, dan penyambungan login sungguhan ke beranda v2.
 
 ## Konvensi catatan progress
 

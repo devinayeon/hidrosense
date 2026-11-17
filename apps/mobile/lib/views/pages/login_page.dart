@@ -8,6 +8,7 @@ import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../v2/pages/v2_login_page.dart';
 import '../v2/pages/v2_onboarding_page.dart';
+import '../v2/v2_ui_mode.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -76,6 +77,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
         .read(sessionProvider.notifier)
         .login(_username.text.trim(), _password.text);
     if (mounted && ref.read(sessionProvider).user != null) {
+      // Form lama selalu mendarat di beranda v1.
+      ref.read(v2UiModeProvider.notifier).state = false;
       TextInput.finishAutofillContext();
     }
   }
@@ -83,11 +86,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// Login sungguhan untuk halaman v2: memakai `SessionViewModel` yang sama
   /// dengan form lama, lalu menerjemahkan kegagalannya ke layar alur v2
   /// (1.7 salah, 1.8 akun nonaktif, 1.9 perlu internet).
+  ///
+  /// Sesi yang berhasil menyalakan mode v2 supaya `AppGate` mengganti layar ke
+  /// beranda v2; membuka pratinjau lewat "Coba tampilan v2" tidak menyalakannya
+  /// agar navigator pratinjau tidak direset lebih dulu.
   Future<V2LoginResult> _v2Login(String username, String password) async {
     await ref.read(sessionProvider.notifier).login(username, password);
     if (!mounted) return const V2LoginResult.success();
     final session = ref.read(sessionProvider);
-    if (session.user != null) return const V2LoginResult.success();
+    if (session.user != null) {
+      ref.read(v2UiModeProvider.notifier).state = true;
+      return const V2LoginResult.success();
+    }
     return switch (session.failure) {
       SessionFailure.invalidCredentials => const V2LoginResult(
         V2LoginOutcome.rejected,

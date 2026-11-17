@@ -37,11 +37,34 @@ Pekerjaan lanjutan (logo, login sungguhan, sesi):
 - [ ] Aksi “Tambah meja tanam” ke alur 6.6.
 - [ ] Tautkan halaman alur v2 dari galeri v2 (`v2_gallery_page.dart`).
 
-## 2. Dokumentasi
+## 2. Slice desain v2 — “02 Beranda & Notifikasi”
+
+Referensi: file FigCraft `HidroSense Mobile UI v2`, page `02 Beranda & Notifikasi`.
+Catatan progress lengkap: [`progress-v2-beranda-notifikasi.md`](./progress-v2-beranda-notifikasi.md).
+
+- [x] Setel ulang widget shared: `V2TabBar` (pil 56×32, ikon 24, label 14/20),
+      `V2CycleRing` (warna/cap/tick/nilai 34/40), `V2TimelineStep` (tinggi 56,
+      tanpa garis penghubung), `V2WeatherCard` (`available`/`unavailable`).
+- [x] Selaraskan `V2Shadow.card` ke halaman `00 Foundations` (blur 24, offset 0,8).
+- [x] Komponen halaman: hero siklus, dua petak statistik, rangka 2.3, label
+      grup, dan keterangan tick siklus.
+- [x] Halaman beranda Petani (2.1) dan Pegawai (2.2) — kartu cuaca hanya Petani.
+- [x] Keadaan beranda: memuat (2.3), offline + antrean sinkron (2.5), BMKG tidak
+      tersedia dengan “Coba lagi” kembali ke 2.1 (2.6).
+- [x] Halaman notifikasi dua kelompok + “Tandai semua dibaca” (2.4).
+- [x] Halaman detail siklus 60 hari: cincin besar, tick HSS 15, linimasa 4
+      langkah, tombol “Buka Meja A2” (2.7).
+- [x] `v2UiModeProvider` + `AppGate` merutekan sesi v2 ke `V2BerandaPage`.
+- [x] `flutter analyze`, `flutter test` (424 tes), cek visual host 2.1–2.7.
+- [x] `graphify update .`.
+- [ ] Sambungkan beranda v2 ke data nyata (semaian, stok, lubang, cuaca BMKG).
+- [ ] Navigasi tab v2 dan tautan 5.16 / 4.9 / 6.11 / halaman cuaca 10.
+
+## 3. Dokumentasi
 
 - [x] Folder `docs/` berisi task list dan progress (file ini + progress log).
 - [x] Catatan alur, masalah, dan rencana lanjutan untuk recovery konteks AI.
 
-## 3. Backend
+## 4. Backend
 
 Lihat [`panduan-menjalankan-backend.md`](./panduan-menjalankan-backend.md).
