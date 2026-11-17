@@ -505,3 +505,4 @@ apps/**/graphify-out/
 /.bob/
 /.vscode/
 /.worktrees/
+/apps/mobile/docs/
