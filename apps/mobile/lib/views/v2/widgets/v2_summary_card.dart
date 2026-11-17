@@ -48,11 +48,11 @@ class V2SummaryCard extends StatelessWidget {
           const SizedBox(height: V2Space.sm),
           Text(value, style: V2Type.display.copyWith(color: V2Colors.white)),
           if (meta != null) ...[
-            const SizedBox(height: V2Space.xs),
+            const SizedBox(height: V2Space.sm),
             Text(meta!, style: V2Type.label.copyWith(color: V2Colors.white)),
           ],
           if (extra != null) ...[
-            const SizedBox(height: V2Space.xs),
+            const SizedBox(height: V2Space.sm),
             Text(
               extra!,
               style: V2Type.label.copyWith(

@@ -67,7 +67,7 @@ abstract final class V2Icons {
     V2IconName.chevronDown => Icons.keyboard_arrow_down,
     V2IconName.droplet => Icons.water_drop_outlined,
     V2IconName.layers => Icons.layers_outlined,
-    V2IconName.calendar => Icons.calendar_today_outlined,
+    V2IconName.calendar => Icons.calendar_today,
     V2IconName.chart => Icons.bar_chart,
   };
 }

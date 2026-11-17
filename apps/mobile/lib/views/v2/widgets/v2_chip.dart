@@ -45,9 +45,11 @@ class V2Chip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (selected || icon != null) ...[
+            // Slot ikon di component set `Chip` 24x24; ikon centangnya sendiri
+            // hanya 14x10,5 di dalam slot itu.
             V2Icon(
               icon ?? V2IconName.check,
-              size: 18,
+              size: V2Icons.size,
               color: disabled ? V2Colors.muted : V2Colors.blue700,
             ),
             const SizedBox(width: V2Space.sm),

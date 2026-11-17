@@ -41,7 +41,9 @@ class V2BottomSheet extends StatelessWidget {
               ),
             ),
             if (title != null) ...[
-              const SizedBox(height: V2Space.xl),
+              // Semua komponen `Sheet/*` di Foundations memakai jarak 16
+              // setelah handle (judul duduk di y=45 dari atas sheet).
+              const SizedBox(height: V2Space.lg),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(title!, style: V2Type.h2),

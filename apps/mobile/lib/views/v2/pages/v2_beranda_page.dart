@@ -18,6 +18,8 @@ import 'v2_akun_tab_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
 import 'v2_notifications_page.dart';
+import 'v2_penjualan_list_page.dart';
+import 'v2_sinkron_page.dart';
 
 /// Peran pengguna dipakai lewat `v2_roles.dart`; di-ekspor ulang di sini supaya
 /// pemanggil lama (`app_gate.dart`) tetap menemukannya di halaman beranda.
@@ -210,11 +212,13 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     );
   }
 
-  void _openSales() =>
-      _notice('Alur Penjualan (page 08) belum tersedia di halaman ini.');
+  void _openSales() {
+    Navigator.of(context).push(V2PenjualanListPage.route());
+  }
 
-  void _openSync() =>
-      _notice('Alur Sinkron (page 11) belum tersedia di halaman ini.');
+  void _openSync() {
+    Navigator.of(context).push(V2SinkronPage.route());
+  }
 
   Future<void> _confirmLogOut() async {
     final confirmed = await showV2Dialog(
