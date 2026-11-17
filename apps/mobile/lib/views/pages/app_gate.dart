@@ -16,18 +16,21 @@ class AppGate extends ConsumerStatefulWidget {
 
 class _AppGateState extends ConsumerState<AppGate> {
   GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  String? _userId;
-  bool? _useV2;
+  String? _identity;
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(sessionProvider.select((state) => state.user));
     final useV2 = ref.watch(v2UiModeProvider);
-    if (user?.id != _userId || useV2 != _useV2) {
-      _userId = user?.id;
-      _useV2 = useV2;
-      // Ganti kunci supaya Navigator dibangun ulang: ganti pengguna maupun
-      // pindah antara alur v1 dan v2 keduanya harus meninggalkan rute lama.
+    // Tanda identitas yang menentukan kapan Navigator dibangun ulang: pengguna,
+    // dan mode v2 yang hanya berarti kalau sudah ada pengguna.
+    //
+    // Perubahan mode saat belum ada sesi (mis. alur v2 ditandai selagi login
+    // berlangsung) **tidak** ikut dibangun ulang, karena itu akan membuang
+    // tumpukan rute pratinjau yang sedang dibuka.
+    final identity = '${user?.id ?? ''}|${user == null ? '' : useV2}';
+    if (identity != _identity) {
+      _identity = identity;
       _navigatorKey = GlobalKey<NavigatorState>();
     }
 

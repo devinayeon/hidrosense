@@ -73,12 +73,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
     }
     HapticFeedback.mediumImpact();
     FocusScope.of(context).unfocus();
+    // Form lama = alur v1. Ditandai sebelum menunggu layanan supaya AppGate
+    // tidak sempat membangun beranda v2 saat sesi baru terpasang.
+    ref.read(v2UiModeProvider.notifier).state = false;
     await ref
         .read(sessionProvider.notifier)
         .login(_username.text.trim(), _password.text);
     if (mounted && ref.read(sessionProvider).user != null) {
-      // Form lama selalu mendarat di beranda v1.
-      ref.read(v2UiModeProvider.notifier).state = false;
       TextInput.finishAutofillContext();
     }
   }
@@ -87,17 +88,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// dengan form lama, lalu menerjemahkan kegagalannya ke layar alur v2
   /// (1.7 salah, 1.8 akun nonaktif, 1.9 perlu internet).
   ///
-  /// Sesi yang berhasil menyalakan mode v2 supaya `AppGate` mengganti layar ke
-  /// beranda v2; membuka pratinjau lewat "Coba tampilan v2" tidak menyalakannya
-  /// agar navigator pratinjau tidak direset lebih dulu.
+  /// Alur v2 ditandai **sebelum** menunggu layanan. Begitu sesi terpasang,
+  /// `AppGate` mengganti seluruh layar dan melepas halaman ini — kalau mode
+  /// disetel setelah `login()` selesai, penandaannya tidak pernah terjadi dan
+  /// pengguna mendarat di beranda v1. Karena itu sisa pekerjaan memakai
+  /// `ProviderContainer` yang dipegang di awal, bukan `ref` milik halaman.
+  /// Kalau login gagal, penanda dikembalikan (halaman masih hidup karena sesi
+  /// masih kosong).
   Future<V2LoginResult> _v2Login(String username, String password) async {
-    await ref.read(sessionProvider.notifier).login(username, password);
-    if (!mounted) return const V2LoginResult.success();
-    final session = ref.read(sessionProvider);
-    if (session.user != null) {
-      ref.read(v2UiModeProvider.notifier).state = true;
-      return const V2LoginResult.success();
-    }
+    final container = ProviderScope.containerOf(context, listen: false);
+    container.read(v2UiModeProvider.notifier).state = true;
+    await container.read(sessionProvider.notifier).login(username, password);
+    final session = container.read(sessionProvider);
+    if (session.user != null) return const V2LoginResult.success();
+    container.read(v2UiModeProvider.notifier).state = false;
     return switch (session.failure) {
       SessionFailure.invalidCredentials => const V2LoginResult(
         V2LoginOutcome.rejected,

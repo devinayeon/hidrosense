@@ -55,6 +55,9 @@ Catatan progress lengkap: [`progress-v2-beranda-notifikasi.md`](./progress-v2-be
 - [x] Halaman detail siklus 60 hari: cincin besar, tick HSS 15, linimasa 4
       langkah, tombol “Buka Meja A2” (2.7).
 - [x] `v2UiModeProvider` + `AppGate` merutekan sesi v2 ke `V2BerandaPage`.
+- [x] Perbaiki login v2 yang tetap mendarat di beranda v1: mode v2 ditandai
+      sebelum menunggu layanan, dan `AppGate` hanya membangun ulang `Navigator`
+      saat identitas (pengguna + mode) berubah.
 - [x] `flutter analyze`, `flutter test` (424 tes), cek visual host 2.1–2.7.
 - [x] `graphify update .`.
 - [ ] Sambungkan beranda v2 ke data nyata (semaian, stok, lubang, cuaca BMKG).

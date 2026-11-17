@@ -124,13 +124,15 @@ Diubah:
   membuat berkas/varian baru — sesuai izin yang diberikan.
 - **Mode v2 dipisah dari sesi.** `v2UiModeProvider` sengaja terpisah supaya
   tombol “Coba tampilan v2” bisa membuka alur prototipe tanpa mengubah rute
-  sesi. Hanya login sungguhan lewat form v2 yang menyalakannya; menekan tombol
-  pratinjau tidak (kalau disalakan di sana, `AppGate` akan mereset navigator
-  pratinjau sebelum terlihat).
-- **Kunci navigator jadi pemicu ganti layar.** `AppGate` dulu hanya membangun
-  ulang `Navigator` saat `user.id` berubah. Untuk v2, perubahan mode juga harus
-  menggantinya; kalau tidak, tumpukan pratinjau (onboarding + login) akan tetap
-  terlihat di atas beranda v2.
+  sesi. Hanya halaman login v2 yang menyalakannya; menekan tombol pratinjau
+  tidak. Penandaan terjadi **sebelum** permintaan login dikirim dan
+  dikembalikan kalau login gagal, sebab sesi bisa terpasang lebih dulu
+  daripada kesempatan menyetel mode (lihat masalah nomor 6).
+- **Kunci navigator memakai identitas.** `AppGate` membangun ulang `Navigator`
+  saat `user.id` berubah, atau saat mode v2 berubah **dan** sudah ada pengguna.
+  Mode yang ditandai selagi login berlangsung (sesi masih kosong) tidak boleh
+  membangun ulang apa pun, karena itu akan membuang tumpukan pratinjau
+  (onboarding + login) sebelum terlihat.
 - **Gaya angka cincin ikut ukuran.** 112 memakai 28/36, 224 memakai 34/40,
   supaya satu widget menutupi hero dan halaman detail tanpa override manual.
 - **Tautan alur yang belum ada** (tab lain, 5.16, 4.9, 6.11, halaman cuaca 10)
@@ -153,6 +155,26 @@ Diubah:
    bersih tanpa exception. Tidak ada perubahan kode.
 5. **`V2TimelineStep.isLast`.** Garis penghubung tidak ada di desain, jadi
    parameter itu dihapus; pemanggil di galeri ikut disesuaikan.
+6. **Login v2 tetap mendarat di beranda v1.** `_v2Login` menyetel mode v2
+   *setelah* `await login()` selesai. Di dalam `login()`, sesi sudah terpasang
+   **sebelum** penulisan sesi ke sqflite, dan satu frame bisa berjalan selama
+   penantian itu: `AppGate` mengganti layar (kunci `Navigator` berubah) dan
+   melepas halaman login. Pemeriksaan `if (!mounted)` lalu mengembalikan sukses
+   tanpa pernah menyalakan mode v2, jadi layar akhirnya beranda v1. Terbukti
+   deterministik di skrip (dulu: `V2BerandaPage` tidak ditemukan).
+   Solusi, tiga bagian:
+   - Mode v2 ditandai **sebelum** menunggu layanan (`_v2Login`) dan
+     dikembalikan ke `false` kalau login gagal. Begitu sesi terpasang,
+     `AppGate` sudah tahu tujuannya, jadi beranda v1 tidak pernah berkedip.
+   - `AppGate` hanya membangun ulang `Navigator` saat **identitas** berubah
+     (`user.id` + mode v2, tapi mode hanya dihitung kalau sudah ada pengguna).
+     Tanpa ini, penandaan mode selagi login berlangsung (sesi masih kosong)
+     akan membuang tumpukan rute pratinjau sebelum terlihat.
+   - Sisa pekerjaan `_v2Login` memakai `ProviderContainer` yang dipegang di
+     awal, bukan `ref` halaman yang bisa sudah dilepas, sehingga status sesi
+     tetap terbaca walau widget-nya hilang.
+   Form login lama ikut menandai mode v1 sebelum menunggu, supaya arah
+   sebaliknya (v1 → v2) tidak berkedip juga.
 
 ## Verifikasi
 
@@ -168,13 +190,23 @@ Diubah:
   menggambar StatusBar palsu (di perangkat diisi status bar sistem lewat
   `SafeArea`), serta nama/angka memakai nilai parameter.
 - **Cek wiring login → beranda v2.** Skrip widget sekali pakai (Poppins dimuat),
-  dua kasus:
+  lima kasus:
   1. mode v2 + sesi → `AppGate` menampilkan `V2BerandaPage` dengan peran
      `pegawai` dari `SessionUser`, sapaan “Halo, Sari”, 4 tab, tanpa kartu
      cuaca. Lulus.
   2. alur penuh: halaman login → “Coba tampilan v2” → onboarding → login v2
      dengan kredensial sungguhan (API tiruan) → sesi terpasang, mode v2 menyala,
      dan `AppGate` mengganti layar ke `V2BerandaPage`. Lulus.
+  3. **regresi bug nomor 6**: penulisan sesi ke penyimpanan ditahan dengan
+     `Completer` supaya ada satu frame di antara “sesi terpasang” dan “mode v2
+     ditandai”, lalu dilepas setelah halaman login dilepas `AppGate`.
+     - versi lama → `V2BerandaPage` **tidak ditemukan** (berakhir di `MainPage`);
+     - versi sekarang → `V2BerandaPage` sudah tampil pada frame pertama setelah
+       sesi terpasang (`MainPage` tidak pernah muncul), dan tetap di sana
+       setelah penulisan sesi selesai.
+  4. login v2 dengan password salah → tetap di halaman login v2, pesan
+     “Username atau password salah”, dan mode v2 kembali `false`.
+  5. form login lama → `MainPage` (v1), mode v2 tetap `false`.
   Berkas skrip lalu dihapus (tidak masuk suite).
 - `graphify update .` dijalankan di root repo.
 
