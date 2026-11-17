@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import '../theme/v2_tokens.dart';
 import 'v2_button.dart';
 
-/// Dialog dari component set `Dialog` (Type=Confirm).
+/// Varian dialog: `Confirm` (aksi utama biru) dan `Destructive` (aksi utama
+/// merah, dipakai konfirmasi nonaktifkan).
+enum V2DialogType { confirm, destructive }
+
+/// Dialog dari component set `Dialog` (Type=Confirm/Destructive).
 class V2Dialog extends StatelessWidget {
   const V2Dialog({
     super.key,
     required this.title,
     this.body,
+    this.type = V2DialogType.confirm,
     this.primaryLabel = 'Simpan',
     this.onPrimary,
     this.secondaryLabel,
@@ -18,6 +23,7 @@ class V2Dialog extends StatelessWidget {
 
   final String title;
   final String? body;
+  final V2DialogType type;
   final String primaryLabel;
   final VoidCallback? onPrimary;
   final String? secondaryLabel;
@@ -31,6 +37,7 @@ class V2Dialog extends StatelessWidget {
       decoration: BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.sheet),
+        boxShadow: V2Shadow.card,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -43,9 +50,15 @@ class V2Dialog extends StatelessWidget {
           ],
           if (child != null) ...[const SizedBox(height: V2Space.lg), child!],
           const SizedBox(height: V2Space.lg),
-          V2Button(label: primaryLabel, onPressed: onPrimary),
+          V2Button(
+            label: primaryLabel,
+            type: type == V2DialogType.destructive
+                ? V2ButtonType.destructive
+                : V2ButtonType.primary,
+            onPressed: onPrimary,
+          ),
           if (secondaryLabel != null) ...[
-            const SizedBox(height: V2Space.md),
+            const SizedBox(height: V2Space.lg),
             V2Button(
               label: secondaryLabel!,
               type: V2ButtonType.tertiary,
@@ -63,6 +76,7 @@ Future<bool?> showV2Dialog(
   BuildContext context, {
   required String title,
   String? body,
+  V2DialogType type = V2DialogType.confirm,
   String primaryLabel = 'Simpan',
   String? secondaryLabel,
   Widget? child,
@@ -77,6 +91,7 @@ Future<bool?> showV2Dialog(
       child: V2Dialog(
         title: title,
         body: body,
+        type: type,
         primaryLabel: primaryLabel,
         secondaryLabel: secondaryLabel,
         child: child,

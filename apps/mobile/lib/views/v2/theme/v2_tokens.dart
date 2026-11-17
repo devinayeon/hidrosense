@@ -160,7 +160,7 @@ abstract final class V2Radius {
 abstract final class V2Shadow {
   /// `Shadow/Card`: difusi lembut untuk permukaan kartu.
   static const List<BoxShadow> card = <BoxShadow>[
-    BoxShadow(color: Color(0x14111827), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x14111827), blurRadius: 24, offset: Offset(0, 8)),
   ];
 
   /// `Shadow/Button Lip`: garis tegas 2px di bawah tombol brand.

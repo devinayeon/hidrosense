@@ -58,7 +58,8 @@ class V2AppBar extends StatelessWidget {
   }
 }
 
-/// Judul layar dari component set `ScreenHeader`.
+/// Judul layar dari component set `ScreenHeader` (tinggi tetap 48, judul
+/// 28/36 Bold di tengah secara vertikal).
 class V2ScreenHeader extends StatelessWidget {
   const V2ScreenHeader({
     super.key,
@@ -73,26 +74,33 @@ class V2ScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: V2Type.h1),
-              if (subtitle != null) ...[
-                const SizedBox(height: V2Space.xs),
-                Text(
-                  subtitle!,
-                  style: V2Type.body.copyWith(color: V2Colors.muted),
-                ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: V2Type.h1),
+                if (subtitle != null) ...[
+                  const SizedBox(height: V2Space.xs),
+                  Text(
+                    subtitle!,
+                    style: V2Type.body.copyWith(color: V2Colors.muted),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-        if (trailing != null) ...[const SizedBox(width: V2Space.md), trailing!],
-      ],
+          if (trailing != null) ...[
+            const SizedBox(width: V2Space.md),
+            trailing!,
+          ],
+        ],
+      ),
     );
   }
 }

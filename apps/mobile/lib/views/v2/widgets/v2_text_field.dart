@@ -133,7 +133,7 @@ class _V2TextFieldState extends State<V2TextField> {
           Row(
             children: [
               const V2Icon(
-                V2IconName.warning,
+                V2IconName.close,
                 size: V2Icons.small,
                 color: V2Colors.red700,
               ),

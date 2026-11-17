@@ -8,6 +8,8 @@ import 'v2_icon.dart';
 ///
 /// FigCraft memakai ilustrasi vektor 160px; di aplikasi slot ilustrasi bisa
 /// diisi asset yang sudah ada. Bila kosong, dipakai medali ikon cloud.
+/// Susunan dari component 3885: ilustrasi, judul, badan, lalu tombol aksi
+/// opsional (bawaan lime `Type=Secondary`).
 class V2ErrorState extends StatelessWidget {
   const V2ErrorState({
     super.key,
@@ -15,6 +17,7 @@ class V2ErrorState extends StatelessWidget {
     required this.body,
     this.actionLabel,
     this.onAction,
+    this.actionType = V2ButtonType.secondary,
     this.illustration,
     this.icon = V2IconName.cloud,
   });
@@ -23,6 +26,7 @@ class V2ErrorState extends StatelessWidget {
   final String body;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final V2ButtonType actionType;
   final Widget? illustration;
   final V2IconName icon;
 
@@ -44,8 +48,8 @@ class V2ErrorState extends StatelessWidget {
               ),
             ),
         const SizedBox(height: V2Space.lg),
-        Text(title, textAlign: TextAlign.center, style: V2Type.h2),
-        const SizedBox(height: V2Space.sm),
+        Text(title, textAlign: TextAlign.center, style: V2Type.h1),
+        const SizedBox(height: V2Space.lg),
         Text(
           body,
           textAlign: TextAlign.center,
@@ -53,7 +57,11 @@ class V2ErrorState extends StatelessWidget {
         ),
         if (actionLabel != null) ...[
           const SizedBox(height: V2Space.lg),
-          V2Button(label: actionLabel!, onPressed: onAction),
+          V2Button(
+            label: actionLabel!,
+            type: actionType,
+            onPressed: onAction,
+          ),
         ],
       ],
     );

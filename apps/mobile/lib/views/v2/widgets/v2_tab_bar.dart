@@ -13,8 +13,8 @@ class V2TabItem {
 
 /// Tab bar bawah dari component set `TabBar`.
 ///
-/// Struktur FigCraft: container 390x106, sudut atas 24, border gray200,
-/// lima tab 56px, lalu home indicator.
+/// Struktur FigCraft: container 390x106, sudut atas 24, border gray200, tiap
+/// tab 56px berisi pil ikon 56x32 dan label 14/20, lalu home indicator.
 class V2TabBar extends StatelessWidget {
   const V2TabBar({
     super.key,
@@ -72,23 +72,20 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foreground = active ? V2Colors.ink : V2Colors.muted;
     final content = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          height: 28,
-          padding: const EdgeInsets.symmetric(horizontal: V2Space.md),
+          width: 56,
+          height: 32,
           decoration: BoxDecoration(
             color: active ? V2Colors.lime400 : Colors.transparent,
             borderRadius: BorderRadius.circular(V2Radius.pill),
           ),
           child: Center(
-            child: V2Icon(
-              item.icon,
-              size: 20,
-              color: active ? V2Colors.ink : V2Colors.slate500,
-            ),
+            child: V2Icon(item.icon, size: V2Icons.size, color: foreground),
           ),
         ),
         const SizedBox(height: V2Space.xs),
@@ -96,11 +93,9 @@ class _Tab extends StatelessWidget {
           item.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: V2Type.caption.copyWith(
-            color: active ? V2Colors.ink : V2Colors.slate500,
+          style: V2Type.label.copyWith(
+            color: foreground,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 12,
-            height: 16 / 12,
           ),
         ),
       ],
