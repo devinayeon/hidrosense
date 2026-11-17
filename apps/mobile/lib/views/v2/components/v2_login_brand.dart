@@ -15,17 +15,16 @@ class V2LoginBrand extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Bingkai `Logo` di FigCraft 81x112 dengan fill putih `visible: false`,
+        // jadi latarnya harus tembus ke warna halaman.
         SizedBox(
           width: 81,
           height: 112,
-          child: ColoredBox(
-            color: V2Colors.white,
-            child: Image.asset(
-              V2AuthAssets.loginMascot,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.medium,
-              excludeFromSemantics: true,
-            ),
+          child: Image.asset(
+            V2AuthAssets.loginMascot,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.medium,
+            excludeFromSemantics: true,
           ),
         ),
         const SizedBox(height: V2Space.lg),

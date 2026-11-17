@@ -10,19 +10,49 @@ import 'v2_inactive_account_page.dart';
 import 'v2_notification_permission_page.dart';
 import 'v2_offline_login_page.dart';
 
-/// Hasil percobaan masuk pada alur demo v2.
-enum V2LoginOutcome { success, wrongPassword, inactiveAccount, offline }
+/// Apa yang terjadi pada satu percobaan masuk di halaman v2.
+enum V2LoginOutcome {
+  /// Sesi terpasang.
+  success,
 
-/// Pengganti proses autentikasi sungguhan saat halaman dipakai untuk pratinjau.
+  /// Username/password ditolak, atau layanan menolak dengan alasan lain yang
+  /// lebih baik ditampilkan apa adanya lewat [V2LoginResult.message].
+  rejected,
+
+  /// Password benar tetapi akun dinonaktifkan (frame 1.8).
+  inactiveAccount,
+
+  /// Permintaan tidak sampai ke layanan (frame 1.9).
+  offline,
+}
+
+/// Hasil percobaan masuk beserta pesan siap tampil dari layanan.
+class V2LoginResult {
+  const V2LoginResult(this.outcome, {this.message});
+
+  const V2LoginResult.success() : this(V2LoginOutcome.success);
+
+  final V2LoginOutcome outcome;
+
+  /// Kalau null, halaman memakai teks desain ("Username atau password salah").
+  final String? message;
+}
+
+/// Proses autentikasi yang disuntikkan pemanggil.
+///
+/// Di aplikasi nyata handler ini memanggil `SessionViewModel.login`. Tanpa
+/// handler, halaman memakai cabang demo supaya semua status bisa direview.
 typedef V2LoginHandler =
-    Future<V2LoginOutcome> Function(String username, String password);
+    Future<V2LoginResult> Function(String username, String password);
 
 /// Halaman masuk dari frame `1.5 Login kosong`, `1.6 Login terisi`,
 /// `1.7 Login salah`, dan `1.5a Login kosong dikirim`.
 ///
-/// Halaman ini belum memanggil backend. Tanpa [onLogin], username tertentu
-/// memicu cabang alur supaya semua status bisa direview:
-/// `nonaktif` (1.8), `offline` (1.9), `salah` (1.7); username lain berhasil.
+/// Tanpa [onLogin], username tertentu memicu cabang alur supaya semua status
+/// bisa direview tanpa layanan: `nonaktif` (1.8), `offline` (1.9), `salah`
+/// (1.7); username lain berhasil lalu lanjut ke izin notifikasi (1.10).
+/// Dengan [onLogin], pemanggil yang mengurus kelanjutan sesi—di aplikasi,
+/// `AppGate` mengganti seluruh layar begitu pengguna masuk.
 class V2LoginPage extends StatefulWidget {
   const V2LoginPage({super.key, this.onLogin});
 
@@ -54,13 +84,13 @@ class _V2LoginPageState extends State<V2LoginPage> {
     super.dispose();
   }
 
-  Future<V2LoginOutcome> _demoLogin(String username, String password) async {
+  Future<V2LoginResult> _demoLogin(String username, String password) async {
     await Future<void>.delayed(const Duration(milliseconds: 350));
     return switch (username.toLowerCase()) {
-      'nonaktif' => V2LoginOutcome.inactiveAccount,
-      'offline' => V2LoginOutcome.offline,
-      'salah' => V2LoginOutcome.wrongPassword,
-      _ => V2LoginOutcome.success,
+      'nonaktif' => const V2LoginResult(V2LoginOutcome.inactiveAccount),
+      'offline' => const V2LoginResult(V2LoginOutcome.offline),
+      'salah' => const V2LoginResult(V2LoginOutcome.rejected),
+      _ => const V2LoginResult.success(),
     };
   }
 
@@ -76,18 +106,24 @@ class _V2LoginPageState extends State<V2LoginPage> {
     });
     if (_usernameError != null || _passwordError != null) return;
 
+    final preview = widget.onLogin == null;
     setState(() => _busy = true);
-    final outcome = await (widget.onLogin ?? _demoLogin)(username, password);
+    final result = await (widget.onLogin ?? _demoLogin)(username, password);
     if (!mounted) return;
     setState(() => _busy = false);
 
-    switch (outcome) {
+    switch (result.outcome) {
       case V2LoginOutcome.success:
-        Navigator.of(
-          context,
-        ).pushReplacement(V2NotificationPermissionPage.route());
-      case V2LoginOutcome.wrongPassword:
-        setState(() => _credentialError = 'Username atau password salah');
+        if (preview) {
+          Navigator.of(
+            context,
+          ).pushReplacement(V2NotificationPermissionPage.route());
+        }
+      case V2LoginOutcome.rejected:
+        setState(
+          () => _credentialError =
+              result.message ?? 'Username atau password salah',
+        );
       case V2LoginOutcome.inactiveAccount:
         Navigator.of(context).push(V2InactiveAccountPage.route());
       case V2LoginOutcome.offline:

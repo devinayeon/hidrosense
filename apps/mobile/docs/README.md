@@ -12,6 +12,9 @@ dokumen di folder ini supaya konteks bisa dipulihkan tanpa riwayat percakapan.
 - [`progress-v2-onboarding-auth.md`](./progress-v2-onboarding-auth.md) —
   progress slice desain v2 “01 Onboarding & Auth”: peta file, alur, animasi,
   masalah dan solusinya, verifikasi, serta rencana lanjutan.
+- [`progress-v2-login-session.md`](./progress-v2-login-session.md) — progress
+  lanjutan: perbaikan logo maskot login v2, integrasi login v2 dengan login
+  sungguhan, dan sesi tersimpan yang melewati login dalam masa berlaku.
 
 ## Konvensi catatan progress
 

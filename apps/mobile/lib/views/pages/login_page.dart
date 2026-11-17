@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/widgets/login_header_hero.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../theme/app_theme.dart';
+import '../v2/pages/v2_login_page.dart';
 import '../v2/pages/v2_onboarding_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -77,6 +78,27 @@ class _LoginPageState extends ConsumerState<LoginPage>
     if (mounted && ref.read(sessionProvider).user != null) {
       TextInput.finishAutofillContext();
     }
+  }
+
+  /// Login sungguhan untuk halaman v2: memakai `SessionViewModel` yang sama
+  /// dengan form lama, lalu menerjemahkan kegagalannya ke layar alur v2
+  /// (1.7 salah, 1.8 akun nonaktif, 1.9 perlu internet).
+  Future<V2LoginResult> _v2Login(String username, String password) async {
+    await ref.read(sessionProvider.notifier).login(username, password);
+    if (!mounted) return const V2LoginResult.success();
+    final session = ref.read(sessionProvider);
+    if (session.user != null) return const V2LoginResult.success();
+    return switch (session.failure) {
+      SessionFailure.invalidCredentials => const V2LoginResult(
+        V2LoginOutcome.rejected,
+      ),
+      SessionFailure.accountDeactivated => const V2LoginResult(
+        V2LoginOutcome.inactiveAccount,
+      ),
+      SessionFailure.offline => const V2LoginResult(V2LoginOutcome.offline),
+      // Sisa kegagalan (mis. kuota permintaan) ditampilkan apa adanya.
+      _ => V2LoginResult(V2LoginOutcome.rejected, message: session.error),
+    };
   }
 
   @override
@@ -246,9 +268,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               ),
                               const SizedBox(height: AppSpacing.md),
                               TextButton.icon(
-                                onPressed: () => Navigator.of(
-                                  context,
-                                ).push(V2OnboardingPage.route()),
+                                onPressed: () => Navigator.of(context).push(
+                                  V2OnboardingPage.route(onLogin: _v2Login),
+                                ),
                                 icon: const Icon(
                                   Icons.auto_awesome_outlined,
                                   size: 18,

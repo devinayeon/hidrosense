@@ -8,6 +8,8 @@ Terakhir diperbarui: 17 November 2026.
 
 Referensi: file FigCraft `HidroSense Mobile UI v2`, page `01 Onboarding & Auth`.
 Catatan progress lengkap: [`progress-v2-onboarding-auth.md`](./progress-v2-onboarding-auth.md).
+Pekerjaan lanjutan (logo, login sungguhan, sesi):
+[`progress-v2-login-session.md`](./progress-v2-login-session.md).
 
 - [x] Export ilustrasi FigCraft ke PNG 3x (`lib/views/v2/assets/illustrations/`).
 - [x] Daftarkan folder aset di `pubspec.yaml`.
@@ -28,8 +30,9 @@ Catatan progress lengkap: [`progress-v2-onboarding-auth.md`](./progress-v2-onboa
 - [x] Halaman v2 dibungkus `V2Theme.light` (tidak mewarisi theme lama).
 - [x] `flutter analyze`, `flutter test` (424 tes), dan cek visual di emulator.
 - [x] `graphify update .`.
-- [ ] Hubungkan login v2 ke `SessionViewModel` / API sungguhan.
-- [ ] Restore sesi tersimpan saat buka aplikasi (splash → 2.1).
+- [x] Perbaiki logo kucing login v2 (kotak putih latar di belakang maskot).
+- [x] Hubungkan login v2 ke `SessionViewModel` / API sungguhan.
+- [x] Sesi tersimpan: lewati login dalam masa berlaku `refresh_expires_at`.
 - [ ] Izin notifikasi sistem sungguhan di 1.10.
 - [ ] Aksi “Tambah meja tanam” ke alur 6.6.
 - [ ] Tautkan halaman alur v2 dari galeri v2 (`v2_gallery_page.dart`).

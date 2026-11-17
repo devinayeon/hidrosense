@@ -21,14 +21,18 @@ import 'v2_login_page.dart';
 /// bermorfosis antar-indeks, sedangkan tombol hanya beranimasi kalau
 /// susunannya berubah (Lanjut/Lewati tetap, Masuk memudar masuk).
 class V2OnboardingPage extends StatefulWidget {
-  const V2OnboardingPage({super.key, this.initialSlide = 0});
+  const V2OnboardingPage({super.key, this.initialSlide = 0, this.onLogin});
 
   /// 0 = splash, 1–3 = Welcome 1–3. Dipakai saat kembali dari login ke 1.4.
   final int initialSlide;
 
-  static Route<void> route({int initialSlide = 0}) {
+  /// Diteruskan ke [V2LoginPage]. kosong = cabang demo pratinjau.
+  final V2LoginHandler? onLogin;
+
+  static Route<void> route({int initialSlide = 0, V2LoginHandler? onLogin}) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2OnboardingPage(initialSlide: initialSlide),
+      builder: (_) =>
+          V2OnboardingPage(initialSlide: initialSlide, onLogin: onLogin),
     );
   }
 
@@ -85,7 +89,9 @@ class _V2OnboardingPageState extends State<V2OnboardingPage> {
   /// Membuka login. Kalau pengguna menekan Kembali di login, onboarding
   /// kembali ke Welcome 3 (alur `1.7 → 1.4`).
   Future<void> _openLogin() async {
-    final result = await Navigator.of(context).push<bool>(V2LoginPage.route());
+    final result = await Navigator.of(
+      context,
+    ).push<bool>(V2LoginPage.route(onLogin: widget.onLogin));
     if (!mounted || result != true) return;
     await _animateTo(3);
   }

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../data/services/api_client.dart';
+import '../data/services/session_store.dart';
 
 export '../data/services/api_client.dart' show SessionUser;
 
@@ -49,11 +52,29 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return api;
 });
 
+/// Kenapa masuk gagal, dalam bentuk yang bisa dipetakan ke layar alur v2.
+enum SessionFailure {
+  /// Username/password ditolak layanan (401 `INVALID_CREDENTIALS`).
+  invalidCredentials,
+
+  /// Password benar tetapi akun dinonaktifkan (403 `ACCOUNT_DEACTIVATED`).
+  accountDeactivated,
+
+  /// Request tidak sampai ke layanan (tanpa jaringan / timeout).
+  offline,
+
+  /// Layar lain yang bukan dua hal di atas (mis. kuota permintaan).
+  service,
+}
+
 class SessionState {
-  const SessionState({this.user, this.busy = false, this.error});
+  const SessionState({this.user, this.busy = false, this.error, this.failure});
   final SessionUser? user;
   final bool busy;
   final String? error;
+
+  /// Kategori [error] supaya pemanggil tidak perlu membaca teksnya.
+  final SessionFailure? failure;
 }
 
 String serviceError(Object error) {
@@ -67,17 +88,112 @@ String serviceError(Object error) {
       : 'Tidak dapat menghubungi layanan. Periksa koneksi lalu coba lagi.';
 }
 
+SessionFailure classifyFailure(Object error) {
+  if (error is FormatException) return SessionFailure.service;
+  if (error is! ApiException) return SessionFailure.offline;
+  return switch (error.code) {
+    'INVALID_CREDENTIALS' ||
+    'UNAUTHENTICATED' => SessionFailure.invalidCredentials,
+    'ACCOUNT_DEACTIVATED' => SessionFailure.accountDeactivated,
+    'CONFIGURATION' => SessionFailure.offline,
+    _ => SessionFailure.service,
+  };
+}
+
 class SessionViewModel extends StateNotifier<SessionState> {
-  SessionViewModel(this._api, {SessionState? initialState})
-    : super(initialState ?? const SessionState()) {
+  SessionViewModel(
+    this._api, {
+    SessionState? initialState,
+    Future<SessionStore?> Function()? openStore,
+  }) : _openStore = openStore ?? SessionStore.open,
+       super(initialState ?? const SessionState()) {
     _api.onSessionExpired = () {
-      if (mounted) {
-        state = const SessionState(error: 'Sesi berakhir. Masuk kembali.');
-      }
+      if (!mounted) return;
+      state = const SessionState(error: 'Sesi berakhir. Masuk kembali.');
+      unawaited(_clearStore());
     };
   }
   final ApiClient _api;
+  final Future<SessionStore?> Function() _openStore;
+  Future<SessionStore?>? _store;
   int _operation = 0;
+
+  /// Membuka penyimpanan sekali per proses, lalu dipakai ulang.
+  Future<SessionStore?> _open() => _store ??= _openStore();
+
+  Future<void> _persist(SessionUser user) async {
+    final store = await _open();
+    final access = _api.accessToken, refresh = _api.refreshToken;
+    final expiry = _api.refreshExpiresAt;
+    if (store == null || access == null || refresh == null || expiry == null) {
+      return;
+    }
+    await store.save(
+      serverOrigin: _api.serverOrigin,
+      session: StoredSession(
+        accessToken: access,
+        refreshToken: refresh,
+        refreshExpiresAt: expiry,
+        user: user,
+      ),
+    );
+  }
+
+  Future<void> _clearStore() async {
+    final store = await _open();
+    await store?.clear(serverOrigin: _api.serverOrigin);
+  }
+
+  /// Memakai sesi tersimpan kalau masa berlakunya belum habis.
+  ///
+  /// Dipanggil sebelum layar pertama digambar. Bagian lokalnya ditunggu supaya
+  /// aplikasi bisa langsung membuka beranda; verifikasi ke layanan lanjut di
+  /// latar (`auth/me`) dan hanya menendang keluar kalau token benar-benar
+  /// ditolak. Gangguan jaringan tidak membatalkan sesi lokal.
+  Future<bool> restore() async {
+    final store = await _open();
+    if (store == null) return false;
+    StoredSession? stored;
+    try {
+      stored = await store.read(serverOrigin: _api.serverOrigin);
+    } catch (_) {
+      return false;
+    }
+    if (stored == null) return false;
+    if (stored.expired) {
+      await _clearStore();
+      return false;
+    }
+    _api.setTokens(
+      accessToken: stored.accessToken,
+      refreshToken: stored.refreshToken,
+      accessExpiresAt: null,
+      refreshExpiresAt: stored.refreshExpiresAt,
+    );
+    final operation = ++_operation;
+    state = SessionState(user: stored.user);
+    unawaited(_verify(operation));
+    return true;
+  }
+
+  Future<void> _verify(int operation) async {
+    try {
+      final user = await _api.me();
+      if (!mounted || operation != _operation) return;
+      state = SessionState(user: user);
+      await _persist(user);
+    } on ApiException catch (error) {
+      if (!mounted || operation != _operation) return;
+      if (error.status != 401) return;
+      // Token ditolak walau masa berlakunya belum habis: sesi benar-benar mati.
+      _api.clearSession();
+      await _clearStore();
+      if (!mounted || operation != _operation) return;
+      state = const SessionState(error: 'Sesi berakhir. Masuk kembali.');
+    } catch (_) {
+      // Tidak bisa memverifikasi (mis. offline); sesi lokal tetap dipakai.
+    }
+  }
 
   Future<void> login(String username, String password) async {
     if (state.busy) return;
@@ -85,10 +201,16 @@ class SessionViewModel extends StateNotifier<SessionState> {
     state = const SessionState(busy: true);
     try {
       final user = await _api.login(username, password);
-      if (mounted && operation == _operation) state = SessionState(user: user);
+      if (mounted && operation == _operation) {
+        state = SessionState(user: user);
+        await _persist(user);
+      }
     } catch (error) {
       if (mounted && operation == _operation) {
-        state = SessionState(error: serviceError(error));
+        state = SessionState(
+          error: serviceError(error),
+          failure: classifyFailure(error),
+        );
       }
     }
   }
@@ -107,6 +229,8 @@ class SessionViewModel extends StateNotifier<SessionState> {
               'Keluar dari perangkat. Pencabutan sesi server belum terkonfirmasi.',
         );
       }
+    } finally {
+      await _clearStore();
     }
   }
 
@@ -124,6 +248,7 @@ class SessionViewModel extends StateNotifier<SessionState> {
       ),
       busy: state.busy,
       error: state.error,
+      failure: state.failure,
     );
   }
 
