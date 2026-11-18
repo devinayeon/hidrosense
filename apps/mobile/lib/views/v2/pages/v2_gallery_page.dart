@@ -11,6 +11,7 @@ import 'v2_beranda_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
 import 'v2_inactive_account_page.dart';
+import 'v2_inventaris_list_page.dart';
 import 'v2_notification_permission_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_offline_login_page.dart';
@@ -100,6 +101,12 @@ class V2GalleryPage extends StatelessWidget {
                         route: V2PenjualanListPage.route,
                       ),
                       _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Inventaris (04)',
+                        subtitle: 'Daftar stok, saringan, dan pencarian',
+                        route: V2InventarisListPage.route,
+                      ),
+                      _FlowRow(
                         icon: V2IconName.sync,
                         title: 'Sinkron & Profil (11)',
                         subtitle: 'Keadaan sinkron, antrean, konflik',
@@ -143,6 +150,79 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Izin notifikasi (1.10)',
                         subtitle: 'Minta izin notifikasi sistem',
                         route: V2NotificationPermissionPage.route,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.user,
+                        title: 'Stok pegawai (4.2)',
+                        subtitle: 'Tab bar peran pegawai',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.pegawai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Stok memuat (4.3)',
+                        subtitle: 'Empat rangka kartu sebelum daftar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.loading(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Stok gagal memuat (4.4)',
+                        subtitle: 'Pesan gagal dan tombol coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.error(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Stok kosong (4.5)',
+                        subtitle: 'Belum ada barang tercatat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.empty(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.search,
+                        title: 'Stok tanpa hasil (4.6)',
+                        subtitle: 'Pencarian "Zzz" tidak ketemu',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.noResults(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Pilih jenis (4.7)',
+                        subtitle: 'Sheet jenis barang terbuka',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisListPage.filterSheet(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Stok jenis Benih (4.8)',
+                        subtitle: 'Saringan jenis aktif',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisListPage.jenisBenih(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Stok menipis Benih (4.9)',
+                        subtitle: 'Saringan jenis dan menipis',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisListPage.menipisBenih(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
                       ),
                     ],
                   ),

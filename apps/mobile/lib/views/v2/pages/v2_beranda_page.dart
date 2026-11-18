@@ -23,6 +23,7 @@ import '../widgets/v2_tab_bar.dart';
 import 'v2_akun_tab_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
+import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
 import 'v2_sinkron_page.dart';
@@ -216,21 +217,6 @@ class V2BerandaPage extends StatefulWidget {
 
   static const String _tableName = 'Meja A2';
 
-  static const List<V2TabItem> _petaniTabs = [
-    V2TabItem(label: 'Beranda', icon: V2IconName.home),
-    V2TabItem(label: 'Tanam', icon: V2IconName.sprout),
-    V2TabItem(label: 'Stok', icon: V2IconName.box),
-    V2TabItem(label: 'Rawat', icon: V2IconName.care),
-    V2TabItem(label: 'Lainnya', icon: V2IconName.more),
-  ];
-
-  static const List<V2TabItem> _pegawaiTabs = [
-    V2TabItem(label: 'Beranda', icon: V2IconName.home),
-    V2TabItem(label: 'Tanam', icon: V2IconName.sprout),
-    V2TabItem(label: 'Stok', icon: V2IconName.box),
-    V2TabItem(label: 'Profil', icon: V2IconName.user),
-  ];
-
   @override
   State<V2BerandaPage> createState() => _V2BerandaPageState();
 }
@@ -262,10 +248,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       : 'Offline. $_queuedSync data menunggu sinkron.';
 
   /// Index tab "Lainnya" (Petani) atau "Profil" (Pegawai): tab terakhir.
-  int get _akunIndex =>
-      (_petani ? V2BerandaPage._petaniTabs : V2BerandaPage._pegawaiTabs)
-          .length -
-      1;
+  int get _akunIndex => v2TabsFor(widget.role).length - 1;
 
   void _notice(String message) {
     if (!mounted) return;
@@ -275,7 +258,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _onTabTap(int index) {
-    if (index == _akunIndex || index == 0) {
+    if (index == _akunIndex || index == 0 || index == v2StokTabIndex) {
       setState(() => _activeTab = index);
       return;
     }
@@ -376,8 +359,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = _petani ? V2BerandaPage._petaniTabs : V2BerandaPage._pegawaiTabs;
+    final tabs = v2TabsFor(widget.role);
     final akun = _activeTab == _akunIndex;
+    final stok = _activeTab == v2StokTabIndex;
     return Theme(
       data: V2Theme.light,
       child: Scaffold(
@@ -400,6 +384,13 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onOpenSales: _petani ? _openSales : null,
                         onOpenSync: _openSync,
                         onLogOut: _confirmLogOut,
+                      )
+                    : stok
+                    ? V2InventarisTabView(
+                        onAdd: () => _notice(
+                          'Formulir tambah barang belum tersedia di '
+                          'pratinjau ini.',
+                        ),
                       )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
