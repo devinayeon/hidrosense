@@ -33,3 +33,6 @@ const int v2TanamTabIndex = 1;
 
 /// Index tab "Stok" di kedua peran; halaman 04 Inventaris duduk di sini.
 const int v2StokTabIndex = 2;
+
+/// Index tab "Rawat" (khusus Petani); halaman 09 Perawatan duduk di sini.
+const int v2RawatTabIndex = 3;

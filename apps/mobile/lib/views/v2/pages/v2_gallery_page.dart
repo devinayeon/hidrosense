@@ -32,6 +32,12 @@ import 'v2_panen_edit_page.dart';
 import 'v2_panen_form_page.dart';
 import 'v2_panen_list_page.dart';
 import 'v2_pilih_semaian_page.dart';
+import 'v2_rawat_detail_page.dart';
+import 'v2_rawat_foto_page.dart';
+import 'v2_rawat_hasil_page.dart';
+import 'v2_rawat_konfirmasi_page.dart';
+import 'v2_rawat_list_page.dart';
+import 'v2_rawat_obat_page.dart';
 import 'v2_tanaman_rusak_page.dart';
 import 'v2_detail_tanaman_page.dart';
 import 'v2_sinkron_page.dart';
@@ -140,6 +146,12 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Panen (07)',
                         subtitle: 'Estimasi, catat panen, riwayat, detail',
                         route: V2PanenListPage.route,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Perawatan (09)',
+                        subtitle: 'Cek hama, hasil deteksi, obat, riwayat',
+                        route: V2RawatListPage.route,
                       ),
                       _FlowRow(
                         icon: V2IconName.sync,
@@ -1184,6 +1196,259 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Dialog konflik di atas form ubah',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2PanenEditPage.konflik(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Rawat (9.1)',
+                        subtitle: 'Cek hama, cuaca, riwayat perawatan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatListPage.petani(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Memuat rawat (9.2)',
+                        subtitle: 'Empat rangka baris sebelum daftar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatListPage.memuat(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Gagal memuat rawat (9.3)',
+                        subtitle: 'Pesan gagal dan tombol coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatListPage.gagal(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Belum ada perawatan (9.4)',
+                        subtitle: 'Ilustrasi dan ajakan foto daun',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatListPage.kosong(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.camera,
+                        title: 'Tips foto (9.5)',
+                        subtitle: 'Tiga tips foto daun yang bagus',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.tips(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.camera,
+                        title: 'Izin kamera (9.6)',
+                        subtitle: 'Minta izin sebelum membuka kamera',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.izin(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Izin kamera ditolak (9.7)',
+                        subtitle: 'Buka pengaturan atau pilih galeri',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.izinDitolak(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.camera,
+                        title: 'Kamera (9.8)',
+                        subtitle: 'Bingkai 310 dan tombol rana 88',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.kamera(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Pratinjau foto (9.9)',
+                        subtitle: 'Foto 240 dan pilihan tanaman',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.pratinjau(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.cloud,
+                        title: 'Foto tanpa internet (9.10)',
+                        subtitle: 'Banner offline dan simpan foto',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.tanpaInternet(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.camera,
+                        title: 'Foto tersimpan (9.11)',
+                        subtitle: 'Baris foto menunggu analisis',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2RawatListPage.fotoTersimpan(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Mengunggah foto (9.12)',
+                        subtitle: 'Tombol mengunggah tanpa batal',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.unggah(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Menganalisis foto (9.13)',
+                        subtitle: 'Tombol batal dan ilustrasi tanaman',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatFotoPage.analisis(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Hasil: hama ditemukan (9.14)',
+                        subtitle: 'Thrips 87%, saran lihat obat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatHasilPage.hama(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Hasil: beberapa hama (9.15)',
+                        subtitle: 'Thrips dan kutu daun',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatHasilPage.beberapa(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.info,
+                        title: 'Hasil: keyakinan rendah (9.16)',
+                        subtitle: '42%, mungkin Thrips',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatHasilPage.rendah(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Hasil: tanaman sehat (9.17)',
+                        subtitle: 'Keyakinan 93%, pantau lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatHasilPage.sehat(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Analisis gagal (9.18)',
+                        subtitle: 'Foto tetap tersimpan, coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatHasilPage.gagal(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Rekomendasi obat Thrips (9.19)',
+                        subtitle: 'Rotasi dari Sabun insektisida',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatObatPage.thrips(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Rekomendasi obat Kutu daun (9.20)',
+                        subtitle: 'Rotasi dari Obat Nabati',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatObatPage.kutuDaun(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Konfirmasi perawatan (9.21)',
+                        subtitle: '1 botol Obat Nabati, stok berkurang',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatKonfirmasiPage.biasa(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Stok obat kurang (9.22)',
+                        subtitle: '2 botol, stok hanya 1',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2RawatKonfirmasiPage.stokKurang(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Perawatan dicatat (9.23)',
+                        subtitle: 'Tersimpan, cek lagi dalam 3 hari',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatSavedPage(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Detail perawatan baru (9.24)',
+                        subtitle: '15 Nov, Obat Nabati 1 botol',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2RawatDetailPage.baru(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Tersimpan di HP (9.25)',
+                        subtitle: 'Banner offline dan baris antrean',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2RawatListPage.tersimpanHp(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Detail perawatan antrean (9.26)',
+                        subtitle: 'Belum di server, saran AI',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2RawatDetailPage.antrean(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Detail perawatan 12 Nov (9.27)',
+                        subtitle: 'Sabun insektisida, keyakinan 87%',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2RawatDetailPage.lama(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Buang perubahan (9.28)',
+                        subtitle: 'Dialog di atas form konfirmasi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2RawatKonfirmasiPage.buang(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
                       ),
