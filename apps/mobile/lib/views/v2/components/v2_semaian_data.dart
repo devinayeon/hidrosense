@@ -63,7 +63,11 @@ String labelTanggalSemai(DateTime tanggal) =>
     '${tanggal.day} ${_bulanSingkat[tanggal.month - 1]}';
 
 /// Saringan keadaan semaian (frame 5.1/5.6).
-const List<String> labelChipSemaian = <String>['Semua', 'Siap pindah', 'Selesai'];
+const List<String> labelChipSemaian = <String>[
+  'Semua',
+  'Siap pindah',
+  'Selesai',
+];
 
 /// Satu baris semaian.
 class V2SemaianItem {
@@ -80,6 +84,9 @@ class V2SemaianItem {
     this.pindahKe,
     this.tidakDipindah,
     this.keterangan,
+    this.bahanInventoryId,
+    this.bahanAmount,
+    this.bahanUnit,
   });
 
   final String id;
@@ -119,6 +126,14 @@ class V2SemaianItem {
   /// Catatan bebas, mis. `Rak 2` (form ubah 5.25/5.27).
   final String? keterangan;
 
+  /// Baris inventaris benih yang dipakai saat menyemai; hanya diisi form
+  /// tersambung supaya draft backend punya `id_inventaris`.
+  final String? bahanInventoryId;
+
+  /// Jumlah bahan yang dipakai, mis. `2`, dalam satuan [bahanUnit].
+  final String? bahanAmount;
+  final String? bahanUnit;
+
   /// Umur semaian dalam hari (HSS).
   int get hss => hssSemaian(tanggalSemai);
 
@@ -143,8 +158,7 @@ class V2SemaianItem {
       : '$nama, sisa $sisaBenih dari $jumlahBenih benih';
 
   /// `Stok terpakai: Benih Romaine 2 pak` (baris Extra kartu detail).
-  String get labelStokTerpakai =>
-      'Stok terpakai: Benih $nama $jumlahBahan pak';
+  String get labelStokTerpakai => 'Stok terpakai: Benih $nama $jumlahBahan pak';
 
   /// `Sudah pindah: 120 ke Meja A3` atau `Pindah 120 ke Meja A3. 80 tidak
   /// dipindah.` (baris Extra kartu detail setelah pindah).
@@ -177,6 +191,9 @@ class V2SemaianItem {
     String? pindahKe,
     int? tidakDipindah,
     String? keterangan,
+    String? bahanInventoryId,
+    String? bahanAmount,
+    String? bahanUnit,
     bool hapusSisaBenih = false,
   }) {
     return V2SemaianItem(
@@ -192,6 +209,9 @@ class V2SemaianItem {
       pindahKe: pindahKe ?? this.pindahKe,
       tidakDipindah: tidakDipindah ?? this.tidakDipindah,
       keterangan: keterangan ?? this.keterangan,
+      bahanInventoryId: bahanInventoryId ?? this.bahanInventoryId,
+      bahanAmount: bahanAmount ?? this.bahanAmount,
+      bahanUnit: bahanUnit ?? this.bahanUnit,
     );
   }
 }
@@ -254,16 +274,12 @@ final V2SemaianItem designSemaianSisa = designSemaianRomaineSiapPindah.copyWith(
 );
 
 /// Frame 5.19: Romaine selesai setelah semua 200 benih pindah ke Meja A2.
-final V2SemaianItem designSemaianDipindahSemua =
-    designSemaianRomaineSiapPindah.copyWith(
-      selesai: true,
-      jumlahPindah: 200,
-      pindahKe: 'Meja A2',
-    );
+final V2SemaianItem designSemaianDipindahSemua = designSemaianRomaineSiapPindah
+    .copyWith(selesai: true, jumlahPindah: 200, pindahKe: 'Meja A2');
 
 /// Frame 5.29: Romaine selesai, 120 benih pindah ke Meja A3 dan 80 ditinggal.
-final V2SemaianItem designSemaianSelesaiSisa =
-    designSemaianRomaineSiapPindah.copyWith(
+final V2SemaianItem designSemaianSelesaiSisa = designSemaianRomaineSiapPindah
+    .copyWith(
       selesai: true,
       jumlahPindah: 120,
       pindahKe: 'Meja A3',
@@ -289,6 +305,7 @@ class V2SemaianBahan {
     required this.nama,
     required this.stok,
     required this.satuan,
+    this.inventoryId,
   });
 
   final String nama;
@@ -296,6 +313,9 @@ class V2SemaianBahan {
   /// Stok benih yang tersisa, dipakai untuk memeriksa "Jumlah bahan".
   final int stok;
   final String satuan;
+
+  /// Baris inventaris backend; null untuk bahan contoh galeri.
+  final String? inventoryId;
 
   /// `12 pak` — dipakai helper "Stok hanya 12 pak" (frame 5.11).
   String get labelStok => '$stok $satuan';
@@ -345,6 +365,7 @@ class V2SemaianMeja {
     this.lubangKosong = 0,
     this.penuh = false,
     this.perawatan = false,
+    this.tableId,
   });
 
   final String nama;
@@ -357,6 +378,9 @@ class V2SemaianMeja {
 
   /// Meja yang sedang dirawat tidak bisa dipilih (frame 5.17: `Meja D1`).
   final bool perawatan;
+
+  /// Identitas meja backend; null untuk daftar contoh galeri.
+  final String? tableId;
 
   bool get tersedia => !penuh && !perawatan && lubangKosong > 0;
 
@@ -394,6 +418,7 @@ class V2SemaianPindah {
     required this.meja,
     required this.jumlah,
     required this.tanggal,
+    this.tableId,
   });
 
   /// Nama meja tujuan, mis. `Meja A2`.
@@ -402,4 +427,7 @@ class V2SemaianPindah {
   /// Banyak tanaman yang dipindah.
   final int jumlah;
   final DateTime tanggal;
+
+  /// Identitas meja backend; null untuk pratinjau galeri.
+  final String? tableId;
 }

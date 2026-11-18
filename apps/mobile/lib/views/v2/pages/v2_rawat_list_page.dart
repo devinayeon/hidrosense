@@ -50,6 +50,8 @@ class V2RawatTabView extends StatefulWidget {
     this.toastTone = V2ToastTone.info,
     this.onFotoTanaman,
     this.onTapItem,
+    this.onRetry,
+    this.onOpenCuaca,
   });
 
   /// Baris riwayat; null berarti data contoh galeri.
@@ -66,6 +68,12 @@ class V2RawatTabView extends StatefulWidget {
 
   final VoidCallback? onFotoTanaman;
   final ValueChanged<V2RawatItem>? onTapItem;
+
+  /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
+  final VoidCallback? onRetry;
+
+  /// Membuka halaman cuaca; null berarti halaman contoh galeri.
+  final VoidCallback? onOpenCuaca;
 
   @override
   State<V2RawatTabView> createState() => _V2RawatTabViewState();
@@ -123,7 +131,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
               title: 'Gagal memuat',
               body: 'Periksa internet, lalu coba lagi.',
               actionLabel: 'Coba lagi',
-              onAction: () {},
+              onAction: widget.onRetry ?? () {},
               illustration: Image.asset(
                 V2RawatAssets.offlineNoInternet,
                 width: 160,
@@ -157,9 +165,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
         else ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
-            child: V2RawatCekHamaCard(
-              onTap: widget.onFotoTanaman ?? () {},
-            ),
+            child: V2RawatCekHamaCard(onTap: widget.onFotoTanaman ?? () {}),
           ),
           const SizedBox(height: V2Space.lg),
           Padding(
@@ -168,7 +174,9 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
               title: 'Cuaca dan saran',
               subtitle: 'Berawan, 29°C',
               icon: V2IconName.cloud,
-              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
+              onTap:
+                  widget.onOpenCuaca ??
+                  () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
           ),
         ],
@@ -295,11 +303,7 @@ class _KeadaanKosong extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 48),
-          Image.asset(
-            V2RawatAssets.itemPlantCare,
-            width: 160,
-            height: 160,
-          ),
+          Image.asset(V2RawatAssets.itemPlantCare, width: 160, height: 160),
           const SizedBox(height: V2Space.lg),
           Text(
             'Belum ada perawatan',
@@ -355,11 +359,7 @@ class V2RawatListPage extends StatefulWidget {
 
   /// Frame `9.25 Perawatan tersimpan di HP`.
   V2RawatListPage.tersimpanHp({Key? key})
-    : this(
-        key: key,
-        riwayat: designRawatRiwayatAntrean,
-        offline: true,
-      );
+    : this(key: key, riwayat: designRawatRiwayatAntrean, offline: true);
 
   final List<V2RawatItem>? riwayat;
   final V2RawatState state;
@@ -439,10 +439,7 @@ class _V2RawatListPageState extends State<V2RawatListPage> {
                   onFotoTanaman: _fotoTanaman,
                 ),
               ),
-              const V2TabBar(
-                items: v2PetaniTabs,
-                activeIndex: v2RawatTabIndex,
-              ),
+              const V2TabBar(items: v2PetaniTabs, activeIndex: v2RawatTabIndex),
             ],
           ),
         ),

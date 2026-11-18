@@ -94,8 +94,12 @@ class V2BerandaPage extends StatefulWidget {
     this.saleRepairer,
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
+    this.tanamTab,
+    this.stokTab,
+    this.rawatTab,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onOpenWeather,
     this.onLogOut,
   });
 
@@ -111,6 +115,7 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -119,6 +124,9 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       tanamTab = null,
+       stokTab = null,
+       rawatTab = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -138,6 +146,7 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -146,6 +155,9 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       tanamTab = null,
+       stokTab = null,
+       rawatTab = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -165,6 +177,7 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
+    this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -173,6 +186,9 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       tanamTab = null,
+       stokTab = null,
+       rawatTab = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -222,8 +238,19 @@ class V2BerandaPage extends StatefulWidget {
   /// Lencana jumlah antrean di baris Sinkron; null berarti tanpa lencana.
   final String? syncBadge;
 
+  /// Isi tab Tanam/Stok/Rawat versi backend; null berarti fixture galeri.
+  ///
+  /// Hanya halaman penghubung (`V2BerandaConnectedPage`) yang mengisinya,
+  /// sehingga galeri tetap memakai data contoh per frame.
+  final Widget? tanamTab;
+  final Widget? stokTab;
+  final Widget? rawatTab;
+
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
+
+  /// Membuka halaman cuaca; null berarti halaman contoh galeri.
+  final VoidCallback? onOpenWeather;
 
   /// Menutup sesi (frame 3.3); diisi oleh `AppGate`.
   final Future<void> Function()? onLogOut;
@@ -448,6 +475,11 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     Navigator.of(context).push(
       V2CycleDetailPage.route(
         tableName: V2BerandaPage._tableName,
+        weatherTitle: widget.weatherTitle,
+        weatherSubtitle: widget.weatherSubtitle,
+        onOpenWeather:
+            widget.onOpenWeather ??
+            () => Navigator.of(context).push(V2CuacaPage.route()),
         onOpenTable: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => V2MejaDetailPage.biasa()),
         ),
@@ -488,24 +520,27 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onLogOut: _confirmLogOut,
                       )
                     : tanam
-                    ? V2SemaianTabView(
-                        items: _semaian,
-                        onAdd: _openTambahSemaian,
-                        onTapItem: _openDetailSemaian,
-                      )
+                    ? (widget.tanamTab ??
+                          V2SemaianTabView(
+                            items: _semaian,
+                            onAdd: _openTambahSemaian,
+                            onTapItem: _openDetailSemaian,
+                          ))
                     : stok
-                    ? V2InventarisTabView(
-                        items: _inventaris,
-                        onAdd: _openTambahBarang,
-                        onTapItem: _openDetailBarang,
-                      )
+                    ? (widget.stokTab ??
+                          V2InventarisTabView(
+                            items: _inventaris,
+                            onAdd: _openTambahBarang,
+                            onTapItem: _openDetailBarang,
+                          ))
                     : rawat
-                    ? V2RawatTabView(
-                        riwayat: _riwayatRawat,
-                        offline: _rawatOffline,
-                        toast: _rawatToast,
-                        onFotoTanaman: _fotoTanamanRawat,
-                      )
+                    ? (widget.rawatTab ??
+                          V2RawatTabView(
+                            riwayat: _riwayatRawat,
+                            offline: _rawatOffline,
+                            toast: _rawatToast,
+                            onFotoTanaman: _fotoTanamanRawat,
+                          ))
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
                           V2Space.xl,
@@ -591,8 +626,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             V2WeatherCard(
               title: widget.weatherTitle,
               subtitle: widget.weatherSubtitle,
-              onTap: () =>
-                  Navigator.of(context).push(V2CuacaPage.route()),
+              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
         ],
       ],

@@ -398,6 +398,23 @@ class ConnectedInventoryViewModel
     return _finishSave();
   }
 
+  /// Mencatat keluar/masuk stok satu barang lalu menyegarkan daftar.
+  Future<void> recordStock({
+    required InventoryRecord item,
+    required bool masuk,
+    required String jumlah,
+    String? note,
+  }) async {
+    await _repository.recordStockMovement(
+      direction: masuk ? 'masuk' : 'keluar',
+      details: [
+        {'id_inventaris': item.id, 'jumlah': jumlah, 'satuan': item.unit},
+      ],
+      note: note,
+    );
+    await refreshAfterWrite();
+  }
+
   Future<void> deactivateItem(String id) async {
     await _repository.deactivateItem(id);
     await _initialLoad;

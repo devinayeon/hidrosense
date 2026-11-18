@@ -60,6 +60,7 @@ class V2PanenTabView extends StatefulWidget {
     this.onCatatPanen,
     this.onTapPanen,
     this.onLihatSemaian,
+    this.onRetry,
   });
 
   /// Baris estimasi; null berarti data contoh galeri.
@@ -87,6 +88,9 @@ class V2PanenTabView extends StatefulWidget {
   /// Tombol "Lihat semaian" saat belum ada tanaman (frame 7.5).
   final VoidCallback? onLihatSemaian;
 
+  /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
+  final VoidCallback? onRetry;
+
   @override
   State<V2PanenTabView> createState() => _V2PanenTabViewState();
 }
@@ -97,8 +101,7 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
   bool get _loading => widget.state == V2PanenState.loading;
   bool get _error => widget.state == V2PanenState.error;
 
-  List<V2PanenEstimasi> get _estimasi =>
-      widget.estimasi ?? designEstimasiPanen;
+  List<V2PanenEstimasi> get _estimasi => widget.estimasi ?? designEstimasiPanen;
   List<V2PanenItem> get _riwayat => widget.riwayat ?? designPanenRiwayat;
 
   /// Frame 7.5 tidak menampilkan chip sama sekali saat belum ada tanaman.
@@ -142,7 +145,7 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
               title: 'Gagal memuat',
               body: 'Periksa internet, lalu coba lagi.',
               actionLabel: 'Coba lagi',
-              onAction: () {},
+              onAction: widget.onRetry ?? () {},
               illustration: Image.asset(
                 V2SemaianAssets.offlineNoInternet,
                 width: 160,
@@ -239,8 +242,7 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
         if (!widget.offline) ...[
           V2PanenChartCard(
             bars: designGrafikPanen,
-            caption:
-                'Panen 12 Okt, 29 Okt, dan 6 Nov: 180, 210, dan 240 kg.',
+            caption: 'Panen 12 Okt, 29 Okt, dan 6 Nov: 180, 210, dan 240 kg.',
           ),
           const SizedBox(height: V2Space.sm),
         ],
@@ -419,11 +421,7 @@ class V2PanenListPage extends StatefulWidget {
 
   /// Frame `7.7 Riwayat panen kosong`.
   const V2PanenListPage.riwayatKosong({Key? key})
-    : this(
-        key: key,
-        initialChipIndex: 1,
-        riwayat: const <V2PanenItem>[],
-      );
+    : this(key: key, initialChipIndex: 1, riwayat: const <V2PanenItem>[]);
 
   /// Frame `7.15 Tersimpan di HP`: banner offline, baris antrean, dan toast.
   V2PanenListPage.offline({Key? key})

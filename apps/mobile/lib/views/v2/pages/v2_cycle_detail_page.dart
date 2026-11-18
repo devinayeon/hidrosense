@@ -4,6 +4,7 @@ import '../components/v2_cycle_legend.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_checklist.dart';
 import '../widgets/v2_cycle_ring.dart';
 import '../widgets/v2_timeline_step.dart';
 
@@ -34,6 +35,9 @@ class V2CycleDetailPage extends StatelessWidget {
     this.daysLeft = 37,
     this.steps = designSteps,
     this.onOpenTable,
+    this.weatherTitle,
+    this.weatherSubtitle,
+    this.onOpenWeather,
   });
 
   final String tableName;
@@ -43,6 +47,11 @@ class V2CycleDetailPage extends StatelessWidget {
   final int daysLeft;
   final List<V2CycleStep> steps;
   final VoidCallback? onOpenTable;
+
+  /// Ringkasan cuaca beranda; null berarti kartu cuaca tidak ditampilkan.
+  final String? weatherTitle;
+  final String? weatherSubtitle;
+  final VoidCallback? onOpenWeather;
 
   static const List<V2CycleStep> designSteps = [
     V2CycleStep(
@@ -70,11 +79,17 @@ class V2CycleDetailPage extends StatelessWidget {
   static Route<void> route({
     String tableName = 'Meja A2',
     VoidCallback? onOpenTable,
+    String? weatherTitle,
+    String? weatherSubtitle,
+    VoidCallback? onOpenWeather,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2CycleDetailPage(
         tableName: tableName,
         onOpenTable: onOpenTable,
+        weatherTitle: weatherTitle,
+        weatherSubtitle: weatherSubtitle,
+        onOpenWeather: onOpenWeather,
       ),
     );
   }
@@ -127,7 +142,11 @@ class V2CycleDetailPage extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (var index = 0; index < steps.length; index++) ...[
+                          for (
+                            var index = 0;
+                            index < steps.length;
+                            index++
+                          ) ...[
                             if (index > 0) const SizedBox(height: V2Space.sm),
                             V2TimelineStep(
                               title: steps[index].title,
@@ -137,6 +156,14 @@ class V2CycleDetailPage extends StatelessWidget {
                           ],
                         ],
                       ),
+                      if (weatherTitle != null) ...[
+                        const SizedBox(height: V2Space.lg),
+                        V2WeatherCard(
+                          title: weatherTitle!,
+                          subtitle: weatherSubtitle ?? 'Cuaca hari ini',
+                          onTap: onOpenWeather,
+                        ),
+                      ],
                     ],
                   ),
                 ),

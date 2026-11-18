@@ -56,6 +56,7 @@ class V2MejaTabView extends StatefulWidget {
     this.onSegmentChanged,
     this.onAdd,
     this.onTapItem,
+    this.onRetry,
   });
 
   /// Meja yang ditampilkan; null berarti data contoh galeri.
@@ -80,6 +81,9 @@ class V2MejaTabView extends StatefulWidget {
 
   /// Ketukan baris; null berarti baris hanya dilihat.
   final ValueChanged<V2MejaItem>? onTapItem;
+
+  /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
+  final VoidCallback? onRetry;
 
   @override
   State<V2MejaTabView> createState() => _V2MejaTabViewState();
@@ -144,7 +148,7 @@ class _V2MejaTabViewState extends State<V2MejaTabView> {
               title: 'Gagal memuat',
               body: 'Periksa internet, lalu coba lagi.',
               actionLabel: 'Coba lagi',
-              onAction: () {},
+              onAction: widget.onRetry ?? () {},
               illustration: Image.asset(
                 V2SemaianAssets.offlineNoInternet,
                 width: 160,
@@ -311,11 +315,7 @@ class V2MejaListPage extends StatefulWidget {
 
   /// Frame `6.8 Meja ditambahkan`: Meja C1 di paling atas dan toast.
   V2MejaListPage.ditambahkan({Key? key})
-    : this(
-        key: key,
-        items: designDaftarMejaBaru,
-        toast: 'Meja ditambahkan',
-      );
+    : this(key: key, items: designDaftarMejaBaru, toast: 'Meja ditambahkan');
 
   /// Frame `6.9 Tersimpan di HP`: banner offline, baris "Antrean", dan toast
   /// info.

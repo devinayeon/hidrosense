@@ -51,6 +51,8 @@ class V2RawatItem {
     this.keyakinan = 87,
     this.status = V2RawatStatus.selesai,
     this.foto = false,
+    this.meta,
+    this.extra,
   });
 
   final String id;
@@ -67,6 +69,12 @@ class V2RawatItem {
   /// Baris “Foto daun” yang masih menunggu analisis (frame 9.11).
   final bool foto;
 
+  /// Subjudul kartu detail; null berarti `obat, jumlah botol` dari desain.
+  final String? meta;
+
+  /// Baris tambahan kartu detail; null berarti `Keyakinan 87%. Saran AI.`.
+  final String? extra;
+
   bool get antrean => status == V2RawatStatus.antrean;
 
   /// `Thrips` atau `Foto daun`.
@@ -78,11 +86,14 @@ class V2RawatItem {
   String get labelKicker => '$meja, $labelTanggal';
 
   /// `Obat Nabati, 1 botol`.
-  String get labelObat => '$obat, $jumlahObat botol';
+  String get labelObat => meta ?? '$obat, $jumlahObat botol';
 
   /// `Keyakinan 87%. Saran AI.` atau catatan antrean (frame 9.26).
   String get labelExtra =>
-      antrean ? 'Belum di server. Saran AI.' : 'Keyakinan $keyakinan%. Saran AI.';
+      extra ??
+      (antrean
+          ? 'Belum di server. Saran AI.'
+          : 'Keyakinan $keyakinan%. Saran AI.');
 
   V2RawatItem copyWith({String? obat, int? jumlahObat, V2RawatStatus? status}) {
     return V2RawatItem(
@@ -95,6 +106,8 @@ class V2RawatItem {
       keyakinan: keyakinan,
       status: status ?? this.status,
       foto: foto,
+      meta: meta,
+      extra: extra,
     );
   }
 }
@@ -131,8 +144,7 @@ class V2Obat {
   bool get habis => stok <= 0;
 
   /// `Obat Nabati, stok 1 botol` atau `Minyak neem, habis`.
-  String get label =>
-      habis ? '$nama, habis' : '$nama, stok $stok botol';
+  String get label => habis ? '$nama, habis' : '$nama, stok $stok botol';
 
   /// Pesan kartu “Stok berkurang” (frame 9.21).
   String labelSisa(int jumlah) {

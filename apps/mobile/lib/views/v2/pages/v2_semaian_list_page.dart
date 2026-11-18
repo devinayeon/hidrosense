@@ -57,6 +57,7 @@ class V2SemaianTabView extends StatefulWidget {
     this.onSegmentChanged,
     this.onAdd,
     this.onTapItem,
+    this.onRetry,
   });
 
   /// Semaian yang ditampilkan; null berarti data contoh galeri.
@@ -81,6 +82,9 @@ class V2SemaianTabView extends StatefulWidget {
 
   /// Ketukan baris; null berarti baris hanya dilihat.
   final ValueChanged<V2SemaianItem>? onTapItem;
+
+  /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
+  final VoidCallback? onRetry;
 
   @override
   State<V2SemaianTabView> createState() => _V2SemaianTabViewState();
@@ -143,7 +147,7 @@ class _V2SemaianTabViewState extends State<V2SemaianTabView> {
               title: 'Gagal memuat',
               body: 'Periksa internet, lalu coba lagi.',
               actionLabel: 'Coba lagi',
-              onAction: () {},
+              onAction: widget.onRetry ?? () {},
               illustration: Image.asset(
                 V2SemaianAssets.offlineNoInternet,
                 width: 160,
@@ -191,11 +195,7 @@ class _V2SemaianTabViewState extends State<V2SemaianTabView> {
           child: _status == 2
               ? Column(
                   children: [
-                    for (
-                      var index = 0;
-                      index < _filtered.length;
-                      index++
-                    ) ...[
+                    for (var index = 0; index < _filtered.length; index++) ...[
                       if (index > 0) const SizedBox(height: V2Space.sm),
                       V2SemaianRow(
                         item: _filtered[index],

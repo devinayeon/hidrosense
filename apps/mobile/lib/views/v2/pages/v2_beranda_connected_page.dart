@@ -6,6 +6,10 @@ import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
+import '../connected/v2_cuaca_connected.dart';
+import '../connected/v2_inventaris_connected.dart';
+import '../connected/v2_rawat_connected.dart';
+import '../connected/v2_tanam_connected.dart';
 import 'v2_beranda_page.dart';
 
 /// Beranda v2 yang diisi data nyata (frame 2.1–2.6).
@@ -64,6 +68,11 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         final V2PenjualanRepairer repairer => repairer,
         _ => null,
       },
+      tanamTab: const V2TanamConnectedTab(),
+      stokTab: const V2InventarisConnectedTab(),
+      rawatTab: const V2RawatConnectedTab(),
+      onOpenWeather: () =>
+          Navigator.of(context).push(V2CuacaConnectedPage.route()),
       syncLabel: syncItems.isEmpty
           ? 'Terakhir 09.40'
           : '${syncItems.length} data menunggu',

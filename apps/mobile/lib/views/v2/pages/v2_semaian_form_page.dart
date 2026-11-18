@@ -32,6 +32,8 @@ class V2SemaianFormPage extends StatefulWidget {
     this.previewKeyboard = false,
     this.previewValidation = false,
     this.previewStokKurang = false,
+    this.bahanList,
+    this.initialDate,
   });
 
   /// Frame `5.7 Tambah semaian`.
@@ -39,35 +41,45 @@ class V2SemaianFormPage extends StatefulWidget {
     : previewDateSheet = false,
       previewKeyboard = false,
       previewValidation = false,
-      previewStokKurang = false;
+      previewStokKurang = false,
+      bahanList = null,
+      initialDate = null;
 
   /// Frame `5.8 Pilih tanggal`.
   const V2SemaianFormPage.pilihTanggal({super.key})
     : previewDateSheet = true,
       previewKeyboard = false,
       previewValidation = false,
-      previewStokKurang = false;
+      previewStokKurang = false,
+      bahanList = null,
+      initialDate = null;
 
   /// Frame `5.9 Tambah semaian, keyboard`.
   const V2SemaianFormPage.keyboard({super.key})
     : previewDateSheet = false,
       previewKeyboard = true,
       previewValidation = false,
-      previewStokKurang = false;
+      previewStokKurang = false,
+      bahanList = null,
+      initialDate = null;
 
   /// Frame `5.10 Tambah semaian, validasi`.
   const V2SemaianFormPage.validation({super.key})
     : previewDateSheet = false,
       previewKeyboard = false,
       previewValidation = true,
-      previewStokKurang = false;
+      previewStokKurang = false,
+      bahanList = null,
+      initialDate = null;
 
   /// Frame `5.11 Stok tidak cukup`.
   const V2SemaianFormPage.stokKurang({super.key})
     : previewDateSheet = false,
       previewKeyboard = false,
       previewValidation = false,
-      previewStokKurang = true;
+      previewStokKurang = true,
+      bahanList = null,
+      initialDate = null;
 
   /// Membuka sheet tanggal begitu form tampil (frame 5.8).
   final bool previewDateSheet;
@@ -81,9 +93,20 @@ class V2SemaianFormPage extends StatefulWidget {
   /// Jumlah bahan melebihi stok dengan galat menyala (frame 5.11).
   final bool previewStokKurang;
 
-  static Route<V2SemaianItem> route() {
+  /// Bahan yang bisa dipilih; null berarti contoh galeri. Halaman tersambung
+  /// mengisinya dari inventaris benih backend.
+  final List<V2SemaianBahan>? bahanList;
+
+  /// Tanggal semai awal; null berarti tanggal acuan galeri.
+  final DateTime? initialDate;
+
+  static Route<V2SemaianItem> route({
+    List<V2SemaianBahan>? bahanList,
+    DateTime? initialDate,
+  }) {
     return MaterialPageRoute<V2SemaianItem>(
-      builder: (_) => const V2SemaianFormPage(),
+      builder: (_) =>
+          V2SemaianFormPage(bahanList: bahanList, initialDate: initialDate),
     );
   }
 
@@ -94,13 +117,17 @@ class V2SemaianFormPage extends StatefulWidget {
 class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   static const double _keyboardBottomSpace = 25;
 
-  late DateTime _tanggal = DateTime(2026, 11, 15);
+  late DateTime _tanggal = widget.initialDate ?? DateTime(2026, 11, 15);
+  late final List<V2SemaianBahan> _pilihan =
+      widget.bahanList?.isNotEmpty == true
+      ? widget.bahanList!
+      : designBahanSemaian;
   late final TextEditingController _jumlahBenih = TextEditingController(
     text: widget.previewValidation ? '' : '200',
   );
   late V2SemaianBahan? _bahan = widget.previewValidation
       ? null
-      : designBahanRomaine;
+      : _pilihan.first;
   late int _jumlahBahan = widget.previewStokKurang ? 15 : 2;
 
   String? _benihError;
@@ -148,7 +175,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
 
   /// Sheet "Pilih bahan"; pilihan baru dipakai setelah tombol "Pilih".
   Future<void> _pickBahan() async {
-    var draft = _bahan ?? designBahanRomaine;
+    var draft = _bahan ?? _pilihan.first;
     final result = await showV2BottomSheet<V2SemaianBahan>(
       context,
       child: StatefulBuilder(
@@ -160,15 +187,14 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
           ),
           child: Column(
             children: [
-              for (var index = 0; index < designBahanSemaian.length; index++) ...[
+              for (var index = 0; index < _pilihan.length; index++) ...[
                 if (index > 0) const SizedBox(height: V2Space.lg),
                 V2OptionRow(
-                  label: designBahanSemaian[index].nama,
-                  state: draft.nama == designBahanSemaian[index].nama
+                  label: _pilihan[index].nama,
+                  state: draft.nama == _pilihan[index].nama
                       ? V2OptionState.selected
                       : V2OptionState.normal,
-                  onTap: () =>
-                      setSheet(() => draft = designBahanSemaian[index]),
+                  onTap: () => setSheet(() => draft = _pilihan[index]),
                 ),
               ],
             ],
@@ -226,6 +252,9 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         nama: bahan.nama.replaceFirst('Benih ', ''),
         tanggalSemai: _tanggal,
         jumlahBenih: benih!,
+        bahanInventoryId: bahan.inventoryId,
+        bahanAmount: '$_jumlahBahan',
+        bahanUnit: bahan.satuan,
       ),
     );
   }
@@ -264,9 +293,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(
-                  bottom: keyboardOpen ? V2Space.sm : 0,
-                ),
+                padding: EdgeInsets.only(bottom: keyboardOpen ? V2Space.sm : 0),
                 child: V2ActionBar(
                   safeBottom: !keyboardOpen,
                   actions: [V2Button(label: 'Simpan', onPressed: _save)],

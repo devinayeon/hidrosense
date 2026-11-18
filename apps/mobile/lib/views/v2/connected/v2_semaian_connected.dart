@@ -1,0 +1,309 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/business_date.dart';
+import '../../../core/uuid.dart';
+import '../../../data/models/inventory_record.dart';
+import '../../../data/models/nursery_record.dart';
+import '../../../viewmodels/connected_inventory_viewmodel.dart';
+import '../../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../../viewmodels/connected_table_viewmodel.dart';
+import '../../../viewmodels/session_viewmodel.dart';
+import '../../../viewmodels/sowing_draft.dart';
+import '../components/v2_semaian_data.dart';
+import '../pages/v2_pindah_meja_page.dart';
+import '../pages/v2_semaian_detail_page.dart';
+import '../pages/v2_semaian_edit_page.dart';
+import '../pages/v2_semaian_form_page.dart';
+import '../pages/v2_semaian_list_page.dart';
+
+/// `Benih Selada Romaine` → `Romaine`; nama benih backend lebih panjang dari
+/// label yang dipakai desain.
+String v2NamaBenih(String nama) {
+  var hasil = nama.trim();
+  for (final awalan in ['Benih ', 'Selada ']) {
+    if (hasil.toLowerCase().startsWith(awalan.toLowerCase())) {
+      hasil = hasil.substring(awalan.length);
+    }
+  }
+  return hasil.isEmpty ? nama : hasil;
+}
+
+int _jumlahBahan(String? amount) {
+  final value = double.tryParse(amount ?? '') ?? 0;
+  return value <= 0 ? 1 : value.round();
+}
+
+/// Pemetaan satu batch penyemaian backend ke model page 05.
+V2SemaianItem v2SemaianItemFromRecord(
+  SowingRecord record, {
+  List<InventoryRecord> inventaris = const <InventoryRecord>[],
+}) {
+  final material = record.materials.firstOrNull;
+  final benih = material == null
+      ? null
+      : inventaris
+            .where((item) => item.id == material.inventoryId)
+            .firstOrNull;
+  final pindah = record.seedCount - record.remainingSeedCount;
+  return V2SemaianItem(
+    id: record.id,
+    nama: benih == null ? 'Semaian' : v2NamaBenih(benih.name),
+    tanggalSemai: DateTime.tryParse(record.sowingDate) ?? jakartaToday(),
+    jumlahBenih: record.seedCount,
+    selesai: record.status == 'selesai',
+    jumlahBahan: _jumlahBahan(material?.amount),
+    sisaBenih: pindah > 0 ? record.remainingSeedCount : null,
+    jumlahPindah: pindah > 0 ? pindah : null,
+    keterangan: record.note,
+    bahanInventoryId: material?.inventoryId,
+    bahanAmount: material?.amount,
+    bahanUnit: material?.unit,
+  );
+}
+
+List<V2SemaianBahan> v2BahanSemaianDariInventaris(
+  List<InventoryRecord> inventaris,
+) {
+  return inventaris
+      .where((item) => item.active && v2JenisBenih(item))
+      .map(
+        (item) => V2SemaianBahan(
+          nama: item.name,
+          stok: (double.tryParse(item.balance) ?? 0).floor(),
+          satuan: item.unit,
+          inventoryId: item.id,
+        ),
+      )
+      .toList();
+}
+
+/// Kategori benih dikenali lewat nama jenis; inventaris tidak menyimpan enum.
+bool v2JenisBenih(InventoryRecord item) =>
+    item.category.toLowerCase().contains('benih');
+
+/// Isi tab "Tanam" segmen Semaian dengan data backend.
+class V2SemaianConnectedTab extends ConsumerWidget {
+  const V2SemaianConnectedTab({
+    super.key,
+    this.initialStatusIndex = 0,
+    this.onSegmentChanged,
+  });
+
+  final int initialStatusIndex;
+  final ValueChanged<int>? onSegmentChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(connectedNurseryProvider);
+    final inventaris = ref.watch(
+      connectedInventoryProvider.select((value) => value.activeRecords),
+    );
+    final items = state.records
+        .map((record) => v2SemaianItemFromRecord(record, inventaris: inventaris))
+        .toList();
+    final viewState = switch (state) {
+      ConnectedNurseryState(loading: true) when items.isEmpty =>
+        V2SemaianState.loading,
+      ConnectedNurseryState(error: _?) when items.isEmpty =>
+        V2SemaianState.error,
+      _ => V2SemaianState.ready,
+    };
+    return V2SemaianTabView(
+      items: items,
+      state: viewState,
+      initialStatusIndex: initialStatusIndex,
+      onSegmentChanged: onSegmentChanged,
+      onRetry: () => ref.read(connectedNurseryProvider.notifier).refresh(),
+      onAdd: () => _tambah(context, ref),
+      onTapItem: (item) => _bukaDetail(context, ref, item),
+    );
+  }
+
+  Future<void> _tambah(BuildContext context, WidgetRef ref) async {
+    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
+    final bahan = v2BahanSemaianDariInventaris(inventaris);
+    if (bahan.isEmpty) {
+      _pesan(context, 'Belum ada benih aktif di inventaris.');
+      return;
+    }
+    final result = await Navigator.of(
+      context,
+    ).push<V2SemaianItem>(
+      V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
+    );
+    if (result == null) return;
+    final inventoryId = result.bahanInventoryId;
+    if (inventoryId == null) {
+      if (!context.mounted) return;
+      _pesan(context, 'Pilih bahan dari inventaris.');
+      return;
+    }
+    try {
+      await ref
+          .read(connectedNurseryProvider.notifier)
+          .saveSowing(
+            SowingDraft(
+              date: apiDate(result.tanggalSemai),
+              seedCount: result.jumlahBenih,
+              note: result.keterangan ?? '',
+              inventoryId: inventoryId,
+              amount: result.bahanAmount ?? '1',
+              unit: result.bahanUnit ?? 'pak',
+            ),
+          );
+      if (!context.mounted) return;
+      _pesan(context, 'Semaian ditambahkan.');
+    } catch (error) {
+      if (!context.mounted) return;
+      _pesan(context, serviceError(error));
+    }
+  }
+
+  Future<void> _bukaDetail(
+    BuildContext context,
+    WidgetRef ref,
+    V2SemaianItem item,
+  ) {
+    return Navigator.of(context).push<V2SemaianItem>(
+      MaterialPageRoute<V2SemaianItem>(
+        builder: (_) => V2SemaianConnectedDetailPage(item: item),
+      ),
+    );
+  }
+}
+
+void _pesan(BuildContext context, String pesan) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(pesan)));
+}
+
+/// Detail semaian dengan ubah dan pindah ke meja yang menulis ke backend.
+class V2SemaianConnectedDetailPage extends ConsumerStatefulWidget {
+  const V2SemaianConnectedDetailPage({super.key, required this.item});
+
+  final V2SemaianItem item;
+
+  @override
+  ConsumerState<V2SemaianConnectedDetailPage> createState() =>
+      _V2SemaianConnectedDetailPageState();
+}
+
+class _V2SemaianConnectedDetailPageState
+    extends ConsumerState<V2SemaianConnectedDetailPage> {
+  late V2SemaianItem _item = widget.item;
+  String? _toast;
+
+  SowingRecord? _record() => ref
+      .read(connectedNurseryProvider)
+      .records
+      .where((record) => record.id == _item.id)
+      .firstOrNull;
+
+  void _segarkan(String toast) {
+    final record = _record();
+    if (record == null) return;
+    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
+    setState(() {
+      _item = v2SemaianItemFromRecord(record, inventaris: inventaris);
+      _toast = toast;
+    });
+  }
+
+  Future<void> _ubah() async {
+    final updated = await Navigator.of(context).push<V2SemaianItem>(
+      MaterialPageRoute<V2SemaianItem>(
+        builder: (_) => V2SemaianEditPage(item: _item),
+      ),
+    );
+    if (!mounted || updated == null) return;
+    try {
+      await ref
+          .read(connectedNurseryProvider.notifier)
+          .saveSowing(
+            SowingDraft(
+              id: _item.id,
+              date: apiDate(_item.tanggalSemai),
+              seedCount: updated.jumlahBenih,
+              note: updated.keterangan ?? '',
+            ),
+          );
+      if (!mounted) return;
+      if (updated.selesai != _item.selesai) {
+        _pesan(
+          context,
+          'Jumlah dan catatan tersimpan. Tandai selesai belum didukung '
+          'backend.',
+        );
+      }
+      _segarkan('Perubahan tersimpan');
+    } catch (error) {
+      if (!mounted) return;
+      _pesan(context, serviceError(error));
+    }
+  }
+
+  Future<void> _pindah() async {
+    final meja = ref
+        .read(connectedTableProvider)
+        .records
+        .map(
+          (table) => V2SemaianMeja(
+            nama: table.displayName,
+            lubangKosong: table.availableCapacity,
+            penuh: table.isFull,
+            perawatan: table.isMaintenance,
+            tableId: table.id,
+          ),
+        )
+        .toList();
+    if (meja.isEmpty) {
+      _pesan(context, 'Belum ada meja tanam.');
+      return;
+    }
+    final hasil = await Navigator.of(context).push<V2SemaianPindah>(
+      MaterialPageRoute<V2SemaianPindah>(
+        builder: (_) => V2PindahMejaFormPage(
+          item: _item,
+          daftarMeja: meja,
+          initialDate: jakartaToday(),
+          onPindahkan: _kirimPindah,
+        ),
+      ),
+    );
+    if (!mounted || hasil == null) return;
+    _segarkan('Bibit dipindah');
+  }
+
+  Future<void> _kirimPindah(V2SemaianPindah pindah) async {
+    final tableId = pindah.tableId;
+    if (tableId == null) {
+      throw StateError('Meja tujuan tidak dikenali.');
+    }
+    await ref
+        .read(connectedNurseryProvider.notifier)
+        .submitTransfer(
+          SeedlingTransferCommand((
+            idempotencyKey: generateUuidV4(),
+            sowingId: _item.id,
+            tableId: tableId,
+            transferDate: apiDate(pindah.tanggal),
+            plantCount: pindah.jumlah,
+            note: '',
+          )),
+        );
+    await ref.read(connectedNurseryProvider.notifier).refresh();
+    await ref.read(connectedTableProvider.notifier).refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return V2SemaianDetailPage(
+      item: _item,
+      toast: _toast,
+      onEdit: _ubah,
+      onMove: _pindah,
+    );
+  }
+}

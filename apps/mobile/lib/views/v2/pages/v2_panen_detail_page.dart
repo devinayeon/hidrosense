@@ -31,6 +31,7 @@ class V2PanenDetailPage extends StatefulWidget {
     required this.item,
     this.role = V2BerandaRole.petani,
     this.toast,
+    this.onUbah,
   });
 
   /// Frame `7.17 Detail panen`: panen 6 Nov, sebagian terjual.
@@ -42,8 +43,7 @@ class V2PanenDetailPage extends StatefulWidget {
     : this(key: key, item: designPanenTerjual, role: V2BerandaRole.pegawai);
 
   /// Frame `7.14 Detail panen baru`: panen 15 Nov, belum terjual.
-  V2PanenDetailPage.baru({Key? key})
-    : this(key: key, item: designPanenBaru);
+  V2PanenDetailPage.baru({Key? key}) : this(key: key, item: designPanenBaru);
 
   /// Frame `7.16 Detail panen, antrean`: panen belum tersimpan di server.
   V2PanenDetailPage.antrean({Key? key})
@@ -58,6 +58,9 @@ class V2PanenDetailPage extends StatefulWidget {
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 7.21).
   final String? toast;
+
+  /// Simpan koreksi ke backend; null berarti perubahan hanya di layar.
+  final Future<V2PanenItem> Function(V2PanenItem item)? onUbah;
 
   static Route<V2PanenItem> route(V2PanenItem item) {
     return MaterialPageRoute<V2PanenItem>(
@@ -99,8 +102,23 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
       context,
     ).push<V2PanenItem>(V2PanenEditPage.route(_item));
     if (!mounted || updated == null) return;
+    final simpan = widget.onUbah;
+    V2PanenItem hasil = updated;
+    if (simpan != null) {
+      try {
+        hasil = await simpan(updated);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text('$error')));
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
     setState(() {
-      _item = updated;
+      _item = hasil;
       _toast = 'Perubahan tersimpan';
     });
     _scheduleToastDismiss();
@@ -175,10 +193,7 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
 
   Widget _badge() {
     if (_item.status == V2PanenStatus.antrean) {
-      return const V2Badge(
-        label: 'Antrean',
-        status: V2BadgeStatus.pending,
-      );
+      return const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending);
     }
     return V2Badge(
       label: _item.status == V2PanenStatus.terjualSebagian
@@ -254,11 +269,7 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
       toast: _toast,
       actions: [
         V2Button(label: 'Catat penjualan', onPressed: _catatPenjualan),
-        V2Button(
-          label: 'Ubah',
-          type: V2ButtonType.tertiary,
-          onPressed: _ubah,
-        ),
+        V2Button(label: 'Ubah', type: V2ButtonType.tertiary, onPressed: _ubah),
       ],
     );
   }

@@ -191,6 +191,21 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     }
   }
 
+  /// Halaman penghubung backend memperbarui barang lalu membangun ulang
+  /// halaman ini; salinan lokal ikut diganti supaya kartu detail tidak
+  /// menampilkan data lama.
+  @override
+  void didUpdateWidget(covariant V2InventarisDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.item, oldWidget.item)) {
+      _item = widget.item;
+    }
+    if (widget.toast != null && widget.toast != oldWidget.toast) {
+      _toast = widget.toast;
+      _scheduleToastDismiss();
+    }
+  }
+
   @override
   void dispose() {
     _toastTimer?.cancel();
@@ -340,10 +355,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                 V2ActionBar(
                   toast: _toast,
                   actions: [
-                    V2Button(
-                      label: widget.footerLabel!,
-                      onPressed: _catatStok,
-                    ),
+                    V2Button(label: widget.footerLabel!, onPressed: _catatStok),
                   ],
                 ),
             ],

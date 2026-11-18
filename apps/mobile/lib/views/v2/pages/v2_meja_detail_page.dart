@@ -34,15 +34,16 @@ class V2MejaDetailPage extends StatefulWidget {
     this.toast,
     this.openStatusOnStart = false,
     this.onCatatPanen,
+    this.onUbahStatus,
+    this.onUbahMeja,
+    this.onTambahTanaman,
   });
 
   /// Frame `6.10 Detail meja kosong`: Meja C1, 0 dari 180.
-  V2MejaDetailPage.kosong({Key? key})
-    : this(key: key, item: designMejaC1);
+  V2MejaDetailPage.kosong({Key? key}) : this(key: key, item: designMejaC1);
 
   /// Frame `6.11 Detail meja`: Meja A2, 40 dari 240, satu tanaman Romaine.
-  V2MejaDetailPage.biasa({Key? key})
-    : this(key: key, item: designMejaA2);
+  V2MejaDetailPage.biasa({Key? key}) : this(key: key, item: designMejaA2);
 
   /// Frame `6.12 Ubah status meja`: sheet status terbuka di atas detail.
   V2MejaDetailPage.statusSheet({Key? key})
@@ -53,12 +54,10 @@ class V2MejaDetailPage extends StatefulWidget {
     : this(key: key, item: designMejaA2Perawatan, toast: 'Status diubah');
 
   /// Frame `6.16 Detail meja penuh`: Meja A2, 240 dari 240, dua tanaman.
-  V2MejaDetailPage.penuh({Key? key})
-    : this(key: key, item: designMejaA2Penuh);
+  V2MejaDetailPage.penuh({Key? key}) : this(key: key, item: designMejaA2Penuh);
 
   /// Frame `6.17 Detail meja siap panen`: Meja B1, panen hari ini.
-  V2MejaDetailPage.siapPanen({Key? key})
-    : this(key: key, item: designMejaB1);
+  V2MejaDetailPage.siapPanen({Key? key}) : this(key: key, item: designMejaB1);
 
   /// Frame `6.20 Meja diubah`: Meja A2 setelah form ubah + toast.
   V2MejaDetailPage.diubah({Key? key})
@@ -75,6 +74,15 @@ class V2MejaDetailPage extends StatefulWidget {
 
   /// Aksi "Catat panen"; null berarti hanya pratinjau.
   final VoidCallback? onCatatPanen;
+
+  /// Simpan status baru ke backend; null berarti perubahan hanya di layar.
+  final Future<void> Function(V2MejaStatus status)? onUbahStatus;
+
+  /// Simpan hasil form "Ubah meja" ke backend; null berarti hanya di layar.
+  final Future<void> Function(V2MejaItem meja)? onUbahMeja;
+
+  /// Tambah tanaman lewat alur backend; null berarti alur contoh galeri.
+  final Future<V2MejaItem?> Function()? onTambahTanaman;
 
   static Route<V2MejaItem> route(V2MejaItem item) {
     return MaterialPageRoute<V2MejaItem>(
@@ -100,6 +108,18 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _ubahStatus();
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant V2MejaDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.item, oldWidget.item)) {
+      _item = widget.item;
+    }
+    if (widget.toast != null && widget.toast != oldWidget.toast) {
+      _toast = widget.toast;
+      _scheduleToastDismiss();
     }
   }
 
@@ -168,6 +188,20 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
       ),
     );
     if (!mounted || result == null) return;
+    final simpan = widget.onUbahStatus;
+    if (simpan != null) {
+      try {
+        await simpan(result);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text('$error')));
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
     setState(() => _item = _item.copyWith(status: result));
     _showToast('Status diubah');
   }
@@ -178,12 +212,40 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
       context,
     ).push<V2MejaItem>(V2MejaFormPage.route(meja: _item));
     if (!mounted || result == null) return;
+    final simpan = widget.onUbahMeja;
+    if (simpan != null) {
+      try {
+        await simpan(result);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text('$error')));
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
     setState(() => _item = result);
     _showToast('Perubahan tersimpan');
   }
 
   /// Buka "Pilih semaian" (6.14) lalu tambahkan semaian terpilih ke meja.
   Future<void> _tambahTanaman() async {
+    final tambah = widget.onTambahTanaman;
+    if (tambah != null) {
+      try {
+        final hasil = await tambah();
+        if (mounted && hasil != null) setState(() => _item = hasil);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text('$error')));
+        }
+      }
+      return;
+    }
     final semaian = await Navigator.of(
       context,
     ).push(V2PilihSemaianPage.route());
@@ -242,7 +304,8 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final siapPanen = _item.status == V2MejaStatus.penuh &&
+    final siapPanen =
+        _item.status == V2MejaStatus.penuh &&
         _item.tanaman.any((tanaman) => tanaman.hariMenujuPanen <= 0);
 
     return Theme(
@@ -335,8 +398,7 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
     return V2ActionBar(
       toast: _toast,
       note: switch (_item.status) {
-        V2MejaStatus.perawatan =>
-          'Meja Perawatan tidak menerima tanaman baru.',
+        V2MejaStatus.perawatan => 'Meja Perawatan tidak menerima tanaman baru.',
         V2MejaStatus.penuh =>
           'Meja penuh. Kosongkan lubang lewat panen atau catat rusak.',
         V2MejaStatus.tersedia => null,

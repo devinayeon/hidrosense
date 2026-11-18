@@ -58,6 +58,7 @@ class V2InventarisTabView extends StatefulWidget {
     this.toastTone = V2ToastTone.success,
     this.onAdd,
     this.onTapItem,
+    this.onRetry,
   });
 
   /// Barang yang ditampilkan; null berarti data contoh galeri.
@@ -89,6 +90,9 @@ class V2InventarisTabView extends StatefulWidget {
 
   /// Ketukan baris; null berarti baris hanya dilihat.
   final ValueChanged<V2InventarisItem>? onTapItem;
+
+  /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
+  final VoidCallback? onRetry;
 
   @override
   State<V2InventarisTabView> createState() => _V2InventarisTabViewState();
@@ -219,7 +223,7 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
               title: 'Gagal memuat',
               body: 'Periksa internet, lalu coba lagi.',
               actionLabel: 'Coba lagi',
-              onAction: () {},
+              onAction: widget.onRetry ?? () {},
               illustration: Image.asset(
                 V2InventarisAssets.offlineNoInternet,
                 width: 160,
@@ -459,11 +463,7 @@ class V2InventarisListPage extends StatefulWidget {
 
   /// Frame `4.28 Arsip`: chip "Arsip" aktif dengan dua barang tersimpan.
   const V2InventarisListPage.arsip({Key? key})
-    : this(
-        key: key,
-        items: designInventarisArsip,
-        initialStatusIndex: 2,
-      );
+    : this(key: key, items: designInventarisArsip, initialStatusIndex: 2);
 
   final List<V2InventarisItem>? items;
   final V2BerandaRole role;

@@ -4,6 +4,7 @@ import '../components/v2_cuaca_assets.dart';
 import '../components/v2_cuaca_cards.dart';
 import '../components/v2_cuaca_data.dart';
 import '../components/v2_cuaca_skeleton.dart';
+import '../../../models/weather_model.dart';
 import '../components/v2_rawat_ai_banner.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_app_bar.dart';
@@ -43,39 +44,37 @@ class V2CuacaPage extends StatefulWidget {
     this.saranKosong = false,
     this.saranGagal = false,
     this.bukaSheet = false,
+    this.data,
+    this.lokasiList,
+    this.lokasiLabel,
+    this.onRetry,
   });
 
   /// Frame 10.1 Cuaca, kondisi.
-  const V2CuacaPage.kondisi({Key? key})
-    : this(key: key);
+  const V2CuacaPage.kondisi({Key? key}) : this(key: key);
 
   /// Frame 10.2 Cuaca, prakiraan.
   const V2CuacaPage.prakiraan({Key? key})
     : this(key: key, tab: V2CuacaTab.prakiraan);
 
   /// Frame 10.3 Saran perawatan.
-  const V2CuacaPage.saran({Key? key})
-    : this(key: key, tab: V2CuacaTab.saran);
+  const V2CuacaPage.saran({Key? key}) : this(key: key, tab: V2CuacaTab.saran);
 
   /// Frame 10.4 Saran kosong.
   const V2CuacaPage.saranKosong({Key? key})
     : this(key: key, tab: V2CuacaTab.saran, saranKosong: true);
 
   /// Frame 10.5 Pilih lokasi (sheet langsung terbuka).
-  const V2CuacaPage.pilihLokasi({Key? key})
-    : this(key: key, bukaSheet: true);
+  const V2CuacaPage.pilihLokasi({Key? key}) : this(key: key, bukaSheet: true);
 
   /// Frame 10.6 Memuat cuaca.
-  const V2CuacaPage.memuat({Key? key})
-    : this(key: key, memuat: true);
+  const V2CuacaPage.memuat({Key? key}) : this(key: key, memuat: true);
 
   /// Frame 10.7 BMKG tidak tersedia.
-  const V2CuacaPage.bmkgGagal({Key? key})
-    : this(key: key, bmkgGagal: true);
+  const V2CuacaPage.bmkgGagal({Key? key}) : this(key: key, bmkgGagal: true);
 
   /// Frame 10.8 Cuaca tanpa internet.
-  const V2CuacaPage.tanpaInternet({Key? key})
-    : this(key: key, offline: true);
+  const V2CuacaPage.tanpaInternet({Key? key}) : this(key: key, offline: true);
 
   /// Frame 10.9 Prakiraan tanpa internet.
   const V2CuacaPage.prakiraanTanpaInternet({Key? key})
@@ -96,6 +95,18 @@ class V2CuacaPage extends StatefulWidget {
   final bool saranKosong;
   final bool saranGagal;
   final bool bukaSheet;
+
+  /// Data BMKG nyata; null berarti kartu contoh galeri.
+  final WeatherData? data;
+
+  /// Lokasi yang bisa dipilih; null berarti tiga lokasi contoh.
+  final List<V2CuacaLokasi>? lokasiList;
+
+  /// Label lokasi di atas segmen; null berarti lokasi contoh terpilih.
+  final String? lokasiLabel;
+
+  /// Muat ulang BMKG nyata; null berarti jeda contoh 700 ms.
+  final Future<void> Function()? onRetry;
 
   static Route<void> route() => MaterialPageRoute<void>(
     settings: const RouteSettings(name: 'v2-cuaca'),
@@ -121,6 +132,76 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant V2CuacaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data != widget.data ||
+        oldWidget.memuat != widget.memuat ||
+        oldWidget.bmkgGagal != widget.bmkgGagal) {
+      _memuat = widget.memuat;
+      _bmkgGagal = widget.bmkgGagal;
+    }
+  }
+
+  List<V2CuacaLokasi> get _daftarLokasi => widget.lokasiList?.isNotEmpty == true
+      ? widget.lokasiList!
+      : designCuacaLokasi;
+
+  V2CuacaSekarang get _sekarang {
+    final data = widget.data;
+    if (data == null) return designCuacaSekarang;
+    return V2CuacaSekarang(
+      suhu: '${data.suhu}°C',
+      kondisi: data.estimasiHujan,
+      catatan: data.statusSuhu,
+      kelembapan: '${data.kelembapan}%',
+      angin: '${data.kecepatanAngin} km/jam ${data.arahAngin}',
+      hujan: data.curahHujan,
+    );
+  }
+
+  List<V2CuacaHarian> get _prakiraanData {
+    final data = widget.data;
+    if (data == null) return designCuacaPrakiraan;
+    return data.prakiraanHarian
+        .map(
+          (hari) => V2CuacaHarian(
+            hari: hari.waktu,
+            kondisi: hari.status,
+            suhu: '${hari.suhu}°C',
+          ),
+        )
+        .toList();
+  }
+
+  List<V2CuacaSaran> get _saranData {
+    final data = widget.data;
+    if (data == null) return designCuacaSaran;
+    final hasil = <V2CuacaSaran>[];
+    for (final hari in data.prakiraanHarian) {
+      for (final saran in hari.rekomendasiList) {
+        if (hasil.any((row) => row.judul == saran.judul)) continue;
+        hasil.add(
+          V2CuacaSaran(
+            judul: saran.judul,
+            isi: saran.deskripsi,
+            dasar: saran.alasan,
+          ),
+        );
+      }
+    }
+    return hasil;
+  }
+
+  String get _labelLokasi => widget.lokasiLabel ?? _daftarLokasi[_lokasi].label;
+
+  String get _captionLokasi {
+    if (widget.offline) return v2CuacaDataTerakhir;
+    final data = widget.data;
+    if (data == null) return v2CuacaDiperbarui;
+    return 'Diperbarui ${data.lastUpdated}. ${data.sumber}';
+  }
+
   Future<void> _bukaSheet() async {
     if (!mounted) return;
     // Sheet lokasi memakai scrim 60% seperti frame 10.5, bukan 35% bawaan
@@ -134,10 +215,7 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
-        child: _PilihLokasiSheet(
-          lokasiAwal: _lokasi,
-          lokasi: designCuacaLokasi,
-        ),
+        child: _PilihLokasiSheet(lokasiAwal: _lokasi, lokasi: _daftarLokasi),
       ),
     );
     if (!mounted || pilihan == null) return;
@@ -155,6 +233,20 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
 
   Future<void> _muatUlangBmkg() async {
     setState(() => _memuat = true);
+    final retry = widget.onRetry;
+    if (retry != null) {
+      try {
+        await retry();
+      } finally {
+        if (mounted) {
+          setState(() {
+            _memuat = false;
+            _bmkgGagal = false;
+          });
+        }
+      }
+      return;
+    }
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     setState(() {
@@ -225,18 +317,15 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
           const SizedBox(height: V2Space.lg),
         ],
         V2CuacaLokasiHeader(
-          lokasi: designCuacaLokasi[_lokasi].label,
-          caption: widget.offline
-              ? v2CuacaDataTerakhir
-              : v2CuacaDiperbarui,
+          lokasi: _labelLokasi,
+          caption: _captionLokasi,
           onTap: _bukaSheet,
         ),
         const SizedBox(height: V2Space.lg),
         V2Segmented(
           labels: const <String>['Kondisi', 'Prakiraan', 'Saran'],
           selectedIndex: _tab.index,
-          onChanged: (index) =>
-              setState(() => _tab = V2CuacaTab.values[index]),
+          onChanged: (index) => setState(() => _tab = V2CuacaTab.values[index]),
         ),
         const SizedBox(height: V2Space.lg),
         ..._isiTab(context),
@@ -254,9 +343,9 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
 
   List<Widget> _kondisi() {
     return <Widget>[
-      const V2CuacaSekarangCard(),
+      V2CuacaSekarangCard(data: _sekarang),
       const SizedBox(height: V2Space.lg),
-      const V2CuacaInfoCard(),
+      V2CuacaInfoCard(data: _sekarang),
       if (widget.offline) ...[
         const SizedBox(height: V2Space.lg),
         Text(
@@ -268,13 +357,14 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
   }
 
   List<Widget> _prakiraan() {
+    final daftar = _prakiraanData;
     return <Widget>[
-      for (var index = 0; index < designCuacaPrakiraan.length; index++) ...[
+      for (var index = 0; index < daftar.length; index++) ...[
         if (index > 0) const SizedBox(height: V2Space.lg),
         V2StockItem(
-          title: designCuacaPrakiraan[index].hari,
-          subtitle: designCuacaPrakiraan[index].kondisi,
-          quantity: designCuacaPrakiraan[index].suhu,
+          title: daftar[index].hari,
+          subtitle: daftar[index].kondisi,
+          quantity: daftar[index].suhu,
           icon: V2IconName.cloud,
           iconSize: 24,
           contentPadding: const EdgeInsets.symmetric(
@@ -305,7 +395,8 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
         ),
       ];
     }
-    if (widget.saranKosong) {
+    final daftar = _saranData;
+    if (widget.saranKosong || daftar.isEmpty) {
       return const <Widget>[
         V2CuacaCatatanCard(
           title: 'Tidak ada saran khusus',
@@ -316,7 +407,7 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
 
     return <Widget>[
       const V2RawatAiBanner(),
-      for (final saran in designCuacaSaran) ...[
+      for (final saran in daftar) ...[
         const SizedBox(height: V2Space.lg),
         V2CuacaSaranCard(saran: saran),
       ],
@@ -326,10 +417,7 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
 
 /// Isi sheet 10.5: tiga lokasi dan tombol “Pilih”.
 class _PilihLokasiSheet extends StatefulWidget {
-  const _PilihLokasiSheet({
-    required this.lokasiAwal,
-    required this.lokasi,
-  });
+  const _PilihLokasiSheet({required this.lokasiAwal, required this.lokasi});
 
   final int lokasiAwal;
   final List<V2CuacaLokasi> lokasi;

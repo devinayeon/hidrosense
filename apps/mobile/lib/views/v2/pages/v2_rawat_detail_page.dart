@@ -17,11 +17,14 @@ import 'v2_rawat_foto_page.dart';
 /// status, nama hama, obat yang dipakai, dan catatan AI. Hanya bisa dibaca;
 /// satu-satunya aksi adalah “Foto ulang untuk cek”.
 class V2RawatDetailPage extends StatelessWidget {
-  const V2RawatDetailPage({super.key, required this.item});
+  const V2RawatDetailPage({
+    super.key,
+    required this.item,
+    this.showFoto = true,
+  });
 
   /// Frame `9.24 Detail perawatan baru`: 15 Nov, Obat Nabati.
-  V2RawatDetailPage.baru({Key? key})
-    : this(key: key, item: designRawatBaru);
+  V2RawatDetailPage.baru({Key? key}) : this(key: key, item: designRawatBaru);
 
   /// Frame `9.26 Detail perawatan, antrean`: belum tersimpan di server.
   V2RawatDetailPage.antrean({Key? key})
@@ -33,9 +36,13 @@ class V2RawatDetailPage extends StatelessWidget {
 
   final V2RawatItem item;
 
-  static Route<void> route(V2RawatItem item) {
+  /// Kartu foto AI hanya ada di alur contoh; laporan kerusakan backend tidak
+  /// punya foto sehingga kartu dan tombol “Foto ulang” disembunyikan.
+  final bool showFoto;
+
+  static Route<void> route(V2RawatItem item, {bool showFoto = true}) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2RawatDetailPage(item: item),
+      builder: (_) => V2RawatDetailPage(item: item, showFoto: showFoto),
     );
   }
 
@@ -65,8 +72,10 @@ class V2RawatDetailPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const V2RawatFotoCard(height: 160),
-                      const SizedBox(height: V2Space.lg),
+                      if (showFoto) ...[
+                        const V2RawatFotoCard(height: 160),
+                        const SizedBox(height: V2Space.lg),
+                      ],
                       V2SummaryCard(
                         kicker: item.labelKicker,
                         badge: item.antrean
@@ -86,17 +95,17 @@ class V2RawatDetailPage extends StatelessWidget {
                   ),
                 ),
               ),
-              V2ActionBar(
-                actions: [
-                  V2Button(
-                    label: 'Foto ulang untuk cek',
-                    type: V2ButtonType.tertiary,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).push(V2RawatFotoPage.route()),
-                  ),
-                ],
-              ),
+              if (showFoto)
+                V2ActionBar(
+                  actions: [
+                    V2Button(
+                      label: 'Foto ulang untuk cek',
+                      type: V2ButtonType.tertiary,
+                      onPressed: () =>
+                          Navigator.of(context).push(V2RawatFotoPage.route()),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -181,17 +190,16 @@ class V2RawatSavedPage extends StatelessWidget {
                 label: 'Selesai',
                 onPressed: () => Navigator.of(context).popUntil(
                   (route) =>
-                      route.settings.name == 'v2-rawat-list' ||
-                      route.isFirst,
+                      route.settings.name == 'v2-rawat-list' || route.isFirst,
                 ),
               ),
               const SizedBox(height: V2Space.lg),
               V2Button(
                 label: 'Lihat riwayat',
                 type: V2ButtonType.ghost,
-                onPressed: () => Navigator.of(context).push(
-                  V2RawatDetailPage.route(designRawatBaru),
-                ),
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(V2RawatDetailPage.route(designRawatBaru)),
               ),
             ],
           ),

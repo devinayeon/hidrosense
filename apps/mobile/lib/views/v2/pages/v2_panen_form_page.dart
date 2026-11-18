@@ -30,6 +30,8 @@ class V2PanenFormPage extends StatefulWidget {
     this.previewKeyboard = false,
     this.previewBuang = false,
     this.openTanamanOnStart = false,
+    this.pilihan,
+    this.initialDate,
   });
 
   /// Frame `7.8 Catat panen`: Meja B1, Romaine 240, 270/18 kg.
@@ -41,7 +43,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = false,
       previewKeyboard = false,
       previewBuang = false,
-      openTanamanOnStart = false;
+      openTanamanOnStart = false,
+      pilihan = null,
+      initialDate = null;
 
   /// Frame `7.9 Pilih tanaman`: sheet pilihan terbuka di atas form.
   const V2PanenFormPage.tanamanSheet({super.key})
@@ -52,7 +56,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = false,
       previewKeyboard = false,
       previewBuang = false,
-      openTanamanOnStart = true;
+      openTanamanOnStart = true,
+      pilihan = null,
+      initialDate = null;
 
   /// Frame `7.10 Catat panen, keyboard`: dua isian berat di atas, kartu
   /// "Berat layak" tetap terlihat.
@@ -64,7 +70,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = false,
       previewKeyboard = true,
       previewBuang = false,
-      openTanamanOnStart = false;
+      openTanamanOnStart = false,
+      pilihan = null,
+      initialDate = null;
 
   /// Frame `7.11 Catat panen, validasi`: tanaman belum dipilih, berat total
   /// kosong.
@@ -76,7 +84,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = false,
       previewKeyboard = false,
       previewBuang = false,
-      openTanamanOnStart = false;
+      openTanamanOnStart = false,
+      pilihan = null,
+      initialDate = null;
 
   /// Frame `7.12 Jumlah melebihi tanaman`: 300 dari 240 tanaman aktif.
   const V2PanenFormPage.melebihi({super.key})
@@ -87,7 +97,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = true,
       previewKeyboard = false,
       previewBuang = false,
-      openTanamanOnStart = false;
+      openTanamanOnStart = false,
+      pilihan = null,
+      initialDate = null;
 
   /// Frame `7.22 Buang perubahan`: dialog di atas form yang sudah diisi.
   const V2PanenFormPage.buang({super.key})
@@ -98,7 +110,9 @@ class V2PanenFormPage extends StatefulWidget {
       previewExceeds = false,
       previewKeyboard = false,
       previewBuang = true,
-      openTanamanOnStart = false;
+      openTanamanOnStart = false,
+      pilihan = null,
+      initialDate = null;
 
   /// Meja terpilih; null berarti belum ada tanaman.
   final String? meja;
@@ -113,16 +127,26 @@ class V2PanenFormPage extends StatefulWidget {
   /// Membuka sheet "Pilih tanaman" begitu halaman tampil (frame 7.9).
   final bool openTanamanOnStart;
 
+  /// Tanaman yang bisa dipanen; null berarti data contoh galeri.
+  final List<V2PanenEstimasi>? pilihan;
+
+  /// Tanggal panen awal; null berarti tanggal acuan galeri.
+  final DateTime? initialDate;
+
   static Route<V2PanenItem> route({
     String? meja,
     String? varietas,
     int? jumlahTanaman,
+    List<V2PanenEstimasi>? pilihan,
+    DateTime? initialDate,
   }) {
     return MaterialPageRoute<V2PanenItem>(
       builder: (_) => V2PanenFormPage(
         meja: meja,
         varietas: varietas,
         jumlahTanaman: jumlahTanaman,
+        pilihan: pilihan,
+        initialDate: initialDate,
       ),
     );
   }
@@ -132,7 +156,10 @@ class V2PanenFormPage extends StatefulWidget {
 }
 
 class _V2PanenFormPageState extends State<V2PanenFormPage> {
-  late DateTime _tanggal = v2PanenHariIni;
+  late DateTime _tanggal = widget.initialDate ?? v2PanenHariIni;
+  List<V2PanenEstimasi> get _pilihan => widget.pilihan?.isNotEmpty == true
+      ? widget.pilihan!
+      : designPilihanTanamanPanen;
   late V2PanenEstimasi? _tanaman = widget.meja == null
       ? null
       : V2PanenEstimasi(
@@ -217,7 +244,7 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
   }
 
   Future<void> _pickTanaman() async {
-    var draft = _tanaman ?? designPilihanTanamanPanen.first;
+    var draft = _tanaman ?? _pilihan.first;
     final result = await showModalBottomSheet<V2PanenEstimasi>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -232,20 +259,17 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
           ),
           child: Column(
             children: [
-              for (var index = 0; index < designPilihanTanamanPanen.length; index++) ...[
+              for (var index = 0; index < _pilihan.length; index++) ...[
                 if (index > 0) const SizedBox(height: V2Space.lg),
                 _PilihanTanamanRow(
                   label:
-                      '${designPilihanTanamanPanen[index].meja}, '
-                      '${designPilihanTanamanPanen[index].varietas} '
-                      '${designPilihanTanamanPanen[index].jumlahTanaman}',
+                      '${_pilihan[index].meja}, '
+                      '${_pilihan[index].varietas} '
+                      '${_pilihan[index].jumlahTanaman}',
                   selected:
-                      designPilihanTanamanPanen[index].meja == draft.meja &&
-                      designPilihanTanamanPanen[index].varietas ==
-                          draft.varietas,
-                  onTap: () => setSheetState(
-                    () => draft = designPilihanTanamanPanen[index],
-                  ),
+                      _pilihan[index].meja == draft.meja &&
+                      _pilihan[index].varietas == draft.varietas,
+                  onTap: () => setSheetState(() => draft = _pilihan[index]),
                 ),
               ],
             ],
@@ -287,6 +311,7 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
         jumlahTanaman: _jumlah,
         beratTotal: total,
         beratReject: reject,
+        transferId: _tanaman!.transferId,
       ),
     );
   }
@@ -398,9 +423,10 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Jumlah tanaman', style: V2Type.label.copyWith(
-          color: V2Colors.ink,
-        )),
+        Text(
+          'Jumlah tanaman',
+          style: V2Type.label.copyWith(color: V2Colors.ink),
+        ),
         const SizedBox(height: V2Space.sm),
         V2QtyField(
           value: _jumlah,
@@ -415,11 +441,7 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
           const SizedBox(height: V2Space.sm),
           Row(
             children: [
-              const V2Icon(
-                V2IconName.error,
-                size: 16,
-                color: V2Colors.red700,
-              ),
+              const V2Icon(V2IconName.error, size: 16, color: V2Colors.red700),
               const SizedBox(width: V2Space.sm),
               Text(
                 _jumlahError!,

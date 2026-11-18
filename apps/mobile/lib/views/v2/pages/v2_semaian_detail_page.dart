@@ -110,6 +110,18 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
   }
 
   @override
+  void didUpdateWidget(covariant V2SemaianDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.item, oldWidget.item)) {
+      _item = widget.item;
+    }
+    if (widget.toast != null && widget.toast != oldWidget.toast) {
+      _toast = widget.toast;
+      _scheduleToastDismiss();
+    }
+  }
+
+  @override
   void dispose() {
     _toastTimer?.cancel();
     super.dispose();
@@ -198,27 +210,31 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
   /// Lencana status di dalam kartu ringkasan (bukan `V2Badge` biasa: status
   /// Selesai memakai latar hijau muda dengan teks abu, frame 5.19/5.29/5.30).
   Widget _badge() {
-    final (String label, Color background, Color foreground, V2IconName icon) =
-        switch (_item.status) {
-          V2SemaianStatus.berjalan => (
-            'Berjalan',
-            V2Colors.blue50,
-            V2Colors.blue700,
-            V2IconName.info,
-          ),
-          V2SemaianStatus.siapPindah => (
-            'Siap pindah',
-            V2Colors.green100,
-            V2Colors.green700,
-            V2IconName.check,
-          ),
-          V2SemaianStatus.selesai => (
-            'Selesai',
-            V2Colors.green100,
-            V2Colors.slate600,
-            V2IconName.minus,
-          ),
-        };
+    final (
+      String label,
+      Color background,
+      Color foreground,
+      V2IconName icon,
+    ) = switch (_item.status) {
+      V2SemaianStatus.berjalan => (
+        'Berjalan',
+        V2Colors.blue50,
+        V2Colors.blue700,
+        V2IconName.info,
+      ),
+      V2SemaianStatus.siapPindah => (
+        'Siap pindah',
+        V2Colors.green100,
+        V2Colors.green700,
+        V2IconName.check,
+      ),
+      V2SemaianStatus.selesai => (
+        'Selesai',
+        V2Colors.green100,
+        V2Colors.slate600,
+        V2IconName.minus,
+      ),
+    };
 
     return Container(
       height: 28,

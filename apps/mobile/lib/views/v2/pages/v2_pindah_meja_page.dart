@@ -30,6 +30,9 @@ class V2PindahMejaFormPage extends StatefulWidget {
     this.jumlahAwal,
     this.previewSisa = false,
     this.previewLubangKurang = false,
+    this.daftarMeja,
+    this.initialDate,
+    this.onPindahkan,
   });
 
   /// Frame `5.17 Pindah ke meja`: Meja A2 terpilih, 200 tanaman.
@@ -69,18 +72,29 @@ class V2PindahMejaFormPage extends StatefulWidget {
   /// Membuka halaman dengan galat "Lubang kosong hanya 120" (frame 5.21).
   final bool previewLubangKurang;
 
+  /// Meja yang bisa dipilih; null berarti daftar contoh galeri.
+  final List<V2SemaianMeja>? daftarMeja;
+
+  /// Tanggal pindah awal; null berarti tanggal acuan galeri.
+  final DateTime? initialDate;
+
+  /// Kirim pemindahan ke backend; null berarti hanya pratinjau galeri.
+  final Future<void> Function(V2SemaianPindah pindah)? onPindahkan;
+
   @override
   State<V2PindahMejaFormPage> createState() => _V2PindahMejaFormPageState();
 }
 
 class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
-  late final List<V2SemaianMeja> _meja = widget.previewSisa
+  late final List<V2SemaianMeja> _meja = widget.daftarMeja?.isNotEmpty == true
+      ? widget.daftarMeja!
+      : widget.previewSisa
       ? designMejaPindahSisa
       : designMejaPindah;
   late int _mejaIndex = widget.mejaAwal;
   late int _jumlah =
       widget.jumlahAwal ?? widget.item.sisaBenih ?? widget.item.jumlahBenih;
-  late DateTime _tanggal = DateTime(2026, 11, 15);
+  late DateTime _tanggal = widget.initialDate ?? DateTime(2026, 11, 15);
   String? _error;
 
   V2SemaianMeja get _terpilih => _meja[_mejaIndex];
@@ -130,7 +144,21 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
       meja: _terpilih.nama,
       jumlah: _jumlah,
       tanggal: _tanggal,
+      tableId: _terpilih.tableId,
     );
+    final kirim = widget.onPindahkan;
+    if (kirim != null) {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await kirim(pindah);
+      } catch (error) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('$error')));
+        return;
+      }
+    }
+    if (!mounted) return;
     final sisa = (widget.item.sisaBenih ?? widget.item.jumlahBenih) - _jumlah;
 
     await Navigator.of(context).push<void>(

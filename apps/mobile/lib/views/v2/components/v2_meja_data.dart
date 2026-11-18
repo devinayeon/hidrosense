@@ -201,8 +201,7 @@ class V2KerusakanItem {
   String get judul => '$jumlah tanaman, ${jenis.toLowerCase()}';
 
   /// `10 Nov. Romaine, Meja A2` (subjudul baris).
-  String get subjudul =>
-      '${labelTanggalMeja(tanggal)}. $varietas, Meja $meja';
+  String get subjudul => '${labelTanggalMeja(tanggal)}. $varietas, Meja $meja';
 
   V2KerusakanItem copyWith({
     int? jumlah,
@@ -226,6 +225,7 @@ class V2KerusakanItem {
 /// Satu meja tanam beserta tanaman dan catatan kerusakannya.
 class V2MejaItem {
   const V2MejaItem({
+    this.id,
     required this.kode,
     required this.jumlahLubang,
     required this.terisi,
@@ -235,6 +235,9 @@ class V2MejaItem {
     this.rusak = const <V2KerusakanItem>[],
     this.antrean = false,
   });
+
+  /// Identitas meja backend; null untuk data contoh galeri.
+  final String? id;
 
   /// Kode tanpa awalan, mis. `A2`; judul baris dibentuk `Meja A2`.
   final String kode;
@@ -265,12 +268,12 @@ class V2MejaItem {
   String get labelTerisi => '$terisi dari $jumlahLubang lubang terisi';
 
   /// Meja menerima tanaman baru hanya saat tersedia dan masih ada lubang.
-  bool get bisaTambahTanaman =>
-      status == V2MejaStatus.tersedia && kosong > 0;
+  bool get bisaTambahTanaman => status == V2MejaStatus.tersedia && kosong > 0;
 
   /// Salinan dengan sebagian kolom diganti; dipakai setelah "Ubah meja" atau
   /// "Ubah status" (frame 6.13, 6.20).
   V2MejaItem copyWith({
+    String? id,
     String? kode,
     int? jumlahLubang,
     int? terisi,
@@ -281,6 +284,7 @@ class V2MejaItem {
     bool? antrean,
   }) {
     return V2MejaItem(
+      id: id ?? this.id,
       kode: kode ?? this.kode,
       jumlahLubang: jumlahLubang ?? this.jumlahLubang,
       terisi: terisi ?? this.terisi,
@@ -306,10 +310,11 @@ final V2TanamanItem designTanamanRomaineA2 = V2TanamanItem(
 );
 
 /// Baris Romaine kedua di Meja A2 saat penuh, panen 30 Des (frame 6.16).
-final V2TanamanItem designTanamanRomaineA2Kedua = designTanamanRomaineA2.copyWith(
-  tanggalTanam: DateTime(2026, 11, 15),
-  tanggalPanen: DateTime(2026, 12, 30),
-);
+final V2TanamanItem designTanamanRomaineA2Kedua = designTanamanRomaineA2
+    .copyWith(
+      tanggalTanam: DateTime(2026, 11, 15),
+      tanggalPanen: DateTime(2026, 12, 30),
+    );
 
 /// Tanaman Romaine di Meja B1 yang siap dipanen hari ini (frame 6.17).
 final V2TanamanItem designTanamanRomaineB1 = V2TanamanItem(
@@ -378,10 +383,7 @@ final V2MejaItem designMejaC1 = V2MejaItem(
 final V2MejaItem designMejaA2Penuh = designMejaA2.copyWith(
   terisi: 240,
   status: V2MejaStatus.penuh,
-  tanaman: <V2TanamanItem>[
-    designTanamanRomaineA2,
-    designTanamanRomaineA2Kedua,
-  ],
+  tanaman: <V2TanamanItem>[designTanamanRomaineA2, designTanamanRomaineA2Kedua],
 );
 
 /// Meja A2 setelah status diubah ke Perawatan (frame 6.13).

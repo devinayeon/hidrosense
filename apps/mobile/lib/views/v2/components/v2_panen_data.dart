@@ -50,6 +50,7 @@ class V2PanenEstimasi {
     required this.varietas,
     required this.jumlahTanaman,
     required this.hariLagi,
+    this.transferId,
   });
 
   final String meja;
@@ -58,6 +59,9 @@ class V2PanenEstimasi {
 
   /// 0 berarti panen hari ini (frame 7.1, Meja B1).
   final int hariLagi;
+
+  /// Batch backend yang dipanen; null untuk data contoh galeri.
+  final String? transferId;
 
   bool get siapPanen => hariLagi == 0;
 
@@ -93,6 +97,7 @@ class V2PanenItem {
     this.terjual = 0,
     this.antrean = false,
     this.keterangan,
+    this.transferId,
   });
 
   final String id;
@@ -110,6 +115,9 @@ class V2PanenItem {
   final bool antrean;
 
   final String? keterangan;
+
+  /// Batch backend saat panen baru dicatat; null untuk riwayat/galeri.
+  final String? transferId;
 
   /// Berat layak = berat total − reject (dihitung otomatis di 7.8).
   double get beratLayak => beratTotal - beratReject;
@@ -130,7 +138,8 @@ class V2PanenItem {
   String get labelBerat => '${labelBeratKg(beratLayak)} kg';
 
   /// `Meja A1. 250 tanaman. Reject 15 kg`
-  String get labelMeta => '$meja. $jumlahTanaman tanaman. '
+  String get labelMeta =>
+      '$meja. $jumlahTanaman tanaman. '
       'Reject ${labelBeratKg(beratReject)} kg';
 
   /// Baris tambahan kartu ringkasan; beda untuk panen antrean (7.16).
@@ -159,6 +168,7 @@ class V2PanenItem {
       terjual: terjual ?? this.terjual,
       antrean: antrean ?? this.antrean,
       keterangan: keterangan ?? this.keterangan,
+      transferId: transferId,
     );
   }
 }
@@ -234,9 +244,7 @@ final V2PanenItem designPanenAntrean = V2PanenItem(
 
 /// Isi chip Estimasi (frame 7.1/7.2).
 /// Isi chip Riwayat pada frame 7.6: hanya panen 6 Nov.
-final List<V2PanenItem> designPanenRiwayat = <V2PanenItem>[
-  designPanenTerjual,
-];
+final List<V2PanenItem> designPanenRiwayat = <V2PanenItem>[designPanenTerjual];
 
 /// Isi chip Riwayat saat offline (frame 7.15): antrean di atas.
 final List<V2PanenItem> designPanenRiwayatAntrean = <V2PanenItem>[
