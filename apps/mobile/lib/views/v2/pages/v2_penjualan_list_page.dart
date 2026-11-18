@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/business_date.dart';
+import '../../../data/models/sync_queue_item.dart';
+import '../../../viewmodels/v2_sync_queue.dart';
 import '../components/v2_penjualan_assets.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_penjualan_row.dart';
@@ -62,6 +64,7 @@ class V2PenjualanListPage extends StatefulWidget {
     this.toast,
     this.panen,
     this.store,
+    this.syncQueue,
   });
 
   /// Frame `8.2 Memuat penjualan`.
@@ -72,7 +75,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 0,
       toast = null,
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   /// Frame `8.3 Gagal memuat penjualan`.
   V2PenjualanListPage.error({super.key})
@@ -82,7 +86,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 0,
       toast = null,
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   /// Frame `8.4 Belum ada penjualan`.
   const V2PenjualanListPage.empty({super.key})
@@ -92,7 +97,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 0,
       toast = null,
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   /// Frame `8.6 Penjualan, belum lunas`: saringan "Belum lunas" menyala.
   V2PenjualanListPage.belumLunas({super.key})
@@ -102,7 +108,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 1,
       toast = null,
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   /// Frame `8.14 Penjualan dicatat`.
   V2PenjualanListPage.created({super.key})
@@ -112,7 +119,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 0,
       toast = 'Penjualan dicatat',
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   /// Frame `8.16 Tersimpan di HP`.
   V2PenjualanListPage.offline({super.key})
@@ -122,7 +130,8 @@ class V2PenjualanListPage extends StatefulWidget {
       filterIndex = 0,
       toast = 'Tersimpan di HP',
       panen = null,
-      store = null;
+      store = null,
+      syncQueue = null;
 
   final List<V2Penjualan>? initialPenjualan;
   final V2PenjualanRingkasan ringkasan;
@@ -138,12 +147,17 @@ class V2PenjualanListPage extends StatefulWidget {
   /// Backend penjualan; null berarti mode pratinjau (hanya di memori).
   final V2PenjualanStore? store;
 
+  /// Antrean HP; baris yang punya perubahan tertunda diberi lencana "Antrean".
+  /// Null berarti galeri tanpa antrean.
+  final V2SyncQueue? syncQueue;
+
   static Route<void> route({
     List<V2Penjualan>? initialPenjualan,
     V2PenjualanRingkasan ringkasan = designRingkasanPenjualan,
     String? toast,
     List<V2PenjualanPanen>? panen,
     V2PenjualanStore? store,
+    V2SyncQueue? syncQueue,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2PenjualanListPage(
@@ -152,6 +166,7 @@ class V2PenjualanListPage extends StatefulWidget {
         toast: toast,
         panen: panen,
         store: store,
+        syncQueue: syncQueue,
       ),
     );
   }
@@ -176,6 +191,9 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   /// Galat muat dari backend; null berarti aman.
   String? _loadError;
 
+  /// Langganan antrean supaya lencana "Antrean" ikut berubah saat baris lepas.
+  StreamSubscription<List<SyncQueueItem>>? _queueSub;
+
   bool get _loading =>
       _fetching || widget.state == V2PenjualanListState.loading;
   bool get _error => _loadError != null || widget.state == V2PenjualanListState.error;
@@ -187,10 +205,29 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   /// 8.16); di keadaan memuat, gagal, dan kosong slotnya dibiarkan kosong.
   bool get _showSummaryAction => !_loading && !_error && !_emptyList;
 
+  /// Baris server dengan tanda sinkron dari antrean HP.
+  List<V2Penjualan> get _displayItems {
+    final queue = widget.syncQueue;
+    if (queue == null || queue.items.isEmpty) return _items;
+    final queued = <String>{};
+    for (final row in queue.items) {
+      if (row.jenis != SyncQueueJenis.penjualan) continue;
+      if (row.mode == SyncQueueMode.baru) continue;
+      queued.add(row.target);
+    }
+    if (queued.isEmpty) return _items;
+    return [
+      for (final item in _items)
+        queued.contains(item.id)
+            ? item.copyWith(sync: V2PenjualanSync.antrean)
+            : item,
+    ];
+  }
+
   List<V2Penjualan> get _filtered => switch (_filter) {
-    1 => _items.where((item) => !item.lunas).toList(),
-    2 => _items.where((item) => item.lunas).toList(),
-    _ => _items,
+    1 => _displayItems.where((item) => !item.lunas).toList(),
+    2 => _displayItems.where((item) => item.lunas).toList(),
+    _ => _displayItems,
   };
 
   @override
@@ -198,6 +235,9 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     super.initState();
     _toast = widget.toast;
     if (_toast != null) _scheduleToastDismiss();
+    _queueSub = widget.syncQueue?.stream.listen((_) {
+      if (mounted) setState(() {});
+    });
     if (widget.store != null) _load();
   }
 
@@ -243,6 +283,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   @override
   void dispose() {
     _toastTimer?.cancel();
+    _queueSub?.cancel();
     super.dispose();
   }
 

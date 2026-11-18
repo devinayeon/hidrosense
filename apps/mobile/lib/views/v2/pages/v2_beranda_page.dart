@@ -294,7 +294,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   void _openSales() {
     Navigator.of(context).push(
-      V2PenjualanListPage.route(store: widget.penjualanStore),
+      V2PenjualanListPage.route(
+        store: widget.penjualanStore,
+        syncQueue: widget.syncQueue,
+      ),
     );
   }
 
