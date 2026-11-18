@@ -39,6 +39,47 @@ abstract interface class V2PenjualanRepairer {
   Future<void> resend(SyncQueueItem item, V2PenjualanDraft draft);
 }
 
+/// Store sempit untuk form perbaikan 11.9: hanya [update] yang dipakai, dan
+/// tulisannya diteruskan ke pengirim baris antrean dengan kunci aslinya.
+class V2PenjualanQueueStore implements V2PenjualanStore {
+  V2PenjualanQueueStore(this._repairer, this._item);
+
+  final V2PenjualanRepairer _repairer;
+  final SyncQueueItem _item;
+
+  @override
+  Future<V2Penjualan> update(
+    V2Penjualan existing,
+    V2PenjualanDraft draft,
+  ) async {
+    await _repairer.resend(_item, draft);
+    return existing.copyWith(
+      pembeli: draft.pembeli,
+      tanggal: draft.tanggal,
+      jumlahKg: draft.jumlahKg,
+      hargaPerKg: draft.hargaPerKg,
+      pembayaran: draft.pembayaran,
+      sync: V2PenjualanSync.terkirim,
+    );
+  }
+
+  @override
+  Future<V2Penjualan> create(V2PenjualanDraft draft) =>
+      throw UnsupportedError('Form perbaikan tidak membuat penjualan baru.');
+
+  @override
+  Future<V2PenjualanSnapshot> load() =>
+      throw UnsupportedError('Form perbaikan tidak memuat daftar.');
+
+  @override
+  Future<V2Penjualan> markPaid(V2Penjualan existing) =>
+      throw UnsupportedError('Form perbaikan tidak menandai lunas.');
+
+  @override
+  Future<V2Penjualan> reload(V2Penjualan existing) =>
+      throw UnsupportedError('Form perbaikan tidak memuat ulang baris.');
+}
+
 /// Store penjualan v2 yang memakai API dan aturan tulis v1.
 ///
 /// Semua penulisan lewat [PenjualanViewModel] supaya kunci idempoten,

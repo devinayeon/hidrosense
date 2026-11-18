@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/business_date.dart';
 import '../../../data/models/sync_queue_item.dart';
+import '../../../viewmodels/v2_penjualan_mappers.dart';
+import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../components/v2_penjualan_assets.dart';
 import '../components/v2_penjualan_data.dart';
@@ -65,6 +67,7 @@ class V2PenjualanListPage extends StatefulWidget {
     this.panen,
     this.store,
     this.syncQueue,
+    this.saleRepairer,
   });
 
   /// Frame `8.2 Memuat penjualan`.
@@ -76,7 +79,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = null,
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   /// Frame `8.3 Gagal memuat penjualan`.
   V2PenjualanListPage.error({super.key})
@@ -87,7 +91,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = null,
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   /// Frame `8.4 Belum ada penjualan`.
   const V2PenjualanListPage.empty({super.key})
@@ -98,7 +103,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = null,
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   /// Frame `8.6 Penjualan, belum lunas`: saringan "Belum lunas" menyala.
   V2PenjualanListPage.belumLunas({super.key})
@@ -109,7 +115,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = null,
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   /// Frame `8.14 Penjualan dicatat`.
   V2PenjualanListPage.created({super.key})
@@ -120,7 +127,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = 'Penjualan dicatat',
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   /// Frame `8.16 Tersimpan di HP`.
   V2PenjualanListPage.offline({super.key})
@@ -131,7 +139,8 @@ class V2PenjualanListPage extends StatefulWidget {
       toast = 'Tersimpan di HP',
       panen = null,
       store = null,
-      syncQueue = null;
+      syncQueue = null,
+      saleRepairer = null;
 
   final List<V2Penjualan>? initialPenjualan;
   final V2PenjualanRingkasan ringkasan;
@@ -151,6 +160,10 @@ class V2PenjualanListPage extends StatefulWidget {
   /// Null berarti galeri tanpa antrean.
   final V2SyncQueue? syncQueue;
 
+  /// Penyiap form 11.9 untuk penjualan yang masih di antrean; null berarti
+  /// baris antrean hanya bisa dilihat.
+  final V2PenjualanRepairer? saleRepairer;
+
   static Route<void> route({
     List<V2Penjualan>? initialPenjualan,
     V2PenjualanRingkasan ringkasan = designRingkasanPenjualan,
@@ -158,6 +171,7 @@ class V2PenjualanListPage extends StatefulWidget {
     List<V2PenjualanPanen>? panen,
     V2PenjualanStore? store,
     V2SyncQueue? syncQueue,
+    V2PenjualanRepairer? saleRepairer,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2PenjualanListPage(
@@ -167,6 +181,7 @@ class V2PenjualanListPage extends StatefulWidget {
         panen: panen,
         store: store,
         syncQueue: syncQueue,
+        saleRepairer: saleRepairer,
       ),
     );
   }
@@ -198,25 +213,31 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
       _fetching || widget.state == V2PenjualanListState.loading;
   bool get _error => _loadError != null || widget.state == V2PenjualanListState.error;
   bool get _emptyList =>
-      !_loading && !_error && _items.isEmpty;
+      !_loading && !_error && _displayItems.isEmpty;
   bool get _offline => widget.state == V2PenjualanListState.offline;
 
   /// Ikon grafik hanya muncul saat daftar siap dibaca (frame 8.1/8.6/8.14/
   /// 8.16); di keadaan memuat, gagal, dan kosong slotnya dibiarkan kosong.
   bool get _showSummaryAction => !_loading && !_error && !_emptyList;
 
-  /// Baris server dengan tanda sinkron dari antrean HP.
+  /// Baris server dengan tanda sinkron dari antrean HP, ditambah penjualan
+  /// baru yang belum terkirim (dirangkai dari payload antrean).
   List<V2Penjualan> get _displayItems {
     final queue = widget.syncQueue;
     if (queue == null || queue.items.isEmpty) return _items;
+    final baru = <V2Penjualan>[];
     final queued = <String>{};
-    for (final row in queue.items) {
+    for (final row in queue.items.reversed) {
       if (row.jenis != SyncQueueJenis.penjualan) continue;
-      if (row.mode == SyncQueueMode.baru) continue;
-      queued.add(row.target);
+      if (row.mode == SyncQueueMode.baru) {
+        final sale = v2PenjualanFromQueue(row, _panenOptions);
+        if (sale != null) baru.add(sale);
+      } else {
+        queued.add(row.target);
+      }
     }
-    if (queued.isEmpty) return _items;
     return [
+      ...baru,
       for (final item in _items)
         queued.contains(item.id)
             ? item.copyWith(sync: V2PenjualanSync.antrean)
@@ -255,7 +276,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
       setState(() {
         _items = snapshot.items;
         _panenOptions = snapshot.panen;
-        _ringkasan = _ringkasanFor(snapshot.items);
+        _ringkasan = _ringkasanFor(_displayItems);
         _fetching = false;
       });
     } on V2PenjualanStoreException catch (error) {
@@ -267,7 +288,8 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     }
   }
 
-  /// Ringkasan hanya menghitung penjualan bulan berjalan (Jakarta).
+  /// Ringkasan menghitung penjualan bulan berjalan (Jakarta), termasuk baris
+  /// antrean yang belum terkirim supaya angka cocok dengan daftar.
   V2PenjualanRingkasan _ringkasanFor(List<V2Penjualan> items) {
     final today = jakartaToday();
     final bulanIni = items
@@ -321,9 +343,59 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     setState(() {
       _items = [created, ..._items];
       _filter = 0;
-      if (widget.store != null) _ringkasan = _ringkasanFor(_items);
+      if (widget.store != null) _ringkasan = _ringkasanFor(_displayItems);
     });
     _showToast('Penjualan dicatat');
+  }
+
+  /// Baris antrean belum ada di server: ketukannya membuka form 11.9, bukan
+  /// detail penjualan.
+  void _openRow(V2Penjualan penjualan) {
+    final key = v2QueueSaleKey(penjualan);
+    if (key != null) {
+      _openRepair(key);
+      return;
+    }
+    _openDetail(penjualan);
+  }
+
+  /// Form 11.9 untuk penjualan baru yang masih di antrean HP.
+  Future<void> _openRepair(String key) async {
+    final repairer = widget.saleRepairer;
+    SyncQueueItem? item;
+    for (final row in widget.syncQueue?.items ?? const <SyncQueueItem>[]) {
+      if (row.key == key) item = row;
+    }
+    if (repairer == null || item == null) {
+      _showToast('Baris ini belum bisa diperbaiki dari HP.');
+      return;
+    }
+    final V2PenjualanRepair? repair;
+    try {
+      repair = await repairer.prepare(item);
+    } catch (_) {
+      if (!mounted) return;
+      _showToast('Penjualan belum bisa dimuat. Coba lagi.');
+      return;
+    }
+    if (!mounted) return;
+    if (repair == null) {
+      _showToast('Baris ini belum bisa diperbaiki dari HP.');
+      return;
+    }
+    final updated = await Navigator.of(context).push<V2Penjualan>(
+      MaterialPageRoute<V2Penjualan>(
+        builder: (_) => V2PenjualanFormPage(
+          initial: repair!.sale,
+          fixing: true,
+          panen: repair.panen,
+          store: V2PenjualanQueueStore(repairer, item!),
+        ),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    _showToast('Penjualan terkirim.');
+    await _load();
   }
 
   Future<void> _openDetail(V2Penjualan penjualan) async {
@@ -340,7 +412,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
         for (final item in _items)
           if (item.id == updated.id) updated else item,
       ];
-      if (widget.store != null) _ringkasan = _ringkasanFor(_items);
+      if (widget.store != null) _ringkasan = _ringkasanFor(_displayItems);
     });
   }
 
@@ -477,7 +549,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
                 for (final penjualan in rows)
                   V2PenjualanRow(
                     penjualan: penjualan,
-                    onTap: () => _openDetail(penjualan),
+                    onTap: () => _openRow(penjualan),
                   ),
               ],
             ),

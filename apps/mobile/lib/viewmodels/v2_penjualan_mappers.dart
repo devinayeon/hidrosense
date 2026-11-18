@@ -1,6 +1,74 @@
+import 'dart:convert';
+
+import '../data/models/sync_queue_item.dart';
 import '../models/penjualan_model.dart';
 import '../views/v2/components/v2_penjualan_data.dart';
 import 'penjualan_mappers.dart';
+
+/// Awalan id baris penjualan yang masih di antrean HP, mis. `antrean:<kunci>`.
+///
+/// Baris seperti ini belum ada di server, jadi daftar memakai id sintetis dan
+/// ketukannya membuka form perbaikan 11.9, bukan detail penjualan.
+const v2QueueSalePrefix = 'antrean:';
+
+/// Kunci antrean dari id sintetis; null untuk baris server.
+String? v2QueueSaleKey(V2Penjualan penjualan) {
+  if (!penjualan.id.startsWith(v2QueueSalePrefix)) return null;
+  final key = penjualan.id.substring(v2QueueSalePrefix.length);
+  return key.isEmpty ? null : key;
+}
+
+/// Penjualan baru yang belum terkirim, dirangkai dari payload antrean.
+///
+/// Hanya baris `baru` yang bisa ditampilkan: koreksi punya baris server yang
+/// sudah tampil dengan lencana "Antrean". Null bila payload rusak atau jenisnya
+/// bukan penjualan.
+V2Penjualan? v2PenjualanFromQueue(
+  SyncQueueItem item,
+  List<V2PenjualanPanen> panen,
+) {
+  if (item.jenis != SyncQueueJenis.penjualan ||
+      item.mode != SyncQueueMode.baru) {
+    return null;
+  }
+  final Map<String, dynamic> json;
+  try {
+    json = jsonDecode(item.payload) as Map<String, dynamic>;
+  } catch (_) {
+    return null;
+  }
+  final pembeli = json['pembeli'];
+  final jumlah = double.tryParse('${json['jumlah_kg']}');
+  final harga = double.tryParse('${json['harga_per_kg']}');
+  final tanggal = DateTime.tryParse('${json['tanggal_penjualan']}');
+  if (pembeli is! String || pembeli.isEmpty || jumlah == null || harga == null) {
+    return null;
+  }
+  final panenId = json['id_panen']?.toString();
+  V2PenjualanPanen? baris;
+  for (final row in panen) {
+    if (row.id == panenId) baris = row;
+  }
+  final tanggalPanen = baris?.tanggalPanen;
+  final label = tanggalPanen == null
+      ? 'Panen'
+      : 'Panen ${formatTanggalPendek(tanggalPanen)}';
+  return V2Penjualan(
+    id: '$v2QueueSalePrefix${item.key}',
+    pembeli: pembeli,
+    tanggal: tanggal ?? item.createdAt.toLocal(),
+    jumlahKg: jumlah,
+    hargaPerKg: harga,
+    pembayaran: json['status_pembayaran'] == 'lunas'
+        ? V2PenjualanBayar.lunas
+        : V2PenjualanBayar.belumLunas,
+    panen: baris == null ? label : '$label, sisa ${formatKg(baris.sisaKg)}',
+    panenAsal: 'Dari $label',
+    panenId: panenId,
+    tanggalPanen: tanggalPanen,
+    sync: V2PenjualanSync.antrean,
+  );
+}
 
 /// Mengubah satu baris server menjadi model tampilan page 08.
 ///

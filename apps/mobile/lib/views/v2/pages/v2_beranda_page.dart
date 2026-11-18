@@ -297,6 +297,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       V2PenjualanListPage.route(
         store: widget.penjualanStore,
         syncQueue: widget.syncQueue,
+        saleRepairer: widget.saleRepairer,
       ),
     );
   }
