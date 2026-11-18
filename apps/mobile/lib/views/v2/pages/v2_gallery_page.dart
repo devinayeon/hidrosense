@@ -24,6 +24,12 @@ import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_edit_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
+import 'v2_meja_detail_page.dart';
+import 'v2_meja_form_page.dart';
+import 'v2_meja_list_page.dart';
+import 'v2_pilih_semaian_page.dart';
+import 'v2_tanaman_rusak_page.dart';
+import 'v2_detail_tanaman_page.dart';
 import 'v2_sinkron_page.dart';
 
 /// Halaman review semua widget reusable v2.
@@ -118,6 +124,12 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Semaian (05)',
                         subtitle: 'Daftar semaian, tambah, dan pindah ke meja',
                         route: V2SemaianListPage.route,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Meja tanam (06)',
+                        subtitle: 'Daftar meja, detail lubang, dan tanaman',
+                        route: V2MejaListPage.route,
                       ),
                       _FlowRow(
                         icon: V2IconName.sync,
@@ -701,6 +713,260 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Dialog muat ulang karena bentrok',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2SemaianEditPage.konflik(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.user,
+                        title: 'Meja tanam pegawai (6.2)',
+                        subtitle: 'Tab bar peran pegawai',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaListPage.pegawai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Meja memuat (6.3)',
+                        subtitle: 'Empat rangka kartu sebelum daftar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaListPage.memuat(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Meja gagal memuat (6.4)',
+                        subtitle: 'Pesan gagal dan tombol coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaListPage.gagal(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Meja kosong (6.5)',
+                        subtitle: 'Belum ada meja, tombol tambah meja',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaListPage.kosong(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.plus,
+                        title: 'Tambah meja (6.6)',
+                        subtitle: 'Kode meja, jumlah lubang, keterangan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaFormPage.create(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.error,
+                        title: 'Tambah meja, validasi (6.7)',
+                        subtitle: 'Kode sudah dipakai dan jumlah 0',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2MejaFormPage.validation(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Meja ditambahkan (6.8)',
+                        subtitle: 'Meja C1 di atas daftar dan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaListPage.ditambahkan(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.cloud,
+                        title: 'Tersimpan di HP (6.9)',
+                        subtitle: 'Banner offline dan baris antrean',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaListPage.offline(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Detail meja kosong (6.10)',
+                        subtitle: 'Meja C1, 0 dari 180 lubang',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.kosong(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Detail meja (6.11)',
+                        subtitle: 'Meja A2, 40 dari 240, satu tanaman',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.biasa(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Ubah status meja (6.12)',
+                        subtitle: 'Sheet Tersedia, Perawatan, Penuh',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.statusSheet(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Status diubah (6.13)',
+                        subtitle: 'Meja perawatan dan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.status(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Pilih semaian (6.14)',
+                        subtitle: 'Semaian HSS 15 siap pindah',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2PilihSemaianPage.siap(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Belum ada semaian siap (6.15)',
+                        subtitle: 'Ilustrasi dan tombol lihat semaian',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2PilihSemaianPage.kosong(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Detail meja penuh (6.16)',
+                        subtitle: '240 dari 240, dua tanaman',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.penuh(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Detail meja siap panen (6.17)',
+                        subtitle: 'Meja B1, panen hari ini',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.siapPanen(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah meja (6.18)',
+                        subtitle: 'Meja A2, 240 lubang, catatan status',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaFormPage.ubah(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.error,
+                        title: 'Ubah meja, lubang kurang (6.19)',
+                        subtitle: '30 lubang, minimal 40',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaFormPage.lubangKurang(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Meja diubah (6.20)',
+                        subtitle: 'Detail meja dan toast tersimpan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaDetailPage.diubah(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Detail tanaman (6.21)',
+                        subtitle: 'Romaine Meja A2, HST 8, panen 22 Des',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2DetailTanamanPage.biasa(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah catatan tanaman (6.22)',
+                        subtitle: 'Keterangan rak bawah',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2UbahCatatanTanamanPage.biasa(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Catatan tersimpan (6.23)',
+                        subtitle: 'Detail tanaman dan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2DetailTanamanPage.tersimpan(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Daftar rusak (6.24)',
+                        subtitle: 'Satu catatan busuk akar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2TanamanRusakPage.biasa(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.plus,
+                        title: 'Catat rusak (6.25)',
+                        subtitle: 'Tanggal, jumlah, jenis, keterangan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2CatatRusakPage.catat(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.error,
+                        title: 'Catat rusak, validasi (6.26)',
+                        subtitle: '45 tanaman dan jenis belum dipilih',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2CatatRusakPage.validation(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Kerusakan dicatat (6.27)',
+                        subtitle: 'Layu 15 Nov di atas busuk akar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2TanamanRusakPage.setelahCatat(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah kerusakan (6.28)',
+                        subtitle: 'Busuk akar 10 Nov dengan catatan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2CatatRusakPage.ubah(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Kerusakan diubah (6.29)',
+                        subtitle: 'Daftar rusak dan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2TanamanRusakPage.diubah(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Data sudah berubah (6.30)',
+                        subtitle: 'Dialog konflik di atas form ubah',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2MejaFormPage.konflik(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
                       ),
