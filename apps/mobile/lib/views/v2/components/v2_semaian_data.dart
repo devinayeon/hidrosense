@@ -172,6 +172,7 @@ class V2SemaianItem {
     int? jumlahPindah,
     String? pindahKe,
     int? tidakDipindah,
+    bool hapusSisaBenih = false,
   }) {
     return V2SemaianItem(
       id: id ?? this.id,
@@ -181,7 +182,7 @@ class V2SemaianItem {
       selesai: selesai ?? this.selesai,
       antrean: antrean ?? this.antrean,
       jumlahBahan: jumlahBahan ?? this.jumlahBahan,
-      sisaBenih: sisaBenih ?? this.sisaBenih,
+      sisaBenih: hapusSisaBenih ? null : sisaBenih ?? this.sisaBenih,
       jumlahPindah: jumlahPindah ?? this.jumlahPindah,
       pindahKe: pindahKe ?? this.pindahKe,
       tidakDipindah: tidakDipindah ?? this.tidakDipindah,
@@ -317,3 +318,74 @@ final List<V2SemaianItem> designSemaianAntrean = <V2SemaianItem>[
   designSemaianBaru.copyWith(antrean: true),
   designSemaianRomaineSiapPindah,
 ];
+
+// --- Pindah ke meja (form 5.17, 5.21, 5.24) --------------------------------
+
+/// Satu meja tujuan di form "Pindah ke meja".
+///
+/// Label mengikuti keadaan meja: `Meja A2, 200 lubang kosong`, `Meja B1, penuh`,
+/// atau `Meja D1, perawatan` (frame 5.17/5.20/5.24).
+class V2SemaianMeja {
+  const V2SemaianMeja({
+    required this.nama,
+    this.lubangKosong = 0,
+    this.penuh = false,
+    this.perawatan = false,
+  });
+
+  final String nama;
+
+  /// Lubang tanam yang masih kosong; nol untuk meja penuh/perawatan.
+  final int lubangKosong;
+
+  /// Meja penuh tidak bisa dipilih (frame 5.24: `Meja A3, penuh`).
+  final bool penuh;
+
+  /// Meja yang sedang dirawat tidak bisa dipilih (frame 5.17: `Meja D1`).
+  final bool perawatan;
+
+  bool get tersedia => !penuh && !perawatan && lubangKosong > 0;
+
+  /// `Meja A2, 200 lubang kosong` — teks baris pilihan.
+  String get label {
+    if (perawatan) return '$nama, perawatan';
+    if (!tersedia) return '$nama, penuh';
+    return '$nama, $lubangKosong lubang kosong';
+  }
+}
+
+/// Pilihan meja form 5.17 dan 5.21: A2 (200 kosong, terpilih) / A3 (120 kosong)
+/// / B1 penuh / D1 perawatan.
+const List<V2SemaianMeja> designMejaPindah = <V2SemaianMeja>[
+  V2SemaianMeja(nama: 'Meja A2', lubangKosong: 200),
+  V2SemaianMeja(nama: 'Meja A3', lubangKosong: 120),
+  V2SemaianMeja(nama: 'Meja B1', penuh: true),
+  V2SemaianMeja(nama: 'Meja D1', perawatan: true),
+];
+
+/// Pilihan meja form 5.24 (pindah sisa): A3 sekarang penuh.
+const List<V2SemaianMeja> designMejaPindahSisa = <V2SemaianMeja>[
+  V2SemaianMeja(nama: 'Meja A2', lubangKosong: 200),
+  V2SemaianMeja(nama: 'Meja A3', penuh: true),
+  V2SemaianMeja(nama: 'Meja B1', penuh: true),
+  V2SemaianMeja(nama: 'Meja D1', perawatan: true),
+];
+
+/// `30 Des 2026, 45 hari lagi` — isi kartu tint "Estimasi panen".
+const String designEstimasiPanen = '30 Des 2026, 45 hari lagi';
+
+/// Hasil form "Pindah ke meja" yang dikembalikan ke halaman detail.
+class V2SemaianPindah {
+  const V2SemaianPindah({
+    required this.meja,
+    required this.jumlah,
+    required this.tanggal,
+  });
+
+  /// Nama meja tujuan, mis. `Meja A2`.
+  final String meja;
+
+  /// Banyak tanaman yang dipindah.
+  final int jumlah;
+  final DateTime tanggal;
+}

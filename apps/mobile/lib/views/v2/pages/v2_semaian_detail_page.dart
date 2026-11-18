@@ -9,6 +9,7 @@ import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_summary_card.dart';
 import '../widgets/v2_timeline_step.dart';
+import 'v2_pindah_meja_page.dart';
 
 /// Detail satu semaian (frame 5.14–5.16, 5.19, 5.23, 5.29, 5.30).
 ///
@@ -232,7 +233,7 @@ class V2SemaianDetailPage extends StatelessWidget {
         if (siap)
           V2Button(
             label: 'Pindah ke meja',
-            onPressed: onMove ?? () => _notice(context, 'Pindah ke meja (5.17)'),
+            onPressed: onMove ?? () => _pindah(context),
           ),
         V2Button(
           label: 'Ubah',
@@ -241,6 +242,27 @@ class V2SemaianDetailPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Buka form 5.17, lalu terapkan hasilnya ke semaian ini dan kembali ke
+  /// daftar dengan baris yang sudah diperbarui.
+  Future<void> _pindah(BuildContext context) async {
+    final result = await Navigator.of(context).push<V2SemaianPindah>(
+      MaterialPageRoute<V2SemaianPindah>(
+        builder: (_) => V2PindahMejaFormPage(item: item),
+      ),
+    );
+    if (result == null || !context.mounted) return;
+
+    final sisa = (item.sisaBenih ?? item.jumlahBenih) - result.jumlah;
+    final updated = item.copyWith(
+      sisaBenih: sisa > 0 ? sisa : null,
+      hapusSisaBenih: sisa <= 0,
+      jumlahPindah: (item.jumlahPindah ?? 0) + result.jumlah,
+      pindahKe: result.meja,
+      selesai: sisa <= 0,
+    );
+    Navigator.of(context).pop(updated);
   }
 
   void _notice(BuildContext context, String alur) {

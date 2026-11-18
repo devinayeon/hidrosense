@@ -19,6 +19,7 @@ import 'v2_notifications_page.dart';
 import 'v2_offline_login_page.dart';
 import 'v2_onboarding_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_pindah_meja_page.dart';
 import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
@@ -536,6 +537,61 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Banner offline dan lencana antrean',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2SemaianListPage.offline(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Pindah ke meja (5.17)',
+                        subtitle: 'Pilih meja, jumlah, dan tanggal',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2PindahMejaFormPage.form(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Pindah berhasil (5.18)',
+                        subtitle: '200 tanaman pindah ke Meja A2',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2PindahMejaResultPage.berhasil(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Tidak ada meja kosong (5.20)',
+                        subtitle: 'Ajakan menambah meja',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2PindahMejaResultPage.tidakAdaMeja(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Pindah, lubang kurang (5.21)',
+                        subtitle: 'Meja A3 hanya 120 lubang',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2PindahMejaFormPage.lubangKurang(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Pindah sebagian (5.22)',
+                        subtitle: '120 pindah, 80 masih di semaian',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2PindahMejaResultPage.sebagian(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Pindah sisa (5.24)',
+                        subtitle: 'Sisa 80 benih ke Meja A2',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2PindahMejaFormPage.sisa(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),
