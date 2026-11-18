@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
+import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import 'v2_beranda_page.dart';
 
@@ -51,6 +52,7 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       weatherSubtitle: data.weatherSubtitle ?? 'Hujan 14.00',
       employeeStore: ref.watch(v2EmployeeStoreProvider),
       penjualanStore: ref.watch(v2PenjualanStoreProvider),
+      syncQueue: ref.watch(v2SyncQueueProvider.notifier),
       onLogOut: onLogOut,
     );
   }

@@ -63,55 +63,73 @@ class V2SinkronPage extends StatefulWidget {
     super.key,
     this.state = V2SinkronState.ready,
     this.toast,
+    this.items,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
   const V2SinkronPage.loading({super.key})
     : state = V2SinkronState.loading,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
     : state = V2SinkronState.notifOff,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
     : state = V2SinkronState.offline,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
     : state = V2SinkronState.syncing,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
     : state = V2SinkronState.done,
-      toast = 'Sinkron selesai';
+      toast = 'Sinkron selesai',
+      items = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
     : state = V2SinkronState.partial,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
     : state = V2SinkronState.conflict,
-      toast = null;
+      toast = null,
+      items = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
     : state = V2SinkronState.sessionExpired,
-      toast = null;
+      toast = null,
+      items = null;
 
   final V2SinkronState state;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 11.6).
   final String? toast;
 
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (_) => const V2SinkronPage());
+  /// Baris antrean nyata dari HP; null berarti data contoh galeri (frame 11.4).
+  final List<V2SinkronItem>? items;
+
+  static Route<void> route({
+    V2SinkronState state = V2SinkronState.ready,
+    String? toast,
+    List<V2SinkronItem>? items,
+  }) {
+    return MaterialPageRoute<void>(
+      builder: (_) => V2SinkronPage(state: state, toast: toast, items: items),
+    );
   }
 
   @override
@@ -250,7 +268,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
           V2SinkronState.offline => [
             const V2Banner(message: 'Offline. Data tersimpan di HP.'),
             const SizedBox(height: V2Space.lg),
-            _list(designSinkronAntrean),
+            _list(widget.items ?? designSinkronAntrean),
           ],
           V2SinkronState.syncing => [
             const V2Banner(

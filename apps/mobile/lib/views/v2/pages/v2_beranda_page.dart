@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
 import '../components/v2_penjualan_store.dart';
+import '../components/v2_sinkron_data.dart';
 import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
 import '../theme/v2_tokens.dart';
+import '../../../viewmodels/v2_sync_queue.dart';
 import '../v2_roles.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_banner.dart';
@@ -70,6 +72,7 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.employeeStore,
     this.penjualanStore,
+    this.syncQueue,
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
@@ -90,6 +93,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
+       syncQueue = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -112,6 +116,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
+       syncQueue = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -134,6 +139,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
+       syncQueue = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -167,6 +173,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Backend penjualan; null berarti galeri memakai data contoh.
   final V2PenjualanStore? penjualanStore;
+
+  /// Antrean sinkron nyata; null berarti galeri memakai data contoh 11.4.
+  final V2SyncQueue? syncQueue;
 
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
@@ -248,7 +257,16 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _openSync() {
-    Navigator.of(context).push(V2SinkronPage.route());
+    final queue = widget.syncQueue;
+    final items = queue == null
+        ? const <V2SinkronItem>[]
+        : v2SinkronItemsFromQueue(queue.items);
+    Navigator.of(context).push(
+      V2SinkronPage.route(
+        state: items.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
+        items: items.isEmpty ? null : items,
+      ),
+    );
   }
 
   Future<void> _confirmLogOut() async {

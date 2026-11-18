@@ -6,6 +6,8 @@
 /// [V2SinkronStatus].
 library;
 
+import '../../../data/models/sync_queue_item.dart';
+
 /// Jenis data yang ikut disinkronkan; menentukan ikon dan nada lingkaran lead.
 enum V2SinkronJenis { semaian, stok, panen, penjualan, rusak }
 
@@ -49,9 +51,41 @@ class V2SinkronItem {
   };
 }
 
+/// Kode kolom kanan tiap jenis data (frame 11.4/11.5).
+String kodeSinkronJenis(V2SinkronJenis jenis) => switch (jenis) {
+  V2SinkronJenis.semaian || V2SinkronJenis.stok => '10.02',
+  V2SinkronJenis.panen => '10.03',
+  V2SinkronJenis.penjualan => '10.04',
+  V2SinkronJenis.rusak => '10.05',
+};
+
+/// Baris antrean nyata dari HP; semuanya masih menunggu dikirim.
+List<V2SinkronItem> v2SinkronItemsFromQueue(List<SyncQueueItem> items) {
+  final result = <V2SinkronItem>[];
+  for (final item in items) {
+    final jenis = _sinkronJenisOf(item.jenis);
+    result.add(
+      V2SinkronItem(
+        jenis: jenis,
+        subtitle: item.subtitle,
+        kode: kodeSinkronJenis(jenis),
+        status: V2SinkronStatus.antrean,
+      ),
+    );
+  }
+  return List.unmodifiable(result);
+}
+
+V2SinkronJenis _sinkronJenisOf(SyncQueueJenis jenis) => switch (jenis) {
+  SyncQueueJenis.semaian => V2SinkronJenis.semaian,
+  SyncQueueJenis.stok => V2SinkronJenis.stok,
+  SyncQueueJenis.panen => V2SinkronJenis.panen,
+  SyncQueueJenis.penjualan => V2SinkronJenis.penjualan,
+  SyncQueueJenis.rusak => V2SinkronJenis.rusak,
+};
+
 /// Isi `SummaryCard` di puncak halaman sinkron.
-class V2SinkronRingkasan {
-  const V2SinkronRingkasan({
+class V2SinkronRingkasan {  const V2SinkronRingkasan({
     required this.kicker,
     required this.value,
     required this.meta,

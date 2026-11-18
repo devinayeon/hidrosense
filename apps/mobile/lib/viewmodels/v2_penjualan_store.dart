@@ -2,23 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/business_date.dart';
 import '../data/models/sale_record.dart';
+import '../data/models/sync_queue_item.dart';
 import '../data/services/api_client.dart';
 import '../models/penjualan_model.dart';
 import '../views/v2/components/v2_penjualan_data.dart';
 import '../views/v2/components/v2_penjualan_store.dart';
 import 'penjualan_viewmodel.dart';
+import 'sale_command.dart';
 import 'session_viewmodel.dart';
 import 'v2_penjualan_mappers.dart';
+import 'v2_sync_queue.dart';
 
 /// Store penjualan v2 yang memakai API dan aturan tulis v1.
 ///
 /// Semua penulisan lewat [PenjualanViewModel] supaya kunci idempoten,
 /// penguncian isian yang belum pasti, dan penyegaran stok tetap satu jalur
-/// dengan aplikasi v1.
+/// dengan aplikasi v1. Tulis yang gagal tanpa jawaban pasti dicatat ke
+/// [V2SyncQueue] supaya tidak hilang saat aplikasi ditutup.
 class V2PenjualanApiStore implements V2PenjualanStore {
-  V2PenjualanApiStore(this._viewModel);
+  V2PenjualanApiStore(this._viewModel, {this.queue});
 
   final PenjualanViewModel _viewModel;
+
+  /// Antrean HP untuk tulis yang belum pasti; null berarti tidak mencatat.
+  final V2SyncQueue? queue;
 
   @override
   Future<V2PenjualanSnapshot> load() async {
@@ -153,10 +160,38 @@ class V2PenjualanApiStore implements V2PenjualanStore {
       if (error.code == 'SALE_VERSION_CONFLICT') {
         throw const V2PenjualanConflictException();
       }
+      await _queuePending();
       throw V2PenjualanStoreException(serviceError(error));
     } catch (error) {
+      await _queuePending();
       throw V2PenjualanStoreException(serviceError(error));
     }
+  }
+
+  /// Mencatat tulis yang hasilnya belum pasti ke antrean HP.
+  ///
+  /// Hanya perintah yang masih tertahan (`uncertainCommand`) yang dicatat:
+  /// penolakan 4xx sudah pasti tidak tersimpan, jadi tidak perlu dikirim ulang.
+  Future<void> _queuePending() async {
+    final queue = this.queue;
+    if (queue == null) return;
+    final command = _viewModel.uncertainCommand;
+    if (command == null) return;
+    await queue.record(
+      SyncQueueItem(
+        key: command.key,
+        jenis: SyncQueueJenis.penjualan,
+        subtitle: _buyerOf(command),
+        target: command.target,
+        payload: command.payload,
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  String _buyerOf(SaleCommand command) {
+    final buyer = command.draft?.buyer ?? command.headerDraft?.buyer ?? '';
+    return buyer.isEmpty ? 'Penjualan' : buyer;
   }
 }
 
@@ -166,5 +201,8 @@ final v2PenjualanStoreProvider = Provider<V2PenjualanStore?>((ref) {
   if (user == null || !user.permissions.contains('penjualan:read')) {
     return null;
   }
-  return V2PenjualanApiStore(ref.watch(penjualanViewModelProvider.notifier));
+  return V2PenjualanApiStore(
+    ref.watch(penjualanViewModelProvider.notifier),
+    queue: ref.watch(v2SyncQueueProvider.notifier),
+  );
 });
