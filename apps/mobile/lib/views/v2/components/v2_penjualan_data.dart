@@ -164,6 +164,90 @@ V2PenjualanRingkasan ringkasanPenjualan(
   );
 }
 
+/// Satu bulan pada grafik ringkasan penjualan (frame 8.5).
+class V2PenjualanBulan {
+  const V2PenjualanBulan({
+    required this.label,
+    required this.totalRupiah,
+    required this.kg,
+  });
+
+  /// Nama bulan singkat, mis. `Nov`.
+  final String label;
+  final double totalRupiah;
+  final double kg;
+
+  /// Tinggi batang dipakai kartu grafik; nilainya dalam juta rupiah.
+  double get juta => totalRupiah / 1000000;
+
+  /// Angka di atas batang, mis. `7,5`.
+  String get display => formatJutaAkurat(totalRupiah);
+}
+
+/// Isi halaman ringkasan 8.5 yang dihitung dari data nyata.
+class V2PenjualanRingkasanBulanan {
+  const V2PenjualanRingkasanBulanan({
+    required this.bulan,
+    required this.totalTigaBulan,
+    required this.rataRataPerKg,
+    required this.belumLunas,
+  });
+
+  /// Tiga bulan berurutan, paling lama di depan (Sep, Okt, Nov).
+  final List<V2PenjualanBulan> bulan;
+  final double totalTigaBulan;
+
+  /// Rata-rata rupiah per kg seluruh tiga bulan; 0 bila belum ada berat.
+  final double rataRataPerKg;
+
+  /// Sisa penjualan yang belum lunas pada tiga bulan itu.
+  final double belumLunas;
+
+  /// `Sep 5,2 juta, Okt 6,4 juta, Nov 7,5 juta.`
+  String get caption =>
+      '${bulan.map((item) => '${item.label} ${item.display} juta').join(', ')}.';
+}
+
+/// Menghitung ringkasan 8.5 dari [items]: bulan [sekarang] dan dua sebelumnya.
+V2PenjualanRingkasanBulanan ringkasanBulananPenjualan(
+  List<V2Penjualan> items, {
+  required DateTime sekarang,
+}) {
+  final bulan = <V2PenjualanBulan>[];
+  var totalTigaBulan = 0.0;
+  var kgTigaBulan = 0.0;
+  var belumLunas = 0.0;
+  for (var mundur = 2; mundur >= 0; mundur--) {
+    final acuan = DateTime(sekarang.year, sekarang.month - mundur);
+    var total = 0.0;
+    var kg = 0.0;
+    for (final item in items) {
+      if (item.tanggal.year != acuan.year ||
+          item.tanggal.month != acuan.month) {
+        continue;
+      }
+      total += item.total;
+      kg += item.jumlahKg;
+      if (!item.lunas) belumLunas += item.total;
+    }
+    totalTigaBulan += total;
+    kgTigaBulan += kg;
+    bulan.add(
+      V2PenjualanBulan(
+        label: _bulanSingkat[acuan.month - 1],
+        totalRupiah: total,
+        kg: kg,
+      ),
+    );
+  }
+  return V2PenjualanRingkasanBulanan(
+    bulan: List.unmodifiable(bulan),
+    totalTigaBulan: totalTigaBulan,
+    rataRataPerKg: kgTigaBulan == 0 ? 0 : totalTigaBulan / kgTigaBulan,
+    belumLunas: belumLunas,
+  );
+}
+
 const List<String> _bulanSingkat = <String>[
   'Jan',
   'Feb',
@@ -217,13 +301,20 @@ int parseAngkaRibu(String text) =>
 /// `60` menjadi `60 kg`, `60.5` menjadi `60,5 kg` (baris daftar/label panen).
 String formatKg(double value) => '${formatAngkaKg(value)} kg';
 
-/// Angka kg tanpa satuan; koma dipakai sebagai desimal seperti kebiasaan lokal.
-String formatAngkaKg(double value) => value == value.roundToDouble()
+/// Angka desimal gaya lokal tanpa satuan: `5.2` -> `5,2`, `5.0` -> `5`.
+String formatAngkaDesimal(double value) => value == value.roundToDouble()
     ? value.toStringAsFixed(0)
     : value
           .toStringAsFixed(2)
           .replaceFirst(RegExp(r'0+$'), '')
           .replaceAll('.', ',');
+
+/// Angka kg tanpa satuan; koma dipakai sebagai desimal seperti kebiasaan lokal.
+String formatAngkaKg(double value) => formatAngkaDesimal(value);
+
+/// Angka juta tanpa satuan untuk label batang: `7500000` -> `7,5` (frame 8.5).
+String formatJutaAkurat(num rupiah) =>
+    formatAngkaDesimal(rupiah / 1000000);
 
 /// Membaca isian kg; `60,5` dan `60.5` sama-sama dibaca `60.5`.
 double parseKg(String text) {

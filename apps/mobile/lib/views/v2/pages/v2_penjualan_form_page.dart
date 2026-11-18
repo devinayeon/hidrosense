@@ -278,6 +278,12 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   /// Sedang mengirim ke backend.
   bool _saving = false;
 
+  /// Salinan terbaru dari server setelah konflik versi (frame 8.24).
+  V2Penjualan? _server;
+
+  /// Nilai acuan: salinan server bila sudah dimuat ulang, kalau tidak data awal.
+  V2Penjualan? get _base => _server ?? widget.initial;
+
   String? _tanggalError;
   String? _pembeliError;
   String? _panenError;
@@ -333,7 +339,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
 
   /// Panen milik baris yang diubah, bila barisnya satu panen.
   V2PenjualanPanen? get _ownOption {
-    final initial = widget.initial;
+    final initial = _base;
     final id = initial?.panenId;
     final tanggal = initial?.tanggalPanen;
     if (initial == null || id == null || tanggal == null) return null;
@@ -448,7 +454,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   }
 
   void _resetToInitial() {
-    final initial = widget.initial;
+    final initial = _base;
     for (final controller in _controllers) {
       controller.removeListener(_onFieldChanged);
     }
@@ -482,7 +488,26 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       primaryLabel: 'Muat ulang',
       secondaryLabel: 'Batal',
     );
-    if (reload == true && mounted) _resetToInitial();
+    if (reload != true || !mounted) return;
+
+    final store = widget.store;
+    final base = _base;
+    if (store == null || base == null) {
+      // Pratinjau galeri: cukup kembali ke isian awal di memori.
+      _resetToInitial();
+      return;
+    }
+    try {
+      final fresh = await store.reload(base);
+      if (!mounted) return;
+      _server = fresh;
+      _resetToInitial();
+    } on V2PenjualanStoreException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
   }
 
   Future<void> _confirmDiscard() async {
@@ -633,11 +658,16 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     );
     try {
       final result = widget.isEdit
-          ? await store.update(widget.initial!, draft)
+          ? await store.update(_base!, draft)
           : await store.create(draft);
       if (!mounted) return;
       _dirty = false;
       Navigator.of(context).pop(result);
+    } on V2PenjualanConflictException {
+      // Server menolak karena versi berubah: tawarkan muat ulang (frame 8.24).
+      if (!mounted) return;
+      setState(() => _saving = false);
+      await _showConflict();
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -649,7 +679,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
 
   /// Mode pratinjau: hasil dirangkai di memori, tanpa backend.
   void _popWithPreview(String pembeli, double jumlah, double harga) {
-    final initial = widget.initial;
+    final initial = _base;
     final panen = _panenLabel!;
     _dirty = false;
     Navigator.of(context).pop(

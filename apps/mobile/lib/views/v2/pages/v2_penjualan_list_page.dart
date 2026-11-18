@@ -260,7 +260,13 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   }
 
   Future<void> _openSummary() async {
-    await Navigator.of(context).push(V2PenjualanSummaryPage.route());
+    await Navigator.of(context).push(
+      V2PenjualanSummaryPage.route(
+        bulanan: widget.store == null
+            ? null
+            : ringkasanBulananPenjualan(_items, sekarang: jakartaToday()),
+      ),
+    );
   }
 
   Future<void> _openCreate() async {

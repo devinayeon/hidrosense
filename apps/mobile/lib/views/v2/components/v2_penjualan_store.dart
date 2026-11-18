@@ -41,6 +41,10 @@ abstract interface class V2PenjualanStore {
   Future<V2Penjualan> update(V2Penjualan existing, V2PenjualanDraft draft);
 
   Future<V2Penjualan> markPaid(V2Penjualan existing);
+
+  /// Mengambil ulang satu penjualan dari server — dipakai tombol "Muat ulang"
+  /// pada dialog konflik versi (frame 8.24).
+  Future<V2Penjualan> reload(V2Penjualan existing);
 }
 
 /// Galat store yang pesannya sudah siap ditampilkan ke pengguna.
@@ -51,4 +55,14 @@ class V2PenjualanStoreException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Konflik versi: baris sudah diubah perangkat lain sejak terakhir dibaca.
+///
+/// Dipisahkan dari [V2PenjualanStoreException] supaya formulir bisa membuka
+/// dialog "Data sudah berubah" (8.24), bukan sekadar menampilkan snackbar.
+class V2PenjualanConflictException extends V2PenjualanStoreException {
+  const V2PenjualanConflictException([
+    super.message = 'Data sudah berubah di server. Muat ulang versi terbaru.',
+  ]);
 }

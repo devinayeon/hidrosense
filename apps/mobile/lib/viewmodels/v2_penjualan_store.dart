@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/business_date.dart';
 import '../data/models/sale_record.dart';
+import '../data/services/api_client.dart';
 import '../models/penjualan_model.dart';
 import '../views/v2/components/v2_penjualan_data.dart';
 import '../views/v2/components/v2_penjualan_store.dart';
@@ -104,6 +105,22 @@ class V2PenjualanApiStore implements V2PenjualanStore {
     });
   }
 
+  @override
+  Future<V2Penjualan> reload(V2Penjualan existing) {
+    return _write(() async {
+      await _viewModel.refresh(force: true);
+      final state = _viewModel.current;
+      for (final item in state.items) {
+        if (item.id == existing.id) {
+          return v2PenjualanFromItem(item, state.batches);
+        }
+      }
+      throw const V2PenjualanStoreException(
+        'Penjualan sudah tidak ada di server. Muat ulang daftar.',
+      );
+    });
+  }
+
   PenjualanItem _itemOf(String id) {
     for (final item in _viewModel.current.items) {
       if (item.id == id) return item;
@@ -132,6 +149,11 @@ class V2PenjualanApiStore implements V2PenjualanStore {
       return await task();
     } on V2PenjualanStoreException {
       rethrow;
+    } on ApiException catch (error) {
+      if (error.code == 'SALE_VERSION_CONFLICT') {
+        throw const V2PenjualanConflictException();
+      }
+      throw V2PenjualanStoreException(serviceError(error));
     } catch (error) {
       throw V2PenjualanStoreException(serviceError(error));
     }
