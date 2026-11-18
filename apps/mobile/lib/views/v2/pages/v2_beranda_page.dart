@@ -241,6 +241,18 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   bool get _petani => widget.role == V2BerandaRole.petani;
 
+  /// Jumlah baris antrean nyata; nol untuk galeri tanpa antrean.
+  int get _queuedSync => widget.syncQueue?.items.length ?? 0;
+
+  /// Banner 2.5 tampil saat perangkat offline atau ada data menunggu sinkron.
+  bool get _showSyncBanner =>
+      _state == V2BerandaState.offline || _queuedSync > 0;
+
+  /// Teks banner: jumlah nyata bila antrean tersambung, teks frame di galeri.
+  String get _syncBannerMessage => _queuedSync == 0
+      ? 'Offline. 3 data menunggu sinkron.'
+      : 'Offline. $_queuedSync data menunggu sinkron.';
+
   /// Index tab "Lainnya" (Petani) atau "Profil" (Pegawai): tab terakhir.
   int get _akunIndex =>
       (_petani ? V2BerandaPage._petaniTabs : V2BerandaPage._pegawaiTabs)
@@ -284,10 +296,15 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     final items = queue == null
         ? const <V2SinkronItem>[]
         : v2SinkronItemsFromQueue(queue.items);
+    // Galeri 2.5 tidak punya antrean nyata; 11.4 memakai baris contoh.
+    final galleryOffline = queue == null && _showSyncBanner;
+    final fallback = galleryOffline ? designSinkronAntrean : items;
     Navigator.of(context).push(
       V2SinkronPage.route(
-        state: items.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
-        items: items.isEmpty ? null : items,
+        state: fallback.isEmpty
+            ? V2SinkronState.ready
+            : V2SinkronState.offline,
+        items: fallback.isEmpty ? null : fallback,
         queue: queue,
         onSyncNow: replayer == null
             ? null
@@ -398,7 +415,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       return V2BerandaSkeleton(withWeather: _petani);
     }
 
-    final offline = _state == V2BerandaState.offline;
+    final offline = _showSyncBanner;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -412,7 +429,15 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         ),
         const SizedBox(height: V2Space.lg),
         if (offline) ...[
-          const V2Banner(message: 'Offline. 3 data menunggu sinkron.'),
+          Semantics(
+            button: true,
+            hint: 'Buka halaman Sinkron',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(V2Radius.card),
+              onTap: _openSync,
+              child: V2Banner(message: _syncBannerMessage),
+            ),
+          ),
           const SizedBox(height: V2Space.lg),
         ],
         V2BerandaHero(onTap: _openCycle),
