@@ -59,7 +59,7 @@ String kodeSinkronJenis(V2SinkronJenis jenis) => switch (jenis) {
   V2SinkronJenis.rusak => '10.05',
 };
 
-/// Baris antrean nyata dari HP; semuanya masih menunggu dikirim.
+/// Baris antrean nyata dari HP; keadaannya mengikuti [SyncQueueItem.status].
 List<V2SinkronItem> v2SinkronItemsFromQueue(List<SyncQueueItem> items) {
   final result = <V2SinkronItem>[];
   for (final item in items) {
@@ -69,7 +69,9 @@ List<V2SinkronItem> v2SinkronItemsFromQueue(List<SyncQueueItem> items) {
         jenis: jenis,
         subtitle: item.subtitle,
         kode: kodeSinkronJenis(jenis),
-        status: V2SinkronStatus.antrean,
+        status: item.status == SyncQueueStatus.gagal
+            ? V2SinkronStatus.gagal
+            : V2SinkronStatus.antrean,
       ),
     );
   }

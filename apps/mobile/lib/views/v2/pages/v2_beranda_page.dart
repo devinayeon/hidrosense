@@ -9,6 +9,7 @@ import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
 import '../theme/v2_tokens.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
+import '../../../viewmodels/v2_sync_replayer.dart';
 import '../v2_roles.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_banner.dart';
@@ -73,6 +74,7 @@ class V2BerandaPage extends StatefulWidget {
     this.employeeStore,
     this.penjualanStore,
     this.syncQueue,
+    this.syncReplayer,
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
@@ -94,6 +96,7 @@ class V2BerandaPage extends StatefulWidget {
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
+       syncReplayer = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -117,6 +120,7 @@ class V2BerandaPage extends StatefulWidget {
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
+       syncReplayer = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -140,6 +144,7 @@ class V2BerandaPage extends StatefulWidget {
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
+       syncReplayer = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -176,6 +181,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Antrean sinkron nyata; null berarti galeri memakai data contoh 11.4.
   final V2SyncQueue? syncQueue;
+
+  /// Pengirim ulang antrean; null berarti halaman 11 memakai simulasi.
+  final V2SyncReplayer? syncReplayer;
 
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
@@ -258,6 +266,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   void _openSync() {
     final queue = widget.syncQueue;
+    final replayer = widget.syncReplayer;
     final items = queue == null
         ? const <V2SinkronItem>[]
         : v2SinkronItemsFromQueue(queue.items);
@@ -265,6 +274,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       V2SinkronPage.route(
         state: items.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
         items: items.isEmpty ? null : items,
+        queue: queue,
+        onSyncNow: replayer == null ? null : () => replayer.run(),
       ),
     );
   }

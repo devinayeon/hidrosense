@@ -53,6 +53,7 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       employeeStore: ref.watch(v2EmployeeStoreProvider),
       penjualanStore: ref.watch(v2PenjualanStoreProvider),
       syncQueue: ref.watch(v2SyncQueueProvider.notifier),
+      syncReplayer: ref.watch(v2SyncReplayerProvider),
       onLogOut: onLogOut,
     );
   }

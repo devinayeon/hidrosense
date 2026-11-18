@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../data/models/sync_queue_item.dart';
 import '../../../data/services/notification_permission_service.dart';
+import '../../../viewmodels/v2_sync_queue.dart';
+import '../../../viewmodels/v2_sync_replayer.dart';
 import '../components/v2_auth_assets.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_sinkron_data.dart';
@@ -64,71 +67,104 @@ class V2SinkronPage extends StatefulWidget {
     this.state = V2SinkronState.ready,
     this.toast,
     this.items,
+    this.queue,
+    this.onSyncNow,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
   const V2SinkronPage.loading({super.key})
     : state = V2SinkronState.loading,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
     : state = V2SinkronState.notifOff,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
     : state = V2SinkronState.offline,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
     : state = V2SinkronState.syncing,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
     : state = V2SinkronState.done,
       toast = 'Sinkron selesai',
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
     : state = V2SinkronState.partial,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
     : state = V2SinkronState.conflict,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
     : state = V2SinkronState.sessionExpired,
       toast = null,
-      items = null;
+      items = null,
+      queue = null,
+      onSyncNow = null;
 
   final V2SinkronState state;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 11.6).
   final String? toast;
 
-  /// Baris antrean nyata dari HP; null berarti data contoh galeri (frame 11.4).
+  /// Baris antrean nyata dari HP (potret); null berarti data contoh galeri.
   final List<V2SinkronItem>? items;
+
+  /// Antrean hidup; bila diisi, baris mengikuti isinya dan "Sinkron sekarang"
+  /// mengirim ulang sungguhan. Null berarti galeri memakai simulasi.
+  final V2SyncQueue? queue;
+
+  /// Menjalankan pengiriman ulang; hasilnya menentukan keadaan setelah 11.5.
+  final Future<V2SyncRun> Function()? onSyncNow;
 
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
     List<V2SinkronItem>? items,
+    V2SyncQueue? queue,
+    Future<V2SyncRun> Function()? onSyncNow,
   }) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2SinkronPage(state: state, toast: toast, items: items),
+      builder: (_) => V2SinkronPage(
+        state: state,
+        toast: toast,
+        items: items,
+        queue: queue,
+        onSyncNow: onSyncNow,
+      ),
     );
   }
 
@@ -170,21 +206,38 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     });
   }
 
-  void _startSync() {
+  Future<void> _startSync() async {
     _syncTimer?.cancel();
     _toastTimer?.cancel();
+    final onSyncNow = widget.onSyncNow;
     setState(() {
       _state = V2SinkronState.syncing;
       _toast = null;
     });
-    _syncTimer = Timer(_syncDuration, () {
-      if (!mounted) return;
-      setState(() {
-        _state = V2SinkronState.done;
-        _toast = 'Sinkron selesai';
+    if (onSyncNow == null) {
+      _syncTimer = Timer(_syncDuration, () {
+        if (!mounted) return;
+        setState(() {
+          _state = V2SinkronState.done;
+          _toast = 'Sinkron selesai';
+        });
+        _scheduleToastDismiss();
       });
-      _scheduleToastDismiss();
+      return;
+    }
+    final run = await onSyncNow();
+    if (!mounted) return;
+    setState(() {
+      if (run.failed > 0) {
+        _state = V2SinkronState.partial;
+      } else {
+        _state = run.pending > 0 && run.sent == 0
+            ? V2SinkronState.offline
+            : V2SinkronState.done;
+        if (_state == V2SinkronState.done) _toast = 'Sinkron selesai';
+      }
     });
+    _scheduleToastDismiss();
   }
 
   Future<void> _openFix() async {
@@ -268,7 +321,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
           V2SinkronState.offline => [
             const V2Banner(message: 'Offline. Data tersimpan di HP.'),
             const SizedBox(height: V2Space.lg),
-            _list(widget.items ?? designSinkronAntrean),
+            _queueList(widget.items ?? designSinkronAntrean),
           ],
           V2SinkronState.syncing => [
             const V2Banner(
@@ -276,12 +329,12 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
               tone: V2BannerTone.sync,
             ),
             const SizedBox(height: V2Space.lg),
-            _list(designSinkronBerjalan),
+            _queueList(designSinkronBerjalan),
           ],
           V2SinkronState.partial || V2SinkronState.conflict => [
             _summary(designSinkronSebagian),
             const SizedBox(height: V2Space.lg),
-            _list(designSinkronGagal, actionable: true),
+            _queueList(widget.items ?? designSinkronGagal, actionable: true),
           ],
           V2SinkronState.done => [_summary(designSinkronSelesai)],
           V2SinkronState.ready => [_summary(designSinkronTerkini)],
@@ -302,6 +355,20 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
         status: ringkasan.gagal
             ? V2BadgeStatus.error
             : V2BadgeStatus.success,
+      ),
+    );
+  }
+
+  /// Daftar baris sinkron; mengikuti antrean hidup bila halaman disambungkan.
+  Widget _queueList(List<V2SinkronItem> fallback, {bool actionable = false}) {
+    final queue = widget.queue;
+    if (queue == null) return _list(fallback, actionable: actionable);
+    return StreamBuilder<List<SyncQueueItem>>(
+      stream: queue.stream,
+      initialData: queue.items,
+      builder: (context, snapshot) => _list(
+        v2SinkronItemsFromQueue(snapshot.data ?? queue.items),
+        actionable: actionable,
       ),
     );
   }
@@ -332,10 +399,13 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     return switch (_state) {
       V2SinkronState.offline => V2ActionBar(
         note: 'Sinkron butuh internet. Data aman di HP.',
-        actions: const [
+        actions: [
           V2Button(
             label: 'Sinkron sekarang',
-            state: V2ButtonState.disabled,
+            state: widget.onSyncNow == null
+                ? V2ButtonState.disabled
+                : V2ButtonState.normal,
+            onPressed: widget.onSyncNow == null ? null : _startSync,
           ),
         ],
       ),

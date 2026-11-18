@@ -54,6 +54,22 @@ class V2SyncQueue extends StateNotifier<List<SyncQueueItem>> {
     state = List.unmodifiable(items);
   }
 
+  /// Menandai satu baris ditolak server supaya tampil sebagai gagal (11.7).
+  Future<void> markFailed(String key, String error) async {
+    final store = await _open();
+    await store?.markFailed(
+      serverOrigin: serverOrigin,
+      userId: userId,
+      key: key,
+      error: error,
+    );
+    if (!mounted) return;
+    state = List.unmodifiable([
+      for (final item in state)
+        if (item.key == key) item.copyWith(status: SyncQueueStatus.gagal, error: error) else item,
+    ]);
+  }
+
   /// Melepas satu baris setelah berhasil dikirim.
   Future<void> remove(String key) async {
     final store = await _open();

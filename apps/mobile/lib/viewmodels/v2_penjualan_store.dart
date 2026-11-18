@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/business_date.dart';
@@ -12,14 +14,16 @@ import 'sale_command.dart';
 import 'session_viewmodel.dart';
 import 'v2_penjualan_mappers.dart';
 import 'v2_sync_queue.dart';
+import 'v2_sync_replayer.dart';
 
 /// Store penjualan v2 yang memakai API dan aturan tulis v1.
 ///
 /// Semua penulisan lewat [PenjualanViewModel] supaya kunci idempoten,
 /// penguncian isian yang belum pasti, dan penyegaran stok tetap satu jalur
 /// dengan aplikasi v1. Tulis yang gagal tanpa jawaban pasti dicatat ke
-/// [V2SyncQueue] supaya tidak hilang saat aplikasi ditutup.
-class V2PenjualanApiStore implements V2PenjualanStore {
+/// [V2SyncQueue] supaya tidak hilang saat aplikasi ditutup, dan bisa dikirim
+/// ulang sebagai [V2SyncSender].
+class V2PenjualanApiStore implements V2PenjualanStore, V2SyncSender {
   V2PenjualanApiStore(this._viewModel, {this.queue});
 
   final PenjualanViewModel _viewModel;
@@ -128,6 +132,90 @@ class V2PenjualanApiStore implements V2PenjualanStore {
     });
   }
 
+  @override
+  SyncQueueJenis get jenis => SyncQueueJenis.penjualan;
+
+  /// Mengirim ulang satu baris antrean dengan kunci dan tiket versi aslinya.
+  ///
+  /// Daftar dimuat ulang dulu supaya baris lama (untuk koreksi) dan stok panen
+  /// terbaru tersedia. Kesalahan diteruskan apa adanya — termasuk [ApiException]
+  /// — supaya pengirim bisa membedakan penolakan pasti dari kegagalan jaringan.
+  @override
+  Future<void> send(SyncQueueItem item) async {
+    await _viewModel.refresh(force: true);
+    final version = item.expectedVersion;
+    final old = item.mode == SyncQueueMode.baru ? null : _existing(item.target);
+    if (item.mode != SyncQueueMode.baru) {
+      if (old == null) {
+        throw const V2SyncRejectedException(
+          'Penjualan sudah tidak ada di server.',
+        );
+      }
+      if (version == null) {
+        throw const V2SyncRejectedException(
+          'Versi baris tidak tersimpan; perbaiki lewat daftar penjualan.',
+        );
+      }
+    }
+    final draft = item.mode == SyncQueueMode.header
+        ? null
+        : _draftFromPayload(item.payload);
+    final header = item.mode == SyncQueueMode.header
+        ? _headerFromPayload(item.payload)
+        : null;
+    await _viewModel.replayCommand(
+      SaleCommand(
+        key: item.key,
+        target: item.target,
+        payload: item.payload,
+        expectedVersion: version,
+        draft: draft,
+        headerDraft: header,
+        oldItem: old,
+        write: switch (item.mode) {
+          SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
+          SyncQueueMode.rincian => (sales, key) =>
+            sales.updateSale(old!.id, draft!, version!, key),
+          SyncQueueMode.header => (sales, key) =>
+            sales.updateSaleHeader(old!.id, header!, version!, key),
+        },
+      ),
+    );
+  }
+
+  /// Baris server milik [id]; null kalau sudah tidak ada di daftar terbaru.
+  PenjualanItem? _existing(String id) {
+    for (final item in _viewModel.current.items) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  SalesDraft _draftFromPayload(String payload) {
+    final json = jsonDecode(payload) as Map<String, dynamic>;
+    final price = json['harga_per_kg'] as String;
+    return SalesDraft(
+      date: json['tanggal_penjualan'] as String,
+      buyer: json['pembeli'] as String,
+      status: json['status_pembayaran'] as String,
+      harvestId: json['id_panen'].toString(),
+      quantity: double.parse(json['jumlah_kg'] as String),
+      price: double.parse(price),
+      note: json['keterangan'] as String?,
+      priceWireInput: price,
+    );
+  }
+
+  SalesHeaderDraft _headerFromPayload(String payload) {
+    final json = jsonDecode(payload) as Map<String, dynamic>;
+    return SalesHeaderDraft(
+      date: json['tanggal_penjualan'] as String,
+      buyer: json['pembeli'] as String,
+      status: json['status_pembayaran'] as String,
+      note: json['keterangan'] as String?,
+    );
+  }
+
   PenjualanItem _itemOf(String id) {
     for (final item in _viewModel.current.items) {
       if (item.id == id) return item;
@@ -182,12 +270,20 @@ class V2PenjualanApiStore implements V2PenjualanStore {
         key: command.key,
         jenis: SyncQueueJenis.penjualan,
         subtitle: _buyerOf(command),
+        mode: _modeOf(command),
         target: command.target,
         payload: command.payload,
+        expectedVersion: command.expectedVersion,
         createdAt: DateTime.now(),
       ),
     );
   }
+
+  SyncQueueMode _modeOf(SaleCommand command) => command.headerDraft != null
+      ? SyncQueueMode.header
+      : command.target == saleCreateTarget
+      ? SyncQueueMode.baru
+      : SyncQueueMode.rincian;
 
   String _buyerOf(SaleCommand command) {
     final buyer = command.draft?.buyer ?? command.headerDraft?.buyer ?? '';
@@ -204,5 +300,18 @@ final v2PenjualanStoreProvider = Provider<V2PenjualanStore?>((ref) {
   return V2PenjualanApiStore(
     ref.watch(penjualanViewModelProvider.notifier),
     queue: ref.watch(v2SyncQueueProvider.notifier),
+  );
+});
+
+/// Pengirim antrean nyata; null bila tidak ada jenis yang bisa dikirim.
+///
+/// Hanya penjualan yang punya pengirim saat ini; jenis lain tetap menunggu di
+/// antrean sampai alurnya disambungkan.
+final v2SyncReplayerProvider = Provider<V2SyncReplayer?>((ref) {
+  final store = ref.watch(v2PenjualanStoreProvider);
+  if (store is! V2SyncSender) return null;
+  return V2SyncReplayer(
+    queue: ref.watch(v2SyncQueueProvider.notifier),
+    senders: [store as V2SyncSender],
   );
 });
