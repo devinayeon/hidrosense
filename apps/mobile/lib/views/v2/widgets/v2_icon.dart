@@ -60,7 +60,10 @@ abstract final class V2Icons {
     V2IconName.minus => Icons.remove,
     V2IconName.warning => Icons.warning_amber_rounded,
     V2IconName.info => Icons.info_outline,
-    V2IconName.error => Icons.error_outline,
+    // FigCraft tidak punya `Icon/error` di library; penanda galat di gambar
+    // (mis. `Helper` sheet "Catat stok", toast Error) memakai glyph X polos,
+    // sama seperti `Icon/close`.
+    V2IconName.error => Icons.close,
     V2IconName.sun => Icons.wb_sunny_outlined,
     V2IconName.edit => Icons.edit_outlined,
     V2IconName.trash => Icons.delete_outline,

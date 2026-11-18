@@ -323,6 +323,33 @@ class V2GalleryPage extends StatelessWidget {
                         iconTone: V2ListItemIconTone.warning,
                       ),
                       _FlowRow(
+                        icon: V2IconName.plus,
+                        title: 'Catat stok (4.21)',
+                        subtitle: 'Sheet catat stok terbuka',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisDetailPage.catatSheet(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.error,
+                        title: 'Stok kurang (4.22)',
+                        subtitle: 'Jumlah melebihi stok',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisDetailPage.catatError(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Stok tercatat (4.23)',
+                        subtitle: 'Riwayat baru dan toast sukses',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.tercatat(),
+                        ),
+                      ),
+                      _FlowRow(
                         icon: V2IconName.trash,
                         title: 'Detail barang arsip (4.29)',
                         subtitle: 'Barang arsip tanpa aksi',

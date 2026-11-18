@@ -27,6 +27,25 @@ enum V2JenisBarang {
 /// Keadaan stok satu barang; menentukan badge di baris (frame 4.1).
 enum V2InventarisStatus { aman, menipis, habis }
 
+/// Keadaan stok dari jumlah vs stok minimum: nol berarti habis, menyentuh
+/// minimum berarti menipis, sisanya aman.
+///
+/// Dipakai setelah "Catat stok" mengubah jumlah supaya badge ikut pindah
+/// (frame 4.23 tetap "Cukup" karena 10 masih di atas minimum 3).
+V2InventarisStatus statusStok(double jumlah, double? minimum) {
+  if (jumlah <= 0) return V2InventarisStatus.habis;
+  if (minimum != null && jumlah <= minimum) return V2InventarisStatus.menipis;
+  return V2InventarisStatus.aman;
+}
+
+/// Riwayat yang tampil di kartu detail: paling banyak 3 entri terbaru.
+///
+/// Frame 4.23 menampilkan "Hari ini", "14 Nov", "10 Nov" — entri "7 Nov" yang
+/// ada di frame 4.19 keluar setelah satu catatan baru masuk. Jadi riwayat lama
+/// tetap disimpan, hanya tampilannya dibatasi tiga baris.
+List<V2InventarisRiwayat> riwayatTampil(List<V2InventarisRiwayat> riwayat) =>
+    riwayat.length <= 3 ? riwayat : riwayat.sublist(0, 3);
+
 /// Satu keluaran/masukan stok di kartu "Riwayat" halaman detail (frame 4.19).
 class V2InventarisRiwayat {
   const V2InventarisRiwayat(this.label, this.tanggal);
@@ -82,6 +101,34 @@ class V2InventarisItem {
   /// `Minimum 3 pak`; null saat stok minimum belum diisi.
   String? get minimumLabel =>
       minimum == null ? null : 'Minimum ${formatAngka(minimum!)} $satuan';
+
+  /// Salinan dengan sebagian kolom diganti; dipakai setelah "Catat stok"
+  /// memperbarui jumlah, keadaan, dan menambah baris riwayat (frame 4.23).
+  V2InventarisItem copyWith({
+    String? id,
+    String? nama,
+    V2JenisBarang? jenis,
+    double? jumlah,
+    String? satuan,
+    V2InventarisStatus? status,
+    bool? arsip,
+    bool? antrean,
+    double? minimum,
+    List<V2InventarisRiwayat>? riwayat,
+  }) {
+    return V2InventarisItem(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      jenis: jenis ?? this.jenis,
+      jumlah: jumlah ?? this.jumlah,
+      satuan: satuan ?? this.satuan,
+      status: status ?? this.status,
+      arsip: arsip ?? this.arsip,
+      antrean: antrean ?? this.antrean,
+      minimum: minimum ?? this.minimum,
+      riwayat: riwayat ?? this.riwayat,
+    );
+  }
 }
 
 /// Label tombol saring jenis: `Jenis` saat belum dipilih, `Jenis: Benih` saat
@@ -173,6 +220,22 @@ const V2InventarisItem designDetailBiasa = V2InventarisItem(
   satuan: 'pak',
   minimum: 3,
   riwayat: _riwayatRomaine,
+);
+
+/// Frame `4.23 Stok tercatat`: Benih Romaine setelah dipakai 2 pak (12 jadi 10).
+/// Tiga baris riwayat terbaru; entri "7 Nov" di frame 4.19 sudah keluar.
+const V2InventarisItem designDetailTercatat = V2InventarisItem(
+  id: 'stok-benih-romaine',
+  nama: 'Benih Romaine',
+  jenis: V2JenisBarang.benih,
+  jumlah: 10,
+  satuan: 'pak',
+  minimum: 3,
+  riwayat: <V2InventarisRiwayat>[
+    V2InventarisRiwayat('Pakai 2 pak', 'Hari ini'),
+    V2InventarisRiwayat('Pakai 2 pak', '14 Nov'),
+    V2InventarisRiwayat('Masuk 10 pak', '10 Nov'),
+  ],
 );
 
 /// Frame `4.20 Detail barang habis`: Rockwool ludes.
