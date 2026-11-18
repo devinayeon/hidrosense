@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../../../data/models/sync_queue_item.dart';
 import '../../../data/services/notification_permission_service.dart';
+import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_sync_replayer.dart';
 import '../components/v2_auth_assets.dart';
 import '../components/v2_penjualan_data.dart';
+import '../components/v2_penjualan_store.dart';
 import '../components/v2_sinkron_data.dart';
 import '../components/v2_sinkron_notif_card.dart';
 import '../components/v2_sinkron_row.dart';
@@ -81,6 +83,7 @@ class V2SinkronPage extends StatefulWidget {
     this.queue,
     this.onSyncNow,
     this.onResolveConflict,
+    this.saleRepairer,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
@@ -90,7 +93,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
@@ -99,7 +103,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
@@ -108,7 +113,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
@@ -117,7 +123,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
@@ -126,7 +133,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
@@ -135,7 +143,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
@@ -144,7 +153,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
@@ -153,7 +163,8 @@ class V2SinkronPage extends StatefulWidget {
       items = null,
       queue = null,
       onSyncNow = null,
-      onResolveConflict = null;
+      onResolveConflict = null,
+      saleRepairer = null;
 
   final V2SinkronState state;
 
@@ -175,6 +186,10 @@ class V2SinkronPage extends StatefulWidget {
   /// menulis ulang isi HP dengan versi server terbaru. Null di galeri.
   final V2SyncConflictAction? onResolveConflict;
 
+  /// Menyiapkan dan mengirim ulang penjualan yang ditolak server (11.9).
+  /// Null berarti ketukan baris Penjualan hanya membuka pratinjau galeri.
+  final V2PenjualanRepairer? saleRepairer;
+
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
@@ -182,6 +197,7 @@ class V2SinkronPage extends StatefulWidget {
     V2SyncQueue? queue,
     V2SyncNow? onSyncNow,
     V2SyncConflictAction? onResolveConflict,
+    V2PenjualanRepairer? saleRepairer,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2SinkronPage(
@@ -191,6 +207,7 @@ class V2SinkronPage extends StatefulWidget {
         queue: queue,
         onSyncNow: onSyncNow,
         onResolveConflict: onResolveConflict,
+        saleRepairer: saleRepairer,
       ),
     );
   }
@@ -333,14 +350,96 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     return v2SinkronRingkasanSelesai(doneAt);
   }
 
-  Future<void> _openFix() async {
-    await Navigator.of(context).push<V2Penjualan>(
+  /// Form 11.9 untuk baris Penjualan: isian nyata bila antrean tersambung,
+  /// pratinjau galeri bila tidak.
+  Future<void> _openFix(V2SinkronItem row) async {
+    final repairer = widget.saleRepairer;
+    final queueItem = _queueItemOf(row.kunci);
+    if (repairer == null || queueItem == null) {
+      await Navigator.of(context).push<V2Penjualan>(
+        MaterialPageRoute<V2Penjualan>(
+          builder: (_) => V2PenjualanFormPage.fix(
+            penjualanWarungSari.copyWith(sync: V2PenjualanSync.antrean),
+          ),
+        ),
+      );
+      return;
+    }
+    final V2PenjualanRepair? repair;
+    try {
+      repair = await repairer.prepare(queueItem);
+    } catch (_) {
+      if (!mounted) return;
+      _flash('Penjualan belum bisa dimuat. Coba lagi.');
+      return;
+    }
+    if (!mounted) return;
+    if (repair == null) {
+      _flash('Baris ini belum bisa diperbaiki dari HP.');
+      return;
+    }
+    final updated = await Navigator.of(context).push<V2Penjualan>(
       MaterialPageRoute<V2Penjualan>(
-        builder: (_) => V2PenjualanFormPage.fix(
-          penjualanWarungSari.copyWith(sync: V2PenjualanSync.antrean),
+        builder: (_) => V2PenjualanFormPage(
+          initial: repair!.sale,
+          fixing: true,
+          panen: repair.panen,
+          store: _QueueRepairStore(repairer, queueItem),
         ),
       ),
     );
+    if (updated == null || !mounted) return;
+    _afterRepair();
+  }
+
+  /// Baris antrean yang sedang tampil, dicari lewat kunci idempotennya.
+  SyncQueueItem? _queueItemOf(String? key) {
+    if (key == null) return null;
+    for (final item in widget.queue?.items ?? const <SyncQueueItem>[]) {
+      if (item.key == key) return item;
+    }
+    return null;
+  }
+
+  /// Setelah satu baris diperbaiki: 11.6 bila antrean kosong, selain itu
+  /// ringkasan 11.7 dihitung ulang dari hasil putaran sebelumnya.
+  void _afterRepair() {
+    final queue = widget.queue;
+    if (queue == null) return;
+    if (queue.items.isEmpty) {
+      setState(() {
+        _state = V2SinkronState.done;
+        _toast = 'Sinkron selesai';
+        _doneAt = DateTime.now();
+        _lastRun = const V2SyncRun();
+      });
+      _scheduleToastDismiss();
+      return;
+    }
+    final run = _lastRun;
+    setState(() {
+      _lastRun = run == null
+          ? V2SyncRun(
+              sent: 1,
+              failed: queue.items.length,
+              total: queue.items.length + 1,
+            )
+          : V2SyncRun(
+              sent: run.sent + 1,
+              failed: run.failed > 0 ? run.failed - 1 : 0,
+              pending: run.pending,
+              waiting: run.waiting,
+              total: run.total,
+            );
+      _toast = 'Penjualan terkirim.';
+    });
+    _scheduleToastDismiss();
+  }
+
+  /// Toast singkat untuk kegagalan yang tidak mengubah keadaan halaman.
+  void _flash(String message) {
+    setState(() => _toast = message);
+    _scheduleToastDismiss();
   }
 
   /// Dialog 11.8; [item] diisi baris yang benar-benar bentrok, jadi badan
@@ -519,7 +618,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   VoidCallback? _actionFor(V2SinkronItem item) {
     if (item.konflik) return () => _showConflict(item);
     return switch (item.jenis) {
-      V2SinkronJenis.penjualan => _openFix,
+      V2SinkronJenis.penjualan => () => _openFix(item),
       V2SinkronJenis.rusak => () => _showConflict(item),
       _ => null,
     };
@@ -570,6 +669,47 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
       ),
     };
   }
+}
+
+/// Store sempit untuk form 11.9: hanya [update] yang dipakai, dan tulisan
+/// diteruskan ke pengirim baris antrean dengan kunci aslinya.
+class _QueueRepairStore implements V2PenjualanStore {
+  _QueueRepairStore(this._repairer, this._item);
+
+  final V2PenjualanRepairer _repairer;
+  final SyncQueueItem _item;
+
+  @override
+  Future<V2Penjualan> update(
+    V2Penjualan existing,
+    V2PenjualanDraft draft,
+  ) async {
+    await _repairer.resend(_item, draft);
+    return existing.copyWith(
+      pembeli: draft.pembeli,
+      tanggal: draft.tanggal,
+      jumlahKg: draft.jumlahKg,
+      hargaPerKg: draft.hargaPerKg,
+      pembayaran: draft.pembayaran,
+      sync: V2PenjualanSync.terkirim,
+    );
+  }
+
+  @override
+  Future<V2Penjualan> create(V2PenjualanDraft draft) =>
+      throw UnsupportedError('Form perbaikan tidak membuat penjualan baru.');
+
+  @override
+  Future<V2PenjualanSnapshot> load() =>
+      throw UnsupportedError('Form perbaikan tidak memuat daftar.');
+
+  @override
+  Future<V2Penjualan> markPaid(V2Penjualan existing) =>
+      throw UnsupportedError('Form perbaikan tidak menandai lunas.');
+
+  @override
+  Future<V2Penjualan> reload(V2Penjualan existing) =>
+      throw UnsupportedError('Form perbaikan tidak memuat ulang baris.');
 }
 
 /// Isi frame 11.10: ilustrasi 160, judul, dan badan dipusatkan di atas footer.

@@ -8,6 +8,7 @@ import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
 import '../theme/v2_tokens.dart';
+import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_sync_replayer.dart';
 import '../v2_roles.dart';
@@ -75,6 +76,7 @@ class V2BerandaPage extends StatefulWidget {
     this.penjualanStore,
     this.syncQueue,
     this.syncReplayer,
+    this.saleRepairer,
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
     this.onLowStock,
@@ -99,6 +101,7 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        state = V2BerandaState.loading,
@@ -125,6 +128,7 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        state = V2BerandaState.offline,
@@ -151,6 +155,7 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        state = V2BerandaState.weatherUnavailable,
@@ -192,6 +197,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Pengirim ulang antrean; null berarti halaman 11 memakai simulasi.
   final V2SyncReplayer? syncReplayer;
+
+  /// Penyiap form perbaikan penjualan (11.9) dari baris antrean nyata.
+  final V2PenjualanRepairer? saleRepairer;
 
   /// Subjudul baris Sinkron di tab akun.
   final String syncLabel;
@@ -313,6 +321,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             ? null
             : (key, {required useServer}) =>
                   replayer.resolveConflict(key, useServer: useServer),
+        saleRepairer: widget.saleRepairer,
       ),
     );
   }

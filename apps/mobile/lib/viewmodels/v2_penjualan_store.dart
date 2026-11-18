@@ -16,6 +16,29 @@ import 'v2_penjualan_mappers.dart';
 import 'v2_sync_queue.dart';
 import 'v2_sync_replayer.dart';
 
+/// Data awal form 11.9 untuk satu baris antrean Penjualan.
+class V2PenjualanRepair {
+  const V2PenjualanRepair({required this.sale, required this.panen});
+
+  /// Baris yang sudah diisi dari payload antrean.
+  final V2Penjualan sale;
+
+  /// Pilihan panen terbaru; form menambahkan berat baris ini sendiri.
+  final List<V2PenjualanPanen> panen;
+}
+
+/// Menyiapkan dan mengirim ulang penjualan yang ditolak server (11.9).
+abstract interface class V2PenjualanRepairer {
+  SyncQueueJenis get jenis;
+
+  /// Data form perbaikan; null bila baris tidak bisa diperbaiki dari HP.
+  Future<V2PenjualanRepair?> prepare(SyncQueueItem item);
+
+  /// Menulis ulang isian dengan kunci idempoten asli, lalu melepas baris
+  /// antrean. Melempar [V2PenjualanStoreException] berpesan siap tampil.
+  Future<void> resend(SyncQueueItem item, V2PenjualanDraft draft);
+}
+
 /// Store penjualan v2 yang memakai API dan aturan tulis v1.
 ///
 /// Semua penulisan lewat [PenjualanViewModel] supaya kunci idempoten,
@@ -24,7 +47,11 @@ import 'v2_sync_replayer.dart';
 /// [V2SyncQueue] supaya tidak hilang saat aplikasi ditutup, dan bisa dikirim
 /// ulang sebagai [V2SyncSender].
 class V2PenjualanApiStore
-    implements V2PenjualanStore, V2SyncSender, V2SyncConflictResolver {
+    implements
+        V2PenjualanStore,
+        V2SyncSender,
+        V2SyncConflictResolver,
+        V2PenjualanRepairer {
   V2PenjualanApiStore(this._viewModel, {this.queue});
 
   final PenjualanViewModel _viewModel;
@@ -190,6 +217,99 @@ class V2PenjualanApiStore
       }
       rethrow;
     }
+  }
+
+  /// Menyiapkan form 11.9 dari payload baris antrean.
+  ///
+  /// Baris koreksi memakai salinan server terbaru supaya isian lain ikut
+  /// benar; baris baru dirangkai dari payload. Null berarti baris tidak lagi
+  /// punya panen atau penjualan yang bisa diperbaiki dari HP.
+  @override
+  Future<V2PenjualanRepair?> prepare(SyncQueueItem item) async {
+    await _viewModel.refresh(force: true);
+    final batches = _viewModel.current.batches;
+    final panen = v2PanenOptions(batches);
+    if (item.mode == SyncQueueMode.header) return null;
+    if (item.mode == SyncQueueMode.rincian &&
+        _existing(item.target) == null) {
+      return null;
+    }
+    final payload = _draftFromPayload(item.payload);
+    BatchPanen? batch;
+    for (final row in batches) {
+      if (row.id == payload.harvestId) batch = row;
+    }
+    if (batch == null) return null;
+    final tanggalPanen = DateTime.tryParse(batch.tanggalPanen ?? '');
+    final tanggal = DateTime.tryParse(payload.date);
+    if (tanggalPanen == null || tanggal == null) return null;
+    final label = 'Panen ${formatTanggalPendek(tanggalPanen)}';
+    return V2PenjualanRepair(
+      sale: V2Penjualan(
+        id: item.target,
+        pembeli: payload.buyer,
+        tanggal: tanggal,
+        jumlahKg: payload.quantity,
+        hargaPerKg: payload.price,
+        pembayaran: payload.status == 'lunas'
+            ? V2PenjualanBayar.lunas
+            : V2PenjualanBayar.belumLunas,
+        panen: label,
+        panenAsal: 'Dari $label',
+        panenId: payload.harvestId,
+        tanggalPanen: tanggalPanen,
+        sync: V2PenjualanSync.antrean,
+      ),
+      panen: panen,
+    );
+  }
+
+  /// Mengirim ulang isian perbaikan dengan kunci dan tiket versi asli.
+  @override
+  Future<void> resend(SyncQueueItem item, V2PenjualanDraft draft) async {
+    final panenId = draft.panenId;
+    if (panenId == null) {
+      throw const V2PenjualanStoreException('Pilih panen dulu.');
+    }
+    await _viewModel.refresh(force: true);
+    final old = item.mode == SyncQueueMode.baru ? null : _existing(item.target);
+    final version = item.expectedVersion;
+    if (item.mode != SyncQueueMode.baru) {
+      if (old == null) {
+        throw const V2PenjualanStoreException(
+          'Penjualan sudah tidak ada di server.',
+        );
+      }
+      if (version == null) {
+        throw const V2PenjualanStoreException(
+          'Versi baris tidak tersimpan; perbaiki lewat daftar penjualan.',
+        );
+      }
+    }
+    final sales = _saleDraft(draft, panenId);
+    try {
+      await _viewModel.replayCommand(
+        SaleCommand(
+          key: item.key,
+          target: item.target,
+          payload: jsonEncode(sales.toJson()),
+          expectedVersion: version,
+          draft: sales,
+          oldItem: old,
+          write: item.mode == SyncQueueMode.baru
+              ? (repo, key) => repo.createSale(sales, key)
+              : (repo, key) =>
+                    repo.updateSale(old!.id, sales, version!, key),
+        ),
+      );
+    } on ApiException catch (error) {
+      throw V2PenjualanStoreException(
+        error.code == 'SALE_VERSION_CONFLICT'
+            ? 'Data sudah berubah di server. Selesaikan lewat dialog konflik.'
+            : serviceError(error),
+      );
+    }
+    await queue?.remove(item.key);
   }
 
   /// Menyelesaikan baris `konflik` menurut pilihan dialog 11.8.

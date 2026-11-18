@@ -60,6 +60,10 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       penjualanStore: ref.watch(v2PenjualanStoreProvider),
       syncQueue: ref.watch(v2SyncQueueProvider.notifier),
       syncReplayer: ref.watch(v2SyncReplayerProvider),
+      saleRepairer: switch (ref.watch(v2PenjualanStoreProvider)) {
+        final V2PenjualanRepairer repairer => repairer,
+        _ => null,
+      },
       syncLabel: syncItems.isEmpty
           ? 'Terakhir 09.40'
           : '${syncItems.length} data menunggu',

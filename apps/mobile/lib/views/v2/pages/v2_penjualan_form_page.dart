@@ -385,7 +385,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     _jumlah = TextEditingController(
       text: empty
           ? ''
-          : widget.previewExceeds || widget.fixing
+          : widget.previewExceeds
           ? '200'
           : formatAngkaKg(initial?.jumlahKg ?? 60),
     );
