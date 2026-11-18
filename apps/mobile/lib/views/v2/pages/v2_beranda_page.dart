@@ -472,11 +472,14 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _openCycle() {
+    // Saat BMKG gagal, beranda menampilkan kartu "Coba lagi"; detail siklus
+    // tidak boleh menampilkan cuaca contoh yang seolah tersedia.
+    final cuacaTersedia = _state != V2BerandaState.weatherUnavailable;
     Navigator.of(context).push(
       V2CycleDetailPage.route(
         tableName: V2BerandaPage._tableName,
-        weatherTitle: widget.weatherTitle,
-        weatherSubtitle: widget.weatherSubtitle,
+        weatherTitle: cuacaTersedia ? widget.weatherTitle : null,
+        weatherSubtitle: cuacaTersedia ? widget.weatherSubtitle : null,
         onOpenWeather:
             widget.onOpenWeather ??
             () => Navigator.of(context).push(V2CuacaPage.route()),
