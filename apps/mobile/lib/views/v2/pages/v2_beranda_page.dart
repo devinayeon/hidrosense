@@ -30,6 +30,7 @@ import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
 
@@ -228,6 +229,7 @@ class V2BerandaPage extends StatefulWidget {
 class _V2BerandaPageState extends State<V2BerandaPage> {
   late V2BerandaState _state = widget.state;
   late List<V2Employee> _employees = widget.initialEmployees;
+  late List<V2SemaianItem> _semaian = designSemaian;
   late List<V2InventarisItem> _inventaris = designInventaris;
   int _activeTab = 0;
 
@@ -320,8 +322,13 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   /// Buka form 5.7 dari tab Tanam; semaian baru menyisip paling atas.
-  void _openTambahSemaian() {
-    _notice('Form tambah semaian (5.7) belum tersedia.');
+  Future<void> _openTambahSemaian() async {
+    final item = await Navigator.of(
+      context,
+    ).push<V2SemaianItem>(V2SemaianFormPage.route());
+    if (!mounted || item == null) return;
+    setState(() => _semaian = [item, ..._semaian]);
+    _notice('Semaian ditambahkan');
   }
 
   /// Buka detail 5.15 dari tab Tanam lewat ketukan baris.
@@ -430,6 +437,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                       )
                     : tanam
                     ? V2SemaianTabView(
+                        items: _semaian,
                         onAdd: _openTambahSemaian,
                         onTapItem: _openDetailSemaian,
                       )

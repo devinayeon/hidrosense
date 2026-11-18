@@ -17,6 +17,7 @@ import '../widgets/v2_error_state.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_segmented.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_semaian_form_page.dart';
 
 /// Keadaan daftar semaian yang punya frame sendiri di page 05.
 enum V2SemaianState {
@@ -51,6 +52,7 @@ class V2SemaianTabView extends StatefulWidget {
     this.initialStatusIndex = 0,
     this.toast,
     this.toastTone = V2ToastTone.success,
+    this.offline = false,
     this.onSegmentChanged,
     this.onAdd,
     this.onTapItem,
@@ -66,6 +68,9 @@ class V2SemaianTabView extends StatefulWidget {
   /// Toast yang melayang di atas tombol footer.
   final String? toast;
   final V2ToastTone toastTone;
+
+  /// Menampilkan banner offline di bawah segmen (frame 5.13).
+  final bool offline;
 
   /// Perpindahan segmen Semaian/Meja/Panen; null berarti hanya dilihat.
   final ValueChanged<int>? onSegmentChanged;
@@ -245,6 +250,13 @@ class _V2SemaianTabViewState extends State<V2SemaianTabView> {
             onChanged: widget.onSegmentChanged,
           ),
         ),
+        if (widget.offline) ...[
+          const SizedBox(height: V2Space.lg),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
+            child: V2Banner(message: 'Offline. Data tersimpan di HP.'),
+          ),
+        ],
       ],
     );
   }
@@ -292,6 +304,7 @@ class V2SemaianListPage extends StatefulWidget {
     this.initialStatusIndex = 0,
     this.toast,
     this.toastTone = V2ToastTone.success,
+    this.offline = false,
     this.onAdd,
     this.onTapItem,
   });
@@ -319,6 +332,25 @@ class V2SemaianListPage extends StatefulWidget {
   const V2SemaianListPage.selesai({Key? key})
     : this(key: key, initialStatusIndex: 2);
 
+  /// Frame `5.12 Semaian ditambahkan`: semaian baru di paling atas dan toast.
+  V2SemaianListPage.ditambahkan({Key? key})
+    : this(
+        key: key,
+        items: designSemaianDitambah,
+        toast: 'Semaian ditambahkan',
+      );
+
+  /// Frame `5.13 Semaian menunggu sinkron`: banner offline, baris "Antrean",
+  /// dan toast info.
+  V2SemaianListPage.offline({Key? key})
+    : this(
+        key: key,
+        items: designSemaianAntrean,
+        toast: 'Tersimpan di HP',
+        toastTone: V2ToastTone.info,
+        offline: true,
+      );
+
   final List<V2SemaianItem>? items;
   final V2BerandaRole role;
   final V2SemaianState state;
@@ -327,6 +359,9 @@ class V2SemaianListPage extends StatefulWidget {
   /// Toast yang sudah tampil saat halaman dibuka.
   final String? toast;
   final V2ToastTone toastTone;
+
+  /// Menampilkan banner offline di bawah segmen (frame 5.13).
+  final bool offline;
 
   final VoidCallback? onAdd;
   final ValueChanged<V2SemaianItem>? onTapItem;
@@ -339,8 +374,9 @@ class V2SemaianListPage extends StatefulWidget {
 }
 
 class _V2SemaianListPageState extends State<V2SemaianListPage> {
-  late final List<V2SemaianItem> _items = widget.items ?? designSemaian;
+  late List<V2SemaianItem> _items = widget.items ?? designSemaian;
   late String? _toast = widget.toast;
+  late V2ToastTone _toastTone = widget.toastTone;
   Timer? _toastTimer;
 
   @override
@@ -374,7 +410,25 @@ class _V2SemaianListPageState extends State<V2SemaianListPage> {
       widget.onAdd!();
       return;
     }
-    _notice('Form tambah semaian (5.7) belum tersedia.');
+    _tambahSemaian();
+  }
+
+  /// Buka form 5.7 lalu sisipkan semaian baru di paling atas (frame 5.12);
+  /// saat offline barisnya menunggu sinkron dan toast-nya info (frame 5.13).
+  Future<void> _tambahSemaian() async {
+    final item = await Navigator.of(
+      context,
+    ).push<V2SemaianItem>(V2SemaianFormPage.route());
+    if (!mounted || item == null) return;
+    setState(() {
+      _items = [
+        widget.offline ? item.copyWith(antrean: true) : item,
+        ..._items,
+      ];
+      _toast = widget.offline ? 'Tersimpan di HP' : 'Semaian ditambahkan';
+      _toastTone = widget.offline ? V2ToastTone.info : V2ToastTone.success;
+    });
+    _scheduleToastDismiss();
   }
 
   void _openDetail(V2SemaianItem item) {
@@ -401,7 +455,8 @@ class _V2SemaianListPageState extends State<V2SemaianListPage> {
                   state: widget.state,
                   initialStatusIndex: widget.initialStatusIndex,
                   toast: _toast,
-                  toastTone: widget.toastTone,
+                  toastTone: _toastTone,
+                  offline: widget.offline,
                   onAdd: _openAdd,
                   onTapItem: _openDetail,
                 ),

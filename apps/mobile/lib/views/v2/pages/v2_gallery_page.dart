@@ -19,6 +19,7 @@ import 'v2_notifications_page.dart';
 import 'v2_offline_login_page.dart';
 import 'v2_onboarding_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
 
@@ -470,6 +471,70 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Baris selesai memudar',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => const V2SemaianListPage.selesai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Tambah semaian (5.7)',
+                        subtitle: 'Isian tanggal, benih, dan bahan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianFormPage.create(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.calendar,
+                        title: 'Pilih tanggal (5.8)',
+                        subtitle: 'Sheet kalender bulanan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2SemaianFormPage.pilihTanggal(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.info,
+                        title: 'Tambah semaian, keyboard (5.9)',
+                        subtitle: 'Kolom jumlah terfokus',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianFormPage.keyboard(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Tambah semaian, validasi (5.10)',
+                        subtitle: 'Jumlah benih dan bahan kosong',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianFormPage.validation(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Stok tidak cukup (5.11)',
+                        subtitle: 'Jumlah bahan melebihi stok',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianFormPage.stokKurang(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Semaian ditambahkan (5.12)',
+                        subtitle: 'Baris baru di paling atas',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianListPage.ditambahkan(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Semaian menunggu sinkron (5.13)',
+                        subtitle: 'Banner offline dan lencana antrean',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianListPage.offline(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),

@@ -37,7 +37,9 @@ class V2SemaianRow extends StatelessWidget {
       title: item.nama,
       subtitle: item.labelSemai,
       quantity: item.labelHss,
-      badge: item.siapPindah
+      badge: item.antrean
+          ? const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending)
+          : item.siapPindah
           ? const V2Badge(
               label: 'Siap pindah',
               status: V2BadgeStatus.success,

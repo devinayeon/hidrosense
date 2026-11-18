@@ -73,6 +73,7 @@ class V2SemaianItem {
     required this.tanggalSemai,
     required this.jumlahBenih,
     this.selesai = false,
+    this.antrean = false,
   });
 
   final String id;
@@ -88,6 +89,10 @@ class V2SemaianItem {
 
   /// Semaian yang sudah selesai tidak bisa diubah lagi (catatan alur page 05).
   final bool selesai;
+
+  /// Semaian yang lahir saat perangkat offline menunggu sinkron; barisnya
+  /// memakai lencana "Antrean" (frame 5.13).
+  final bool antrean;
 
   /// Umur semaian dalam hari (HSS).
   int get hss => hssSemaian(tanggalSemai);
@@ -118,6 +123,7 @@ class V2SemaianItem {
     DateTime? tanggalSemai,
     int? jumlahBenih,
     bool? selesai,
+    bool? antrean,
   }) {
     return V2SemaianItem(
       id: id ?? this.id,
@@ -125,6 +131,7 @@ class V2SemaianItem {
       tanggalSemai: tanggalSemai ?? this.tanggalSemai,
       jumlahBenih: jumlahBenih ?? this.jumlahBenih,
       selesai: selesai ?? this.selesai,
+      antrean: antrean ?? this.antrean,
     );
   }
 }
@@ -177,4 +184,56 @@ final List<V2SemaianItem> designSemaian = <V2SemaianItem>[
   designSemaianButterhead,
   designSemaianRomaineBaru,
   designSemaianSelesai,
+];
+
+// --- Bahan semaian (form 5.7) --------------------------------------------
+
+/// Satu pilihan bahan di form "Tambah semaian" (kolom "Bahan").
+class V2SemaianBahan {
+  const V2SemaianBahan({
+    required this.nama,
+    required this.stok,
+    required this.satuan,
+  });
+
+  final String nama;
+
+  /// Stok benih yang tersisa, dipakai untuk memeriksa "Jumlah bahan".
+  final int stok;
+  final String satuan;
+
+  /// `12 pak` — dipakai helper "Stok hanya 12 pak" (frame 5.11).
+  String get labelStok => '$stok $satuan';
+}
+
+/// Pilihan bahan form tambah semaian. Benih Romaine 12 pak seperti frame 5.7.
+const List<V2SemaianBahan> designBahanSemaian = <V2SemaianBahan>[
+  V2SemaianBahan(nama: 'Benih Romaine', stok: 12, satuan: 'pak'),
+  V2SemaianBahan(nama: 'Benih Butterhead', stok: 2, satuan: 'pak'),
+  V2SemaianBahan(nama: 'Benih Lollo Rossa', stok: 8, satuan: 'pak'),
+];
+
+/// Bahan yang terpilih saat form dibuka (frame 5.7).
+final V2SemaianBahan designBahanRomaine = designBahanSemaian[0];
+
+/// Semaian baru hasil form 5.7: Romaine disemai hari ini (HSS 0), 200 benih.
+final V2SemaianItem designSemaianBaru = V2SemaianItem(
+  id: 'semaian-romaine-15-nov',
+  nama: 'Romaine',
+  tanggalSemai: DateTime(2026, 11, 15),
+  jumlahBenih: 200,
+);
+
+/// Daftar frame 5.12 setelah "Semaian ditambahkan": semaian baru di paling atas.
+final List<V2SemaianItem> designSemaianDitambah = <V2SemaianItem>[
+  designSemaianBaru,
+  designSemaianRomaineSiapPindah,
+  designSemaianButterhead,
+];
+
+/// Daftar frame 5.13 saat offline: semaian baru menunggu sinkron di paling atas,
+/// lalu satu semaian siap pindah.
+final List<V2SemaianItem> designSemaianAntrean = <V2SemaianItem>[
+  designSemaianBaru.copyWith(antrean: true),
+  designSemaianRomaineSiapPindah,
 ];
