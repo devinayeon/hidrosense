@@ -268,19 +268,54 @@ const V2InventarisItem designDetailArsip = V2InventarisItem(
 
 // --- Data contoh (frame 4.1, 4.8, 4.9) ------------------------------------
 
+/// Baris nutrisi frame 4.1/4.2/4.7 dan 4.27.
+const V2InventarisItem designInventarisNutrisi = V2InventarisItem(
+  id: 'stok-nutrisi-ab-mix',
+  nama: 'Nutrisi AB Mix',
+  jenis: V2JenisBarang.nutrisi,
+  jumlah: 8,
+  satuan: 'kg',
+);
+
+/// Barang arsip nutrisi frame 4.28.
+const V2InventarisItem designInventarisPupukDaun = V2InventarisItem(
+  id: 'stok-pupuk-daun',
+  nama: 'Pupuk Daun',
+  jenis: V2JenisBarang.nutrisi,
+  jumlah: 0,
+  satuan: 'botol',
+  arsip: true,
+);
+
 /// Empat baris frame 4.1/4.2/4.7: dua benih, satu nutrisi, satu media.
-final List<V2InventarisItem> designInventaris = <V2InventarisItem>[
+const List<V2InventarisItem> designInventaris = <V2InventarisItem>[
   designDetailBiasa,
   designDetailMenipis,
-  const V2InventarisItem(
-    id: 'stok-nutrisi-ab-mix',
-    nama: 'Nutrisi AB Mix',
-    jenis: V2JenisBarang.nutrisi,
-    jumlah: 8,
-    satuan: 'kg',
-  ),
+  designInventarisNutrisi,
   designDetailHabis,
 ];
+
+/// Frame `4.28 Arsip`: barang arsip hanya muncul di chip "Arsip".
+///
+/// Romaine memakai contoh yang sama dengan frame 4.29; "Pupuk Daun" menambah
+/// satu barang nutrisi yang sudah habis dan disimpan.
+const List<V2InventarisItem> designInventarisArsip = <V2InventarisItem>[
+  designDetailArsip,
+  designInventarisPupukDaun,
+];
+
+/// Frame `4.27 Barang diarsipkan`: daftar setelah Romaine diarsipkan.
+///
+/// Barang arsip tetap ada di daftar, hanya tersaring keluar dari chip "Semua"
+/// oleh `V2InventarisTabView`.
+const List<V2InventarisItem> designInventarisSetelahArsip =
+    <V2InventarisItem>[
+      designDetailMenipis,
+      designInventarisNutrisi,
+      designDetailHabis,
+      designDetailArsip,
+      designInventarisPupukDaun,
+    ];
 
 /// Tiga baris frame 4.15 "Barang ditambahkan": barang baru `Benih Lollo Rossa`
 /// duduk paling atas.

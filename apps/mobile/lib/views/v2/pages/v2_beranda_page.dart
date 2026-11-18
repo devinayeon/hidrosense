@@ -298,7 +298,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     _notice('Barang ditambahkan');
   }
 
-  /// Buka detail 4.17 dari tab Stok; hasilnya menggantikan baris lama.
+  /// Buka detail 4.17 dari tab Stok; hasilnya menggantikan baris lama dan arsip
+  /// yang baru selesai memberi tahu "X diarsipkan" (frame 4.27).
   Future<void> _openDetailBarang(V2InventarisItem item) async {
     final updated = await Navigator.of(
       context,
@@ -310,6 +311,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           if (baris.id == updated.id) updated else baris,
       ];
     });
+    if (updated.arsip && !item.arsip) _notice('${updated.nama} diarsipkan');
   }
 
   void _openSync() {

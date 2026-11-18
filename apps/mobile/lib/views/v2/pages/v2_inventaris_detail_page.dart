@@ -9,9 +9,11 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_summary_card.dart';
+import 'v2_inventaris_form_page.dart';
 
-/// Detail satu barang stok (frame 4.17–4.23, 4.29).
+/// Detail satu barang stok (frame 4.17–4.23, 4.25, 4.26, 4.29).
 ///
 /// Susunannya sama untuk semua keadaan: kartu ringkasan biru (nama + jenis,
 /// jumlah, stok minimum, badge keadaan), kartu putih "Riwayat", lalu baris aksi
@@ -21,8 +23,11 @@ import '../widgets/v2_summary_card.dart';
 ///
 /// Halaman ini menyimpan jumlah barang di memori supaya "Catat stok" (sheet
 /// 4.21) bisa langsung memperbarui kartu, badge, dan riwayat, lalu memunculkan
-/// toast "Stok dicatat" (frame 4.23). Jumlah terbaru dikembalikan lewat `pop`
-/// agar baris di daftar ikut berubah.
+/// toast "Stok dicatat" (frame 4.23). "Ubah" membuka form 4.24 dan kembali
+/// dengan toast "Perubahan tersimpan" (frame 4.25); "Arsipkan" minta
+/// konfirmasi (frame 4.26) lalu menutup halaman sambil membawa barang yang
+/// sudah ditandai arsip. Jumlah/keadaan terbaru dikembalikan lewat `pop` agar
+/// baris di daftar ikut berubah.
 class V2InventarisDetailPage extends StatefulWidget {
   const V2InventarisDetailPage({
     super.key,
@@ -35,6 +40,7 @@ class V2InventarisDetailPage extends StatefulWidget {
     this.toast,
     this.openCatatOnStart = false,
     this.catatJumlah,
+    this.openArsipOnStart = false,
   });
 
   /// Frame `4.17 Detail barang baru`: Benih Lollo Rossa baru masuk.
@@ -90,6 +96,24 @@ class V2InventarisDetailPage extends StatefulWidget {
         toast: 'Stok dicatat',
       );
 
+  /// Frame `4.25 Perubahan tersimpan`: detail dengan toast setelah "Ubah".
+  const V2InventarisDetailPage.perubahan({Key? key})
+    : this(
+        key: key,
+        item: designDetailBiasa,
+        footerLabel: 'Catat stok',
+        toast: 'Perubahan tersimpan',
+      );
+
+  /// Frame `4.26 Arsipkan, konfirmasi`: dialog arsip terbuka di atas detail.
+  const V2InventarisDetailPage.arsipkanKonfirmasi({Key? key})
+    : this(
+        key: key,
+        item: designDetailBiasa,
+        footerLabel: 'Catat stok',
+        openArsipOnStart: true,
+      );
+
   final V2InventarisItem item;
 
   /// Label tombol footer; null berarti tanpa footer (frame 4.29).
@@ -111,6 +135,9 @@ class V2InventarisDetailPage extends StatefulWidget {
 
   /// Jumlah bawaan di sheet; null berarti 2 pak (frame 4.21).
   final int? catatJumlah;
+
+  /// Membuka dialog "Arsipkan barang?" begitu halaman tampil (frame 4.26).
+  final bool openArsipOnStart;
 
   /// Label footer untuk satu barang: arsip tanpa footer, barang habis
   /// "Catat stok masuk", sisanya "Catat stok".
@@ -155,6 +182,11 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     if (widget.openCatatOnStart) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _catatStok();
+      });
+    }
+    if (widget.openArsipOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _arsipkan();
       });
     }
   }
@@ -205,6 +237,45 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     _scheduleToastDismiss();
   }
 
+  /// Buka form ubah (frame 4.24); hasilnya menggantikan barang lalu memunculkan
+  /// toast "Perubahan tersimpan" (frame 4.25).
+  Future<void> _ubah() async {
+    if (widget.onUbah != null) {
+      widget.onUbah!();
+      return;
+    }
+    final updated = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisFormPage.routeUbah(_item));
+    if (!mounted || updated == null) return;
+    setState(() {
+      _item = updated;
+      _toast = 'Perubahan tersimpan';
+    });
+    _scheduleToastDismiss();
+  }
+
+  /// Minta konfirmasi arsip (frame 4.26); bila setuju, halaman ditutup sambil
+  /// membawa barang yang sudah ditandai arsip supaya hilang dari daftar.
+  Future<void> _arsipkan() async {
+    if (widget.onArsipkan != null) {
+      widget.onArsipkan!();
+      return;
+    }
+    final confirmed = await showV2Dialog(
+      context,
+      type: V2DialogType.destructive,
+      title: 'Arsipkan barang?',
+      body:
+          '${_item.nama} hilang dari daftar. Riwayat tetap bisa dilihat di '
+          'Arsip.',
+      primaryLabel: 'Arsipkan',
+      secondaryLabel: 'Batal',
+    );
+    if (!mounted || confirmed != true) return;
+    Navigator.of(context).pop(_item.copyWith(arsip: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -247,7 +318,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                               child: V2Button(
                                 label: 'Ubah',
                                 type: V2ButtonType.tertiary,
-                                onPressed: widget.onUbah ?? () {},
+                                onPressed: _ubah,
                               ),
                             ),
                             const SizedBox(width: V2Space.lg),
@@ -255,7 +326,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                               child: V2Button(
                                 label: 'Arsipkan',
                                 type: V2ButtonType.destructive,
-                                onPressed: widget.onArsipkan ?? () {},
+                                onPressed: _arsipkan,
                               ),
                             ),
                           ],

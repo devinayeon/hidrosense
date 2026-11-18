@@ -106,7 +106,8 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
 
   /// Daftar sumber; keadaan kosong diberikan lewat `items` berisi list kosong.
   List<V2InventarisItem> get _source => widget.items ?? designInventaris;
-  bool get _showFooter => !_loading && !_error;
+  // Chip "Arsip" tidak menawarkan "Tambah barang" (frame 4.28).
+  bool get _showFooter => !_loading && !_error && _status != 2;
   bool get _hasNoResults =>
       !_loading && !_error && _source.isNotEmpty && _filtered.isEmpty;
 
@@ -448,6 +449,22 @@ class V2InventarisListPage extends StatefulWidget {
         toastTone: V2ToastTone.info,
       );
 
+  /// Frame `4.27 Barang diarsipkan`: Romaine sudah hilang dari chip "Semua".
+  const V2InventarisListPage.archived({Key? key})
+    : this(
+        key: key,
+        items: designInventarisSetelahArsip,
+        toast: 'Benih Romaine diarsipkan',
+      );
+
+  /// Frame `4.28 Arsip`: chip "Arsip" aktif dengan dua barang tersimpan.
+  const V2InventarisListPage.arsip({Key? key})
+    : this(
+        key: key,
+        items: designInventarisArsip,
+        initialStatusIndex: 2,
+      );
+
   final List<V2InventarisItem>? items;
   final V2BerandaRole role;
   final V2InventarisState state;
@@ -515,7 +532,9 @@ class _V2InventarisListPageState extends State<V2InventarisListPage> {
   }
 
   /// Buka detail 4.17 lewat ketukan baris; hasilnya menggantikan baris lama
-  /// (barang bisa berubah setelah dicatat/diubah di langkah berikutnya).
+  /// (barang bisa berubah setelah dicatat/diubah/diarsipkan di langkah
+  /// berikutnya). Arsip yang baru selesai memunculkan toast "X diarsipkan"
+  /// (frame 4.27).
   Future<void> _openDetail(V2InventarisItem item) async {
     if (widget.onTapItem != null) {
       widget.onTapItem!(item);
@@ -530,7 +549,9 @@ class _V2InventarisListPageState extends State<V2InventarisListPage> {
         for (final baris in _items)
           if (baris.id == updated.id) updated else baris,
       ];
+      if (updated.arsip && !item.arsip) _toast = '${updated.nama} diarsipkan';
     });
+    if (updated.arsip && !item.arsip) _scheduleToastDismiss();
   }
 
   @override

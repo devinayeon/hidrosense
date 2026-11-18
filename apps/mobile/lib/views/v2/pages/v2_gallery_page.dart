@@ -350,6 +350,50 @@ class V2GalleryPage extends StatelessWidget {
                         ),
                       ),
                       _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah barang (4.24)',
+                        subtitle: 'Form ubah tanpa stok awal',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisFormPage.ubah(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Perubahan tersimpan (4.25)',
+                        subtitle: 'Detail dengan toast sukses',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.perubahan(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.trash,
+                        title: 'Arsipkan, konfirmasi (4.26)',
+                        subtitle: 'Dialog arsip barang',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisDetailPage.arsipkanKonfirmasi(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.trash,
+                        title: 'Barang diarsipkan (4.27)',
+                        subtitle: 'Baris hilang dengan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.archived(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Arsip (4.28)',
+                        subtitle: 'Barang tersimpan tanpa lencana',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.arsip(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
                         icon: V2IconName.trash,
                         title: 'Detail barang arsip (4.29)',
                         subtitle: 'Barang arsip tanpa aksi',
@@ -357,6 +401,25 @@ class V2GalleryPage extends StatelessWidget {
                           builder: (_) => const V2InventarisDetailPage.arsip(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Buang perubahan (4.30)',
+                        subtitle: 'Dialog konfirmasi buang isian',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisFormPage.buangPerubahan(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Data sudah berubah (4.31)',
+                        subtitle: 'Dialog muat ulang data terbaru',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisFormPage.dataBerubah(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
                       ),
                     ],
                   ),
