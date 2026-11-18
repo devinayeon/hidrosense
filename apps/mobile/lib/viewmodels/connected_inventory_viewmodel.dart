@@ -5,8 +5,11 @@ import '../data/models/jenis_inventaris_record.dart';
 import '../data/repositories/inventory_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/inventory_cache.dart';
-import 'session_viewmodel.dart';
 import 'inventory_draft.dart';
+import 'inventory_queue_sink.dart';
+import 'session_viewmodel.dart';
+import 'v2_inventory_sender.dart';
+import 'v2_sync_queue.dart';
 
 final inventoryCacheProvider = Provider<Future<InventoryCache>>((ref) {
   final cache = InventoryCache.open();
@@ -78,6 +81,7 @@ class ConnectedInventoryViewModel
     ConnectedInventoryState? initialState,
     bool autoLoad = true,
     Map<(String, String), InventorySaveCommand>? commands,
+    this.queueSink,
   }) : super(initialState ?? const ConnectedInventoryState()) {
     _commands = commands ?? {};
     if (_command != null) {
@@ -91,6 +95,7 @@ class ConnectedInventoryViewModel
     if (autoLoad) _initialLoad = _load();
   }
   final InventoryRepository _repository;
+  final InventoryQueueSink? queueSink;
   Future<void>? _initialLoad, _refreshTask;
   late final Map<(String, String), InventorySaveCommand> _commands;
   (String, String) get _scope => (_repository.serverOrigin, _repository.userId);
@@ -228,6 +233,7 @@ class ConnectedInventoryViewModel
         if (!currentAttempt()) return null;
         command.item = item;
         previousUncertain = command.uncertain = false;
+        await _settleQueue(command.itemKey);
       }
       if (!mounted) return null;
       if (!command.stockSaved &&
@@ -249,6 +255,7 @@ class ConnectedInventoryViewModel
         if (!currentAttempt()) return null;
         command.stockSaved = true;
         command.uncertain = false;
+        await _settleQueue(command.stockKey);
       }
     } catch (error) {
       if (!currentAttempt()) return null;
@@ -261,6 +268,17 @@ class ConnectedInventoryViewModel
       command.canFinishWithoutStock =
           command.item != null && !command.uncertain;
       if (command.item == null && !command.uncertain) _command = null;
+      if (command.item == null) {
+        if (command.uncertain) {
+          await _recordItem(command, input);
+        } else {
+          await _failQueue(command.itemKey, serviceError(error));
+        }
+      } else if (command.uncertain) {
+        await _recordStock(command, input);
+      } else {
+        await _failQueue(command.stockKey, serviceError(error));
+      }
       if (!mounted) return null;
       state = state.withSave(
         saving: false,
@@ -274,6 +292,87 @@ class ConnectedInventoryViewModel
     if (!mounted) return null;
     _command = null;
     return _finishSave();
+  }
+
+  /// Isi kiriman barang, sama persis dengan yang dikirim repository.
+  Map<String, dynamic> _itemBody(InventoryDraft input) => input.id == null
+      ? {
+          'id_jenis_inventaris': input.categoryId,
+          'nama_barang': input.name,
+          'satuan': input.unit,
+          if (input.minimum.isNotEmpty) 'stok_minimum': input.minimum,
+        }
+      : {
+          'id_jenis_inventaris': input.categoryId,
+          'nama_barang': input.name,
+          'satuan': input.unit,
+          'stok_minimum': input.minimum.isEmpty ? null : input.minimum,
+        };
+
+  Future<void> _recordItem(
+    InventorySaveCommand command,
+    InventoryDraft input,
+  ) async {
+    final sink = queueSink;
+    if (sink == null) return;
+    try {
+      await sink.record(
+        key: command.itemKey,
+        target: input.id == null
+            ? inventoryCreateTarget
+            : '$inventoryUpdatePrefix${input.id}',
+        body: _itemBody(input),
+        subtitle: input.name,
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _recordStock(
+    InventorySaveCommand command,
+    InventoryDraft input,
+  ) async {
+    final sink = queueSink;
+    if (sink == null) return;
+    try {
+      await sink.record(
+        key: command.stockKey,
+        target: inventoryStockTarget,
+        body: {
+          'jenis_stok': 'masuk',
+          'details': [
+            {
+              'id_inventaris': command.item!.id,
+              'jumlah': input.initialStock,
+              'satuan': input.unit,
+            },
+          ],
+          'keterangan': 'Saldo awal registrasi barang',
+        },
+        subtitle: 'Saldo awal ${input.name}',
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _settleQueue(String key) async {
+    try {
+      await queueSink?.remove(key);
+    } catch (_) {
+      // Baris akan dilepas saat kiriman ulang berikutnya.
+    }
+  }
+
+  Future<void> _failQueue(String key, String message) async {
+    try {
+      await queueSink?.fail(key, message);
+    } catch (_) {
+      // Status gagal akan ditandai lagi saat pengiriman ulang.
+    }
   }
 
   Future<String?> _finishSave() async {
@@ -292,7 +391,9 @@ class ConnectedInventoryViewModel
     if (!mounted || state.saving || _command?.canFinishWithoutStock != true) {
       throw StateError('Saldo awal belum dapat dipastikan. Coba simpan lagi.');
     }
+    final key = _command!.stockKey;
     _command = null;
+    await _settleQueue(key);
     state = state.withSave(saving: true);
     return _finishSave();
   }
@@ -319,6 +420,9 @@ final connectedInventoryProvider =
           userId: user.id,
         ),
         commands: ref.watch(inventoryCommandsProvider),
+        queueSink: V2InventoryQueueSink(
+          ref.watch(v2SyncQueueProvider.notifier),
+        ),
       );
     });
 
