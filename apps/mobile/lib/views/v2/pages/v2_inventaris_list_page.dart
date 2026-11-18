@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../components/v2_akun_action_bar.dart';
@@ -8,6 +10,7 @@ import '../components/v2_inventaris_skeleton.dart';
 import '../theme/v2_tokens.dart';
 import '../v2_roles.dart';
 import '../widgets/v2_app_bar.dart';
+import '../widgets/v2_banner.dart';
 import '../widgets/v2_bottom_sheet.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_chip.dart';
@@ -16,6 +19,7 @@ import '../widgets/v2_group_list.dart';
 import '../widgets/v2_option_row.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_inventaris_form_page.dart';
 
 /// Keadaan daftar stok yang punya frame sendiri di page 04.
 enum V2InventarisState {
@@ -48,6 +52,9 @@ class V2InventarisTabView extends StatefulWidget {
     this.initialJenis,
     this.initialStatusIndex = 0,
     this.openFilterOnStart = false,
+    this.offline = false,
+    this.toast,
+    this.toastTone = V2ToastTone.success,
     this.onAdd,
     this.onTapItem,
   });
@@ -67,6 +74,14 @@ class V2InventarisTabView extends StatefulWidget {
 
   /// Membuka sheet "Jenis barang" begitu halaman tampil (frame 4.7).
   final bool openFilterOnStart;
+
+  /// Menampilkan banner "Offline. Data tersimpan di HP." di atas kolom cari
+  /// (frame 4.16).
+  final bool offline;
+
+  /// Toast yang melayang di atas tombol footer (frame 4.15/4.16).
+  final String? toast;
+  final V2ToastTone toastTone;
 
   /// Tombol footer; null berarti hanya pratinjau (belum tersambung).
   final VoidCallback? onAdd;
@@ -288,7 +303,8 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
     );
   }
 
-  /// Judul "Stok" dengan kolom cari di bawahnya (langkah 16).
+  /// Judul "Stok" dengan kolom cari di bawahnya (langkah 16). Saat perangkat
+  /// offline, banner "Tersimpan di HP" menyelip di antara keduanya (4.16).
   Widget _header({bool includeSearch = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -297,6 +313,13 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
           padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
           child: V2ScreenHeader(title: 'Stok'),
         ),
+        if (widget.offline) ...[
+          const SizedBox(height: V2Space.lg),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
+            child: V2Banner(message: 'Offline. Data tersimpan di HP.'),
+          ),
+        ],
         if (includeSearch) ...[
           const SizedBox(height: V2Space.lg),
           Padding(
@@ -339,6 +362,8 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
 
   Widget _buildFooter() {
     return V2AkunActionBar(
+      toast: widget.toast,
+      toastTone: widget.toastTone,
       actions: [
         V2Button(label: 'Tambah barang', onPressed: widget.onAdd ?? () {}),
       ],
@@ -346,11 +371,13 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
   }
 }
 
-/// Halaman daftar stok lengkap dengan TabBar (frame 4.1–4.9).
+/// Halaman daftar stok lengkap dengan TabBar (frame 4.1–4.9, 4.15, 4.16).
 ///
 /// Dipakai galeri review supaya setiap keadaan bisa dibuka langsung; di aplikasi
 /// nyata isinya dipasang oleh `V2BerandaPage` lewat [V2InventarisTabView].
-class V2InventarisListPage extends StatelessWidget {
+/// Tombol "Tambah barang" membuka form 4.10; barang yang tersimpan langsung
+/// menyisip di paling atas daftar dengan toast "Barang ditambahkan".
+class V2InventarisListPage extends StatefulWidget {
   const V2InventarisListPage({
     super.key,
     this.items,
@@ -360,6 +387,9 @@ class V2InventarisListPage extends StatelessWidget {
     this.initialJenis,
     this.initialStatusIndex = 0,
     this.openFilterOnStart = false,
+    this.offline = false,
+    this.toast,
+    this.toastTone = V2ToastTone.success,
     this.onAdd,
     this.onTapItem,
   });
@@ -397,10 +427,24 @@ class V2InventarisListPage extends StatelessWidget {
 
   /// Frame `4.9 Stok menipis, jenis Benih`.
   const V2InventarisListPage.menipisBenih({Key? key})
+    : this(key: key, initialJenis: V2JenisBarang.benih, initialStatusIndex: 1);
+
+  /// Frame `4.15 Barang ditambahkan`.
+  const V2InventarisListPage.added({Key? key})
     : this(
         key: key,
-        initialJenis: V2JenisBarang.benih,
-        initialStatusIndex: 1,
+        items: designInventarisDitambah,
+        toast: 'Barang ditambahkan',
+      );
+
+  /// Frame `4.16 Tersimpan di HP`.
+  const V2InventarisListPage.offline({Key? key})
+    : this(
+        key: key,
+        items: designInventarisAntrean,
+        offline: true,
+        toast: 'Tersimpan di HP',
+        toastTone: V2ToastTone.info,
       );
 
   final List<V2InventarisItem>? items;
@@ -410,11 +454,64 @@ class V2InventarisListPage extends StatelessWidget {
   final V2JenisBarang? initialJenis;
   final int initialStatusIndex;
   final bool openFilterOnStart;
+
+  /// Menampilkan banner offline di atas kolom cari (frame 4.16).
+  final bool offline;
+
+  /// Toast yang sudah tampil saat halaman dibuka (frame 4.15/4.16).
+  final String? toast;
+  final V2ToastTone toastTone;
+
   final VoidCallback? onAdd;
   final ValueChanged<V2InventarisItem>? onTapItem;
 
   static Route<void> route() =>
       MaterialPageRoute<void>(builder: (_) => const V2InventarisListPage());
+
+  @override
+  State<V2InventarisListPage> createState() => _V2InventarisListPageState();
+}
+
+class _V2InventarisListPageState extends State<V2InventarisListPage> {
+  late List<V2InventarisItem> _items = widget.items ?? designInventaris;
+  late String? _toast = widget.toast;
+  Timer? _toastTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_toast != null) _scheduleToastDismiss();
+  }
+
+  @override
+  void dispose() {
+    _toastTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleToastDismiss() {
+    _toastTimer?.cancel();
+    _toastTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _toast = null);
+    });
+  }
+
+  /// Buka form 4.10; barang yang tersimpan menyisip paling atas (frame 4.15).
+  Future<void> _openForm() async {
+    if (widget.onAdd != null) {
+      widget.onAdd!();
+      return;
+    }
+    final item = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisFormPage.route());
+    if (!mounted || item == null) return;
+    setState(() {
+      _items = [item, ..._items];
+      _toast = 'Barang ditambahkan';
+    });
+    _scheduleToastDismiss();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,18 +525,21 @@ class V2InventarisListPage extends StatelessWidget {
             children: [
               Expanded(
                 child: V2InventarisTabView(
-                  items: items,
-                  state: state,
-                  initialQuery: initialQuery,
-                  initialJenis: initialJenis,
-                  initialStatusIndex: initialStatusIndex,
-                  openFilterOnStart: openFilterOnStart,
-                  onAdd: onAdd,
-                  onTapItem: onTapItem,
+                  items: _items,
+                  state: widget.state,
+                  initialQuery: widget.initialQuery,
+                  initialJenis: widget.initialJenis,
+                  initialStatusIndex: widget.initialStatusIndex,
+                  openFilterOnStart: widget.openFilterOnStart,
+                  offline: widget.offline,
+                  toast: _toast,
+                  toastTone: widget.toastTone,
+                  onAdd: _openForm,
+                  onTapItem: widget.onTapItem,
                 ),
               ),
               V2TabBar(
-                items: v2TabsFor(role),
+                items: v2TabsFor(widget.role),
                 activeIndex: v2StokTabIndex,
               ),
             ],

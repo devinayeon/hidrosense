@@ -42,15 +42,21 @@ class V2InventarisRow extends StatelessWidget {
   };
 
   /// Aman tidak berlencana; menipis diberi peringatan kuning, habis merah.
-  Widget? get _badge => switch (item.status) {
-    V2InventarisStatus.menipis => const V2Badge(
-      label: 'Menipis',
-      status: V2BadgeStatus.warning,
-    ),
-    V2InventarisStatus.habis => const V2Badge(
-      label: 'Habis',
-      status: V2BadgeStatus.error,
-    ),
-    V2InventarisStatus.aman => null,
-  };
+  /// Barang yang menunggu sinkron memakai lencana "Antrean" (frame 4.16).
+  Widget? get _badge {
+    if (item.antrean) {
+      return const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending);
+    }
+    return switch (item.status) {
+      V2InventarisStatus.menipis => const V2Badge(
+        label: 'Menipis',
+        status: V2BadgeStatus.warning,
+      ),
+      V2InventarisStatus.habis => const V2Badge(
+        label: 'Habis',
+        status: V2BadgeStatus.error,
+      ),
+      V2InventarisStatus.aman => null,
+    };
+  }
 }

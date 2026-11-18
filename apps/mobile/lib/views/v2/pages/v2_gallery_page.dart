@@ -11,6 +11,7 @@ import 'v2_beranda_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
 import 'v2_inactive_account_page.dart';
+import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notification_permission_page.dart';
 import 'v2_notifications_page.dart';
@@ -192,7 +193,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Stok tanpa hasil (4.6)',
                         subtitle: 'Pencarian "Zzz" tidak ketemu',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2InventarisListPage.noResults(),
+                          builder: (_) =>
+                              const V2InventarisListPage.noResults(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),
@@ -223,6 +225,66 @@ class V2GalleryPage extends StatelessWidget {
                               const V2InventarisListPage.menipisBenih(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Tambah barang (4.10)',
+                        subtitle: 'Form isian barang baru',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisFormPage.create(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Tambah barang, obat (4.11)',
+                        subtitle: 'Jenis Obat dengan pilihan obat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisFormPage.obat(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Pilih obat (4.12)',
+                        subtitle: 'Sheet pilihan obat terbuka',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisFormPage.pilihObat(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Tambah barang, keyboard (4.13)',
+                        subtitle: 'Kolom stok awal terfokus',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisFormPage.keyboard(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Tambah barang, validasi (4.14)',
+                        subtitle: 'Tiga kolom bergalat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisFormPage.validation(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Barang ditambahkan (4.15)',
+                        subtitle: 'Baris baru dan toast sukses',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.added(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.cloud,
+                        title: 'Tersimpan di HP (4.16)',
+                        subtitle: 'Banner offline dan badge antrean',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisListPage.offline(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
                       ),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
+import '../components/v2_inventaris_data.dart';
 import '../components/v2_penjualan_store.dart';
 import '../components/v2_sinkron_data.dart';
 import '../components/v2_beranda_hero.dart';
@@ -23,6 +24,7 @@ import '../widgets/v2_tab_bar.dart';
 import 'v2_akun_tab_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
+import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
@@ -214,7 +216,6 @@ class V2BerandaPage extends StatefulWidget {
   /// Menutup sesi (frame 3.3); diisi oleh `AppGate`.
   final Future<void> Function()? onLogOut;
 
-
   static const String _tableName = 'Meja A2';
 
   @override
@@ -224,6 +225,7 @@ class V2BerandaPage extends StatefulWidget {
 class _V2BerandaPageState extends State<V2BerandaPage> {
   late V2BerandaState _state = widget.state;
   late List<V2Employee> _employees = widget.initialEmployees;
+  late List<V2InventarisItem> _inventaris = designInventaris;
   int _activeTab = 0;
 
   @override
@@ -252,9 +254,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   void _notice(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _onTabTap(int index) {
@@ -285,6 +287,16 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     );
   }
 
+  /// Buka form 4.10 dari tab Stok; barang baru menyisip paling atas.
+  Future<void> _openTambahBarang() async {
+    final item = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisFormPage.route());
+    if (!mounted || item == null) return;
+    setState(() => _inventaris = [item, ..._inventaris]);
+    _notice('Barang ditambahkan');
+  }
+
   void _openSync() {
     final queue = widget.syncQueue;
     final replayer = widget.syncReplayer;
@@ -296,9 +308,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     final fallback = galleryOffline ? designSinkronAntrean : items;
     Navigator.of(context).push(
       V2SinkronPage.route(
-        state: fallback.isEmpty
-            ? V2SinkronState.ready
-            : V2SinkronState.offline,
+        state: fallback.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
         items: fallback.isEmpty ? null : fallback,
         queue: queue,
         onSyncNow: replayer == null
@@ -387,10 +397,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                       )
                     : stok
                     ? V2InventarisTabView(
-                        onAdd: () => _notice(
-                          'Formulir tambah barang belum tersedia di '
-                          'pratinjau ini.',
-                        ),
+                        items: _inventaris,
+                        onAdd: _openTambahBarang,
                       )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
@@ -402,11 +410,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         child: _content(),
                       ),
               ),
-              V2TabBar(
-                items: tabs,
-                activeIndex: _activeTab,
-                onTap: _onTabTap,
-              ),
+              V2TabBar(items: tabs, activeIndex: _activeTab, onTap: _onTabTap),
             ],
           ),
         ),
@@ -450,7 +454,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           icon: V2IconName.sprout,
           title: 'Siap pindah',
           subtitle: widget.siapPindahSubtitle,
-          onTap: () => _notice('Alur semaian 5.16 belum tersedia di halaman ini.'),
+          onTap: () =>
+              _notice('Alur semaian 5.16 belum tersedia di halaman ini.'),
         ),
         const SizedBox(height: V2Space.lg),
         V2BerandaStats(
