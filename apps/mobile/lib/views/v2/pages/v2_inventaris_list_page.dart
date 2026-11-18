@@ -19,6 +19,7 @@ import '../widgets/v2_group_list.dart';
 import '../widgets/v2_option_row.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_inventaris_detail_page.dart';
 import 'v2_inventaris_form_page.dart';
 
 /// Keadaan daftar stok yang punya frame sendiri di page 04.
@@ -513,6 +514,25 @@ class _V2InventarisListPageState extends State<V2InventarisListPage> {
     _scheduleToastDismiss();
   }
 
+  /// Buka detail 4.17 lewat ketukan baris; hasilnya menggantikan baris lama
+  /// (barang bisa berubah setelah dicatat/diubah di langkah berikutnya).
+  Future<void> _openDetail(V2InventarisItem item) async {
+    if (widget.onTapItem != null) {
+      widget.onTapItem!(item);
+      return;
+    }
+    final updated = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisDetailPage.route(item));
+    if (!mounted || updated == null) return;
+    setState(() {
+      _items = [
+        for (final baris in _items)
+          if (baris.id == updated.id) updated else baris,
+      ];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -535,7 +555,7 @@ class _V2InventarisListPageState extends State<V2InventarisListPage> {
                   toast: _toast,
                   toastTone: widget.toastTone,
                   onAdd: _openForm,
-                  onTapItem: widget.onTapItem,
+                  onTapItem: _openDetail,
                 ),
               ),
               V2TabBar(

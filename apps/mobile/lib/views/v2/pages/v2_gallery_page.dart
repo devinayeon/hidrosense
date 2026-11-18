@@ -11,6 +11,7 @@ import 'v2_beranda_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
 import 'v2_inactive_account_page.dart';
+import 'v2_inventaris_detail_page.dart';
 import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notification_permission_page.dart';
@@ -283,6 +284,50 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Banner offline dan badge antrean',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => const V2InventarisListPage.offline(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Detail barang baru (4.17)',
+                        subtitle: 'Barang baru dengan satu riwayat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.baru(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Detail barang menipis (4.18)',
+                        subtitle: 'Badge Menipis dan riwayat penuh',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2InventarisDetailPage.menipis(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.box,
+                        title: 'Detail barang (4.19)',
+                        subtitle: 'Stok cukup dengan riwayat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.biasa(),
+                        ),
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.close,
+                        title: 'Detail barang habis (4.20)',
+                        subtitle: 'Stok habis dan catat stok masuk',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.habis(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.trash,
+                        title: 'Detail barang arsip (4.29)',
+                        subtitle: 'Barang arsip tanpa aksi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2InventarisDetailPage.arsip(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),

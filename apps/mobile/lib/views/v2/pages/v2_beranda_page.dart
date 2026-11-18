@@ -24,6 +24,7 @@ import '../widgets/v2_tab_bar.dart';
 import 'v2_akun_tab_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
+import 'v2_inventaris_detail_page.dart';
 import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
@@ -297,6 +298,20 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     _notice('Barang ditambahkan');
   }
 
+  /// Buka detail 4.17 dari tab Stok; hasilnya menggantikan baris lama.
+  Future<void> _openDetailBarang(V2InventarisItem item) async {
+    final updated = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisDetailPage.route(item));
+    if (!mounted || updated == null) return;
+    setState(() {
+      _inventaris = [
+        for (final baris in _inventaris)
+          if (baris.id == updated.id) updated else baris,
+      ];
+    });
+  }
+
   void _openSync() {
     final queue = widget.syncQueue;
     final replayer = widget.syncReplayer;
@@ -399,6 +414,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                     ? V2InventarisTabView(
                         items: _inventaris,
                         onAdd: _openTambahBarang,
+                        onTapItem: _openDetailBarang,
                       )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
