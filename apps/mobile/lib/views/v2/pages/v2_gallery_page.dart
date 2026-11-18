@@ -38,6 +38,7 @@ import 'v2_rawat_hasil_page.dart';
 import 'v2_rawat_konfirmasi_page.dart';
 import 'v2_rawat_list_page.dart';
 import 'v2_rawat_obat_page.dart';
+import 'v2_cuaca_page.dart';
 import 'v2_tanaman_rusak_page.dart';
 import 'v2_detail_tanaman_page.dart';
 import 'v2_sinkron_page.dart';
@@ -152,6 +153,12 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Perawatan (09)',
                         subtitle: 'Cek hama, hasil deteksi, obat, riwayat',
                         route: V2RawatListPage.route,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sun,
+                        title: 'Cuaca (10)',
+                        subtitle: 'Kondisi, prakiraan, saran, pilih lokasi',
+                        route: V2CuacaPage.route,
                       ),
                       _FlowRow(
                         icon: V2IconName.sync,
@@ -1449,6 +1456,106 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Dialog di atas form konfirmasi',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => const V2RawatKonfirmasiPage.buang(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sun,
+                        title: 'Cuaca, kondisi (10.1)',
+                        subtitle: 'Suhu 29°C, kelembapan, hujan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.kondisi(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.cloud,
+                        title: 'Cuaca, prakiraan (10.2)',
+                        subtitle: 'Empat hari ke depan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.prakiraan(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.care,
+                        title: 'Saran perawatan (10.3)',
+                        subtitle: 'Tiga saran dari cuaca',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.saran(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.info,
+                        title: 'Saran kosong (10.4)',
+                        subtitle: 'Tidak ada saran khusus',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.saranKosong(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Pilih lokasi (10.5)',
+                        subtitle: 'Sheet tiga lokasi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.pilihLokasi(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.layers,
+                        title: 'Memuat cuaca (10.6)',
+                        subtitle: 'Tiga rangka kartu',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.memuat(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'BMKG tidak tersedia (10.7)',
+                        subtitle: 'ErrorState dan coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.bmkgGagal(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Cuaca tanpa internet (10.8)',
+                        subtitle: 'Data terakhir 14.05',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.tanpaInternet(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Prakiraan tanpa internet (10.9)',
+                        subtitle: 'Empat hari dari HP',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const V2CuacaPage.prakiraanTanpaInternet(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Saran tanpa internet (10.10)',
+                        subtitle: 'Saran butuh internet',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.saranTanpaInternet(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Saran AI tidak tersedia (10.11)',
+                        subtitle: 'Kartu coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2CuacaPage.saranGagal(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
                       ),

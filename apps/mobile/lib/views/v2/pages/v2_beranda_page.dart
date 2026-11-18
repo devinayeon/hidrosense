@@ -23,6 +23,7 @@ import '../widgets/v2_icon_button.dart';
 import '../widgets/v2_list_item.dart';
 import '../widgets/v2_tab_bar.dart';
 import 'v2_akun_tab_page.dart';
+import 'v2_cuaca_page.dart';
 import 'v2_cycle_detail_page.dart';
 import 'v2_employee_list_page.dart';
 import 'v2_inventaris_detail_page.dart';
@@ -533,7 +534,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             V2WeatherCard(
               title: widget.weatherTitle,
               subtitle: widget.weatherSubtitle,
-              onTap: () => _notice('Halaman cuaca BMKG (10) belum tersedia.'),
+              onTap: () =>
+                  Navigator.of(context).push(V2CuacaPage.route()),
             ),
         ],
       ],

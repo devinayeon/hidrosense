@@ -19,6 +19,7 @@ import '../widgets/v2_skeleton.dart';
 import '../widgets/v2_stock_item.dart';
 import '../widgets/v2_tab_bar.dart';
 import '../components/v2_akun_action_bar.dart';
+import 'v2_cuaca_page.dart';
 import 'v2_rawat_detail_page.dart';
 import 'v2_rawat_foto_page.dart';
 
@@ -167,6 +168,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
               title: 'Cuaca dan saran',
               subtitle: 'Berawan, 29°C',
               icon: V2IconName.cloud,
+              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
           ),
         ],
