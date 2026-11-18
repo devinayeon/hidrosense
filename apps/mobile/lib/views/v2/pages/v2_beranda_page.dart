@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/v2_akun_employee.dart';
+import '../components/v2_akun_employee_store.dart';
 import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
@@ -66,6 +67,7 @@ class V2BerandaPage extends StatefulWidget {
     this.weatherTitle = 'Berawan, 29°C',
     this.weatherSubtitle = 'Hujan 14.00',
     this.initialEmployees = designEmployees,
+    this.employeeStore,
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
@@ -84,7 +86,8 @@ class V2BerandaPage extends StatefulWidget {
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
-  }) : state = V2BerandaState.loading,
+  }) : employeeStore = null,
+       state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
        filledHoles = '400',
@@ -104,7 +107,8 @@ class V2BerandaPage extends StatefulWidget {
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
-  }) : state = V2BerandaState.offline,
+  }) : employeeStore = null,
+       state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
        filledHoles = '184',
@@ -124,7 +128,8 @@ class V2BerandaPage extends StatefulWidget {
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
-  }) : state = V2BerandaState.weatherUnavailable,
+  }) : employeeStore = null,
+       state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
        filledHoles = '184',
@@ -151,6 +156,9 @@ class V2BerandaPage extends StatefulWidget {
   /// Daftar akun pegawai (alur 03). Disimpan di sini supaya tetap utuh saat
   /// berpindah tab, lalu diteruskan ke halaman daftar/ubah.
   final List<V2Employee> initialEmployees;
+
+  /// Backend akun pegawai; null berarti galeri memakai [initialEmployees].
+  final V2EmployeeStore? employeeStore;
 
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
@@ -220,6 +228,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       V2EmployeeListPage.route(
         initialEmployees: _employees,
         onChanged: (employees) => setState(() => _employees = employees),
+        store: widget.employeeStore,
       ),
     );
   }

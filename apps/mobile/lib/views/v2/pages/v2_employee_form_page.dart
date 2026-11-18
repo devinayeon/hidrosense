@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_akun_action_bar.dart';
 import '../components/v2_akun_employee.dart';
+import '../components/v2_akun_employee_store.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
@@ -13,7 +14,8 @@ import '../widgets/v2_text_field.dart';
 ///
 /// Satu halaman menangani tambah dan ubah karena desainnya sama; yang berbeda
 /// hanya judul dan label password. Hasil simpan dikembalikan sebagai
-/// [V2Employee] lewat `Navigator.pop`.
+/// [V2Employee] lewat `Navigator.pop`. Kalau [store] diisi, tombol Simpan
+/// mengirim ke backend dan galat server ditampilkan sebagai snackbar.
 class V2EmployeeFormPage extends StatefulWidget {
   const V2EmployeeFormPage({
     super.key,
@@ -22,12 +24,14 @@ class V2EmployeeFormPage extends StatefulWidget {
     this.previewValidation = false,
     this.previewConflict = false,
     this.previewDiscard = false,
+    this.store,
   });
 
   /// Frame `3.7 Tambah pegawai`.
   const V2EmployeeFormPage.create({
     super.key,
     this.takenUsernames = const <String>{},
+    this.store,
   }) : initial = null,
        previewValidation = false,
        previewConflict = false,
@@ -39,13 +43,15 @@ class V2EmployeeFormPage extends StatefulWidget {
       takenUsernames = const <String>{'sari.dewi'},
       previewValidation = true,
       previewConflict = false,
-      previewDiscard = false;
+      previewDiscard = false,
+      store = null;
 
   /// Frame `3.12 Ubah pegawai`.
   const V2EmployeeFormPage.edit(
     V2Employee employee, {
     super.key,
     this.takenUsernames = const <String>{},
+    this.store,
   }) : initial = employee,
        previewValidation = false,
        previewConflict = false,
@@ -57,6 +63,7 @@ class V2EmployeeFormPage extends StatefulWidget {
     super.key,
     this.takenUsernames = const <String>{},
   }) : initial = employee,
+       store = null,
        previewValidation = false,
        previewConflict = true,
        previewDiscard = false;
@@ -67,6 +74,7 @@ class V2EmployeeFormPage extends StatefulWidget {
     super.key,
     this.takenUsernames = const <String>{},
   }) : initial = employee,
+       store = null,
        previewValidation = false,
        previewConflict = false,
        previewDiscard = true;
@@ -81,16 +89,21 @@ class V2EmployeeFormPage extends StatefulWidget {
   final bool previewConflict;
   final bool previewDiscard;
 
+  /// Backend akun; null berarti mode pratinjau (hanya di memori).
+  final V2EmployeeStore? store;
+
   bool get isEdit => initial != null;
 
   static Route<V2Employee> route({
     V2Employee? initial,
     Set<String> takenUsernames = const <String>{},
+    V2EmployeeStore? store,
   }) {
     return MaterialPageRoute<V2Employee>(
       builder: (_) => V2EmployeeFormPage(
         initial: initial,
         takenUsernames: takenUsernames,
+        store: store,
       ),
     );
   }
@@ -112,6 +125,9 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
 
   /// Menandai isian sudah disentuh, supaya tombol kembali meminta konfirmasi.
   bool _dirty = false;
+
+  /// Sedang mengirim ke backend.
+  bool _saving = false;
 
   @override
   void initState() {
@@ -252,6 +268,16 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       return;
     }
 
+    final store = widget.store;
+    if (store == null) {
+      _popWithPreview(name, username, password);
+      return;
+    }
+    _submitToStore(store, name, username, password);
+  }
+
+  /// Mode pratinjau: hasil dirangkai di memori, tanpa backend.
+  void _popWithPreview(String name, String username, String password) {
     _dirty = false;
     Navigator.of(context).pop(
       V2Employee(
@@ -265,12 +291,42 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     );
   }
 
+  Future<void> _submitToStore(
+    V2EmployeeStore store,
+    String name,
+    String username,
+    String password,
+  ) async {
+    setState(() => _saving = true);
+    final draft = V2EmployeeDraft(
+      name: name,
+      username: username,
+      password: password.isEmpty ? null : password,
+      phone: _phone.text.trim(),
+      address: _address.text.trim(),
+    );
+    try {
+      final result = widget.isEdit
+          ? await store.update(widget.initial!.id, draft)
+          : await store.create(draft);
+      if (!mounted) return;
+      _dirty = false;
+      Navigator.of(context).pop(result);
+    } on V2EmployeeStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
       data: V2Theme.light,
       child: PopScope<V2Employee>(
-        canPop: !_dirty,
+        canPop: !_dirty && !_saving,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
           _back();
@@ -341,7 +397,15 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                 ),
                 V2AkunActionBar(
                   safeBottom: true,
-                  actions: [V2Button(label: 'Simpan', onPressed: _save)],
+                  actions: [
+                    V2Button(
+                      label: 'Simpan',
+                      state: _saving
+                          ? V2ButtonState.loading
+                          : V2ButtonState.normal,
+                      onPressed: _saving ? null : _save,
+                    ),
+                  ],
                 ),
               ],
             ),

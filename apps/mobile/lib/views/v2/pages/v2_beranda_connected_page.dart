@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import 'v2_beranda_page.dart';
 
@@ -47,6 +48,7 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       filledHoles: data.filledHoles,
       weatherTitle: data.weatherTitle ?? 'Berawan, 29°C',
       weatherSubtitle: data.weatherSubtitle ?? 'Hujan 14.00',
+      employeeStore: ref.watch(v2EmployeeStoreProvider),
       onLogOut: onLogOut,
     );
   }

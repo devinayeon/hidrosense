@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_akun_action_bar.dart';
 import '../components/v2_akun_employee.dart';
+import '../components/v2_akun_employee_store.dart';
 import '../components/v2_akun_info_card.dart';
 import '../components/v2_akun_profil_card.dart';
 import '../theme/v2_tokens.dart';
@@ -17,12 +18,14 @@ import 'v2_employee_form_page.dart';
 /// nonaktifkan), dan 3.14 (notifikasi "Perubahan tersimpan" setelah ubah).
 ///
 /// Dua tombol saat pegawai masih aktif (Ubah + Nonaktifkan); setelah nonaktif
-/// hanya "Ubah" yang tersisa, sama seperti frame 3.17.
+/// hanya "Ubah" yang tersisa, sama seperti frame 3.17. Saat [store] diisi,
+/// ubah dan nonaktifkan dikirim ke backend.
 class V2EmployeeDetailPage extends StatefulWidget {
   const V2EmployeeDetailPage({
     super.key,
     required this.employee,
     this.confirmDeactivate = false,
+    this.store,
   });
 
   final V2Employee employee;
@@ -30,14 +33,19 @@ class V2EmployeeDetailPage extends StatefulWidget {
   /// Membuka halaman dengan dialog nonaktifkan sudah tampil (frame 3.15).
   final bool confirmDeactivate;
 
-  static Route<V2EmployeeDeactivated> route(
+  /// Backend akun; null berarti mode pratinjau (hanya di memori).
+  final V2EmployeeStore? store;
+
+  static Route<V2EmployeeResult> route(
     V2Employee employee, {
     bool confirmDeactivate = false,
+    V2EmployeeStore? store,
   }) {
-    return MaterialPageRoute<V2EmployeeDeactivated>(
+    return MaterialPageRoute<V2EmployeeResult>(
       builder: (_) => V2EmployeeDetailPage(
         employee: employee,
         confirmDeactivate: confirmDeactivate,
+        store: store,
       ),
     );
   }
@@ -50,6 +58,12 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
   late V2Employee _employee = widget.employee;
   Timer? _toastTimer;
   String? _toast;
+
+  /// Data berubah; tombol kembali mengembalikannya ke daftar.
+  bool _changed = false;
+
+  /// Sedang mengirim nonaktifkan ke backend.
+  bool _busy = false;
 
   @override
   void initState() {
@@ -78,10 +92,14 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
       V2EmployeeFormPage.route(
         initial: _employee,
         takenUsernames: {_employee.username.toLowerCase()},
+        store: widget.store,
       ),
     );
     if (updated == null || !mounted) return;
-    setState(() => _employee = updated);
+    setState(() {
+      _employee = updated;
+      _changed = true;
+    });
     _showToast('Perubahan tersimpan');
   }
 
@@ -95,9 +113,35 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
       secondaryLabel: 'Batal',
     );
     if (confirmed != true || !mounted) return;
-    Navigator.of(context).pop(
-      V2EmployeeDeactivated(_employee.copyWith(active: false)),
-    );
+
+    final store = widget.store;
+    if (store == null) {
+      Navigator.of(context).pop(
+        V2EmployeeDeactivated(_employee.copyWith(active: false)),
+      );
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final updated = await store.deactivate(_employee.id);
+      if (!mounted) return;
+      Navigator.of(context).pop(V2EmployeeDeactivated(updated));
+    } on V2EmployeeStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
+  }
+
+  void _back() {
+    if (_changed) {
+      Navigator.of(context).pop(V2EmployeeSaved(_employee));
+      return;
+    }
+    Navigator.of(context).maybePop();
   }
 
   @override
@@ -112,7 +156,7 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
             children: [
               V2AppBar(
                 title: 'Detail pegawai',
-                onBack: () => Navigator.of(context).maybePop(),
+                onBack: _back,
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -172,7 +216,10 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
                     V2Button(
                       label: 'Nonaktifkan',
                       type: V2ButtonType.destructive,
-                      onPressed: _confirmDeactivate,
+                      state: _busy
+                          ? V2ButtonState.loading
+                          : V2ButtonState.normal,
+                      onPressed: _busy ? null : _confirmDeactivate,
                     ),
                 ],
               ),
