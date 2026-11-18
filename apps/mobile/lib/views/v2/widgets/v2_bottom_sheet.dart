@@ -66,7 +66,7 @@ Future<T?> showV2BottomSheet<T>(BuildContext context, {required Widget child}) {
   return showModalBottomSheet<T>(
     context: context,
     backgroundColor: Colors.transparent,
-    barrierColor: V2Colors.ink.withValues(alpha: 0.35),
+    barrierColor: V2Colors.ink.withValues(alpha: 0.6),
     isScrollControlled: true,
     builder: (_) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),

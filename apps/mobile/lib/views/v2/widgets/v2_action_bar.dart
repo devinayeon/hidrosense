@@ -52,11 +52,13 @@ class V2ActionBar extends StatelessWidget {
       ],
     );
 
+    // Desain `Actions` selalu menyisakan 42 dari bawah frame: 8 di dalam
+    // SafeArea home indicator 34, baik satu tombol maupun dua.
     final padding = EdgeInsets.fromLTRB(
       V2Space.xl,
       0,
       V2Space.xl,
-      safeBottom ? (actions.length > 1 ? 0 : V2Space.sm) : 0,
+      safeBottom ? V2Space.sm : 0,
     );
 
     return Container(
