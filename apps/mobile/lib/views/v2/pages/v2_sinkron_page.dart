@@ -23,6 +23,12 @@ import '../widgets/v2_group_list.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_penjualan_form_page.dart';
 
+/// Menjalankan satu putaran sinkron dan melaporkan kemajuannya.
+typedef V2SyncNow =
+    Future<V2SyncRun> Function(
+      void Function(V2SyncProgress progress) onProgress,
+    );
+
 /// Keadaan halaman sinkron yang punya frame sendiri di page 11.
 enum V2SinkronState {
   /// Frame 11.1: semua data sudah di server.
@@ -59,8 +65,9 @@ enum V2SinkronState {
 ///
 /// "Sinkron sekarang" menjalankan pengiriman contoh: banner "Mengirim 3 dari
 /// 5 data" tampil sebentar, lalu ringkasan berganti ke 11.6 dengan toast.
-/// Pada 11.7, baris Penjualan membuka form perbaikan 11.9 dan baris Rusak
-/// membuka dialog 11.8.
+/// Bila halaman diberi antrean dan pengirim nyata, banner memakai jumlah baris
+/// sungguhan dan hasilnya menentukan 11.6/11.7. Pada 11.7, baris Penjualan
+/// membuka form perbaikan 11.9 dan baris Rusak membuka dialog 11.8.
 class V2SinkronPage extends StatefulWidget {
   const V2SinkronPage({
     super.key,
@@ -148,14 +155,15 @@ class V2SinkronPage extends StatefulWidget {
   final V2SyncQueue? queue;
 
   /// Menjalankan pengiriman ulang; hasilnya menentukan keadaan setelah 11.5.
-  final Future<V2SyncRun> Function()? onSyncNow;
+  /// [onProgress] melaporkan kemajuan tiap baris untuk banner 11.5.
+  final V2SyncNow? onSyncNow;
 
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
     List<V2SinkronItem>? items,
     V2SyncQueue? queue,
-    Future<V2SyncRun> Function()? onSyncNow,
+    V2SyncNow? onSyncNow,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2SinkronPage(
@@ -178,8 +186,19 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   Timer? _toastTimer;
   String? _toast;
 
-  /// Satu sinkron contoh berjalan cepat; angka 11.5 dan hasil 11.6 sudah
-  /// ditentukan desain, bukan dihitung dari backend.
+  /// Hasil putaran nyata, dipakai ringkasan 11.7.
+  V2SyncRun? _lastRun;
+  DateTime? _doneAt;
+
+  /// Potret antrean saat tombol ditekan, supaya baris yang sudah terkirim
+  /// tetap tampil "Terkirim" sampai keadaan berikutnya (frame 11.5).
+  List<SyncQueueItem> _runItems = const [];
+  Map<String, V2SinkronStatus> _runStatus = const {};
+  int _syncCurrent = 1;
+  int _syncTotal = 0;
+
+  /// Satu sinkron contoh berjalan cepat; angka 11.5 dan hasil 11.6 galeri
+  /// sudah ditentukan desain, bukan dihitung dari backend.
   static const Duration _syncDuration = Duration(milliseconds: 1400);
 
   @override
@@ -210,9 +229,19 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     _syncTimer?.cancel();
     _toastTimer?.cancel();
     final onSyncNow = widget.onSyncNow;
+    final queue = widget.queue;
+    final snapshot = onSyncNow == null || queue == null
+        ? const <SyncQueueItem>[]
+        : List<SyncQueueItem>.unmodifiable(queue.items);
     setState(() {
       _state = V2SinkronState.syncing;
       _toast = null;
+      _lastRun = null;
+      _doneAt = null;
+      _runItems = snapshot;
+      _runStatus = const {};
+      _syncCurrent = 1;
+      _syncTotal = snapshot.length;
     });
     if (onSyncNow == null) {
       _syncTimer = Timer(_syncDuration, () {
@@ -220,24 +249,69 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
         setState(() {
           _state = V2SinkronState.done;
           _toast = 'Sinkron selesai';
+          _doneAt = DateTime.now();
         });
         _scheduleToastDismiss();
       });
       return;
     }
-    final run = await onSyncNow();
+    final run = await onSyncNow(_onProgress);
     if (!mounted) return;
     setState(() {
-      if (run.failed > 0) {
-        _state = V2SinkronState.partial;
+      _lastRun = run;
+      if (run.remaining == 0) {
+        _state = V2SinkronState.done;
+        _toast = 'Sinkron selesai';
+        _doneAt = DateTime.now();
+      } else if (run.sent == 0 && run.pending > 0) {
+        _state = V2SinkronState.offline;
       } else {
-        _state = run.pending > 0 && run.sent == 0
-            ? V2SinkronState.offline
-            : V2SinkronState.done;
-        if (_state == V2SinkronState.done) _toast = 'Sinkron selesai';
+        _state = V2SinkronState.partial;
       }
     });
     _scheduleToastDismiss();
+  }
+
+  /// Menandai baris yang baru selesai supaya daftar 11.5 ikut berubah.
+  void _onProgress(V2SyncProgress progress) {
+    if (!mounted) return;
+    final status = switch (progress.stage) {
+      V2SyncProgressStage.terkirim => V2SinkronStatus.terkirim,
+      V2SyncProgressStage.gagal => V2SinkronStatus.gagal,
+      _ => null,
+    };
+    setState(() {
+      _syncCurrent = progress.current;
+      _syncTotal = progress.total;
+      if (status != null) {
+        _runStatus = {..._runStatus, progress.item.key: status};
+      }
+    });
+  }
+
+  /// Teks banner 11.5: angka nyata bila halaman disambungkan, contoh di galeri.
+  String get _progressLabel => _syncTotal == 0
+      ? 'Mengirim 3 dari 5 data'
+      : 'Mengirim $_syncCurrent dari $_syncTotal data';
+
+  /// Ringkasan 11.7 dari hasil putaran terakhir.
+  V2SinkronRingkasan get _partialRingkasan {
+    final run = _lastRun;
+    if (run == null || widget.onSyncNow == null) return designSinkronSebagian;
+    return v2SinkronRingkasanSebagian(
+      sent: run.sent,
+      remaining: run.remaining,
+      failed: run.failed,
+    );
+  }
+
+  /// Ringkasan 11.6; galeri tetap memakai jam contoh frame.
+  V2SinkronRingkasan get _doneRingkasan {
+    final doneAt = _doneAt;
+    if (doneAt == null || widget.onSyncNow == null) {
+      return designSinkronSelesai;
+    }
+    return v2SinkronRingkasanSelesai(doneAt);
   }
 
   Future<void> _openFix() async {
@@ -324,19 +398,16 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
             _queueList(widget.items ?? designSinkronAntrean),
           ],
           V2SinkronState.syncing => [
-            const V2Banner(
-              message: 'Mengirim 3 dari 5 data',
-              tone: V2BannerTone.sync,
-            ),
+            V2Banner(message: _progressLabel, tone: V2BannerTone.sync),
             const SizedBox(height: V2Space.lg),
-            _queueList(designSinkronBerjalan),
+            _runList(),
           ],
           V2SinkronState.partial || V2SinkronState.conflict => [
-            _summary(designSinkronSebagian),
+            _summary(_partialRingkasan),
             const SizedBox(height: V2Space.lg),
             _queueList(widget.items ?? designSinkronGagal, actionable: true),
           ],
-          V2SinkronState.done => [_summary(designSinkronSelesai)],
+          V2SinkronState.done => [_summary(_doneRingkasan)],
           V2SinkronState.ready => [_summary(designSinkronTerkini)],
           V2SinkronState.sessionExpired => const [],
         },
@@ -352,11 +423,21 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
       extra: ringkasan.extra,
       badge: V2Badge(
         label: ringkasan.badgeLabel,
-        status: ringkasan.gagal
-            ? V2BadgeStatus.error
-            : V2BadgeStatus.success,
+        status: switch (ringkasan.tone) {
+          V2SinkronRingkasanTone.gagal => V2BadgeStatus.error,
+          V2SinkronRingkasanTone.antrean => V2BadgeStatus.pending,
+          V2SinkronRingkasanTone.terkini => V2BadgeStatus.success,
+        },
       ),
     );
+  }
+
+  /// Daftar 11.5: potret antrean saat mulai, dengan status per baris.
+  Widget _runList() {
+    if (widget.onSyncNow == null || widget.queue == null) {
+      return _list(designSinkronBerjalan);
+    }
+    return _list(v2SinkronItemsWithStatus(_runItems, _runStatus));
   }
 
   /// Daftar baris sinkron; mengikuti antrean hidup bila halaman disambungkan.

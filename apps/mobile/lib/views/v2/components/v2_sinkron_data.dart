@@ -60,18 +60,48 @@ String kodeSinkronJenis(V2SinkronJenis jenis) => switch (jenis) {
 };
 
 /// Baris antrean nyata dari HP; keadaannya mengikuti [SyncQueueItem.status].
+///
+/// Baris yang ditolak server memakai pesan penolakannya sebagai subjudul
+/// (frame 11.7: "Sisa panen kurang"), jadi pengguna tahu apa yang harus
+/// diperbaiki tanpa membuka barisnya.
 List<V2SinkronItem> v2SinkronItemsFromQueue(List<SyncQueueItem> items) {
   final result = <V2SinkronItem>[];
   for (final item in items) {
     final jenis = _sinkronJenisOf(item.jenis);
+    final gagal = item.status == SyncQueueStatus.gagal;
     result.add(
       V2SinkronItem(
         jenis: jenis,
-        subtitle: item.subtitle,
+        subtitle: gagal ? (item.error ?? item.subtitle) : item.subtitle,
         kode: kodeSinkronJenis(jenis),
-        status: item.status == SyncQueueStatus.gagal
-            ? V2SinkronStatus.gagal
-            : V2SinkronStatus.antrean,
+        status: gagal ? V2SinkronStatus.gagal : V2SinkronStatus.antrean,
+      ),
+    );
+  }
+  return List.unmodifiable(result);
+}
+
+/// Baris antrean dengan status hasil putaran berjalan (frame 11.5).
+///
+/// [status] berisi status per kunci baris; baris yang belum punya status
+/// memakai status tersimpan, jadi baris yang belum sempat dikirim tetap
+/// tampil "Antrean".
+List<V2SinkronItem> v2SinkronItemsWithStatus(
+  List<SyncQueueItem> items,
+  Map<String, V2SinkronStatus> status,
+) {
+  final result = <V2SinkronItem>[];
+  for (final item in items) {
+    final jenis = _sinkronJenisOf(item.jenis);
+    final gagal = item.status == SyncQueueStatus.gagal;
+    result.add(
+      V2SinkronItem(
+        jenis: jenis,
+        subtitle: gagal ? (item.error ?? item.subtitle) : item.subtitle,
+        kode: kodeSinkronJenis(jenis),
+        status:
+            status[item.key] ??
+            (gagal ? V2SinkronStatus.gagal : V2SinkronStatus.antrean),
       ),
     );
   }
@@ -86,14 +116,19 @@ V2SinkronJenis _sinkronJenisOf(SyncQueueJenis jenis) => switch (jenis) {
   SyncQueueJenis.rusak => V2SinkronJenis.rusak,
 };
 
+/// Nada lencana ringkasan: hijau "Terkini", merah "Gagal N", atau biru
+/// "Antrean N" saat sisa data hanya menunggu (bukan ditolak).
+enum V2SinkronRingkasanTone { terkini, gagal, antrean }
+
 /// Isi `SummaryCard` di puncak halaman sinkron.
-class V2SinkronRingkasan {  const V2SinkronRingkasan({
+class V2SinkronRingkasan {
+  const V2SinkronRingkasan({
     required this.kicker,
     required this.value,
     required this.meta,
     required this.extra,
     required this.badgeLabel,
-    this.gagal = false,
+    this.tone = V2SinkronRingkasanTone.terkini,
   });
 
   final String kicker;
@@ -104,8 +139,8 @@ class V2SinkronRingkasan {  const V2SinkronRingkasan({
   final String extra;
   final String badgeLabel;
 
-  /// Lencana merah "Gagal N" (frame 11.7/11.8), bukan hijau "Terkini".
-  final bool gagal;
+  /// Nada lencana; frame 11.7/11.8 memakai merah, sisa antrean memakai biru.
+  final V2SinkronRingkasanTone tone;
 }
 
 /// Ringkasan frame 11.1: semuanya sudah di server.
@@ -133,8 +168,45 @@ const V2SinkronRingkasan designSinkronSebagian = V2SinkronRingkasan(
   meta: '2 data masih di HP',
   extra: 'Ketuk data untuk memperbaiki',
   badgeLabel: 'Gagal 2',
-  gagal: true,
+  tone: V2SinkronRingkasanTone.gagal,
 );
+
+/// Ringkasan 11.6 dari putaran nyata: jam selesai diambil dari perangkat.
+V2SinkronRingkasan v2SinkronRingkasanSelesai(DateTime waktu) {
+  final jam = waktu.hour.toString().padLeft(2, '0');
+  final menit = waktu.minute.toString().padLeft(2, '0');
+  return V2SinkronRingkasan(
+    kicker: 'Terakhir sinkron',
+    value: '$jam.$menit',
+    meta: 'Semua data sudah di server',
+    extra: 'Antrean kosong',
+    badgeLabel: 'Terkini',
+  );
+}
+
+/// Ringkasan 11.7 dari putaran nyata.
+///
+/// [remaining] adalah semua baris yang belum terkirim (ditolak maupun masih
+/// menunggu), jadi "x dari y terkirim" selalu sama dengan isi antrean.
+V2SinkronRingkasan v2SinkronRingkasanSebagian({
+  required int sent,
+  required int remaining,
+  required int failed,
+}) {
+  final gagal = failed > 0;
+  return V2SinkronRingkasan(
+    kicker: gagal ? 'Sinkron gagal sebagian' : 'Sinkron belum selesai',
+    value: '$sent dari ${sent + remaining} terkirim',
+    meta: '$remaining data masih di HP',
+    extra: gagal
+        ? 'Ketuk data untuk memperbaiki'
+        : 'Akan dicoba lagi saat online',
+    badgeLabel: gagal ? 'Gagal $failed' : 'Antrean $remaining',
+    tone: gagal
+        ? V2SinkronRingkasanTone.gagal
+        : V2SinkronRingkasanTone.antrean,
+  );
+}
 
 /// Lima baris frame 11.4: perangkat offline, belum ada yang terkirim.
 const List<V2SinkronItem> designSinkronAntrean = <V2SinkronItem>[

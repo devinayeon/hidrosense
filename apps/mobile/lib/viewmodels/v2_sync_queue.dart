@@ -9,7 +9,7 @@ import 'session_viewmodel.dart';
 /// Antrean sinkron alur v2: daftar di memori, simpanan tahan-tutup di HP.
 ///
 /// Baris ditambahkan saat sebuah tulis gagal tanpa jawaban pasti, dan dilepas
-/// setelah berhasil dikirim (tahap replay menyusul).
+/// setelah berhasil dikirim ulang.
 class V2SyncQueue extends StateNotifier<List<SyncQueueItem>> {
   V2SyncQueue({
     required this.openStore,

@@ -75,6 +75,8 @@ class V2BerandaPage extends StatefulWidget {
     this.penjualanStore,
     this.syncQueue,
     this.syncReplayer,
+    this.syncLabel = 'Terakhir 09.40',
+    this.syncBadge,
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
@@ -97,6 +99,8 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       syncLabel = 'Terakhir 09.40',
+       syncBadge = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -121,6 +125,8 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       syncLabel = 'Terakhir 09.40',
+       syncBadge = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -145,6 +151,8 @@ class V2BerandaPage extends StatefulWidget {
        penjualanStore = null,
        syncQueue = null,
        syncReplayer = null,
+       syncLabel = 'Terakhir 09.40',
+       syncBadge = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -184,6 +192,12 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Pengirim ulang antrean; null berarti halaman 11 memakai simulasi.
   final V2SyncReplayer? syncReplayer;
+
+  /// Subjudul baris Sinkron di tab akun.
+  final String syncLabel;
+
+  /// Lencana jumlah antrean di baris Sinkron; null berarti tanpa lencana.
+  final String? syncBadge;
 
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
@@ -275,7 +289,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         state: items.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
         items: items.isEmpty ? null : items,
         queue: queue,
-        onSyncNow: replayer == null ? null : () => replayer.run(),
+        onSyncNow: replayer == null
+            ? null
+            : (onProgress) => replayer.run(onProgress: onProgress),
       ),
     );
   }
@@ -344,6 +360,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         username: widget.username,
                         phone: widget.phone,
                         address: widget.address,
+                        syncLabel: widget.syncLabel,
+                        syncBadge: widget.syncBadge,
                         onOpenEmployees: _petani ? _openEmployees : null,
                         onOpenSales: _petani ? _openSales : null,
                         onOpenSync: _openSync,

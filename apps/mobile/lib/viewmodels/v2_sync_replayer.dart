@@ -26,7 +26,13 @@ abstract interface class V2SyncSender {
 
 /// Hasil satu putaran sinkron.
 class V2SyncRun {
-  const V2SyncRun({this.sent = 0, this.failed = 0, this.pending = 0});
+  const V2SyncRun({
+    this.sent = 0,
+    this.failed = 0,
+    this.pending = 0,
+    this.waiting = 0,
+    this.total = 0,
+  });
 
   /// Berhasil terkirim dan lepas dari antrean.
   final int sent;
@@ -34,10 +40,52 @@ class V2SyncRun {
   /// Ditolak server; tetap di antrean dengan status gagal.
   final int failed;
 
-  /// Masih tidak pasti (jaringan/server); tetap menunggu.
+  /// Sudah dicoba tetapi jawabannya tidak pasti (jaringan/server).
   final int pending;
 
-  bool get empty => sent == 0 && failed == 0 && pending == 0;
+  /// Jenisnya belum punya pengirim, jadi tidak dicoba sama sekali.
+  final int waiting;
+
+  /// Jumlah baris antrean saat putaran dimulai; dasar teks "x dari y".
+  final int total;
+
+  /// Baris yang masih tersimpan di HP setelah putaran ini.
+  int get remaining => total - sent;
+
+  bool get empty => total == 0;
+}
+
+/// Kemajuan satu baris di dalam putaran sinkron (banner 11.5).
+class V2SyncProgress {
+  const V2SyncProgress({
+    required this.current,
+    required this.total,
+    required this.item,
+    required this.stage,
+  });
+
+  /// Urutan baris yang sedang ditangani, mulai dari 1.
+  final int current;
+
+  /// Jumlah baris antrean saat putaran dimulai.
+  final int total;
+  final SyncQueueItem item;
+  final V2SyncProgressStage stage;
+}
+
+/// Keadaan satu baris saat dilaporkan lewat [V2SyncProgress].
+enum V2SyncProgressStage {
+  /// Sedang dikirim ke server.
+  mengirim,
+
+  /// Sudah diterima server dan lepas dari antrean.
+  terkirim,
+
+  /// Ditolak server; tetap di antrean dengan status gagal.
+  gagal,
+
+  /// Belum pasti atau belum punya pengirim; tetap di antrean.
+  menunggu,
 }
 
 /// Mengirim antrean tersimpan berurutan, induk lebih dulu [SyncQueueJenis].
@@ -51,28 +99,83 @@ class V2SyncReplayer {
   final V2SyncQueue queue;
   final Map<SyncQueueJenis, V2SyncSender> _senders;
 
-  Future<V2SyncRun> run() async {
+  Future<V2SyncRun> run({
+    void Function(V2SyncProgress progress)? onProgress,
+  }) async {
     final items = [...queue.items]..sort(_compare);
+    final total = items.length;
     var sent = 0;
     var failed = 0;
     var pending = 0;
-    for (final item in items) {
+    var waiting = 0;
+    for (var index = 0; index < items.length; index++) {
+      final item = items[index];
+      final current = index + 1;
       final sender = _senders[item.jenis];
-      if (sender == null) continue;
+      if (sender == null) {
+        waiting++;
+        onProgress?.call(
+          V2SyncProgress(
+            current: current,
+            total: total,
+            item: item,
+            stage: V2SyncProgressStage.menunggu,
+          ),
+        );
+        continue;
+      }
+      onProgress?.call(
+        V2SyncProgress(
+          current: current,
+          total: total,
+          item: item,
+          stage: V2SyncProgressStage.mengirim,
+        ),
+      );
       try {
         await sender.send(item);
         await queue.remove(item.key);
         sent++;
+        onProgress?.call(
+          V2SyncProgress(
+            current: current,
+            total: total,
+            item: item,
+            stage: V2SyncProgressStage.terkirim,
+          ),
+        );
       } catch (error) {
         if (_permanent(error)) {
           await queue.markFailed(item.key, serviceError(error));
           failed++;
+          onProgress?.call(
+            V2SyncProgress(
+              current: current,
+              total: total,
+              item: item,
+              stage: V2SyncProgressStage.gagal,
+            ),
+          );
         } else {
           pending++;
+          onProgress?.call(
+            V2SyncProgress(
+              current: current,
+              total: total,
+              item: item,
+              stage: V2SyncProgressStage.menunggu,
+            ),
+          );
         }
       }
     }
-    return V2SyncRun(sent: sent, failed: failed, pending: pending);
+    return V2SyncRun(
+      sent: sent,
+      failed: failed,
+      pending: pending,
+      waiting: waiting,
+      total: total,
+    );
   }
 
   /// Penolakan pasti: syarat awal pengirim, atau jawaban API dari jalur tulis.

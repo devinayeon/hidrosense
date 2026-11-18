@@ -8,6 +8,7 @@ import '../components/v2_akun_profil_card.dart';
 import '../theme/v2_tokens.dart';
 import '../v2_roles.dart';
 import '../widgets/v2_app_bar.dart';
+import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
@@ -30,6 +31,7 @@ class V2AkunTabView extends StatelessWidget {
     this.phone = '0812 3456 7890',
     this.address = 'Jl. Melati 12, Malang',
     this.syncLabel = 'Terakhir 09.40',
+    this.syncBadge,
     this.onOpenEmployees,
     this.onOpenSales,
     this.onOpenSync,
@@ -42,6 +44,9 @@ class V2AkunTabView extends StatelessWidget {
   final String phone;
   final String address;
   final String syncLabel;
+
+  /// Lencana jumlah data yang menunggu; null berarti tanpa lencana.
+  final String? syncBadge;
   final VoidCallback? onOpenEmployees;
   final VoidCallback? onOpenSales;
   final VoidCallback? onOpenSync;
@@ -90,6 +95,12 @@ class V2AkunTabView extends StatelessWidget {
                         icon: V2IconName.sync,
                         title: 'Sinkron',
                         subtitle: syncLabel,
+                        trailing: syncBadge == null
+                            ? null
+                            : V2Badge(
+                                label: syncBadge!,
+                                status: V2BadgeStatus.pending,
+                              ),
                         onTap: onOpenSync,
                       ),
                     ],
@@ -110,6 +121,12 @@ class V2AkunTabView extends StatelessWidget {
                         icon: V2IconName.sync,
                         title: 'Sinkron',
                         subtitle: syncLabel,
+                        trailing: syncBadge == null
+                            ? null
+                            : V2Badge(
+                                label: syncBadge!,
+                                status: V2BadgeStatus.pending,
+                              ),
                         onTap: onOpenSync,
                       ),
                     ],

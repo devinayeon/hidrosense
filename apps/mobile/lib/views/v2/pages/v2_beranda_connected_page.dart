@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
@@ -32,6 +33,11 @@ class V2BerandaConnectedPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(v2BerandaDataProvider);
+    final syncItems = ref.watch(v2SyncQueueProvider);
+    final gagal = syncItems
+        .where((item) => item.status == SyncQueueStatus.gagal)
+        .length;
+    final menunggu = syncItems.length - gagal;
     final state = switch (data) {
       V2BerandaData(loading: true) => V2BerandaState.loading,
       V2BerandaData(weatherUnavailable: true) =>
@@ -54,6 +60,14 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       penjualanStore: ref.watch(v2PenjualanStoreProvider),
       syncQueue: ref.watch(v2SyncQueueProvider.notifier),
       syncReplayer: ref.watch(v2SyncReplayerProvider),
+      syncLabel: syncItems.isEmpty
+          ? 'Terakhir 09.40'
+          : '${syncItems.length} data menunggu',
+      syncBadge: syncItems.isEmpty
+          ? null
+          : gagal > 0
+          ? 'Gagal $gagal'
+          : 'Antrean $menunggu',
       onLogOut: onLogOut,
     );
   }
