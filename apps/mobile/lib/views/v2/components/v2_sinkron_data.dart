@@ -30,12 +30,20 @@ class V2SinkronItem {
     required this.subtitle,
     required this.kode,
     required this.status,
+    this.nama,
+    this.konflik = false,
   });
 
   final V2SinkronJenis jenis;
 
   /// Baris kedua: nama varietas, meja, atau alasan gagal.
   final String subtitle;
+
+  /// Nama data asli (mis. pembeli); dipakai dialog konflik 11.8.
+  final String? nama;
+
+  /// Baris bentrok versi: ketuk membuka dialog 11.8, bukan form perbaikan.
+  final bool konflik;
 
   /// Kode data di kolom kanan, mis. `10.04`.
   final String kode;
@@ -67,16 +75,7 @@ String kodeSinkronJenis(V2SinkronJenis jenis) => switch (jenis) {
 List<V2SinkronItem> v2SinkronItemsFromQueue(List<SyncQueueItem> items) {
   final result = <V2SinkronItem>[];
   for (final item in items) {
-    final jenis = _sinkronJenisOf(item.jenis);
-    final gagal = item.status == SyncQueueStatus.gagal;
-    result.add(
-      V2SinkronItem(
-        jenis: jenis,
-        subtitle: gagal ? (item.error ?? item.subtitle) : item.subtitle,
-        kode: kodeSinkronJenis(jenis),
-        status: gagal ? V2SinkronStatus.gagal : V2SinkronStatus.antrean,
-      ),
-    );
+    result.add(_sinkronItemOf(item, null));
   }
   return List.unmodifiable(result);
 }
@@ -92,20 +91,35 @@ List<V2SinkronItem> v2SinkronItemsWithStatus(
 ) {
   final result = <V2SinkronItem>[];
   for (final item in items) {
-    final jenis = _sinkronJenisOf(item.jenis);
-    final gagal = item.status == SyncQueueStatus.gagal;
-    result.add(
-      V2SinkronItem(
-        jenis: jenis,
-        subtitle: gagal ? (item.error ?? item.subtitle) : item.subtitle,
-        kode: kodeSinkronJenis(jenis),
-        status:
-            status[item.key] ??
-            (gagal ? V2SinkronStatus.gagal : V2SinkronStatus.antrean),
-      ),
-    );
+    result.add(_sinkronItemOf(item, status[item.key]));
   }
   return List.unmodifiable(result);
+}
+
+/// Satu baris dari antrean; [override] adalah status hasil putaran berjalan.
+V2SinkronItem _sinkronItemOf(
+  SyncQueueItem item,
+  V2SinkronStatus? override,
+) {
+  final jenis = _sinkronJenisOf(item.jenis);
+  final konflik = item.status == SyncQueueStatus.konflik;
+  final gagal = item.status == SyncQueueStatus.gagal;
+  return V2SinkronItem(
+    jenis: jenis,
+    nama: item.subtitle,
+    subtitle: konflik
+        ? 'Berubah di server'
+        : gagal
+        ? (item.error ?? item.subtitle)
+        : item.subtitle,
+    kode: kodeSinkronJenis(jenis),
+    status:
+        override ??
+        (konflik || gagal
+            ? V2SinkronStatus.gagal
+            : V2SinkronStatus.antrean),
+    konflik: konflik,
+  );
 }
 
 V2SinkronJenis _sinkronJenisOf(SyncQueueJenis jenis) => switch (jenis) {
@@ -289,5 +303,7 @@ const List<V2SinkronItem> designSinkronGagal = <V2SinkronItem>[
     subtitle: 'Berubah di server',
     kode: '10.05',
     status: V2SinkronStatus.gagal,
+    nama: 'Meja A2',
+    konflik: true,
   ),
 ];

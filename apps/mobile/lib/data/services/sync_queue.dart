@@ -117,11 +117,39 @@ final class SyncQueueStore {
     required String userId,
     required String key,
     required String error,
+  }) => _mark(
+    serverOrigin: serverOrigin,
+    userId: userId,
+    key: key,
+    status: SyncQueueStatus.gagal,
+    error: error,
+  );
+
+  /// Menandai satu baris bentrok versi (dialog 11.8).
+  Future<void> markConflict({
+    required String serverOrigin,
+    required String userId,
+    required String key,
+    required String error,
+  }) => _mark(
+    serverOrigin: serverOrigin,
+    userId: userId,
+    key: key,
+    status: SyncQueueStatus.konflik,
+    error: error,
+  );
+
+  Future<void> _mark({
+    required String serverOrigin,
+    required String userId,
+    required String key,
+    required SyncQueueStatus status,
+    required String error,
   }) async {
     try {
       await _db.update(
         'sync_queue',
-        {'status': SyncQueueStatus.gagal.name, 'error': error},
+        {'status': status.name, 'error': error},
         where: 'server_origin=? AND user_id=? AND key=?',
         whereArgs: [serverOrigin, userId, key],
       );

@@ -23,6 +23,10 @@ enum SyncQueueStatus {
 
   /// Ditolak server; perlu diperbaiki atau menunggu tindakan pengguna.
   gagal,
+
+  /// Bentrok versi: baris di server berubah setelah data ini diubah di HP.
+  /// Pengguna memilih versi di dialog 11.8.
+  konflik,
 }
 
 /// Satu tulis yang tersimpan di HP dan menunggu dikirim ke server.

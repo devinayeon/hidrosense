@@ -163,24 +163,32 @@ class V2PenjualanApiStore implements V2PenjualanStore, V2SyncSender {
     final header = item.mode == SyncQueueMode.header
         ? _headerFromPayload(item.payload)
         : null;
-    await _viewModel.replayCommand(
-      SaleCommand(
-        key: item.key,
-        target: item.target,
-        payload: item.payload,
-        expectedVersion: version,
-        draft: draft,
-        headerDraft: header,
-        oldItem: old,
-        write: switch (item.mode) {
-          SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
-          SyncQueueMode.rincian => (sales, key) =>
-            sales.updateSale(old!.id, draft!, version!, key),
-          SyncQueueMode.header => (sales, key) =>
-            sales.updateSaleHeader(old!.id, header!, version!, key),
-        },
-      ),
-    );
+    try {
+      await _viewModel.replayCommand(
+        SaleCommand(
+          key: item.key,
+          target: item.target,
+          payload: item.payload,
+          expectedVersion: version,
+          draft: draft,
+          headerDraft: header,
+          oldItem: old,
+          write: switch (item.mode) {
+            SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
+            SyncQueueMode.rincian => (sales, key) =>
+              sales.updateSale(old!.id, draft!, version!, key),
+            SyncQueueMode.header => (sales, key) =>
+              sales.updateSaleHeader(old!.id, header!, version!, key),
+          },
+        ),
+      );
+    } on ApiException catch (error) {
+      // Bentrok versi bukan penolakan biasa: pengguna memilih versi di 11.8.
+      if (error.code == 'SALE_VERSION_CONFLICT') {
+        throw V2SyncConflictException(error.message);
+      }
+      rethrow;
+    }
   }
 
   /// Baris server milik [id]; null kalau sudah tidak ada di daftar terbaru.

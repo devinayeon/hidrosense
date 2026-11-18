@@ -15,6 +15,18 @@ class V2SyncRejectedException implements Exception {
   String toString() => message;
 }
 
+/// Bentrok versi: versi baris di server sudah berubah, jadi kiriman ulang
+/// dengan tiket lama ditolak. Baris ditandai `konflik` dan dialog 11.8 yang
+/// memutuskan versi mana yang dipakai.
+class V2SyncConflictException implements Exception {
+  const V2SyncConflictException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// Pengirim satu jenis data dari antrean ke server.
 abstract interface class V2SyncSender {
   SyncQueueJenis get jenis;
@@ -145,7 +157,18 @@ class V2SyncReplayer {
           ),
         );
       } catch (error) {
-        if (_permanent(error)) {
+        if (error is V2SyncConflictException) {
+          await queue.markConflict(item.key, error.message);
+          failed++;
+          onProgress?.call(
+            V2SyncProgress(
+              current: current,
+              total: total,
+              item: item,
+              stage: V2SyncProgressStage.gagal,
+            ),
+          );
+        } else if (_permanent(error)) {
           await queue.markFailed(item.key, serviceError(error));
           failed++;
           onProgress?.call(

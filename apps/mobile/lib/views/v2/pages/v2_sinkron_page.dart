@@ -324,11 +324,17 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     );
   }
 
-  Future<void> _showConflict() async {
+  /// Dialog 11.8; [item] diisi baris yang benar-benar bentrok, jadi badan
+  /// dialog menyebut data nyata (mis. "Penjualan Toko Baru").
+  Future<void> _showConflict([V2SinkronItem? item]) async {
+    final nama = item?.nama;
+    final body = nama == null
+        ? 'Rusak Meja A2 diubah di server setelah Anda mengubahnya di HP.'
+        : '${item!.title} $nama diubah di server setelah Anda mengubahnya di HP.';
     await showV2Dialog(
       context,
       title: 'Data berubah di server',
-      body: 'Rusak Meja A2 diubah di server setelah Anda mengubahnya di HP.',
+      body: body,
       primaryLabel: 'Pakai data server',
       secondaryLabel: 'Kirim ulang punya saya',
     );
@@ -460,16 +466,21 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
         for (final item in items)
           V2SinkronRow(
             item: item,
-            onTap: actionable
-                ? switch (item.jenis) {
-                    V2SinkronJenis.penjualan => _openFix,
-                    V2SinkronJenis.rusak => _showConflict,
-                    _ => null,
-                  }
-                : null,
+            onTap: actionable ? _actionFor(item) : null,
           ),
       ],
     );
+  }
+
+  /// Aksi baris 11.7: bentrok versi membuka 11.8, penjualan ditolak membuka
+  /// form perbaikan, dan baris Rusak memakai contoh dialog desain.
+  VoidCallback? _actionFor(V2SinkronItem item) {
+    if (item.konflik) return () => _showConflict(item);
+    return switch (item.jenis) {
+      V2SinkronJenis.penjualan => _openFix,
+      V2SinkronJenis.rusak => () => _showConflict(item),
+      _ => null,
+    };
   }
 
   void _openNotificationSettings() {
