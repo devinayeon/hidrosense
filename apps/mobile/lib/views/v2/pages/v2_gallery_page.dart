@@ -19,6 +19,7 @@ import 'v2_notifications_page.dart';
 import 'v2_offline_login_page.dart';
 import 'v2_onboarding_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
 
 /// Halaman review semua widget reusable v2.
@@ -107,6 +108,12 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Inventaris (04)',
                         subtitle: 'Daftar stok, saringan, dan pencarian',
                         route: V2InventarisListPage.route,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Semaian (05)',
+                        subtitle: 'Daftar semaian, tambah, dan pindah ke meja',
+                        route: V2SemaianListPage.route,
                       ),
                       _FlowRow(
                         icon: V2IconName.sync,
@@ -420,6 +427,51 @@ class V2GalleryPage extends StatelessWidget {
                           builder: (_) => const V2InventarisFormPage.dataBerubah(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.user,
+                        title: 'Semaian pegawai (5.2)',
+                        subtitle: 'Tab bar peran pegawai',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianListPage.pegawai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Semaian memuat (5.3)',
+                        subtitle: 'Empat rangka kartu sebelum daftar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianListPage.loading(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Semaian gagal memuat (5.4)',
+                        subtitle: 'Pesan gagal dan tombol coba lagi',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianListPage.error(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Semaian kosong (5.5)',
+                        subtitle: 'Belum ada semaian tercatat',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianListPage.empty(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Semaian selesai (5.6)',
+                        subtitle: 'Baris selesai memudar',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => const V2SemaianListPage.selesai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
                       ),
                     ],
                   ),

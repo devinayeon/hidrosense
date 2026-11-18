@@ -4,6 +4,7 @@ import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
 import '../components/v2_inventaris_data.dart';
 import '../components/v2_penjualan_store.dart';
+import '../components/v2_semaian_data.dart';
 import '../components/v2_sinkron_data.dart';
 import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
@@ -29,6 +30,7 @@ import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
 
 /// Peran pengguna dipakai lewat `v2_roles.dart`; di-ekspor ulang di sini supaya
@@ -261,7 +263,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _onTabTap(int index) {
-    if (index == _akunIndex || index == 0 || index == v2StokTabIndex) {
+    if (index == _akunIndex ||
+        index == 0 ||
+        index == v2TanamTabIndex ||
+        index == v2StokTabIndex) {
       setState(() => _activeTab = index);
       return;
     }
@@ -312,6 +317,16 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       ];
     });
     if (updated.arsip && !item.arsip) _notice('${updated.nama} diarsipkan');
+  }
+
+  /// Buka form 5.7 dari tab Tanam; semaian baru menyisip paling atas.
+  void _openTambahSemaian() {
+    _notice('Form tambah semaian (5.7) belum tersedia.');
+  }
+
+  /// Buka detail 5.15 dari tab Tanam lewat ketukan baris.
+  void _openDetailSemaian(V2SemaianItem item) {
+    _notice('Detail semaian ${item.nama} (5.15) belum tersedia.');
   }
 
   void _openSync() {
@@ -388,6 +403,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   Widget build(BuildContext context) {
     final tabs = v2TabsFor(widget.role);
     final akun = _activeTab == _akunIndex;
+    final tanam = _activeTab == v2TanamTabIndex;
     final stok = _activeTab == v2StokTabIndex;
     return Theme(
       data: V2Theme.light,
@@ -411,6 +427,11 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onOpenSales: _petani ? _openSales : null,
                         onOpenSync: _openSync,
                         onLogOut: _confirmLogOut,
+                      )
+                    : tanam
+                    ? V2SemaianTabView(
+                        onAdd: _openTambahSemaian,
+                        onTapItem: _openDetailSemaian,
                       )
                     : stok
                     ? V2InventarisTabView(

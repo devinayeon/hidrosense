@@ -28,5 +28,8 @@ const List<V2TabItem> v2PegawaiTabs = <V2TabItem>[
 List<V2TabItem> v2TabsFor(V2BerandaRole role) =>
     role == V2BerandaRole.petani ? v2PetaniTabs : v2PegawaiTabs;
 
+/// Index tab "Tanam" di kedua peran; halaman 05 Semaian duduk di sini.
+const int v2TanamTabIndex = 1;
+
 /// Index tab "Stok" di kedua peran; halaman 04 Inventaris duduk di sini.
 const int v2StokTabIndex = 2;

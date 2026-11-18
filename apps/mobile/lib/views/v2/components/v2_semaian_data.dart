@@ -1,0 +1,180 @@
+/// Model dan data contoh alur "05 Semaian".
+///
+/// Umur semaian dihitung dari tanggal semai dan disebut HSS (hari setelah
+/// semai). Semua angka di frame (17, 10, 3, 23) diukur dari satu tanggal acuan
+/// [v2SemaianHariIni] supaya data contoh tidak ikut bergeser saat aplikasi
+/// dibuka di hari lain.
+library;
+
+/// Tanggal acuan data contoh page 05, 15 Nov 2026.
+///
+/// 29 Okt + 17, 5 Nov + 10, 12 Nov + 3, dan 23 Okt + 23 semuanya jatuh di
+/// tanggal ini; itulah HSS pada frame 5.1–5.6, 5.15, dan 5.16.
+final DateTime v2SemaianHariIni = DateTime(2026, 11, 15);
+
+/// Semaian siap pindah ke meja saat umurnya mencapai HSS ini (frame 5.15/5.16).
+const int v2SemaianHssSiapPindah = 15;
+
+/// Umur semaian dalam hari sejak [tanggalSemai] (HSS).
+///
+/// Dihitung dari tanggal saja, dalam UTC, supaya jam dan pergantian waktu
+/// musim panas tidak membuat satu hari hilang.
+int hssSemaian(DateTime tanggalSemai, {DateTime? hariIni}) {
+  final acuan = hariIni ?? v2SemaianHariIni;
+  final awal = DateTime.utc(
+    tanggalSemai.year,
+    tanggalSemai.month,
+    tanggalSemai.day,
+  );
+  final akhir = DateTime.utc(acuan.year, acuan.month, acuan.day);
+  return akhir.difference(awal).inDays;
+}
+
+/// Keadaan satu semaian; menentukan lencana di baris dan kartu detail.
+enum V2SemaianStatus {
+  /// Belum genap 15 hari; lencana "Berjalan" (frame 5.15).
+  berjalan,
+
+  /// Umur sudah 15 hari atau lebih; lencana "Siap pindah" (frame 5.16).
+  siapPindah,
+
+  /// Sudah ditandai selesai; baris memudar, tanpa lencana (frame 5.6).
+  selesai,
+}
+
+const List<String> _bulanSingkat = <String>[
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agu',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des',
+];
+
+/// `29 Okt` — hari tanpa angka nol di depan dan tanpa tahun, seperti subjudul
+/// "Semai 29 Okt" di frame 5.1.
+String labelTanggalSemai(DateTime tanggal) =>
+    '${tanggal.day} ${_bulanSingkat[tanggal.month - 1]}';
+
+/// Saringan keadaan semaian (frame 5.1/5.6).
+const List<String> labelChipSemaian = <String>['Semua', 'Siap pindah', 'Selesai'];
+
+/// Satu baris semaian.
+class V2SemaianItem {
+  const V2SemaianItem({
+    required this.id,
+    required this.nama,
+    required this.tanggalSemai,
+    required this.jumlahBenih,
+    this.selesai = false,
+  });
+
+  final String id;
+
+  /// Nama benih yang disemai, mis. `Romaine`.
+  final String nama;
+
+  /// Tanggal benih disemai; umur dihitung dari sini.
+  final DateTime tanggalSemai;
+
+  /// Banyak benih yang dipakai, mis. `200` (frame 5.15/5.16).
+  final int jumlahBenih;
+
+  /// Semaian yang sudah selesai tidak bisa diubah lagi (catatan alur page 05).
+  final bool selesai;
+
+  /// Umur semaian dalam hari (HSS).
+  int get hss => hssSemaian(tanggalSemai);
+
+  /// Siap pindah saat umurnya genap 15 hari dan belum ditandai selesai.
+  bool get siapPindah => !selesai && hss >= v2SemaianHssSiapPindah;
+
+  V2SemaianStatus get status => selesai
+      ? V2SemaianStatus.selesai
+      : siapPindah
+      ? V2SemaianStatus.siapPindah
+      : V2SemaianStatus.berjalan;
+
+  /// `HSS 17` (kolom kanan baris dan Value kartu detail).
+  String get labelHss => 'HSS $hss';
+
+  /// `Semai 29 Okt` (subjudul baris dan Kicker kartu detail).
+  String get labelSemai => 'Semai ${labelTanggalSemai(tanggalSemai)}';
+
+  /// `Romaine, 200 benih` (baris Meta kartu detail 5.15/5.16).
+  String get labelBenih => '$nama, $jumlahBenih benih';
+
+  /// Salinan dengan sebagian kolom diganti; dipakai setelah "Ubah semaian"
+  /// mengubah tanggal, jumlah benih, atau status selesai (frame 5.25–5.28).
+  V2SemaianItem copyWith({
+    String? id,
+    String? nama,
+    DateTime? tanggalSemai,
+    int? jumlahBenih,
+    bool? selesai,
+  }) {
+    return V2SemaianItem(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      tanggalSemai: tanggalSemai ?? this.tanggalSemai,
+      jumlahBenih: jumlahBenih ?? this.jumlahBenih,
+      selesai: selesai ?? this.selesai,
+    );
+  }
+}
+
+// --- Data contoh (frame 5.1, 5.2, 5.6) -----------------------------------
+
+/// Baris pertama frame 5.1/5.2 dan kartu detail 5.16: Romaine siap pindah,
+/// semai 29 Okt (HSS 17), 200 benih.
+final V2SemaianItem designSemaianRomaineSiapPindah = V2SemaianItem(
+  id: 'semaian-romaine-29-okt',
+  nama: 'Romaine',
+  tanggalSemai: DateTime(2026, 10, 29),
+  jumlahBenih: 200,
+);
+
+/// Baris kedua frame 5.1/5.2 dan kartu detail 5.15: Butterhead sedang
+/// berjalan, semai 5 Nov (HSS 10), 150 benih.
+final V2SemaianItem designSemaianButterhead = V2SemaianItem(
+  id: 'semaian-butterhead-5-nov',
+  nama: 'Butterhead',
+  tanggalSemai: DateTime(2026, 11, 5),
+  jumlahBenih: 150,
+);
+
+/// Baris ketiga frame 5.1/5.2: Romaine baru disemai, semai 12 Nov (HSS 3).
+///
+/// Jumlah benih tidak terbaca di frame; 100 dipakai sebagai contoh.
+final V2SemaianItem designSemaianRomaineBaru = V2SemaianItem(
+  id: 'semaian-romaine-12-nov',
+  nama: 'Romaine',
+  tanggalSemai: DateTime(2026, 11, 12),
+  jumlahBenih: 100,
+);
+
+/// Baris frame 5.6: Romaine sudah selesai, semai 23 Okt (HSS 23).
+final V2SemaianItem designSemaianSelesai = V2SemaianItem(
+  id: 'semaian-romaine-23-okt',
+  nama: 'Romaine',
+  tanggalSemai: DateTime(2026, 10, 23),
+  jumlahBenih: 200,
+  selesai: true,
+);
+
+/// Sumber daftar semaian: tiga baris berjalan dan satu baris selesai.
+///
+/// Chip "Semua" menyaring baris selesai keluar (frame 5.1), sehingga frame 5.6
+/// cukup memakai chip "Selesai" pada daftar yang sama.
+final List<V2SemaianItem> designSemaian = <V2SemaianItem>[
+  designSemaianRomaineSiapPindah,
+  designSemaianButterhead,
+  designSemaianRomaineBaru,
+  designSemaianSelesai,
+];
