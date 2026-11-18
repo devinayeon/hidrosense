@@ -292,6 +292,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         onSyncNow: replayer == null
             ? null
             : (onProgress) => replayer.run(onProgress: onProgress),
+        onResolveConflict: replayer == null
+            ? null
+            : (key, {required useServer}) =>
+                  replayer.resolveConflict(key, useServer: useServer),
       ),
     );
   }

@@ -29,6 +29,10 @@ typedef V2SyncNow =
       void Function(V2SyncProgress progress) onProgress,
     );
 
+/// Menyelesaikan satu baris konflik menurut pilihan dialog 11.8.
+typedef V2SyncConflictAction =
+    Future<void> Function(String key, {required bool useServer});
+
 /// Keadaan halaman sinkron yang punya frame sendiri di page 11.
 enum V2SinkronState {
   /// Frame 11.1: semua data sudah di server.
@@ -76,6 +80,7 @@ class V2SinkronPage extends StatefulWidget {
     this.items,
     this.queue,
     this.onSyncNow,
+    this.onResolveConflict,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
@@ -84,7 +89,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
@@ -92,7 +98,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
@@ -100,7 +107,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
@@ -108,7 +116,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
@@ -116,7 +125,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = 'Sinkron selesai',
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
@@ -124,7 +134,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
@@ -132,7 +143,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
@@ -140,7 +152,8 @@ class V2SinkronPage extends StatefulWidget {
       toast = null,
       items = null,
       queue = null,
-      onSyncNow = null;
+      onSyncNow = null,
+      onResolveConflict = null;
 
   final V2SinkronState state;
 
@@ -158,12 +171,17 @@ class V2SinkronPage extends StatefulWidget {
   /// [onProgress] melaporkan kemajuan tiap baris untuk banner 11.5.
   final V2SyncNow? onSyncNow;
 
+  /// Menyelesaikan baris konflik: [useServer] true membuang isi HP, false
+  /// menulis ulang isi HP dengan versi server terbaru. Null di galeri.
+  final V2SyncConflictAction? onResolveConflict;
+
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
     List<V2SinkronItem>? items,
     V2SyncQueue? queue,
     V2SyncNow? onSyncNow,
+    V2SyncConflictAction? onResolveConflict,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2SinkronPage(
@@ -172,6 +190,7 @@ class V2SinkronPage extends StatefulWidget {
         items: items,
         queue: queue,
         onSyncNow: onSyncNow,
+        onResolveConflict: onResolveConflict,
       ),
     );
   }
@@ -290,7 +309,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   }
 
   /// Teks banner 11.5: angka nyata bila halaman disambungkan, contoh di galeri.
-  String get _progressLabel => _syncTotal == 0
+  String get _progressLabel => widget.onSyncNow == null
       ? 'Mengirim 3 dari 5 data'
       : 'Mengirim $_syncCurrent dari $_syncTotal data';
 
@@ -331,13 +350,36 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     final body = nama == null
         ? 'Rusak Meja A2 diubah di server setelah Anda mengubahnya di HP.'
         : '${item!.title} $nama diubah di server setelah Anda mengubahnya di HP.';
-    await showV2Dialog(
+    final useServer = await showV2Dialog(
       context,
       title: 'Data berubah di server',
       body: body,
       primaryLabel: 'Pakai data server',
       secondaryLabel: 'Kirim ulang punya saya',
     );
+    if (useServer == null) return;
+    final resolve = widget.onResolveConflict;
+    final key = item?.kunci;
+    if (resolve == null || key == null) return;
+    try {
+      await resolve(key, useServer: useServer);
+      if (!mounted) return;
+      if (widget.queue?.items.isEmpty ?? false) {
+        setState(() {
+          _state = V2SinkronState.done;
+          _toast = 'Sinkron selesai';
+          _doneAt = DateTime.now();
+          _lastRun = const V2SyncRun();
+        });
+        _scheduleToastDismiss();
+      } else if (widget.onSyncNow != null) {
+        await _startSync();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _toast = 'Konflik belum selesai. Coba lagi.');
+      _scheduleToastDismiss();
+    }
   }
 
   bool get _sessionEnded => _state == V2SinkronState.sessionExpired;

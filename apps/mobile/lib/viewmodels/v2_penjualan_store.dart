@@ -23,7 +23,8 @@ import 'v2_sync_replayer.dart';
 /// dengan aplikasi v1. Tulis yang gagal tanpa jawaban pasti dicatat ke
 /// [V2SyncQueue] supaya tidak hilang saat aplikasi ditutup, dan bisa dikirim
 /// ulang sebagai [V2SyncSender].
-class V2PenjualanApiStore implements V2PenjualanStore, V2SyncSender {
+class V2PenjualanApiStore
+    implements V2PenjualanStore, V2SyncSender, V2SyncConflictResolver {
   V2PenjualanApiStore(this._viewModel, {this.queue});
 
   final PenjualanViewModel _viewModel;
@@ -191,6 +192,67 @@ class V2PenjualanApiStore implements V2PenjualanStore, V2SyncSender {
     }
   }
 
+  /// Menyelesaikan baris `konflik` menurut pilihan dialog 11.8.
+  ///
+  /// "Pakai data server" membuang isi HP. "Kirim ulang punya saya" memuat
+  /// ulang daftar, memakai versi server terbaru sebagai tiket, lalu menulis
+  /// ulang isi HP — tulis terakhir menang tanpa menabrak pemeriksaan versi.
+  @override
+  Future<void> resolveConflict(
+    SyncQueueItem item, {
+    required bool useServer,
+  }) async {
+    final queue = this.queue;
+    if (useServer) {
+      await queue?.remove(item.key);
+      return;
+    }
+    await _viewModel.refresh(force: true);
+    final old = item.mode == SyncQueueMode.baru
+        ? null
+        : _existing(item.target);
+    final version = old?.version;
+    if (item.mode != SyncQueueMode.baru &&
+        (old == null || version == null)) {
+      throw const V2SyncRejectedException(
+        'Penjualan sudah tidak ada di server; pakai data server.',
+      );
+    }
+    final draft = item.mode == SyncQueueMode.header
+        ? null
+        : _draftFromPayload(item.payload);
+    final header = item.mode == SyncQueueMode.header
+        ? _headerFromPayload(item.payload)
+        : null;
+    try {
+      await _viewModel.replayCommand(
+        SaleCommand(
+          key: item.key,
+          target: item.target,
+          payload: item.payload,
+          expectedVersion: version,
+          draft: draft,
+          headerDraft: header,
+          oldItem: old,
+          write: switch (item.mode) {
+            // Penjualan baru tidak punya versi, jadi tidak bisa bentrok.
+            SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
+            SyncQueueMode.rincian => (sales, key) =>
+              sales.updateSale(old!.id, draft!, version!, key),
+            SyncQueueMode.header => (sales, key) =>
+              sales.updateSaleHeader(old!.id, header!, version!, key),
+          },
+        ),
+      );
+    } on ApiException catch (error) {
+      if (error.code == 'SALE_VERSION_CONFLICT') {
+        throw V2SyncConflictException(error.message);
+      }
+      rethrow;
+    }
+    await queue?.remove(item.key);
+  }
+
   /// Baris server milik [id]; null kalau sudah tidak ada di daftar terbaru.
   PenjualanItem? _existing(String id) {
     for (final item in _viewModel.current.items) {
@@ -318,8 +380,13 @@ final v2PenjualanStoreProvider = Provider<V2PenjualanStore?>((ref) {
 final v2SyncReplayerProvider = Provider<V2SyncReplayer?>((ref) {
   final store = ref.watch(v2PenjualanStoreProvider);
   if (store is! V2SyncSender) return null;
+  final sender = store as V2SyncSender;
+  final resolver = store is V2SyncConflictResolver
+      ? store as V2SyncConflictResolver
+      : null;
   return V2SyncReplayer(
     queue: ref.watch(v2SyncQueueProvider.notifier),
-    senders: [store as V2SyncSender],
+    senders: [sender],
+    resolvers: [?resolver],
   );
 });

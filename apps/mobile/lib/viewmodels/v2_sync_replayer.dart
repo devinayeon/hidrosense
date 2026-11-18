@@ -27,6 +27,18 @@ class V2SyncConflictException implements Exception {
   String toString() => message;
 }
 
+/// Penyelesai konflik versi untuk satu jenis data.
+abstract interface class V2SyncConflictResolver {
+  SyncQueueJenis get jenis;
+
+  /// [useServer] true membuang isi HP dan memakai data server; false menulis
+  /// ulang isi HP dengan versi server terbaru.
+  Future<void> resolveConflict(
+    SyncQueueItem item, {
+    required bool useServer,
+  });
+}
+
 /// Pengirim satu jenis data dari antrean ke server.
 abstract interface class V2SyncSender {
   SyncQueueJenis get jenis;
@@ -105,11 +117,37 @@ enum V2SyncProgressStage {
 /// Hanya jenis yang punya pengirim yang dikirim; sisanya dibiarkan menunggu
 /// supaya penambahan alur lain tidak diam-diam membuang datanya.
 class V2SyncReplayer {
-  V2SyncReplayer({required this.queue, required List<V2SyncSender> senders})
-    : _senders = {for (final sender in senders) sender.jenis: sender};
+  V2SyncReplayer({
+    required this.queue,
+    required List<V2SyncSender> senders,
+    List<V2SyncConflictResolver> resolvers = const [],
+  }) : _senders = {for (final sender in senders) sender.jenis: sender},
+       _resolvers = {
+         for (final resolver in resolvers) resolver.jenis: resolver,
+       };
 
   final V2SyncQueue queue;
   final Map<SyncQueueJenis, V2SyncSender> _senders;
+  final Map<SyncQueueJenis, V2SyncConflictResolver> _resolvers;
+
+  /// Menyelesaikan satu baris `konflik` menurut pilihan pengguna di 11.8.
+  Future<void> resolveConflict(
+    String key, {
+    required bool useServer,
+  }) async {
+    SyncQueueItem? item;
+    for (final row in queue.items) {
+      if (row.key == key) item = row;
+    }
+    if (item == null) return;
+    final resolver = _resolvers[item.jenis];
+    if (resolver == null) {
+      throw const V2SyncRejectedException(
+        'Jenis data ini belum bisa diselesaikan dari HP.',
+      );
+    }
+    await resolver.resolveConflict(item, useServer: useServer);
+  }
 
   Future<V2SyncRun> run({
     void Function(V2SyncProgress progress)? onProgress,

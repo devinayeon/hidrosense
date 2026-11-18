@@ -31,6 +31,7 @@ class V2SinkronItem {
     required this.kode,
     required this.status,
     this.nama,
+    this.kunci,
     this.konflik = false,
   });
 
@@ -41,6 +42,9 @@ class V2SinkronItem {
 
   /// Nama data asli (mis. pembeli); dipakai dialog konflik 11.8.
   final String? nama;
+
+  /// Kunci idempoten baris antrean; null untuk baris contoh galeri.
+  final String? kunci;
 
   /// Baris bentrok versi: ketuk membuka dialog 11.8, bukan form perbaikan.
   final bool konflik;
@@ -107,6 +111,7 @@ V2SinkronItem _sinkronItemOf(
   return V2SinkronItem(
     jenis: jenis,
     nama: item.subtitle,
+    kunci: item.key,
     subtitle: konflik
         ? 'Berubah di server'
         : gagal
