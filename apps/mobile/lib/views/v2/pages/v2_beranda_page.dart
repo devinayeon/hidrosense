@@ -63,6 +63,8 @@ class V2BerandaPage extends StatefulWidget {
     this.siapPindahSubtitle = '1 semaian, HSS 17',
     this.lowStock = '2',
     this.filledHoles = '400',
+    this.weatherTitle = 'Berawan, 29°C',
+    this.weatherSubtitle = 'Hujan 14.00',
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onOpenNotifications,
@@ -85,7 +87,9 @@ class V2BerandaPage extends StatefulWidget {
   }) : state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
-       filledHoles = '400';
+       filledHoles = '400',
+       weatherTitle = 'Berawan, 29°C',
+       weatherSubtitle = 'Hujan 14.00';
 
   /// Frame `2.5 Offline dan antrean sinkron`.
   const V2BerandaPage.offline({
@@ -103,7 +107,9 @@ class V2BerandaPage extends StatefulWidget {
   }) : state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
-       filledHoles = '184';
+       filledHoles = '184',
+       weatherTitle = 'Berawan, 29°C',
+       weatherSubtitle = 'Hujan 14.00';
 
   /// Frame `2.6 BMKG tidak tersedia`.
   const V2BerandaPage.weatherUnavailable({
@@ -121,7 +127,9 @@ class V2BerandaPage extends StatefulWidget {
   }) : state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
-       filledHoles = '184';
+       filledHoles = '184',
+       weatherTitle = 'Berawan, 29°C',
+       weatherSubtitle = 'Hujan 14.00';
 
   final String userName;
 
@@ -135,6 +143,10 @@ class V2BerandaPage extends StatefulWidget {
   final String siapPindahSubtitle;
   final String lowStock;
   final String filledHoles;
+
+  /// Teks kartu cuaca (frame 2.1/2.2); diisi data BMKG saat beranda tersambung.
+  final String weatherTitle;
+  final String weatherSubtitle;
 
   /// Daftar akun pegawai (alur 03). Disimpan di sini supaya tetap utuh saat
   /// berpindah tab, lalu diteruskan ke halaman daftar/ubah.
@@ -358,8 +370,8 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             )
           else
             V2WeatherCard(
-              title: 'Berawan, 29°C',
-              subtitle: 'Hujan 14.00',
+              title: widget.weatherTitle,
+              subtitle: widget.weatherSubtitle,
               onTap: () => _notice('Halaman cuaca BMKG (10) belum tersedia.'),
             ),
         ],

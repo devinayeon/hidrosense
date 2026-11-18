@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../viewmodels/session_viewmodel.dart';
-import '../v2/pages/v2_beranda_page.dart';
+import '../v2/pages/v2_beranda_connected_page.dart';
+import '../v2/v2_roles.dart';
 import '../v2/v2_ui_mode.dart';
 import 'login_page.dart';
 import 'main_page.dart';
@@ -42,7 +43,7 @@ class _AppGateState extends ConsumerState<AppGate> {
           builder: (_) {
             if (user == null) return const LoginPage();
             if (!useV2) return const MainPage();
-            return V2BerandaPage(
+            return V2BerandaConnectedPage(
               userName: user.name,
               fullName: user.name,
               username: user.username,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../data/services/notification_permission_service.dart';
 import '../components/v2_auth_assets.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_sinkron_data.dart';
@@ -306,9 +307,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   }
 
   void _openNotificationSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pengaturan sistem belum terhubung.')),
-    );
+    NotificationPermissionService.openSettings();
   }
 
   Widget _buildFooter() {
