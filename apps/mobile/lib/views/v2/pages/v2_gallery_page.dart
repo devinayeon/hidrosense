@@ -21,6 +21,7 @@ import 'v2_onboarding_page.dart';
 import 'v2_penjualan_list_page.dart';
 import 'v2_pindah_meja_page.dart';
 import 'v2_semaian_detail_page.dart';
+import 'v2_semaian_edit_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
@@ -657,6 +658,51 @@ class V2GalleryPage extends StatelessWidget {
                           builder: (_) => V2SemaianDetailPage.selesaiSisa(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah semaian (5.25)',
+                        subtitle: 'Butterhead 150 benih, Rak 2, aktif',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianEditPage.butterhead(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.edit,
+                        title: 'Ubah semaian Romaine (5.27)',
+                        subtitle: '200 benih, Rak 2, aktif',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianEditPage.romaine(),
+                        ),
+                        iconTone: V2ListItemIconTone.blue,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Perubahan tersimpan (5.26)',
+                        subtitle: 'Detail Butterhead 140 benih dan toast',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.tersimpan(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.warning,
+                        title: 'Tandai selesai (5.28)',
+                        subtitle: 'Dialog destruktif sisa 80 benih',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianEditPage.tandaiSelesai(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sync,
+                        title: 'Data sudah berubah (5.31)',
+                        subtitle: 'Dialog muat ulang karena bentrok',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianEditPage.konflik(),
+                        ),
+                        iconTone: V2ListItemIconTone.warning,
                       ),
                     ],
                   ),

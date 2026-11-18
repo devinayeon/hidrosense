@@ -79,6 +79,7 @@ class V2SemaianItem {
     this.jumlahPindah,
     this.pindahKe,
     this.tidakDipindah,
+    this.keterangan,
   });
 
   final String id;
@@ -114,6 +115,9 @@ class V2SemaianItem {
 
   /// Benih yang sengaja tidak dipindah saat semaian ditutup (frame 5.29).
   final int? tidakDipindah;
+
+  /// Catatan bebas, mis. `Rak 2` (form ubah 5.25/5.27).
+  final String? keterangan;
 
   /// Umur semaian dalam hari (HSS).
   int get hss => hssSemaian(tanggalSemai);
@@ -172,6 +176,7 @@ class V2SemaianItem {
     int? jumlahPindah,
     String? pindahKe,
     int? tidakDipindah,
+    String? keterangan,
     bool hapusSisaBenih = false,
   }) {
     return V2SemaianItem(
@@ -186,6 +191,7 @@ class V2SemaianItem {
       jumlahPindah: jumlahPindah ?? this.jumlahPindah,
       pindahKe: pindahKe ?? this.pindahKe,
       tidakDipindah: tidakDipindah ?? this.tidakDipindah,
+      keterangan: keterangan ?? this.keterangan,
     );
   }
 }
@@ -199,6 +205,7 @@ final V2SemaianItem designSemaianRomaineSiapPindah = V2SemaianItem(
   nama: 'Romaine',
   tanggalSemai: DateTime(2026, 10, 29),
   jumlahBenih: 200,
+  keterangan: 'Rak 2',
 );
 
 /// Baris kedua frame 5.1/5.2 dan kartu detail 5.15: Butterhead sedang
@@ -208,6 +215,13 @@ final V2SemaianItem designSemaianButterhead = V2SemaianItem(
   nama: 'Butterhead',
   tanggalSemai: DateTime(2026, 11, 5),
   jumlahBenih: 150,
+  keterangan: 'Rak 2',
+);
+
+/// Frame 5.26: Butterhead setelah jumlah benih diubah dari 150 menjadi 140 di
+/// form "Ubah semaian", dengan toast "Perubahan tersimpan".
+final V2SemaianItem designSemaianTersimpan = designSemaianButterhead.copyWith(
+  jumlahBenih: 140,
 );
 
 /// Baris ketiga frame 5.1/5.2: Romaine baru disemai, semai 12 Nov (HSS 3).
