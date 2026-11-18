@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../components/v2_penjualan_data.dart';
+import '../components/v2_penjualan_store.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
@@ -22,48 +23,76 @@ class V2PenjualanDetailPage extends StatefulWidget {
     super.key,
     required this.penjualan,
     this.toast,
+    this.panen,
+    this.store,
   });
 
   /// Frame `8.15 Detail penjualan baru`: Warung Sari belum lunas.
   V2PenjualanDetailPage.baru({super.key})
     : penjualan = penjualanWarungSari,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.17 Detail penjualan, antrean`.
   V2PenjualanDetailPage.queued({super.key})
     : penjualan = penjualanWarungSariAntrean,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.18 Detail penjualan`: Toko Segar belum lunas.
   V2PenjualanDetailPage.tokoSegar({super.key})
     : penjualan = penjualanTokoSegar,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.19 Detail penjualan lunas`.
   V2PenjualanDetailPage.lunas({super.key})
     : penjualan = penjualanPasarInduk,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.20 Ditandai lunas`: Toko Segar sudah lunas, toast menyala.
   V2PenjualanDetailPage.markedPaid({super.key})
     : penjualan = penjualanTokoSegar.copyWith(
         pembayaran: V2PenjualanBayar.lunas,
       ),
-      toast = 'Ditandai lunas';
+      toast = 'Ditandai lunas',
+      panen = null,
+      store = null;
 
   /// Frame `8.22 Perubahan tersimpan`: harga Toko Segar naik jadi 41.000.
   V2PenjualanDetailPage.editSaved({super.key})
     : penjualan = penjualanTokoSegarDiubah,
-      toast = 'Perubahan tersimpan';
+      toast = 'Perubahan tersimpan',
+      panen = null,
+      store = null;
 
   final V2Penjualan penjualan;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 8.20/8.22).
   final String? toast;
 
-  static Route<V2Penjualan> route(V2Penjualan penjualan) {
+  /// Pilihan panen untuk form ubah; null berarti data contoh galeri.
+  final List<V2PenjualanPanen>? panen;
+
+  /// Backend penjualan; null berarti mode pratinjau (hanya di memori).
+  final V2PenjualanStore? store;
+
+  static Route<V2Penjualan> route(
+    V2Penjualan penjualan, {
+    List<V2PenjualanPanen>? panen,
+    V2PenjualanStore? store,
+  }) {
     return MaterialPageRoute<V2Penjualan>(
-      builder: (_) => V2PenjualanDetailPage(penjualan: penjualan),
+      builder: (_) => V2PenjualanDetailPage(
+        penjualan: penjualan,
+        panen: panen,
+        store: store,
+      ),
     );
   }
 
@@ -75,6 +104,9 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
   late V2Penjualan _penjualan = widget.penjualan;
   Timer? _toastTimer;
   String? _toast;
+
+  /// Sedang mengirim "Tandai lunas" ke backend.
+  bool _busy = false;
 
   @override
   void initState() {
@@ -104,16 +136,41 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
 
   void _close() => Navigator.of(context).pop(_penjualan);
 
-  void _markPaid() {
-    setState(() {
-      _penjualan = _penjualan.copyWith(pembayaran: V2PenjualanBayar.lunas);
-    });
-    _showToast('Ditandai lunas');
+  Future<void> _markPaid() async {
+    final store = widget.store;
+    if (store == null) {
+      setState(() {
+        _penjualan = _penjualan.copyWith(pembayaran: V2PenjualanBayar.lunas);
+      });
+      _showToast('Ditandai lunas');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final updated = await store.markPaid(_penjualan);
+      if (!mounted) return;
+      setState(() {
+        _penjualan = updated;
+        _busy = false;
+      });
+      _showToast('Ditandai lunas');
+    } on V2PenjualanStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
   }
 
   Future<void> _edit() async {
     final updated = await Navigator.of(context).push<V2Penjualan>(
-      V2PenjualanFormPage.route(initial: _penjualan),
+      V2PenjualanFormPage.route(
+        initial: _penjualan,
+        panen: widget.panen,
+        store: widget.store,
+      ),
     );
     if (updated == null || !mounted) return;
     setState(() => _penjualan = updated);
@@ -167,8 +224,10 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                         label: 'Tandai lunas',
                         state: antrean
                             ? V2ButtonState.disabled
+                            : _busy
+                            ? V2ButtonState.loading
                             : V2ButtonState.normal,
-                        onPressed: antrean ? null : _markPaid,
+                        onPressed: antrean || _busy ? null : _markPaid,
                       ),
                     V2Button(
                       label: 'Ubah',

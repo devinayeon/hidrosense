@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/v2_penjualan_data.dart';
+import '../components/v2_penjualan_store.dart';
 import '../components/v2_penjualan_tint_card.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
@@ -37,6 +38,8 @@ class V2PenjualanFormPage extends StatefulWidget {
     this.previewDiscard = false,
     this.previewConflict = false,
     this.previewPanenSheet = false,
+    this.panen,
+    this.store,
     this.forceJumlahFocus = false,
   });
 
@@ -51,7 +54,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.8 Catat penjualan, panen baru`: pilihan panen tanggal 15 Nov.
   const V2PenjualanFormPage.panenBaru({super.key})
@@ -64,7 +69,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.9 Pilih panen`: sheet pilihan panen sudah terbuka.
   const V2PenjualanFormPage.pilihPanen({super.key})
@@ -77,7 +84,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = true,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.10 Catat penjualan, keyboard`: kolom jumlah sedang difokus.
   const V2PenjualanFormPage.keyboard({super.key})
@@ -90,7 +99,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = true;
+      forceJumlahFocus = true,
+      panen = null,
+      store = null;
 
   /// Frame `8.11 Catat penjualan, validasi`.
   const V2PenjualanFormPage.validation({super.key})
@@ -103,7 +114,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.12 Melebihi sisa panen`.
   const V2PenjualanFormPage.exceeds({super.key})
@@ -116,7 +129,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.13 Tanggal sebelum panen`.
   const V2PenjualanFormPage.dateBefore({super.key})
@@ -129,7 +144,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.23 Buang perubahan`: dialog buang sudah terbuka.
   const V2PenjualanFormPage.discard({super.key})
@@ -142,7 +159,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = true,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.24 Data sudah berubah`: dialog muat ulang sudah terbuka.
   const V2PenjualanFormPage.conflict(V2Penjualan penjualan, {super.key})
@@ -155,7 +174,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = true,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `8.21 Ubah penjualan`.
   const V2PenjualanFormPage.edit(V2Penjualan penjualan, {super.key})
@@ -168,7 +189,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Frame `11.9 Perbaiki penjualan`: jumlah melebihi sisa panen, lalu dikirim
   /// ulang.
@@ -182,7 +205,9 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewDiscard = false,
       previewConflict = false,
       previewPanenSheet = false,
-      forceJumlahFocus = false;
+      forceJumlahFocus = false,
+      panen = null,
+      store = null;
 
   /// Data awal; null berarti mencatat penjualan baru.
   final V2Penjualan? initial;
@@ -203,11 +228,25 @@ class V2PenjualanFormPage extends StatefulWidget {
   /// Untuk pratinjau 8.10: kolom jumlah tampil terfokus tanpa keyboard nyata.
   final bool forceJumlahFocus;
 
+  /// Pilihan panen; null berarti data contoh galeri.
+  final List<V2PenjualanPanen>? panen;
+
+  /// Backend penjualan; null berarti mode pratinjau (hanya di memori).
+  final V2PenjualanStore? store;
+
   bool get isEdit => initial != null;
 
-  static Route<V2Penjualan> route({V2Penjualan? initial}) {
+  static Route<V2Penjualan> route({
+    V2Penjualan? initial,
+    List<V2PenjualanPanen>? panen,
+    V2PenjualanStore? store,
+  }) {
     return MaterialPageRoute<V2Penjualan>(
-      builder: (_) => V2PenjualanFormPage(initial: initial),
+      builder: (_) => V2PenjualanFormPage(
+        initial: initial,
+        panen: panen,
+        store: store,
+      ),
     );
   }
 
@@ -216,8 +255,6 @@ class V2PenjualanFormPage extends StatefulWidget {
 }
 
 class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
-  static final DateTime _tanggalPanen = DateTime(2026, 11, 6);
-
   late final TextEditingController _pembeli;
   late final TextEditingController _jumlah;
   late final TextEditingController _harga;
@@ -232,8 +269,14 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   static const double _keyboardBottomSpace = 53;
 
   late DateTime _tanggal;
-  String? _panen;
+  V2PenjualanPanen? _panen;
+
+  /// Label panen untuk pratinjau frame 8.8 (panen yang belum ada di daftar).
+  String? _panenPreview;
   int _pembayaran = 0;
+
+  /// Sedang mengirim ke backend.
+  bool _saving = false;
 
   String? _tanggalError;
   String? _pembeliError;
@@ -267,18 +310,59 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   String get _actionLabel =>
       widget.fixing ? 'Simpan dan kirim ulang' : 'Simpan';
 
-  int get _sisaPanen {
-    final label = _panen;
+  /// Pilihan panen; baris yang sedang diubah mendapat kembali beratnya sendiri
+  /// supaya sisanya bisa dialokasikan ulang (sama seperti `saleBatchesForForm`).
+  List<V2PenjualanPanen> get _options {
+    final base = widget.panen ?? designPanen;
+    final own = _ownOption;
+    if (own == null) return base;
+    final index = base.indexWhere((option) => option.id == own.id);
+    if (index == -1) return [own, ...base];
+    return [
+      for (var cursor = 0; cursor < base.length; cursor++)
+        if (cursor == index)
+          V2PenjualanPanen(
+            id: base[cursor].id,
+            tanggalPanen: base[cursor].tanggalPanen,
+            sisaKg: base[cursor].sisaKg + own.sisaKg,
+          )
+        else
+          base[cursor],
+    ];
+  }
+
+  /// Panen milik baris yang diubah, bila barisnya satu panen.
+  V2PenjualanPanen? get _ownOption {
+    final initial = widget.initial;
+    final id = initial?.panenId;
+    final tanggal = initial?.tanggalPanen;
+    if (initial == null || id == null || tanggal == null) return null;
+    return V2PenjualanPanen(
+      id: id,
+      tanggalPanen: tanggal,
+      sisaKg: initial.jumlahKg,
+    );
+  }
+
+  String? get _panenLabel => _panen?.label ?? _panenPreview;
+
+  bool _samePanen(V2PenjualanPanen? a, V2PenjualanPanen? b) {
+    if (a == null || b == null) return false;
+    if (a.id != null && b.id != null) return a.id == b.id;
+    return a.label == b.label;
+  }
+
+  double get _sisaPanen {
+    final option = _panen;
+    if (option != null) return option.sisaKg;
+    final label = _panenPreview;
     if (label == null) return 0;
-    for (final option in designPanen) {
-      if (option.label == label) return option.sisaKg;
-    }
     // Panen 15 Nov (frame 8.8) tidak ada di daftar contoh.
     return label.contains('15 Nov') ? 252 : 0;
   }
 
-  int get _total =>
-      parseAngkaRibu(_jumlah.text) * parseAngkaRibu(_harga.text);
+  num get _total =>
+      parseKg(_jumlah.text) * parseAngkaRibu(_harga.text);
 
   @override
   void initState() {
@@ -297,16 +381,21 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           ? ''
           : widget.previewExceeds || widget.fixing
           ? '200'
-          : '${initial?.jumlahKg ?? 60}',
+          : formatAngkaKg(initial?.jumlahKg ?? 60),
     );
     _harga = TextEditingController(
       text: empty
           ? ''
-          : formatAngkaRibu(initial?.hargaPerKg ?? 40000),
+          : formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000),
     );
-    _panen = empty
-        ? null
-        : widget.panenLabel ?? initial?.panen ?? designPanen.first.label;
+    if (!empty) {
+      if (widget.panenLabel != null) {
+        _panenPreview = widget.panenLabel;
+      } else {
+        final own = _ownOption;
+        _panen = own ?? (_options.isEmpty ? null : _options.first);
+      }
+    }
     _pembayaran = (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
 
     for (final controller in _controllers) {
@@ -365,14 +454,15 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     }
     _dirty = false;
     _pembeli.text = initial?.pembeli ?? 'Warung Sari';
-    _jumlah.text = '${initial?.jumlahKg ?? 60}';
-    _harga.text = formatAngkaRibu(initial?.hargaPerKg ?? 40000);
+    _jumlah.text = formatAngkaKg(initial?.jumlahKg ?? 60);
+    _harga.text = formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000);
     for (final controller in _controllers) {
       controller.addListener(_onFieldChanged);
     }
     setState(() {
       _tanggal = initial?.tanggal ?? DateTime(2026, 11, 15);
-      _panen = initial?.panen ?? designPanen.first.label;
+      _panenPreview = null;
+      _panen = _ownOption ?? (_options.isEmpty ? null : _options.first);
       _pembayaran =
           (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
       _tanggalError = null;
@@ -422,12 +512,13 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
 
   Future<void> _pickDate() async {
     var day = _tanggal.day;
+    final bulan = DateTime(_tanggal.year, _tanggal.month);
     await showV2BottomSheet<void>(
       context,
       child: StatefulBuilder(
         builder: (sheetContext, setSheet) => V2DateSheet(
-          monthLabel: 'November 2026',
-          days: _hariNovember(),
+          monthLabel: formatBulanTahun(bulan),
+          days: _hariBulan(bulan),
           selectedDay: day,
           onSelect: (value) => setSheet(() => day = value),
           onConfirm: () => Navigator.of(sheetContext).pop(),
@@ -436,13 +527,14 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     );
     if (!mounted) return;
     setState(() {
-      _tanggal = DateTime(2026, 11, day);
+      _tanggal = DateTime(bulan.year, bulan.month, day);
       _tanggalError = null;
       _dirty = true;
     });
   }
 
   Future<void> _pickPanen() async {
+    final options = _options;
     var picked = _panen;
     await showV2BottomSheet<void>(
       context,
@@ -456,18 +548,18 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (var index = 0; index < designPanen.length; index++) ...[
+              for (var index = 0; index < options.length; index++) ...[
                 // Komponen `Sheet/Pilih` merapatkan baris pilihan 16.
                 if (index > 0) const SizedBox(height: V2Space.lg),
                 V2OptionRow(
-                  label: designPanen[index].label,
-                  state: !designPanen[index].tersedia
+                  label: options[index].label,
+                  state: !options[index].tersedia
                       ? V2OptionState.disabled
-                      : designPanen[index].label == picked
+                      : _samePanen(options[index], picked)
                       ? V2OptionState.selected
                       : V2OptionState.normal,
-                  onTap: designPanen[index].tersedia
-                      ? () => setSheet(() => picked = designPanen[index].label)
+                  onTap: options[index].tersedia
+                      ? () => setSheet(() => picked = options[index])
                       : null,
                 ),
               ],
@@ -477,9 +569,10 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       ),
     );
     if (!mounted) return;
-    if (picked != null && picked != _panen) {
+    if (picked != null && !_samePanen(picked, _panen)) {
       setState(() {
         _panen = picked;
+        _panenPreview = null;
         _panenError = null;
         _jumlahError = null;
         _dirty = true;
@@ -487,41 +580,78 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     }
   }
 
-  List<int?> _hariNovember() {
-    final first = DateTime(2026, 11, 1);
-    final count = DateTime(2026, 12, 0).day;
+  List<int?> _hariBulan(DateTime bulan) {
+    final count = DateTime(bulan.year, bulan.month + 1, 0).day;
     return [
-      for (var index = 0; index < first.weekday - 1; index++) null,
+      for (var index = 0; index < bulan.weekday - 1; index++) null,
       for (var day = 1; day <= count; day++) day,
     ];
   }
 
-  void _save() {
+  Future<void> _save() async {
     FocusScope.of(context).unfocus();
 
     final pembeli = _pembeli.text.trim();
-    final jumlah = parseAngkaRibu(_jumlah.text);
-    final harga = parseAngkaRibu(_harga.text);
+    final jumlah = parseKg(_jumlah.text);
+    final harga = parseAngkaRibu(_harga.text).toDouble();
+    final panen = _panen;
+    final tanggalPanen = panen?.tanggalPanen;
 
     setState(() {
-      _tanggalError = _tanggal.isBefore(_tanggalPanen)
-          ? 'Sebelum panen (6 Nov)'
+      _tanggalError =
+          tanggalPanen != null && _tanggal.isBefore(tanggalPanen)
+          ? 'Sebelum panen (${formatTanggalPendek(tanggalPanen)})'
           : null;
       _pembeliError = pembeli.isEmpty ? 'Isi nama pembeli' : null;
-      _panenError = _panen == null ? 'Pilih panen' : null;
+      _panenError = _panenLabel == null ? 'Pilih panen' : null;
       _jumlahError = jumlah <= 0
           ? 'Isi jumlah'
           : jumlah > _sisaPanen
-          ? 'Sisa $_sisaPanen kg'
+          ? 'Sisa ${formatKg(_sisaPanen)}'
           : null;
       _hargaError = harga <= 0 ? 'Isi harga' : null;
     });
 
     if (_hasError) return;
 
-    _dirty = false;
+    final store = widget.store;
+    if (store == null) {
+      _popWithPreview(pembeli, jumlah, harga);
+      return;
+    }
+
+    setState(() => _saving = true);
+    final draft = V2PenjualanDraft(
+      tanggal: _tanggal,
+      pembeli: pembeli,
+      panenId: panen?.id,
+      jumlahKg: jumlah,
+      hargaPerKg: harga,
+      pembayaran: _pembayaran == 0
+          ? V2PenjualanBayar.lunas
+          : V2PenjualanBayar.belumLunas,
+    );
+    try {
+      final result = widget.isEdit
+          ? await store.update(widget.initial!, draft)
+          : await store.create(draft);
+      if (!mounted) return;
+      _dirty = false;
+      Navigator.of(context).pop(result);
+    } on V2PenjualanStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
+  }
+
+  /// Mode pratinjau: hasil dirangkai di memori, tanpa backend.
+  void _popWithPreview(String pembeli, double jumlah, double harga) {
     final initial = widget.initial;
-    final panen = _panen!;
+    final panen = _panenLabel!;
+    _dirty = false;
     Navigator.of(context).pop(
       V2Penjualan(
         id: initial?.id ?? 'sale-${pembeli.toLowerCase()}',
@@ -536,6 +666,9 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         panenAsal: panen.contains('15 Nov')
             ? 'Dari panen 15 Nov, Meja A1'
             : 'Dari panen 6 Nov, Meja A1',
+        panenId: _panen?.id ?? initial?.panenId,
+        tanggalPanen: _panen?.tanggalPanen ?? initial?.tanggalPanen,
+        version: initial?.version,
         sync: initial?.sync ?? V2PenjualanSync.terkirim,
       ),
     );
@@ -550,7 +683,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     return Theme(
       data: V2Theme.light,
       child: PopScope<V2Penjualan>(
-        canPop: !_dirty,
+        canPop: !_dirty && !_saving,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
           _back();
@@ -588,7 +721,13 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
                   child: V2ActionBar(
                     safeBottom: !keyboardOpen,
                     actions: [
-                      V2Button(label: _actionLabel, onPressed: _save),
+                      V2Button(
+                        label: _actionLabel,
+                        state: _saving
+                            ? V2ButtonState.loading
+                            : V2ButtonState.normal,
+                        onPressed: _saving ? null : _save,
+                      ),
                     ],
                   ),
                 ),
@@ -619,7 +758,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       SizedBox(height: gap),
       V2SelectField(
         label: 'Panen',
-        value: _panen,
+        value: _panenLabel,
         hint: '',
         error: _panenError,
         onTap: _pickPanen,

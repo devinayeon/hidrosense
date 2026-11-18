@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_penjualan_assets.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_penjualan_row.dart';
 import '../components/v2_penjualan_skeleton.dart';
+import '../components/v2_penjualan_store.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
@@ -58,6 +60,8 @@ class V2PenjualanListPage extends StatefulWidget {
     this.state = V2PenjualanListState.ready,
     this.filterIndex = 0,
     this.toast,
+    this.panen,
+    this.store,
   });
 
   /// Frame `8.2 Memuat penjualan`.
@@ -66,7 +70,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.loading,
       filterIndex = 0,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.3 Gagal memuat penjualan`.
   V2PenjualanListPage.error({super.key})
@@ -74,7 +80,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.error,
       filterIndex = 0,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.4 Belum ada penjualan`.
   const V2PenjualanListPage.empty({super.key})
@@ -82,7 +90,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.empty,
       filterIndex = 0,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.6 Penjualan, belum lunas`: saringan "Belum lunas" menyala.
   V2PenjualanListPage.belumLunas({super.key})
@@ -90,7 +100,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.ready,
       filterIndex = 1,
-      toast = null;
+      toast = null,
+      panen = null,
+      store = null;
 
   /// Frame `8.14 Penjualan dicatat`.
   V2PenjualanListPage.created({super.key})
@@ -98,7 +110,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualanBaru,
       state = V2PenjualanListState.created,
       filterIndex = 0,
-      toast = 'Penjualan dicatat';
+      toast = 'Penjualan dicatat',
+      panen = null,
+      store = null;
 
   /// Frame `8.16 Tersimpan di HP`.
   V2PenjualanListPage.offline({super.key})
@@ -106,7 +120,9 @@ class V2PenjualanListPage extends StatefulWidget {
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.offline,
       filterIndex = 0,
-      toast = 'Tersimpan di HP';
+      toast = 'Tersimpan di HP',
+      panen = null,
+      store = null;
 
   final List<V2Penjualan>? initialPenjualan;
   final V2PenjualanRingkasan ringkasan;
@@ -116,16 +132,26 @@ class V2PenjualanListPage extends StatefulWidget {
   /// Toast yang sudah tampil saat halaman dibuka (frame 8.14/8.16).
   final String? toast;
 
+  /// Pilihan panen untuk form; null berarti memakai data contoh galeri.
+  final List<V2PenjualanPanen>? panen;
+
+  /// Backend penjualan; null berarti mode pratinjau (hanya di memori).
+  final V2PenjualanStore? store;
+
   static Route<void> route({
     List<V2Penjualan>? initialPenjualan,
     V2PenjualanRingkasan ringkasan = designRingkasanPenjualan,
     String? toast,
+    List<V2PenjualanPanen>? panen,
+    V2PenjualanStore? store,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2PenjualanListPage(
         initialPenjualan: initialPenjualan,
         ringkasan: ringkasan,
         toast: toast,
+        panen: panen,
+        store: store,
       ),
     );
   }
@@ -138,13 +164,23 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   static const List<String> _filters = <String>['Semua', 'Belum lunas', 'Lunas'];
 
   late List<V2Penjualan> _items = widget.initialPenjualan ?? designPenjualan;
+  late V2PenjualanRingkasan _ringkasan = widget.ringkasan;
+  late List<V2PenjualanPanen> _panenOptions = widget.panen ?? designPanen;
   late int _filter = widget.filterIndex;
   Timer? _toastTimer;
   String? _toast;
 
-  bool get _loading => widget.state == V2PenjualanListState.loading;
-  bool get _error => widget.state == V2PenjualanListState.error;
-  bool get _emptyList => widget.state == V2PenjualanListState.empty;
+  /// Daftar sedang dimuat dari backend.
+  bool _fetching = false;
+
+  /// Galat muat dari backend; null berarti aman.
+  String? _loadError;
+
+  bool get _loading =>
+      _fetching || widget.state == V2PenjualanListState.loading;
+  bool get _error => _loadError != null || widget.state == V2PenjualanListState.error;
+  bool get _emptyList =>
+      !_loading && !_error && _items.isEmpty;
   bool get _offline => widget.state == V2PenjualanListState.offline;
 
   /// Ikon grafik hanya muncul saat daftar siap dibaca (frame 8.1/8.6/8.14/
@@ -162,6 +198,46 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     super.initState();
     _toast = widget.toast;
     if (_toast != null) _scheduleToastDismiss();
+    if (widget.store != null) _load();
+  }
+
+  /// Memuat daftar, pilihan panen, dan ringkasan bulan berjalan.
+  Future<void> _load() async {
+    final store = widget.store;
+    if (store == null) return;
+    setState(() {
+      _fetching = true;
+      _loadError = null;
+    });
+    try {
+      final snapshot = await store.load();
+      if (!mounted) return;
+      setState(() {
+        _items = snapshot.items;
+        _panenOptions = snapshot.panen;
+        _ringkasan = _ringkasanFor(snapshot.items);
+        _fetching = false;
+      });
+    } on V2PenjualanStoreException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _fetching = false;
+        _loadError = error.message;
+      });
+    }
+  }
+
+  /// Ringkasan hanya menghitung penjualan bulan berjalan (Jakarta).
+  V2PenjualanRingkasan _ringkasanFor(List<V2Penjualan> items) {
+    final today = jakartaToday();
+    final bulanIni = items
+        .where(
+          (item) =>
+              item.tanggal.year == today.year &&
+              item.tanggal.month == today.month,
+        )
+        .toList();
+    return ringkasanPenjualan(bulanIni, kicker: formatBulanTahun(today));
   }
 
   @override
@@ -189,17 +265,27 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
   Future<void> _openCreate() async {
     final created = await Navigator.of(context).push<V2Penjualan>(
-      V2PenjualanFormPage.route(),
+      V2PenjualanFormPage.route(
+        panen: _panenOptions,
+        store: widget.store,
+      ),
     );
     if (created == null || !mounted) return;
-    _items = [created, ..._items];
-    _filter = 0;
+    setState(() {
+      _items = [created, ..._items];
+      _filter = 0;
+      if (widget.store != null) _ringkasan = _ringkasanFor(_items);
+    });
     _showToast('Penjualan dicatat');
   }
 
   Future<void> _openDetail(V2Penjualan penjualan) async {
     final updated = await Navigator.of(context).push<V2Penjualan>(
-      V2PenjualanDetailPage.route(penjualan),
+      V2PenjualanDetailPage.route(
+        penjualan,
+        panen: _panenOptions,
+        store: widget.store,
+      ),
     );
     if (updated == null || !mounted) return;
     setState(() {
@@ -207,6 +293,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
         for (final item in _items)
           if (item.id == updated.id) updated else item,
       ];
+      if (widget.store != null) _ringkasan = _ringkasanFor(_items);
     });
   }
 
@@ -272,8 +359,9 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
               padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
               child: V2ErrorState(
                 title: 'Gagal memuat',
-                body: 'Periksa internet, lalu coba lagi.',
+                body: _loadError ?? 'Periksa internet, lalu coba lagi.',
                 actionLabel: 'Coba lagi',
+                onAction: _load,
                 illustration: Image.asset(
                   V2PenjualanAssets.offlineNoInternet,
                   width: 160,
@@ -359,11 +447,11 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
   Widget _buildSummary() {
     return V2SummaryCard(
-      kicker: widget.ringkasan.kicker,
-      value: widget.ringkasan.total,
-      meta: widget.ringkasan.kgTerjual,
-      extra: widget.ringkasan.belumLunas,
-      badge: widget.ringkasan.adaBelumLunas
+      kicker: _ringkasan.kicker,
+      value: _ringkasan.total,
+      meta: _ringkasan.kgTerjual,
+      extra: _ringkasan.belumLunas,
+      badge: _ringkasan.adaBelumLunas
           ? const V2Badge(label: 'Belum lunas', status: V2BadgeStatus.warning)
           : null,
     );

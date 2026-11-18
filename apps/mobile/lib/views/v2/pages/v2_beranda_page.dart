@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
+import '../components/v2_penjualan_store.dart';
 import '../components/v2_beranda_hero.dart';
 import '../components/v2_beranda_skeleton.dart';
 import '../components/v2_beranda_stats.dart';
@@ -68,6 +69,7 @@ class V2BerandaPage extends StatefulWidget {
     this.weatherSubtitle = 'Hujan 14.00',
     this.initialEmployees = designEmployees,
     this.employeeStore,
+    this.penjualanStore,
     this.onLowStock,
     this.onOpenNotifications,
     this.onLogOut,
@@ -87,6 +89,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenNotifications,
     this.onLogOut,
   }) : employeeStore = null,
+       penjualanStore = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
@@ -108,6 +111,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenNotifications,
     this.onLogOut,
   }) : employeeStore = null,
+       penjualanStore = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -129,6 +133,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenNotifications,
     this.onLogOut,
   }) : employeeStore = null,
+       penjualanStore = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
@@ -159,6 +164,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Backend akun pegawai; null berarti galeri memakai [initialEmployees].
   final V2EmployeeStore? employeeStore;
+
+  /// Backend penjualan; null berarti galeri memakai data contoh.
+  final V2PenjualanStore? penjualanStore;
 
   final VoidCallback? onLowStock;
   final VoidCallback? onOpenNotifications;
@@ -234,7 +242,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   void _openSales() {
-    Navigator.of(context).push(V2PenjualanListPage.route());
+    Navigator.of(context).push(
+      V2PenjualanListPage.route(store: widget.penjualanStore),
+    );
   }
 
   void _openSync() {

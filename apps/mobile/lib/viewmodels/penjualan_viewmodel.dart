@@ -59,6 +59,10 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
 
   Future<void> fetchPenjualanData() => refresh();
 
+  /// Keadaan terakhir untuk lapisan tampilan lain (alur v2), tanpa mengubah
+  /// notifier itu sendiri.
+  PenjualanState get current => state;
+
   Future<void> refresh({bool force = false}) {
     final running = _refreshTask;
     if (!force && running != null) return running;
