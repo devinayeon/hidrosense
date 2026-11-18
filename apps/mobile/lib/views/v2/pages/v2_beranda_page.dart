@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
 import '../components/v2_inventaris_data.dart';
 import '../components/v2_penjualan_store.dart';
+import '../components/v2_rawat_data.dart';
 import '../components/v2_semaian_data.dart';
 import '../components/v2_sinkron_data.dart';
 import '../components/v2_beranda_hero.dart';
@@ -29,8 +32,11 @@ import 'v2_employee_list_page.dart';
 import 'v2_inventaris_detail_page.dart';
 import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
+import 'v2_meja_detail_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_rawat_foto_page.dart';
+import 'v2_rawat_list_page.dart';
 import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
@@ -233,7 +239,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   late List<V2Employee> _employees = widget.initialEmployees;
   late List<V2SemaianItem> _semaian = designSemaian;
   late List<V2InventarisItem> _inventaris = designInventaris;
+  late List<V2RawatItem> _riwayatRawat = designRawatRiwayat;
+  late bool _rawatOffline = false;
+  String? _rawatToast;
+  Timer? _rawatToastTimer;
   int _activeTab = 0;
+
+  @override
+  void dispose() {
+    _rawatToastTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(V2BerandaPage oldWidget) {
@@ -270,11 +286,34 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     if (index == _akunIndex ||
         index == 0 ||
         index == v2TanamTabIndex ||
-        index == v2StokTabIndex) {
+        index == v2StokTabIndex ||
+        (index == v2RawatTabIndex && _petani)) {
       setState(() => _activeTab = index);
       return;
     }
     _notice('Tab ${index + 1} alur v2 belum tersedia di halaman ini.');
+  }
+
+  /// Buka alur foto tanaman 9.5 dari tab Rawat; hasilnya menyisip paling atas.
+  Future<void> _fotoTanamanRawat() async {
+    await Navigator.of(context).push<V2RawatItem>(
+      V2RawatFotoPage.route(
+        onSaved: (item) {
+          if (!mounted) return;
+          setState(() {
+            _riwayatRawat = <V2RawatItem>[item, ..._riwayatRawat];
+            _rawatOffline = _rawatOffline || item.antrean;
+            // Frame 9.11 memunculkan toast setelah foto disimpan di HP.
+            _rawatToast = item.foto ? 'Foto tersimpan di HP' : null;
+          });
+          _rawatToastTimer?.cancel();
+          if (_rawatToast == null) return;
+          _rawatToastTimer = Timer(const Duration(seconds: 3), () {
+            if (mounted) setState(() => _rawatToast = null);
+          });
+        },
+      ),
+    );
   }
 
   void _openEmployees() {
@@ -409,8 +448,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     Navigator.of(context).push(
       V2CycleDetailPage.route(
         tableName: V2BerandaPage._tableName,
-        onOpenTable: () =>
-            _notice('Alur Meja A2 6.11 belum tersedia di halaman ini.'),
+        onOpenTable: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => V2MejaDetailPage.biasa()),
+        ),
       ),
     );
   }
@@ -423,6 +463,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     final akun = _activeTab == _akunIndex;
     final tanam = _activeTab == v2TanamTabIndex;
     final stok = _activeTab == v2StokTabIndex;
+    final rawat = _petani && _activeTab == v2RawatTabIndex;
     return Theme(
       data: V2Theme.light,
       child: Scaffold(
@@ -457,6 +498,13 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         items: _inventaris,
                         onAdd: _openTambahBarang,
                         onTapItem: _openDetailBarang,
+                      )
+                    : rawat
+                    ? V2RawatTabView(
+                        riwayat: _riwayatRawat,
+                        offline: _rawatOffline,
+                        toast: _rawatToast,
+                        onFotoTanaman: _fotoTanamanRawat,
                       )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
@@ -512,14 +560,23 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           icon: V2IconName.sprout,
           title: 'Siap pindah',
           subtitle: widget.siapPindahSubtitle,
-          onTap: () =>
-              _notice('Alur semaian 5.16 belum tersedia di halaman ini.'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<V2SemaianItem>(
+              builder: (_) => V2SemaianDetailPage.siapPindah(),
+            ),
+          ),
         ),
         const SizedBox(height: V2Space.lg),
         V2BerandaStats(
           lowStock: widget.lowStock,
           filledHoles: widget.filledHoles,
-          onLowStock: widget.onLowStock ?? () => _notice('Stok menipis 4.9.'),
+          onLowStock:
+              widget.onLowStock ??
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const V2InventarisListPage.menipisBenih(),
+                ),
+              ),
         ),
         if (_petani) ...[
           const SizedBox(height: V2Space.lg),
