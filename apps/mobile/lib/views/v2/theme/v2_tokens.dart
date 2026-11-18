@@ -55,6 +55,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 34,
     fontWeight: FontWeight.w700,
+    letterSpacing: 0,
     height: 40 / 34,
     color: V2Colors.ink,
   );
@@ -65,6 +66,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 28,
     fontWeight: FontWeight.w700,
+    letterSpacing: 0,
     height: 36 / 28,
     color: V2Colors.ink,
   );
@@ -75,6 +77,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 28,
     fontWeight: FontWeight.w700,
+    letterSpacing: 0,
     height: 36 / 28,
     color: V2Colors.ink,
   );
@@ -85,6 +88,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 20,
     fontWeight: FontWeight.w600,
+    letterSpacing: 0,
     height: 28 / 20,
     color: V2Colors.ink,
   );
@@ -94,6 +98,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 16,
     fontWeight: FontWeight.w400,
+    letterSpacing: 0,
     height: 24 / 16,
     color: V2Colors.ink,
   );
@@ -103,6 +108,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 16,
     fontWeight: FontWeight.w600,
+    letterSpacing: 0,
     height: 24 / 16,
     color: V2Colors.ink,
   );
@@ -112,6 +118,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 16,
     fontWeight: FontWeight.w600,
+    letterSpacing: 0,
     height: 24 / 16,
     color: V2Colors.ink,
   );
@@ -121,6 +128,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 14,
     fontWeight: FontWeight.w500,
+    letterSpacing: 0,
     height: 20 / 14,
     color: V2Colors.ink,
   );
@@ -130,6 +138,7 @@ abstract final class V2Type {
     fontFamilyFallback: fallback,
     fontSize: 12,
     fontWeight: FontWeight.w400,
+    letterSpacing: 0,
     height: 16 / 12,
     color: V2Colors.secondary,
   );

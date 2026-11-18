@@ -74,6 +74,11 @@ class V2SemaianItem {
     required this.jumlahBenih,
     this.selesai = false,
     this.antrean = false,
+    this.jumlahBahan = 2,
+    this.sisaBenih,
+    this.jumlahPindah,
+    this.pindahKe,
+    this.tidakDipindah,
   });
 
   final String id;
@@ -94,6 +99,22 @@ class V2SemaianItem {
   /// memakai lencana "Antrean" (frame 5.13).
   final bool antrean;
 
+  /// Banyak bahan (pak) yang terpakai saat menyemai; tampil di kartu detail
+  /// sebagai "Stok terpakai: Benih Romaine 2 pak" (frame 5.14–5.16).
+  final int jumlahBahan;
+
+  /// Sisa benih yang belum dipindah setelah pindah sebagian (frame 5.23).
+  final int? sisaBenih;
+
+  /// Banyak benih yang sudah dipindah ke meja (frame 5.16–5.30).
+  final int? jumlahPindah;
+
+  /// Nama meja tujuan, mis. `Meja A2` (frame 5.19–5.30).
+  final String? pindahKe;
+
+  /// Benih yang sengaja tidak dipindah saat semaian ditutup (frame 5.29).
+  final int? tidakDipindah;
+
   /// Umur semaian dalam hari (HSS).
   int get hss => hssSemaian(tanggalSemai);
 
@@ -112,8 +133,30 @@ class V2SemaianItem {
   /// `Semai 29 Okt` (subjudul baris dan Kicker kartu detail).
   String get labelSemai => 'Semai ${labelTanggalSemai(tanggalSemai)}';
 
-  /// `Romaine, 200 benih` (baris Meta kartu detail 5.15/5.16).
-  String get labelBenih => '$nama, $jumlahBenih benih';
+  /// `Romaine, 200 benih` atau `Romaine, sisa 80 dari 200 benih` (kartu detail).
+  String get labelBenih => sisaBenih == null
+      ? '$nama, $jumlahBenih benih'
+      : '$nama, sisa $sisaBenih dari $jumlahBenih benih';
+
+  /// `Stok terpakai: Benih Romaine 2 pak` (baris Extra kartu detail).
+  String get labelStokTerpakai =>
+      'Stok terpakai: Benih $nama $jumlahBahan pak';
+
+  /// `Sudah pindah: 120 ke Meja A3` atau `Pindah 120 ke Meja A3. 80 tidak
+  /// dipindah.` (baris Extra kartu detail setelah pindah).
+  String? get labelPindah {
+    final jumlah = jumlahPindah;
+    final meja = pindahKe;
+    if (jumlah == null || meja == null) return null;
+    if (tidakDipindah != null) {
+      return 'Pindah $jumlah ke $meja. $tidakDipindah tidak dipindah.';
+    }
+    return 'Sudah pindah: $jumlah ke $meja';
+  }
+
+  /// Sisa hari menuju HSS 15; nol saat sudah siap pindah.
+  int get hariMenujuSiap =>
+      v2SemaianHssSiapPindah - hss < 0 ? 0 : v2SemaianHssSiapPindah - hss;
 
   /// Salinan dengan sebagian kolom diganti; dipakai setelah "Ubah semaian"
   /// mengubah tanggal, jumlah benih, atau status selesai (frame 5.25–5.28).
@@ -124,6 +167,11 @@ class V2SemaianItem {
     int? jumlahBenih,
     bool? selesai,
     bool? antrean,
+    int? jumlahBahan,
+    int? sisaBenih,
+    int? jumlahPindah,
+    String? pindahKe,
+    int? tidakDipindah,
   }) {
     return V2SemaianItem(
       id: id ?? this.id,
@@ -132,6 +180,11 @@ class V2SemaianItem {
       jumlahBenih: jumlahBenih ?? this.jumlahBenih,
       selesai: selesai ?? this.selesai,
       antrean: antrean ?? this.antrean,
+      jumlahBahan: jumlahBahan ?? this.jumlahBahan,
+      sisaBenih: sisaBenih ?? this.sisaBenih,
+      jumlahPindah: jumlahPindah ?? this.jumlahPindah,
+      pindahKe: pindahKe ?? this.pindahKe,
+      tidakDipindah: tidakDipindah ?? this.tidakDipindah,
     );
   }
 }
@@ -166,14 +219,41 @@ final V2SemaianItem designSemaianRomaineBaru = V2SemaianItem(
   jumlahBenih: 100,
 );
 
-/// Baris frame 5.6: Romaine sudah selesai, semai 23 Okt (HSS 23).
+/// Baris frame 5.6 dan kartu detail 5.30: Romaine sudah selesai, semai 23 Okt
+/// (HSS 23), 42 benih, semuanya dipindah ke Meja A2.
 final V2SemaianItem designSemaianSelesai = V2SemaianItem(
   id: 'semaian-romaine-23-okt',
   nama: 'Romaine',
   tanggalSemai: DateTime(2026, 10, 23),
-  jumlahBenih: 200,
+  jumlahBenih: 42,
   selesai: true,
+  jumlahPindah: 42,
+  pindahKe: 'Meja A2',
 );
+
+/// Frame 5.23: Romaine siap pindah dengan sisa 80 benih setelah 120 dipindah.
+final V2SemaianItem designSemaianSisa = designSemaianRomaineSiapPindah.copyWith(
+  sisaBenih: 80,
+  jumlahPindah: 120,
+  pindahKe: 'Meja A3',
+);
+
+/// Frame 5.19: Romaine selesai setelah semua 200 benih pindah ke Meja A2.
+final V2SemaianItem designSemaianDipindahSemua =
+    designSemaianRomaineSiapPindah.copyWith(
+      selesai: true,
+      jumlahPindah: 200,
+      pindahKe: 'Meja A2',
+    );
+
+/// Frame 5.29: Romaine selesai, 120 benih pindah ke Meja A3 dan 80 ditinggal.
+final V2SemaianItem designSemaianSelesaiSisa =
+    designSemaianRomaineSiapPindah.copyWith(
+      selesai: true,
+      jumlahPindah: 120,
+      pindahKe: 'Meja A3',
+      tidakDipindah: 80,
+    );
 
 /// Sumber daftar semaian: tiga baris berjalan dan satu baris selesai.
 ///

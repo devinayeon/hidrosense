@@ -30,6 +30,7 @@ import 'v2_inventaris_form_page.dart';
 import 'v2_inventaris_list_page.dart';
 import 'v2_notifications_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
@@ -332,8 +333,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   }
 
   /// Buka detail 5.15 dari tab Tanam lewat ketukan baris.
-  void _openDetailSemaian(V2SemaianItem item) {
-    _notice('Detail semaian ${item.nama} (5.15) belum tersedia.');
+  Future<void> _openDetailSemaian(V2SemaianItem item) async {
+    final updated = await Navigator.of(
+      context,
+    ).push<V2SemaianItem>(V2SemaianDetailPage.route(item));
+    if (!mounted || updated == null) return;
+    setState(() {
+      _semaian = [
+        for (final baris in _semaian)
+          if (baris.id == updated.id) updated else baris,
+      ];
+    });
   }
 
   void _openSync() {

@@ -17,6 +17,7 @@ import '../widgets/v2_error_state.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_segmented.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_form_page.dart';
 
 /// Keadaan daftar semaian yang punya frame sendiri di page 05.
@@ -398,13 +399,6 @@ class _V2SemaianListPageState extends State<V2SemaianListPage> {
     });
   }
 
-  void _notice(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
   void _openAdd() {
     if (widget.onAdd != null) {
       widget.onAdd!();
@@ -436,7 +430,21 @@ class _V2SemaianListPageState extends State<V2SemaianListPage> {
       widget.onTapItem!(item);
       return;
     }
-    _notice('Detail semaian ${item.nama} (5.15) belum tersedia.');
+    _bukaDetail(item);
+  }
+
+  /// Buka detail 5.15; hasil ubah/pindah menggantikan baris lama.
+  Future<void> _bukaDetail(V2SemaianItem item) async {
+    final updated = await Navigator.of(
+      context,
+    ).push<V2SemaianItem>(V2SemaianDetailPage.route(item));
+    if (!mounted || updated == null) return;
+    setState(() {
+      _items = [
+        for (final baris in _items)
+          if (baris.id == updated.id) updated else baris,
+      ];
+    });
   }
 
   @override

@@ -19,6 +19,7 @@ import 'v2_notifications_page.dart';
 import 'v2_offline_login_page.dart';
 import 'v2_onboarding_page.dart';
 import 'v2_penjualan_list_page.dart';
+import 'v2_semaian_detail_page.dart';
 import 'v2_semaian_form_page.dart';
 import 'v2_semaian_list_page.dart';
 import 'v2_sinkron_page.dart';
@@ -535,6 +536,69 @@ class V2GalleryPage extends StatelessWidget {
                         subtitle: 'Banner offline dan lencana antrean',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2SemaianListPage.offline(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Detail semaian baru (5.14)',
+                        subtitle: 'HSS 0, linimasa berjalan',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.baru(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.sprout,
+                        title: 'Detail semaian (5.15)',
+                        subtitle: 'Butterhead berjalan, HSS 10',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.biasa(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Detail siap pindah (5.16)',
+                        subtitle: 'Banner hijau dan tombol pindah',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.siapPindah(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Detail siap pindah, ada sisa (5.23)',
+                        subtitle: '120 pindah, sisa 80 benih',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.sisa(),
+                        ),
+                        iconTone: V2ListItemIconTone.success,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.info,
+                        title: 'Detail semaian selesai (5.30)',
+                        subtitle: 'Tanpa tombol, tumbuh di Meja A2',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.selesai(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.check,
+                        title: 'Detail dipindah semua (5.19)',
+                        subtitle: '200 benih pindah ke Meja A2',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.dipindahSemua(),
+                        ),
+                        iconTone: V2ListItemIconTone.neutral,
+                      ),
+                      _FlowRow(
+                        icon: V2IconName.info,
+                        title: 'Detail selesai, ada sisa (5.29)',
+                        subtitle: '120 pindah, 80 tidak dipindah',
+                        route: () => MaterialPageRoute<void>(
+                          builder: (_) => V2SemaianDetailPage.selesaiSisa(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),
