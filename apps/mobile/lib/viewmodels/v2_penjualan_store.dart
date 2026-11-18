@@ -12,6 +12,7 @@ import '../views/v2/components/v2_penjualan_store.dart';
 import 'penjualan_viewmodel.dart';
 import 'sale_command.dart';
 import 'session_viewmodel.dart';
+import 'v2_panen_sender.dart';
 import 'v2_penjualan_mappers.dart';
 import 'v2_sync_queue.dart';
 import 'v2_sync_replayer.dart';
@@ -536,18 +537,20 @@ final v2PenjualanStoreProvider = Provider<V2PenjualanStore?>((ref) {
 
 /// Pengirim antrean nyata; null bila tidak ada jenis yang bisa dikirim.
 ///
-/// Hanya penjualan yang punya pengirim saat ini; jenis lain tetap menunggu di
-/// antrean sampai alurnya disambungkan.
+/// Penjualan dan panen punya pengirim; semaian, stok, dan rusak masih menunggu
+/// sampai alur tulisnya disambungkan ke antrean.
 final v2SyncReplayerProvider = Provider<V2SyncReplayer?>((ref) {
   final store = ref.watch(v2PenjualanStoreProvider);
-  if (store is! V2SyncSender) return null;
-  final sender = store as V2SyncSender;
+  final senders = <V2SyncSender>[
+    ?(store is V2SyncSender ? store as V2SyncSender : null),
+    ref.watch(v2PanenSenderProvider),
+  ];
   final resolver = store is V2SyncConflictResolver
       ? store as V2SyncConflictResolver
       : null;
   return V2SyncReplayer(
     queue: ref.watch(v2SyncQueueProvider.notifier),
-    senders: [sender],
+    senders: senders,
     resolvers: [?resolver],
   );
 });
