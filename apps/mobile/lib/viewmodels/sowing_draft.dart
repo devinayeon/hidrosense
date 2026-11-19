@@ -11,8 +11,15 @@ class SowingDraft {
     this.inventoryId,
     this.amount = '',
     this.unit = '',
+    this.status,
   });
   final String? id, inventoryId;
+
+  /// Status penyemaian backend saat mengubah: `aktif` atau `selesai`.
+  ///
+  /// Null berarti status tidak ikut diubah. Hanya dipakai saat [id] terisi.
+  final String? status;
+
   final String date, note, amount, unit;
   final int seedCount;
 

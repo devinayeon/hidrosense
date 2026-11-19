@@ -27,9 +27,9 @@ class V2Banner extends StatelessWidget {
   };
 
   Color get _foreground => switch (tone) {
-    V2BannerTone.offline ||
-    V2BannerTone.sync ||
-    V2BannerTone.ai => V2Colors.blue700,
+    V2BannerTone.offline || V2BannerTone.sync => V2Colors.blue700,
+    // `Banner / Type=AI` memakai teks dan ikon charcoal, bukan biru.
+    V2BannerTone.ai => V2Colors.ink,
     V2BannerTone.bmkg => V2Colors.amber800,
     V2BannerTone.success => V2Colors.green700,
   };

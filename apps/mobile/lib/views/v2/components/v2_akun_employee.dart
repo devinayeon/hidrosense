@@ -50,11 +50,21 @@ class V2Employee {
   }
 }
 
-/// Hasil halaman detail saat pegawai dinonaktifkan (frame 3.15 → 3.16).
-class V2EmployeeDeactivated {
-  const V2EmployeeDeactivated(this.employee);
+/// Hasil halaman detail pegawai: menyimpan perubahan atau menonaktifkan.
+sealed class V2EmployeeResult {
+  const V2EmployeeResult(this.employee);
 
   final V2Employee employee;
+}
+
+/// Hasil halaman detail saat data pegawai berubah (frame 3.12 → 3.14).
+class V2EmployeeSaved extends V2EmployeeResult {
+  const V2EmployeeSaved(super.employee);
+}
+
+/// Hasil halaman detail saat pegawai dinonaktifkan (frame 3.15 → 3.16).
+class V2EmployeeDeactivated extends V2EmployeeResult {
+  const V2EmployeeDeactivated(super.employee);
 }
 
 /// Inisial dua kata pertama sebuah nama (dipakai kartu Profil dan avatar baris).

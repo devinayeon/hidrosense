@@ -44,13 +44,17 @@ class V2HomeIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
-      child: Center(
-        child: Container(
-          width: 134,
-          height: 5,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: V2Space.sm),
+          child: Container(
+            width: 134,
+            height: 5,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
         ),
       ),

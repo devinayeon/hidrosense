@@ -43,6 +43,11 @@ class V2Stepper extends StatelessWidget {
 }
 
 /// Field jumlah dengan tombol minus/plus 56px dari component set `Qty`.
+///
+/// Angka selalu abu ([V2Colors.muted]) kecuali saat [error], mengikuti state
+/// `Qty`: Default/Focus abu, Error ink. [error] juga menyalakan border merah 3px
+/// (frame 4.22 "Stok kurang"). Baris pesan galat tidak digambar di sini karena
+/// di desain `Helper` berdiri sebagai saudara `Qty`, bukan di dalamnya.
 class V2QtyField extends StatelessWidget {
   const V2QtyField({
     super.key,
@@ -51,6 +56,7 @@ class V2QtyField extends StatelessWidget {
     this.onMinus,
     this.onPlus,
     this.enabled = true,
+    this.error = false,
   });
 
   final int value;
@@ -58,6 +64,7 @@ class V2QtyField extends StatelessWidget {
   final VoidCallback? onMinus;
   final VoidCallback? onPlus;
   final bool enabled;
+  final bool error;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +83,10 @@ class V2QtyField extends StatelessWidget {
             decoration: BoxDecoration(
               color: enabled ? V2Colors.white : V2Colors.gray200,
               borderRadius: BorderRadius.circular(V2Radius.pill),
-              border: Border.all(color: V2Colors.slate400, width: 2),
+              border: Border.all(
+                color: error ? V2Colors.red700 : V2Colors.slate400,
+                width: error ? 3 : 2,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -84,7 +94,8 @@ class V2QtyField extends StatelessWidget {
                 Text(
                   '$value',
                   style: V2Type.bodyStrong.copyWith(
-                    color: enabled ? V2Colors.ink : V2Colors.muted,
+                    // Angka abu saat biasa, jadi ink saat galat (component `Qty`).
+                    color: error ? V2Colors.ink : V2Colors.muted,
                   ),
                 ),
                 if (unit.isNotEmpty) ...[

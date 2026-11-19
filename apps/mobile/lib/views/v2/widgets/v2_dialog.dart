@@ -83,7 +83,10 @@ Future<bool?> showV2Dialog(
 }) {
   return showDialog<bool>(
     context: context,
-    barrierColor: V2Colors.ink.withValues(alpha: 0.35),
+    // FigCraft menggambar Scrim `#111827` 60% dan menaruh dialog di tengah
+    // frame penuh (3.3, 3.9, 3.13, 3.15, 11.8), bukan di tengah area aman.
+    barrierColor: V2Colors.ink.withValues(alpha: 0.6),
+    useSafeArea: false,
     builder: (dialogContext) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,

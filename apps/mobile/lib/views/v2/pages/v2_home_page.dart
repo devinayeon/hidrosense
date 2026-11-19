@@ -5,6 +5,7 @@ import '../theme/v2_tokens.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_tab_bar.dart';
+import 'v2_meja_form_page.dart';
 
 /// Frame `1.11 Beranda kosong (Petani)`.
 ///
@@ -41,13 +42,7 @@ class V2HomePage extends StatelessWidget {
       onAddTable!();
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Alur tambah meja tanam belum tersedia di pratinjau ini.',
-        ),
-      ),
-    );
+    Navigator.of(context).push(V2MejaFormPage.route());
   }
 
   @override

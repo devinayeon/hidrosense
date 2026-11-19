@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/business_date.dart';
 export '../core/business_date.dart' show jakartaToday, apiDate;
+import '../core/formatting.dart';
 import '../core/uuid.dart';
 import '../data/models/damage_record.dart';
 import '../data/models/transfer_record.dart';
@@ -11,7 +12,10 @@ import '../data/repositories/damage_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/write_outcome.dart';
 import 'connected_table_viewmodel.dart';
+import 'damage_queue_sink.dart';
 import 'session_viewmodel.dart';
+import 'v2_damage_sender.dart';
+import 'v2_sync_queue.dart';
 
 class DamageState {
   const DamageState({
@@ -59,6 +63,7 @@ class DamageViewModel extends StateNotifier<DamageState> {
     String userId = '',
     Map<(String, String, String), DamageCommand>? commands,
     DateTime Function()? clock,
+    this.queueSink,
   }) : _commands = commands ?? {},
        _scope = (_repository.serverOrigin, userId, tableId),
        _clock = clock ?? DateTime.now,
@@ -69,6 +74,7 @@ class DamageViewModel extends StateNotifier<DamageState> {
   final String tableId;
   final Future<void> Function() _refreshTable;
   final bool canWrite, autoLoad;
+  final DamageQueueSink? queueSink;
   final Map<(String, String, String), DamageCommand> _commands;
   final (String, String, String) _scope;
   final DateTime Function() _clock;
@@ -215,6 +221,7 @@ class DamageViewModel extends StateNotifier<DamageState> {
         command.uncertain = true;
         await write(command);
         command.uncertain = false;
+        await _settleQueue(command.key);
       }
       if (!mounted) return DamageSubmitResult.saved;
       _merge(command);
@@ -242,6 +249,11 @@ class DamageViewModel extends StateNotifier<DamageState> {
         wasUncertain: wasUncertain,
       );
       if (!command.uncertain) _commands.remove(_scope);
+      if (command.uncertain) {
+        await _record(command, target, body);
+      } else {
+        await _failQueue(command.key, serviceError(error));
+      }
       if (error is ApiException &&
           [
             'DAMAGE_EXCEEDS_ACTIVE',
@@ -258,6 +270,67 @@ class DamageViewModel extends StateNotifier<DamageState> {
       if (mounted && state.submitting) {
         _set(error: state.error, warning: state.refreshWarning);
       }
+    }
+  }
+
+  /// Subjudul baris antrean: tanggal laporan, catatan batch, atau koreksi.
+  String _queueSubtitle(String queueTarget, Map<String, dynamic> body) {
+    if (queueTarget == damageCreateTarget) {
+      final date = DateTime.tryParse('${body['tanggal_kejadian'] ?? ''}');
+      return date == null
+          ? 'Rusak tanaman'
+          : 'Rusak ${formatTanggalIndo(date, singkat: true)}';
+    }
+    if (queueTarget.startsWith(damageBatchPrefix)) {
+      final id = queueTarget.substring(damageBatchPrefix.length);
+      final batch = state.transfers.where((t) => t.id == id).firstOrNull;
+      return batch == null ? 'Catatan batch #$id' : 'Catatan ${batch.label}';
+    }
+    return 'Koreksi kerusakan';
+  }
+
+  /// Target antrean yang stabil, terpisah dari nama target internal command.
+  String _queueTarget(String target) => switch (target) {
+    'create' => damageCreateTarget,
+    _ when target.startsWith('damage:') =>
+      '$damageUpdatePrefix${target.substring('damage:'.length)}',
+    _ => target,
+  };
+
+  Future<void> _record(
+    DamageCommand command,
+    String target,
+    Map<String, dynamic> body,
+  ) async {
+    final sink = queueSink;
+    final queueTarget = _queueTarget(target);
+    if (sink == null) return;
+    try {
+      await sink.record(
+        key: command.key,
+        target: queueTarget,
+        body: body,
+        subtitle: _queueSubtitle(queueTarget, body),
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _settleQueue(String key) async {
+    try {
+      await queueSink?.remove(key);
+    } catch (_) {
+      // Baris akan dilepas saat kiriman ulang berikutnya.
+    }
+  }
+
+  Future<void> _failQueue(String key, String message) async {
+    try {
+      await queueSink?.fail(key, message);
+    } catch (_) {
+      // Status gagal akan ditandai lagi saat pengiriman ulang.
     }
   }
 
@@ -361,6 +434,9 @@ final damageProvider = StateNotifierProvider.autoDispose
         userId: user.id,
         commands: ref.watch(damageCommandsProvider),
         clock: clock,
+        queueSink: V2DamageQueueSink(
+          ref.watch(v2SyncQueueProvider.notifier),
+        ),
       );
       Timer? timer;
       void schedule() {

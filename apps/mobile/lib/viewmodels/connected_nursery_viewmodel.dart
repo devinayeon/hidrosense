@@ -7,9 +7,12 @@ import '../data/models/transfer_record.dart';
 import '../data/repositories/nursery_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/write_outcome.dart';
+import 'connected_inventory_viewmodel.dart';
+import 'nursery_queue_sink.dart';
 import 'session_viewmodel.dart';
 import 'sowing_draft.dart';
-import 'connected_inventory_viewmodel.dart';
+import 'v2_nursery_sender.dart';
+import 'v2_sync_queue.dart';
 
 final sowingCommandsProvider = Provider(
   (ref) => <(String, String), SowingCommand>{},
@@ -130,6 +133,7 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
     String userId = '',
     Map<(String, String), SowingCommand>? commands,
     Future<String?> Function()? refreshInventory,
+    this.queueSink,
   }) : super(const ConnectedNurseryState()) {
     _scope = (_repository.serverOrigin, userId);
     _commands = commands ?? {};
@@ -140,6 +144,7 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
 
   final NurseryRepository _repository;
   final bool canWrite;
+  final NurseryQueueSink? queueSink;
   late final (String, String) _scope;
   late final Map<(String, String), SowingCommand> _commands;
   late final Future<String?> Function()? _refreshInventory;
@@ -184,13 +189,98 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
         note: payload.note,
       );
       command.complete(receipt);
+      await _settleQueue(payload.idempotencyKey);
     } catch (error) {
       command.uncertain = writeStaysUncertain(
         error,
         wasUncertain: command.uncertain,
       );
       command.fail(error, definitivelyRejected: !command.uncertain);
+      if (command.uncertain) {
+        await _recordTransfer(command);
+      } else {
+        await _failQueue(command.payload.idempotencyKey, serviceError(error));
+      }
       rethrow;
+    }
+  }
+
+  /// Isi kiriman penyemaian, sama persis dengan yang dikirim repository.
+  Map<String, dynamic> _sowingBody(SowingDraft input) => input.id == null
+      ? {
+          'tanggal_semai': input.date,
+          'jumlah_benih': input.seedCount,
+          if (input.note.isNotEmpty) 'keterangan': input.note,
+          'materials': [
+            {
+              'id_inventaris': input.inventoryId,
+              'jumlah': input.amount,
+              'satuan': input.unit,
+            },
+          ],
+        }
+      : {
+          'jumlah_benih': input.seedCount,
+          'keterangan': input.note,
+        };
+
+  Future<void> _recordSowing(SowingCommand command, SowingDraft input) async {
+    final sink = queueSink;
+    if (sink == null) return;
+    try {
+      await sink.record(
+        key: command.key,
+        target: input.id == null
+            ? nurseryCreateTarget
+            : '$nurseryUpdatePrefix${input.id}',
+        body: _sowingBody(input),
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _recordTransfer(SeedlingTransferCommand command) async {
+    final sink = queueSink;
+    if (sink == null) return;
+    final payload = command.payload;
+    String? subtitle;
+    for (final row in state.records) {
+      if (row.id == payload.sowingId) subtitle = 'Pindah ${row.batchName}';
+    }
+    try {
+      await sink.record(
+        key: payload.idempotencyKey,
+        target: nurseryTransferTarget,
+        body: {
+          'id_penyemaian': payload.sowingId,
+          'id_meja': payload.tableId,
+          'tanggal_pemindahan': payload.transferDate,
+          'jumlah_tanaman': payload.plantCount,
+          if (payload.note.isNotEmpty) 'keterangan': payload.note,
+        },
+        subtitle: subtitle,
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _settleQueue(String key) async {
+    try {
+      await queueSink?.remove(key);
+    } catch (_) {
+      // Baris akan dilepas saat kiriman ulang berikutnya.
+    }
+  }
+
+  Future<void> _failQueue(String key, String message) async {
+    try {
+      await queueSink?.fail(key, message);
+    } catch (_) {
+      // Status gagal akan ditandai lagi saat pengiriman ulang.
     }
   }
 
@@ -265,11 +355,13 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
               : await _repository.updateSowing(
                   input.id!,
                   seedCount: input.seedCount,
+                  status: input.status,
                   note: input.note,
                   idempotencyKey: command.key,
                 ));
       if (!currentAttempt()) return null;
       command.receipt = record;
+      await _settleQueue(command.key);
     } catch (error) {
       if (!currentAttempt()) return null;
       final rejected =
@@ -279,6 +371,11 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
           error.status < 500;
       command.uncertain = previousUncertain || !rejected;
       if (!command.uncertain) _commands.remove(_scope);
+      if (command.uncertain) {
+        await _recordSowing(command, input);
+      } else {
+        await _failQueue(command.key, serviceError(error));
+      }
       if (!mounted) return null;
       state = state.copyWith(
         saving: false,
@@ -336,6 +433,9 @@ final connectedNurseryProvider =
             user.permissions.contains('penyemaian:write') &&
             user.permissions.contains('budidaya:write'),
         commands: ref.watch(sowingCommandsProvider),
+        queueSink: V2NurseryQueueSink(
+          ref.watch(v2SyncQueueProvider.notifier),
+        ),
         refreshInventory: () async {
           final inventory = ref.read(connectedInventoryProvider.notifier);
           await inventory.refreshAfterWrite();

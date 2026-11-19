@@ -59,6 +59,10 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
 
   Future<void> fetchPenjualanData() => refresh();
 
+  /// Keadaan terakhir untuk lapisan tampilan lain (alur v2), tanpa mengubah
+  /// notifier itu sendiri.
+  PenjualanState get current => state;
+
   Future<void> refresh({bool force = false}) {
     final running = _refreshTask;
     if (!force && running != null) return running;
@@ -164,6 +168,16 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
     if (uncertainCommand != null) _commands.remove(_scope);
   }
 
+  /// Mengirim ulang satu [SaleCommand] tersimpan dari antrean HP.
+  ///
+  /// Kunci idempoten dibawa perintah, jadi server mengembalikan hasil yang sama
+  /// kalau kiriman pertama sudah tersimpan. [command] dibangun pemanggil dari
+  /// baris antrean; perintah tertunda di memori menang bila kuncinya cocok.
+  Future<void> replayCommand(SaleCommand command) async {
+    final record = await _run(command);
+    await _finish(record, command.oldItem);
+  }
+
   Future<PenjualanItem> _finish(SaleRecord record, PenjualanItem? old) async {
     final item = toPenjualanItem(record);
     if (mounted) _merge(oldItem: old, newItem: item);
@@ -209,6 +223,7 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         payload: jsonEncode(draft.toJson()),
         draft: draft,
         oldItem: existing,
+        expectedVersion: version,
         write: (sales, key) =>
             sales.updateSale(existing.id, draft, version, key),
       ),
@@ -232,6 +247,7 @@ class PenjualanViewModel extends StateNotifier<PenjualanState> {
         payload: jsonEncode(draft.toJson('')),
         headerDraft: draft,
         oldItem: existing,
+        expectedVersion: version,
         write: (sales, key) =>
             sales.updateSaleHeader(existing.id, draft, version, key),
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../data/services/api_client.dart';
+import '../../data/employee_errors.dart';
 import '../../data/models/employee_model.dart';
 import '../../data/repositories/employee_repository.dart';
 
@@ -255,24 +255,7 @@ class EmployeeViewModel extends StateNotifier<EmployeeListState> {
     }
   }
 
-  String _formatError(Object error) {
-    if (error is ApiException) {
-      if (error.code == 'USERNAME_TAKEN') {
-        return 'Username sudah digunakan oleh akun lain.';
-      }
-      if (error.code == 'ACCOUNT_DEACTIVATED') {
-        return 'Akun sedang dinonaktifkan. Aktifkan kembali akun terlebih dahulu.';
-      }
-      if (error.code == 'VALIDATION_ERROR') {
-        return 'Input data tidak valid. Periksa kembali form.';
-      }
-      return error.message;
-    }
-    if (error is FormatException) {
-      return 'Format data tidak sesuai. Silakan muat ulang.';
-    }
-    return 'Terjadi kendala jaringan. Periksa koneksi Anda.';
-  }
+  String _formatError(Object error) => employeeErrorMessage(error);
 
   @override
   void dispose() {

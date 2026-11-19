@@ -217,6 +217,62 @@ void main() {
       await cache.close();
     },
   );
+
+  test('barang jenis obat dikirim dengan id_obat', () async {
+    final db = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: InventoryCache.createSchema,
+      ),
+    );
+    final cache = InventoryCache(db);
+    final api = ApiClient(
+      MockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/api/v1/inventaris');
+        expect(jsonDecode(request.body), {
+          'id_jenis_inventaris': '4',
+          'id_obat': '9',
+          'nama_barang': 'Pestisida nabati',
+          'satuan': 'Botol',
+        });
+        return reply(201, {
+          'data': {
+            ...master('7'),
+            'id_jenis_inventaris': '4',
+            'id_obat': '9',
+            'nama_barang': 'Pestisida nabati',
+            'nama_jenis': 'Obat',
+            'nama_obat': 'Pestisida nabati',
+            'satuan': 'Botol',
+            'saldo': '5',
+            'di_bawah_minimum': false,
+          },
+        });
+      }),
+      baseUri: Uri.parse('https://example.test/api/v1'),
+    )..setTokens(accessToken: 'access', refreshToken: 'refresh');
+    addTearDown(() async {
+      api.close();
+      await cache.close();
+    });
+    final repository = InventoryRepository(
+      api,
+      Future.value(cache),
+      userId: '1',
+    );
+
+    final created = await repository.createItem(
+      categoryId: '4',
+      medicineId: '9',
+      name: 'Pestisida nabati',
+      unit: 'Botol',
+    );
+
+    expect(created.medicineId, '9');
+    expect(created.medicineName, 'Pestisida nabati');
+  });
 }
 
 Map<String, dynamic> master(String id) => {

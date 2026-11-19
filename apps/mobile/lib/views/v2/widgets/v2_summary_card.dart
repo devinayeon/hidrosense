@@ -28,6 +28,9 @@ class V2SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: V2Colors.blue500,
         borderRadius: BorderRadius.circular(V2Radius.sheet),
+        // `SummaryCard` (varian Basic & Progress) punya drop shadow yang sama
+        // dengan `Shadow/Card`; sama seperti kartu putih "Riwayat".
+        boxShadow: V2Shadow.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,11 +51,11 @@ class V2SummaryCard extends StatelessWidget {
           const SizedBox(height: V2Space.sm),
           Text(value, style: V2Type.display.copyWith(color: V2Colors.white)),
           if (meta != null) ...[
-            const SizedBox(height: V2Space.xs),
+            const SizedBox(height: V2Space.sm),
             Text(meta!, style: V2Type.label.copyWith(color: V2Colors.white)),
           ],
           if (extra != null) ...[
-            const SizedBox(height: V2Space.xs),
+            const SizedBox(height: V2Space.sm),
             Text(
               extra!,
               style: V2Type.label.copyWith(

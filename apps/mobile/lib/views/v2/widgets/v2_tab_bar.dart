@@ -29,7 +29,9 @@ class V2TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // `DecoratedBox` paints the 1px top border inside the 106px frame without
+    // adding it to the layout height (a `Container` border would make 107).
+    return DecoratedBox(
       decoration: const BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.vertical(
@@ -37,27 +39,29 @@ class V2TabBar extends StatelessWidget {
         ),
         border: Border(top: BorderSide(color: V2Colors.border)),
       ),
-      padding: const EdgeInsets.only(top: V2Space.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 56,
-            child: Row(
-              children: [
-                for (var index = 0; index < items.length; index++)
-                  Expanded(
-                    child: _Tab(
-                      item: items[index],
-                      active: index == activeIndex,
-                      onTap: onTap == null ? null : () => onTap!(index),
+      child: Padding(
+        padding: const EdgeInsets.only(top: V2Space.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  for (var index = 0; index < items.length; index++)
+                    Expanded(
+                      child: _Tab(
+                        item: items[index],
+                        active: index == activeIndex,
+                        onTap: onTap == null ? null : () => onTap!(index),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const V2HomeIndicator(),
-        ],
+            const V2HomeIndicator(),
+          ],
+        ),
       ),
     );
   }

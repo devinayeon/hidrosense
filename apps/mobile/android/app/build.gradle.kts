@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.hidrosense.hidrosense_mobile"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android mensyaratkan compileSdk 37, sementara
+    // Flutter masih memakai 36 secara bawaan.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

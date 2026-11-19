@@ -12,7 +12,10 @@ import '../data/services/api_client.dart';
 import '../data/services/write_outcome.dart';
 import 'connected_table_viewmodel.dart';
 import 'damage_viewmodel.dart' show growthClockProvider;
+import 'harvest_queue_sink.dart';
 import 'session_viewmodel.dart';
+import 'v2_panen_sender.dart';
+import 'v2_sync_queue.dart';
 
 enum PanenFilterCategory { all, upcoming, completed }
 
@@ -77,6 +80,7 @@ class PanenViewModel extends StateNotifier<PanenState> {
     required this.canReadBatches,
     required String userId,
     HarvestCommands? commands,
+    this.queueSink,
     DateTime Function()? clock,
     bool autoLoad = true,
   }) : _commands = commands ?? HarvestCommands(),
@@ -89,6 +93,7 @@ class PanenViewModel extends StateNotifier<PanenState> {
   final Future<void> Function(Set<String>) refreshTables;
   final bool canWrite, canReadBatches;
   final HarvestCommands _commands;
+  final HarvestQueueSink? queueSink;
   final (String, String) _scope;
   final DateTime Function() _clock;
   int _generation = 0;
@@ -344,6 +349,39 @@ class PanenViewModel extends StateNotifier<PanenState> {
     return _save(c.target, c.body, draft: c.draft, correction: c.correction);
   }
 
+  /// Mencatat tulis yang belum pasti; kegagalan penyimpanan tidak boleh
+  /// menutupi galat aslinya.
+  Future<void> _recordQueue(HarvestCommand command) async {
+    final sink = queueSink;
+    if (sink == null) return;
+    try {
+      await sink.record(
+        key: command.key,
+        target: command.target,
+        body: command.body,
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      // Antrean HP bersifat cadangan; galat asli tetap yang dilaporkan.
+    }
+  }
+
+  Future<void> _settleQueue(String key) async {
+    try {
+      await queueSink?.remove(key);
+    } catch (_) {
+      // Baris antrean akan dilepas saat kiriman ulang berikutnya.
+    }
+  }
+
+  Future<void> _failQueue(String key, String message) async {
+    try {
+      await queueSink?.fail(key, message);
+    } catch (_) {
+      // Status gagal akan ditandai lagi saat pengiriman ulang.
+    }
+  }
+
   Future<HarvestSubmitResult> _save(
     String target,
     Map<String, dynamic> body, {
@@ -393,6 +431,7 @@ class PanenViewModel extends StateNotifier<PanenState> {
         }
         command.uncertain = false;
       }
+      await _settleQueue(command.key);
       if (!mounted) return HarvestSubmitResult.saved;
       final receipt = command.receipt!;
       _detailLoads[receipt.id] = (_detailLoads[receipt.id] ?? 0) + 1;
@@ -428,7 +467,12 @@ class PanenViewModel extends StateNotifier<PanenState> {
           : HarvestSubmitResult.savedRefreshFailed;
     } catch (e) {
       command.uncertain = writeStaysUncertain(e, wasUncertain: wasUncertain);
-      if (!command.uncertain) _commands.pending.remove(_scope);
+      if (!command.uncertain) {
+        _commands.pending.remove(_scope);
+        await _failQueue(command.key, serviceError(e));
+      } else {
+        await _recordQueue(command);
+      }
       if (e is ApiException && e.status == 409) {
         await refresh();
         if (mounted && e.code == 'HARVEST_VERSION_CONFLICT') {
@@ -474,6 +518,9 @@ final panenViewModelProvider =
         canReadBatches: user.permissions.contains('budidaya:read'),
         userId: user.id,
         commands: ref.watch(harvestCommandsProvider),
+        queueSink: V2HarvestQueueSink(
+          ref.watch(v2SyncQueueProvider.notifier),
+        ),
         clock: clock,
       );
       Timer? timer;

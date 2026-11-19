@@ -9,8 +9,13 @@ class InventoryDraft {
     required this.unit,
     required this.minimum,
     required this.initialStock,
+    this.medicineId,
   });
   final String? id;
+
+  /// `id_obat` saat jenis barang Obat; null untuk jenis lain (frame 4.11/4.12).
+  final String? medicineId;
+
   final String name, categoryId, unit, minimum, initialStock;
 
   static String? quantityError(String value, {bool positive = false}) {

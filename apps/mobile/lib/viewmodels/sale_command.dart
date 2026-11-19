@@ -19,11 +19,17 @@ class SaleCommand {
     this.draft,
     this.headerDraft,
     this.oldItem,
-  }) : key = generateUuidV4();
+    this.expectedVersion,
+    String? key,
+  }) : key = key ?? generateUuidV4();
 
   final String target, payload, key;
   final SalesDraft? draft;
   final SalesHeaderDraft? headerDraft;
+
+  /// Versi baris sebelum dikoreksi; null untuk penjualan baru. Disimpan supaya
+  /// pengiriman ulang dari antrean HP memakai tiket versi yang sama.
+  final String? expectedVersion;
 
   /// Baris sebelum dikoreksi, untuk menghitung ulang stok setelah kirim ulang.
   final PenjualanItem? oldItem;

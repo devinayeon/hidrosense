@@ -21,6 +21,7 @@ enum V2IconName {
   minus,
   warning,
   info,
+  error,
   sun,
   edit,
   trash,
@@ -59,6 +60,10 @@ abstract final class V2Icons {
     V2IconName.minus => Icons.remove,
     V2IconName.warning => Icons.warning_amber_rounded,
     V2IconName.info => Icons.info_outline,
+    // FigCraft tidak punya `Icon/error` di library; penanda galat di gambar
+    // (mis. `Helper` sheet "Catat stok", toast Error) memakai glyph X polos,
+    // sama seperti `Icon/close`.
+    V2IconName.error => Icons.close,
     V2IconName.sun => Icons.wb_sunny_outlined,
     V2IconName.edit => Icons.edit_outlined,
     V2IconName.trash => Icons.delete_outline,
@@ -67,7 +72,7 @@ abstract final class V2Icons {
     V2IconName.chevronDown => Icons.keyboard_arrow_down,
     V2IconName.droplet => Icons.water_drop_outlined,
     V2IconName.layers => Icons.layers_outlined,
-    V2IconName.calendar => Icons.calendar_today_outlined,
+    V2IconName.calendar => Icons.calendar_today,
     V2IconName.chart => Icons.bar_chart,
   };
 }

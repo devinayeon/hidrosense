@@ -162,4 +162,42 @@ void main() {
       expect(rec.note, 'Diperbarui');
     },
   );
+
+  test('NurseryRepository updateSowing mengirim status_penyemaian', () async {
+    final mockClient = MockNurseryHttpClient((req) async {
+      expect(req.method, 'PATCH');
+      expect(req.url.path, '/api/v1/penyemaian/sem-01');
+      final body = jsonDecode(req.body);
+      expect(body['status_penyemaian'], 'selesai');
+      expect(body.containsKey('jumlah_benih'), isFalse);
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {
+            'id_penyemaian': 'sem-01',
+            'id_user': 'usr-01',
+            'tanggal_semai': '2026-10-01',
+            'jumlah_benih': 150,
+            'status_penyemaian': 'selesai',
+            'siap_pindah': false,
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final api = ApiClient(
+      mockClient,
+      baseUri: Uri.parse('http://localhost:3000/api/v1'),
+      allowInsecureLocalhost: true,
+    );
+    api.setTokens(accessToken: 'token-abc', refreshToken: 'ref-xyz');
+    final repo = NurseryRepository(api);
+
+    final rec = await repo.updateSowing('sem-01', status: 'selesai');
+
+    expect(rec.id, 'sem-01');
+    expect(rec.status, 'selesai');
+  });
 }
