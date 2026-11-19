@@ -29,6 +29,9 @@ class V2DetailTanamanPage extends StatefulWidget {
     required this.meja,
     this.onUbah,
     this.toast,
+    this.onSimpanCatatan,
+    this.onCatatRusak,
+    this.onUbahRusak,
   });
 
   /// Frame `6.21 Detail tanaman`: Romaine Meja A2, HST 8.
@@ -53,6 +56,15 @@ class V2DetailTanamanPage extends StatefulWidget {
 
   /// Dipanggil saat catatan tanaman berubah supaya halaman meja ikut segar.
   final ValueChanged<String?>? onUbah;
+
+  /// Simpan catatan tanaman ke batch pemindahan; null berarti hanya di layar.
+  final Future<void> Function(String? catatan)? onSimpanCatatan;
+
+  /// Simpan kerusakan baru ke backend; null berarti hanya di layar.
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onCatatRusak;
+
+  /// Simpan perubahan kerusakan ke backend; null berarti hanya di layar.
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onUbahRusak;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 6.23).
   final String? toast;
@@ -97,21 +109,61 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
       V2UbahCatatanTanamanPage.route(_tanaman.keterangan),
     );
     if (!mounted || catatan == null) return;
+    final simpan = widget.onSimpanCatatan;
+    if (simpan != null) {
+      try {
+        await simpan(catatan);
+        if (!mounted) return;
+      } catch (error) {
+        if (!mounted) return;
+        _pesan('$error');
+        return;
+      }
+    }
     setState(() => _tanaman = _tanaman.copyWith(keterangan: catatan));
     widget.onUbah?.call(catatan);
     _showToast('Perubahan tersimpan');
   }
 
   void _bukaRusak() {
+    final rusak = widget.meja.rusak
+        .where((item) => item.transferId == _tanaman.transferId)
+        .toList();
     Navigator.of(context).push(
       V2TanamanRusakPage.route(
-        item: widget.meja.copyWith(rusak: widget.meja.rusak),
+        item: widget.meja.copyWith(rusak: rusak),
+        transferId: _tanaman.transferId,
+        onCatat: widget.onCatatRusak,
+        onUbah: widget.onUbahRusak,
       ),
     );
   }
 
-  void _catatRusak() {
-    Navigator.of(context).push(V2CatatRusakPage.route());
+  Future<void> _catatRusak() async {
+    final hasil = await Navigator.of(context).push<V2KerusakanItem>(
+      V2CatatRusakPage.route(
+        meja: widget.meja,
+        transferId: _tanaman.transferId,
+      ),
+    );
+    if (!mounted || hasil == null) return;
+    final simpan = widget.onCatatRusak;
+    if (simpan == null) {
+      _showToast('Kerusakan dicatat');
+      return;
+    }
+    try {
+      await simpan(hasil);
+      if (mounted) _showToast('Kerusakan dicatat');
+    } catch (error) {
+      if (mounted) _pesan('$error');
+    }
+  }
+
+  void _pesan(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -150,7 +202,7 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
                       V2ListItem(
                         title: 'Tanaman rusak',
                         subtitle:
-                            '${widget.meja.rusak.fold<int>(0, (total, rusak) => total + rusak.jumlah)} tanaman. Lihat daftar',
+                            '${widget.meja.rusak.where((item) => item.transferId == _tanaman.transferId).fold<int>(0, (total, rusak) => total + rusak.jumlah)} tanaman. Lihat daftar',
                         icon: V2IconName.warning,
                         iconTone: V2ListItemIconTone.warning,
                         onTap: _bukaRusak,
@@ -162,7 +214,7 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
               V2ActionBar(
                 toast: _toast,
                 actions: [
-                  V2Button(label: 'Catat rusak', onPressed: _catatRusak),
+                  V2Button(label: 'Catat rusak', onPressed: () => _catatRusak()),
                   V2Button(
                     label: 'Ubah',
                     type: V2ButtonType.tertiary,

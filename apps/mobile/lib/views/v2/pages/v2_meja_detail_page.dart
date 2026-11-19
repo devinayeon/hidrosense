@@ -37,6 +37,9 @@ class V2MejaDetailPage extends StatefulWidget {
     this.onUbahStatus,
     this.onUbahMeja,
     this.onTambahTanaman,
+    this.onUbahCatatanTanaman,
+    this.onCatatRusak,
+    this.onUbahRusak,
   });
 
   /// Frame `6.10 Detail meja kosong`: Meja C1, 0 dari 180.
@@ -83,6 +86,16 @@ class V2MejaDetailPage extends StatefulWidget {
 
   /// Tambah tanaman lewat alur backend; null berarti alur contoh galeri.
   final Future<V2MejaItem?> Function()? onTambahTanaman;
+
+  /// Simpan catatan tanaman ke batch pemindahan (frame 6.22/6.23).
+  final Future<void> Function(V2TanamanItem tanaman, String? catatan)?
+  onUbahCatatanTanaman;
+
+  /// Catat kerusakan baru ke backend (frame 6.25–6.27).
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onCatatRusak;
+
+  /// Ubah kerusakan yang sudah ada ke backend (frame 6.28/6.29).
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onUbahRusak;
 
   static Route<V2MejaItem> route(V2MejaItem item) {
     return MaterialPageRoute<V2MejaItem>(
@@ -297,6 +310,11 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
               );
             });
           },
+          onSimpanCatatan: widget.onUbahCatatanTanaman == null
+              ? null
+              : (catatan) => widget.onUbahCatatanTanaman!(tanaman, catatan),
+          onCatatRusak: widget.onCatatRusak,
+          onUbahRusak: widget.onUbahRusak,
         ),
       ),
     );

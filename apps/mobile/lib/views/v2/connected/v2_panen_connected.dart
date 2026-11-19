@@ -88,8 +88,29 @@ V2PanenItem v2PanenItemFromRecord(
     beratTotal: _kg(record.total ?? record.saleable),
     beratReject: _kg(record.reject),
     keterangan: record.note,
+    rincian: _rincianPanen(record, tables),
   );
 }
+
+/// Rincian per batch untuk koreksi "Ubah panen" (frame 7.19).
+///
+/// Panen yang belum disortasi tidak punya `berat_total`; berat layak dipakai
+/// sebagai isian awal supaya koreksi tetap bisa disimpan.
+List<V2PanenRincian> _rincianPanen(
+  HarvestRecord record,
+  List<TableRecord> tables,
+) => [
+  for (final baris in record.details)
+    V2PanenRincian(
+      detailId: baris.id,
+      label: _kodeMeja(
+        tables.where((row) => row.id == baris.tableId).firstOrNull,
+        baris.tableCode,
+      ),
+      beratTotal: _kg(baris.total ?? baris.saleable),
+      beratReject: _kg(baris.reject),
+    ),
+];
 
 /// Isi segmen "Panen" di tab Tanam dengan data backend.
 class V2PanenConnectedTab extends ConsumerWidget {
@@ -255,12 +276,25 @@ class _V2PanenConnectedDetailPageState
     if (version == null) {
       throw StateError('Versi panen tidak tersedia. Muat ulang daftar.');
     }
-    if (record.details.length != 1) {
-      throw StateError(
-        'Koreksi panen dengan beberapa rincian belum didukung layar ini.',
-      );
-    }
-    final detail = record.details.first;
+    // Satu baris koreksi per rincian, dikirim dengan `id_detail_panen` masing
+    // masing (batas backend 100 rincian per panen).
+    final rows = edited.rincian.isEmpty
+        ? [
+            for (final baris in record.details)
+              HarvestCorrectionRow(
+                detailId: baris.id,
+                total: formatAngka(_kg(baris.total ?? baris.saleable)),
+                reject: formatAngka(_kg(baris.reject)),
+              ),
+          ]
+        : [
+            for (final baris in edited.rincian)
+              HarvestCorrectionRow(
+                detailId: baris.detailId,
+                total: formatAngka(baris.beratTotal),
+                reject: formatAngka(baris.beratReject),
+              ),
+          ];
     final result = await ref
         .read(panenViewModelProvider.notifier)
         .correct(
@@ -268,13 +302,7 @@ class _V2PanenConnectedDetailPageState
             id: record.id,
             expectedVersion: version,
             note: edited.keterangan,
-            rows: [
-              HarvestCorrectionRow(
-                detailId: detail.id,
-                total: formatAngka(edited.beratTotal),
-                reject: formatAngka(edited.beratReject),
-              ),
-            ],
+            rows: rows,
           ),
         );
     if (result == HarvestSubmitResult.busy) {

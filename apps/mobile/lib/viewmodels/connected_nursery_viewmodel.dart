@@ -355,6 +355,7 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
               : await _repository.updateSowing(
                   input.id!,
                   seedCount: input.seedCount,
+                  status: input.status,
                   note: input.note,
                   idempotencyKey: command.key,
                 ));

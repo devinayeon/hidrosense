@@ -38,6 +38,7 @@ class V2InventarisFormPage extends StatefulWidget {
     this.previewValidation = false,
     this.previewDiscard = false,
     this.previewConflict = false,
+    this.obatPilihan = designObatPilihan,
   });
 
   /// Frame `4.10 Tambah barang`.
@@ -48,7 +49,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.11 Tambah barang, jenis Obat`.
   const V2InventarisFormPage.obat({super.key})
@@ -58,7 +60,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.12 Pilih obat`.
   const V2InventarisFormPage.pilihObat({super.key})
@@ -68,7 +71,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.13 Tambah barang, keyboard`.
   const V2InventarisFormPage.keyboard({super.key})
@@ -78,7 +82,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = true,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.14 Tambah barang, validasi`.
   const V2InventarisFormPage.validation({super.key})
@@ -88,7 +93,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = true,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.24 Ubah barang`.
   const V2InventarisFormPage.ubah({super.key})
@@ -98,7 +104,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.30 Buang perubahan`.
   const V2InventarisFormPage.buangPerubahan({super.key})
@@ -108,7 +115,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = true,
-      previewConflict = false;
+      previewConflict = false,
+      obatPilihan = designObatPilihan;
 
   /// Frame `4.31 Data sudah berubah`.
   const V2InventarisFormPage.dataBerubah({super.key})
@@ -118,7 +126,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewKeyboard = false,
       previewValidation = false,
       previewDiscard = false,
-      previewConflict = true;
+      previewConflict = true,
+      obatPilihan = designObatPilihan;
 
   /// Jenis terpilih saat form dibuka.
   final V2JenisBarang initialJenis;
@@ -142,21 +151,33 @@ class V2InventarisFormPage extends StatefulWidget {
   /// Untuk pratinjau 4.31: dialog "Data sudah berubah" dibuka begitu tampil.
   final bool previewConflict;
 
+  /// Daftar obat untuk sheet "Pilih obat" (frame 4.12). Dari `GET /api/v1/obat`
+  /// saat tersambung, atau data contoh di galeri.
+  final List<V2ObatPilihan> obatPilihan;
+
   /// Form sedang mengubah barang yang sudah ada (frame 4.24).
   bool get isEdit => initialItem != null;
 
   static Route<V2InventarisItem> route({
     V2JenisBarang initialJenis = V2JenisBarang.benih,
+    List<V2ObatPilihan> obatPilihan = designObatPilihan,
   }) {
     return MaterialPageRoute<V2InventarisItem>(
-      builder: (_) => V2InventarisFormPage(initialJenis: initialJenis),
+      builder: (_) => V2InventarisFormPage(
+        initialJenis: initialJenis,
+        obatPilihan: obatPilihan,
+      ),
     );
   }
 
   /// Buka form ubah untuk [item] (frame 4.24).
-  static Route<V2InventarisItem> routeUbah(V2InventarisItem item) {
+  static Route<V2InventarisItem> routeUbah(
+    V2InventarisItem item, {
+    List<V2ObatPilihan> obatPilihan = designObatPilihan,
+  }) {
     return MaterialPageRoute<V2InventarisItem>(
-      builder: (_) => V2InventarisFormPage(initialItem: item),
+      builder: (_) =>
+          V2InventarisFormPage(initialItem: item, obatPilihan: obatPilihan),
     );
   }
 
@@ -167,7 +188,7 @@ class V2InventarisFormPage extends StatefulWidget {
 class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
   late V2JenisBarang _jenis =
       widget.initialItem?.jenis ?? widget.initialJenis;
-  String? _obat;
+  V2ObatPilihan? _obat;
 
   late final TextEditingController _nama;
   late final TextEditingController _satuan;
@@ -193,6 +214,10 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
 
   bool get _showStokMin => _jenis != V2JenisBarang.obat;
 
+  /// `id_obat`/nama obat yang ikut disimpan; hanya untuk jenis Obat.
+  String? get _obatId => _jenis == V2JenisBarang.obat ? _obat?.id : null;
+  String? get _obatNama => _jenis == V2JenisBarang.obat ? _obat?.nama : null;
+
   @override
   void initState() {
     super.initState();
@@ -211,6 +236,8 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           : '',
     );
     _stokMin = TextEditingController(text: _minimumAwal(item));
+
+    _obat = _obatDariItem(item);
 
     for (final controller in [_nama, _satuan, _stokAwal, _stokMin]) {
       controller.addListener(_markDirty);
@@ -310,22 +337,42 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     setState(() {
       _dirty = false;
       _jenis = item?.jenis ?? widget.initialJenis;
+      _obat = _obatDariItem(item);
       _namaError = null;
       _satuanError = null;
       _stokAwalError = null;
     });
   }
 
+  /// Obat awal dari barang yang diubah; null bila tidak tertaut obat atau baru
+  /// ditambah. Cocokkan dulu dengan daftar pilihan, kalau tidak ada baru
+  /// bangun pilihan dari nama yang tersimpan supaya nilainya tetap tampil.
+  V2ObatPilihan? _obatDariItem(V2InventarisItem? item) {
+    final medicineId = item?.medicineId;
+    if (medicineId == null) return null;
+    return widget.obatPilihan
+            .where((pilihan) => pilihan.id == medicineId)
+            .firstOrNull ??
+        V2ObatPilihan(nama: item?.medicineName ?? '', id: medicineId);
+  }
+
   void _setJenis(V2JenisBarang jenis) {
     if (jenis == _jenis) return;
-    setState(() => _jenis = jenis);
+    setState(() {
+      _jenis = jenis;
+      // Obat hanya berlaku untuk jenis Obat; pilihan lama dibuang supaya
+      // `id_obat` tidak ikut terkirim untuk jenis lain.
+      if (jenis != V2JenisBarang.obat) _obat = null;
+    });
   }
 
   /// Sheet "Pilih obat" (frame 4.12): pilihan ditahan di dalam sheet dan baru
   /// dipakai setelah "Pilih", mengikuti pola sheet "Jenis barang".
   Future<void> _pickObat() async {
-    var draft = _obat ?? designObat.first;
-    final result = await showV2BottomSheet<String>(
+    final pilihan = widget.obatPilihan;
+    if (pilihan.isEmpty) return;
+    var draft = _obat ?? pilihan.first;
+    final result = await showV2BottomSheet<V2ObatPilihan>(
       context,
       child: StatefulBuilder(
         builder: (sheetContext, setSheet) => V2BottomSheet(
@@ -336,14 +383,14 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           ),
           child: Column(
             children: [
-              for (var index = 0; index < designObat.length; index++) ...[
+              for (var index = 0; index < pilihan.length; index++) ...[
                 if (index > 0) const SizedBox(height: V2Space.lg),
                 V2OptionRow(
-                  label: designObat[index],
-                  state: draft == designObat[index]
+                  label: pilihan[index].nama,
+                  state: draft.id == pilihan[index].id
                       ? V2OptionState.selected
                       : V2OptionState.normal,
-                  onTap: () => setSheet(() => draft = designObat[index]),
+                  onTap: () => setSheet(() => draft = pilihan[index]),
                 ),
               ],
             ],
@@ -391,6 +438,8 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           antrean: item.antrean,
           minimum: minimum,
           riwayat: item.riwayat,
+          medicineId: _obatId,
+          medicineName: _obatNama,
         ),
       );
       return;
@@ -418,6 +467,8 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         jenis: _jenis,
         jumlah: jumlah,
         satuan: satuan,
+        medicineId: _obatId,
+        medicineName: _obatNama,
       ),
     );
   }
@@ -490,7 +541,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       if (_jenis == V2JenisBarang.obat) ...[
         V2SelectField(
           label: 'Obat',
-          value: _obat,
+          value: _obatNama,
           hint: 'Pilih obat',
           onTap: _pickObat,
         ),

@@ -84,6 +84,39 @@ enum V2PanenStatus {
   antrean,
 }
 
+/// Satu rincian panen (per batch pemindahan) untuk koreksi multi-rincian.
+///
+/// Satu panen bisa memuat beberapa rincian; frame 7.19 menampilkan satu isian
+/// berat, tetapi backend menerima koreksi per `id_detail_panen` sampai 100
+/// baris.
+class V2PanenRincian {
+  const V2PanenRincian({
+    required this.detailId,
+    required this.label,
+    required this.beratTotal,
+    required this.beratReject,
+  });
+
+  /// `id_detail_panen` backend; kosong untuk data contoh galeri.
+  final String detailId;
+
+  /// Label meja rincian, mis. `Meja A1`.
+  final String label;
+
+  final double beratTotal;
+  final double beratReject;
+
+  double get beratLayak => beratTotal - beratReject;
+
+  V2PanenRincian copyWith({double? beratTotal, double? beratReject}) =>
+      V2PanenRincian(
+        detailId: detailId,
+        label: label,
+        beratTotal: beratTotal ?? this.beratTotal,
+        beratReject: beratReject ?? this.beratReject,
+      );
+}
+
 /// Satu panen: berat, sisa, dan status penjualan.
 class V2PanenItem {
   const V2PanenItem({
@@ -98,6 +131,7 @@ class V2PanenItem {
     this.antrean = false,
     this.keterangan,
     this.transferId,
+    this.rincian = const <V2PanenRincian>[],
   });
 
   final String id;
@@ -118,6 +152,9 @@ class V2PanenItem {
 
   /// Batch backend saat panen baru dicatat; null untuk riwayat/galeri.
   final String? transferId;
+
+  /// Rincian per batch pemindahan; kosong untuk data contoh galeri.
+  final List<V2PanenRincian> rincian;
 
   /// Berat layak = berat total − reject (dihitung otomatis di 7.8).
   double get beratLayak => beratTotal - beratReject;
@@ -156,6 +193,7 @@ class V2PanenItem {
     double? terjual,
     bool? antrean,
     String? keterangan,
+    List<V2PanenRincian>? rincian,
   }) {
     return V2PanenItem(
       id: id,
@@ -169,6 +207,7 @@ class V2PanenItem {
       antrean: antrean ?? this.antrean,
       keterangan: keterangan ?? this.keterangan,
       transferId: transferId,
+      rincian: rincian ?? this.rincian,
     );
   }
 }

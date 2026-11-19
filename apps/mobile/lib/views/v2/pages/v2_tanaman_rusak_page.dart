@@ -28,6 +28,9 @@ class V2TanamanRusakPage extends StatefulWidget {
     required this.item,
     this.rusak,
     this.toast,
+    this.transferId,
+    this.onCatat,
+    this.onUbah,
   });
 
   /// Frame `6.24 Daftar rusak`: satu catatan busuk akar.
@@ -58,9 +61,28 @@ class V2TanamanRusakPage extends StatefulWidget {
   /// Toast yang sudah tampil saat halaman dibuka.
   final String? toast;
 
-  static Route<void> route({required V2MejaItem item}) {
+  /// Batch tanaman tempat "Catat rusak" baru dibuat; null berarti data contoh.
+  final String? transferId;
+
+  /// Simpan kerusakan baru ke backend; null berarti perubahan hanya di layar.
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onCatat;
+
+  /// Simpan perubahan kerusakan ke backend; null berarti hanya di layar.
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onUbah;
+
+  static Route<void> route({
+    required V2MejaItem item,
+    String? transferId,
+    Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onCatat,
+    Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onUbah,
+  }) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2TanamanRusakPage(item: item),
+      builder: (_) => V2TanamanRusakPage(
+        item: item,
+        transferId: transferId,
+        onCatat: onCatat,
+        onUbah: onUbah,
+      ),
     );
   }
 
@@ -70,7 +92,7 @@ class V2TanamanRusakPage extends StatefulWidget {
 
 class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
   late List<V2KerusakanItem> _rusak =
-      widget.rusak ?? designDaftarRusak;
+      widget.rusak ?? widget.item.rusak;
   String? _toast;
   Timer? _toastTimer;
 
@@ -101,26 +123,68 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
   }
 
   Future<void> _catat() async {
-    final hasil = await Navigator.of(
-      context,
-    ).push<V2KerusakanItem>(V2CatatRusakPage.route(meja: widget.item));
+    final hasil = await Navigator.of(context).push<V2KerusakanItem>(
+      V2CatatRusakPage.route(
+        meja: widget.item,
+        transferId: widget.transferId,
+      ),
+    );
     if (!mounted || hasil == null) return;
-    setState(() => _rusak = [hasil, ..._rusak]);
-    _showToast('Kerusakan dicatat');
+    final simpan = widget.onCatat;
+    if (simpan == null) {
+      setState(() => _rusak = [hasil, ..._rusak]);
+      _showToast('Kerusakan dicatat');
+      return;
+    }
+    try {
+      final tersimpan = await simpan(hasil);
+      if (!mounted) return;
+      setState(() => _rusak = [tersimpan, ..._rusak]);
+      _showToast('Kerusakan dicatat');
+    } catch (error) {
+      if (!mounted) return;
+      _pesan('$error');
+    }
   }
 
   Future<void> _ubah(V2KerusakanItem rusak) async {
     final hasil = await Navigator.of(context).push<V2KerusakanItem>(
-      V2CatatRusakPage.route(meja: widget.item, kerusakan: rusak),
+      V2CatatRusakPage.route(
+        meja: widget.item,
+        kerusakan: rusak,
+        transferId: widget.transferId,
+      ),
     );
     if (!mounted || hasil == null) return;
-    setState(() {
-      _rusak = [
-        for (final baris in _rusak)
-          if (identical(baris, rusak)) hasil else baris,
-      ];
-    });
+    final simpan = widget.onUbah;
+    if (simpan != null) {
+      try {
+        final tersimpan = await simpan(hasil);
+        if (!mounted) return;
+        setState(() => _rusak = _ganti(rusak, tersimpan));
+        _showToast('Perubahan tersimpan');
+      } catch (error) {
+        if (!mounted) return;
+        _pesan('$error');
+      }
+      return;
+    }
+    setState(() => _rusak = _ganti(rusak, hasil));
     _showToast('Perubahan tersimpan');
+  }
+
+  List<V2KerusakanItem> _ganti(
+    V2KerusakanItem lama,
+    V2KerusakanItem baru,
+  ) => [
+    for (final baris in _rusak)
+      if (identical(baris, lama)) baru else baris,
+  ];
+
+  void _pesan(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   V2ListItem _row(V2KerusakanItem rusak) {
@@ -191,6 +255,7 @@ class V2CatatRusakPage extends StatefulWidget {
     this.meja,
     this.kerusakan,
     this.previewValidation = false,
+    this.transferId,
   });
 
   /// Frame `6.25 Catat rusak`.
@@ -213,13 +278,20 @@ class V2CatatRusakPage extends StatefulWidget {
   final V2KerusakanItem? kerusakan;
   final bool previewValidation;
 
+  /// Batch tanaman tujuan laporan baru; dipakai mengirim ke backend.
+  final String? transferId;
+
   static Route<V2KerusakanItem> route({
     V2MejaItem? meja,
     V2KerusakanItem? kerusakan,
+    String? transferId,
   }) {
     return MaterialPageRoute<V2KerusakanItem>(
-      builder: (_) =>
-          V2CatatRusakPage(meja: meja, kerusakan: kerusakan),
+      builder: (_) => V2CatatRusakPage(
+        meja: meja,
+        kerusakan: kerusakan,
+        transferId: transferId,
+      ),
     );
   }
 
@@ -289,14 +361,25 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
     });
     if (_jumlahError != null || _jenisError != null) return;
 
+    final lama = widget.kerusakan;
     final dasar =
-        widget.kerusakan ?? designKerusakanBusukAkar;
+        lama ??
+        V2KerusakanItem(
+          jumlah: _jumlah,
+          jenis: 'Busuk akar',
+          tanggal: _tanggal,
+          varietas:
+              widget.meja?.tanaman.firstOrNull?.varietas ?? 'Romaine',
+          meja: widget.meja?.kode ?? 'A2',
+          transferId: widget.transferId,
+        );
     Navigator.of(context).pop(
       dasar.copyWith(
         jumlah: _jumlah,
         jenis: _jenisDipilih,
         tanggal: _tanggal,
         keterangan: _keterangan.text.trim(),
+        transferId: lama?.transferId ?? widget.transferId,
       ),
     );
   }

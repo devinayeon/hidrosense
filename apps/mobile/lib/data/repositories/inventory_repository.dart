@@ -1,6 +1,7 @@
 import '../../core/uuid.dart';
 import '../models/inventory_record.dart';
 import '../models/jenis_inventaris_record.dart';
+import '../models/obat_record.dart';
 import '../models/stock_movement_record.dart';
 import '../services/api_client.dart';
 import '../services/inventory_cache.dart';
@@ -195,5 +196,17 @@ Future<List<JenisInventarisRecord>> fetchInventoryCategories(
       .map(
         (json) => JenisInventarisRecord.fromJson(json as Map<String, dynamic>),
       )
+      .toList();
+}
+
+Future<List<ObatRecord>> fetchMedicines(ApiClient api) async {
+  final response = await api.get(
+    'obat',
+    query: {'limit': '100', 'status_aktif': '1'},
+  );
+  final data = response['data'];
+  if (data is! List) throw const FormatException('Daftar obat tidak valid.');
+  return data
+      .map((json) => ObatRecord.fromJson(json as Map<String, dynamic>))
       .toList();
 }

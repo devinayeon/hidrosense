@@ -227,16 +227,12 @@ class _V2SemaianConnectedDetailPageState
               date: apiDate(_item.tanggalSemai),
               seedCount: updated.jumlahBenih,
               note: updated.keterangan ?? '',
+              // Tandai selesai hanya bila status berubah; tidak ada jalan
+              // balik karena form ubah disembunyikan untuk semaian selesai.
+              status: updated.selesai && !_item.selesai ? 'selesai' : null,
             ),
           );
       if (!mounted) return;
-      if (updated.selesai != _item.selesai) {
-        _pesan(
-          context,
-          'Jumlah dan catatan tersimpan. Tandai selesai belum didukung '
-          'backend.',
-        );
-      }
       _segarkan('Perubahan tersimpan');
     } catch (error) {
       if (!mounted) return;

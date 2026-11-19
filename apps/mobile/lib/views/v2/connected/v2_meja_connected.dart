@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/business_date.dart';
 import '../../../core/uuid.dart';
 import '../../../data/models/inventory_record.dart';
+import '../../../data/models/damage_record.dart';
 import '../../../data/models/nursery_record.dart';
 import '../../../data/models/table_record.dart';
 import '../../../data/models/transfer_record.dart';
 import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../../viewmodels/connected_table_viewmodel.dart';
+import '../../../viewmodels/damage_viewmodel.dart';
 import '../../../viewmodels/panen_viewmodel.dart';
 import '../../../viewmodels/session_viewmodel.dart';
 import '../components/v2_meja_data.dart';
@@ -95,8 +96,25 @@ V2TanamanItem _tanamanFromTransfer(
     jumlahAktif: transfer.activePlants,
     jumlahAwal: transfer.plantCount,
     keterangan: transfer.note,
+    transferId: transfer.id,
   );
 }
+
+/// Satu laporan kerusakan backend → catatan page 06 (frame 6.24–6.29).
+V2KerusakanItem v2KerusakanDariDamage(
+  DamageRecord damage, {
+  required String varietas,
+  required String meja,
+}) => V2KerusakanItem(
+  id: damage.id,
+  transferId: damage.transferId,
+  jumlah: damage.plantCount,
+  jenis: damage.category,
+  tanggal: DateTime.tryParse(damage.date) ?? jakartaToday(),
+  varietas: varietas,
+  meja: meja,
+  keterangan: damage.note,
+);
 
 /// Pemetaan satu meja backend ke model daftar/detail page 06.
 V2MejaItem v2MejaItemFromRecord(
@@ -104,6 +122,7 @@ V2MejaItem v2MejaItemFromRecord(
   List<TransferRecord> transfers = const <TransferRecord>[],
   List<SowingRecord> sowings = const <SowingRecord>[],
   List<InventoryRecord> inventaris = const <InventoryRecord>[],
+  List<DamageRecord> damages = const <DamageRecord>[],
 }) {
   final tanaman = transfers
       .where((item) => item.tableId == record.id && item.activePlants > 0)
@@ -115,6 +134,20 @@ V2MejaItem v2MejaItemFromRecord(
         ),
       )
       .toList();
+  final rusak = damages.map((damage) {
+    final transfer = transfers
+        .where((item) => item.id == damage.transferId)
+        .firstOrNull;
+    final varietas = transfer == null
+        ? 'Tanaman meja'
+        : v2NamaVarietasTransfer(transfer, sowings, inventaris) ??
+              'Tanaman meja';
+    return v2KerusakanDariDamage(
+      damage,
+      varietas: varietas,
+      meja: record.code,
+    );
+  }).toList();
   return V2MejaItem(
     id: record.id,
     kode: record.code,
@@ -123,6 +156,7 @@ V2MejaItem v2MejaItemFromRecord(
     status: v2StatusMeja(record),
     keterangan: record.notes,
     tanaman: tanaman,
+    rusak: rusak,
   );
 }
 
@@ -241,7 +275,48 @@ class _V2MejaConnectedDetailPageState
       transfers: ref.read(v2AllTransfersProvider).valueOrNull ?? const [],
       sowings: ref.read(v2AllSowingsProvider).valueOrNull ?? const [],
       inventaris: _inventaris,
+      damages: _damages(),
     );
+  }
+
+  /// Semua laporan kerusakan meja ini dari `damageProvider`.
+  List<DamageRecord> _damages() {
+    final id = _item.id;
+    if (id == null) return const <DamageRecord>[];
+    return ref
+        .read(damageProvider(id))
+        .reports
+        .values
+        .expand((rows) => rows)
+        .toList();
+  }
+
+  /// Nama benih batch, dipakai subjudul catatan rusak (frame 6.24).
+  String _varietasTransfer(String transferId) {
+    final transfer = (ref.read(v2AllTransfersProvider).valueOrNull ?? const [])
+        .where((item) => item.id == transferId)
+        .firstOrNull;
+    if (transfer == null) return 'Tanaman meja';
+    return v2NamaVarietasTransfer(
+          transfer,
+          ref.read(v2AllSowingsProvider).valueOrNull ?? const [],
+          _inventaris,
+        ) ??
+        'Tanaman meja';
+  }
+
+  /// Meja yang ditampilkan, dengan daftar rusak terbaru dari backend.
+  V2MejaItem _denganRusak(V2MejaItem item) {
+    final rusak = _damages()
+        .map(
+          (damage) => v2KerusakanDariDamage(
+            damage,
+            varietas: _varietasTransfer(damage.transferId),
+            meja: item.kode,
+          ),
+        )
+        .toList();
+    return item.copyWith(rusak: rusak);
   }
 
   Future<void> _ubahStatus(V2MejaStatus status) async {
@@ -312,6 +387,115 @@ class _V2MejaConnectedDetailPageState
     return hasil;
   }
 
+  /// Simpan catatan tanaman lewat `PATCH /api/v1/pemindahan/:id` (frame 6.22).
+  Future<void> _ubahCatatanTanaman(
+    V2TanamanItem tanaman,
+    String? catatan,
+  ) async {
+    final id = _item.id;
+    final transferId = tanaman.transferId;
+    if (id == null || transferId == null) {
+      throw StateError('Batch tanaman belum tersimpan di server.');
+    }
+    final result = await ref
+        .read(damageProvider(id).notifier)
+        .updateTransfer(transferId, note: catatan);
+    if (result == DamageSubmitResult.busy) {
+      throw StateError('Catatan sedang disimpan.');
+    }
+    if (result == DamageSubmitResult.failed) {
+      throw StateError(
+        ref.read(damageProvider(id)).error ?? 'Catatan gagal disimpan.',
+      );
+    }
+    ref.invalidate(v2AllTransfersProvider);
+    await ref.read(v2AllTransfersProvider.future);
+    _segarkan();
+  }
+
+  /// Catat kerusakan baru lewat `POST /api/v1/kerusakan` (frame 6.25–6.27).
+  Future<V2KerusakanItem> _catatRusak(V2KerusakanItem draft) async {
+    final id = _item.id;
+    final transferId = draft.transferId;
+    if (id == null || transferId == null) {
+      throw StateError('Batch tanaman tidak dikenali.');
+    }
+    final sebelum = _idKerusakan(id);
+    final result = await ref
+        .read(damageProvider(id).notifier)
+        .submit(
+          DamageDraft(
+            transferId: transferId,
+            date: apiDate(draft.tanggal),
+            plantCount: draft.jumlah,
+            category: draft.jenis,
+            note: draft.keterangan,
+          ),
+        );
+    await _selesaiRusak(id, result);
+    return _cariRusak(id, _idKerusakan(id).difference(sebelum)) ?? draft;
+  }
+
+  /// Ubah laporan kerusakan lewat `PATCH /api/v1/kerusakan/:id` (frame 6.28).
+  Future<V2KerusakanItem> _ubahRusak(V2KerusakanItem draft) async {
+    final id = _item.id;
+    final damageId = draft.id;
+    if (id == null || damageId == null) {
+      throw StateError('Laporan kerusakan tidak dikenali.');
+    }
+    final result = await ref
+        .read(damageProvider(id).notifier)
+        .updateDamage(
+          damageId,
+          date: apiDate(draft.tanggal),
+          plantCount: draft.jumlah,
+          category: draft.jenis,
+          note: draft.keterangan,
+        );
+    await _selesaiRusak(id, result);
+    return _cariRusak(id, {damageId}) ?? draft;
+  }
+
+  Future<void> _selesaiRusak(String tableId, DamageSubmitResult result) async {
+    if (result == DamageSubmitResult.busy) {
+      throw StateError('Kerusakan sedang disimpan.');
+    }
+    if (result == DamageSubmitResult.failed) {
+      throw StateError(
+        ref.read(damageProvider(tableId)).error ??
+            'Laporan kerusakan gagal disimpan.',
+      );
+    }
+    ref.invalidate(v2AllTransfersProvider);
+    await ref.read(v2AllTransfersProvider.future);
+    await ref.read(connectedTableProvider.notifier).refreshTable(tableId);
+    _segarkan();
+  }
+
+  Set<String> _idKerusakan(String tableId) => ref
+      .read(damageProvider(tableId))
+      .reports
+      .values
+      .expand((rows) => rows)
+      .map((row) => row.id)
+      .toSet();
+
+  /// Cari laporan yang baru disimpan berdasarkan sekumpulan id.
+  V2KerusakanItem? _cariRusak(String tableId, Set<String> ids) {
+    if (ids.isEmpty) return null;
+    for (final row in ref.read(damageProvider(tableId)).reports.values.expand(
+      (rows) => rows,
+    )) {
+      if (!ids.contains(row.id)) continue;
+      return v2KerusakanDariDamage(
+        row,
+        varietas: _varietasTransfer(row.transferId),
+        meja: _item.kode,
+      );
+    }
+    return null;
+  }
+
   void _segarkan() {
     final terbaru = _dariBackend();
     if (terbaru != null && mounted) setState(() => _item = terbaru);
@@ -319,11 +503,16 @@ class _V2MejaConnectedDetailPageState
 
   @override
   Widget build(BuildContext context) {
+    final id = _item.id;
+    if (id != null) ref.watch(damageProvider(id));
     return V2MejaDetailPage(
-      item: _item,
+      item: _denganRusak(_item),
       onUbahStatus: _ubahStatus,
       onUbahMeja: _ubahMeja,
       onTambahTanaman: _tambahTanaman,
+      onUbahCatatanTanaman: _ubahCatatanTanaman,
+      onCatatRusak: _catatRusak,
+      onUbahRusak: _ubahRusak,
     );
   }
 }

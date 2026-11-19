@@ -7,6 +7,7 @@
 library;
 
 import '../../../core/formatting.dart';
+import '../../../data/models/obat_record.dart';
 
 /// Jenis barang yang bisa disaring di halaman Stok (sheet 4.7).
 enum V2JenisBarang {
@@ -70,12 +71,20 @@ class V2InventarisItem {
     this.antrean = false,
     this.minimum,
     this.riwayat = const <V2InventarisRiwayat>[],
+    this.medicineId,
+    this.medicineName,
   });
 
   final String id;
   final String nama;
   final V2JenisBarang jenis;
   final double jumlah;
+
+  /// `id_obat` barang jenis Obat; null untuk jenis lain (frame 4.11/4.12).
+  final String? medicineId;
+
+  /// Nama obat yang tertaut, dipakai untuk menampilkan pilihan di form.
+  final String? medicineName;
 
   /// Satuan yang ditulis apa adanya, mis. `pak`, `kg`, `lembar`.
   final String satuan;
@@ -115,6 +124,8 @@ class V2InventarisItem {
     bool? antrean,
     double? minimum,
     List<V2InventarisRiwayat>? riwayat,
+    String? medicineId,
+    String? medicineName,
   }) {
     return V2InventarisItem(
       id: id ?? this.id,
@@ -127,6 +138,8 @@ class V2InventarisItem {
       antrean: antrean ?? this.antrean,
       minimum: minimum ?? this.minimum,
       riwayat: riwayat ?? this.riwayat,
+      medicineId: medicineId ?? this.medicineId,
+      medicineName: medicineName ?? this.medicineName,
     );
   }
 }
@@ -158,10 +171,25 @@ const List<V2JenisBarang> urutanJenisForm = <V2JenisBarang>[
 ];
 
 /// Pilihan di sheet "Pilih obat" (frame 4.12).
-const List<String> designObat = <String>[
-  'Pestisida nabati',
-  'Sabun insektisida',
-  'Fungisida organik',
+///
+/// [id] adalah `id_obat` backend; null hanya untuk data contoh galeri yang
+/// tidak pernah dikirim ke server.
+class V2ObatPilihan {
+  const V2ObatPilihan({required this.nama, this.id});
+
+  final String nama;
+  final String? id;
+}
+
+/// Pilihan obat dari data nyata (`GET /api/v1/obat`).
+List<V2ObatPilihan> v2ObatPilihanDari(List<ObatRecord> obat) =>
+    obat.map((item) => V2ObatPilihan(nama: item.name, id: item.id)).toList();
+
+/// Data contoh sheet "Pilih obat" (frame 4.12) tanpa id backend.
+const List<V2ObatPilihan> designObatPilihan = <V2ObatPilihan>[
+  V2ObatPilihan(nama: 'Pestisida nabati'),
+  V2ObatPilihan(nama: 'Sabun insektisida'),
+  V2ObatPilihan(nama: 'Fungisida organik'),
 ];
 
 /// Contoh isian form "Tambah barang": (nama barang, satuan). Frame 4.10 memakai

@@ -88,6 +88,7 @@ class V2TanamanItem {
     this.jumlahAktif = 40,
     this.jumlahAwal = 42,
     this.keterangan,
+    this.transferId,
   });
 
   /// Nama benih, mis. `Romaine`.
@@ -116,6 +117,12 @@ class V2TanamanItem {
 
   /// Catatan bebas, mis. `Rak bawah` (frame 6.22).
   final String? keterangan;
+
+  /// Identitas batch pemindahan backend; null untuk data contoh galeri.
+  ///
+  /// Dipakai untuk menyimpan catatan tanaman lewat
+  /// `PATCH /api/v1/pemindahan/:id` (frame 6.22/6.23).
+  final String? transferId;
 
   /// Umur tanaman dalam hari setelah tanam (HST).
   int get hst => _selisihHari(tanggalTanam, v2MejaHariIni);
@@ -154,6 +161,7 @@ class V2TanamanItem {
     int? jumlahAktif,
     int? jumlahAwal,
     String? keterangan,
+    String? transferId,
   }) {
     return V2TanamanItem(
       varietas: varietas ?? this.varietas,
@@ -165,6 +173,7 @@ class V2TanamanItem {
       jumlahAktif: jumlahAktif ?? this.jumlahAktif,
       jumlahAwal: jumlahAwal ?? this.jumlahAwal,
       keterangan: keterangan ?? this.keterangan,
+      transferId: transferId ?? this.transferId,
     );
   }
 }
@@ -178,7 +187,15 @@ class V2KerusakanItem {
     required this.varietas,
     required this.meja,
     this.keterangan,
+    this.id,
+    this.transferId,
   });
+
+  /// Identitas laporan backend; null untuk catatan contoh galeri.
+  final String? id;
+
+  /// Batch pemindahan yang punya laporan ini (`id_pemindahan`).
+  final String? transferId;
 
   /// Banyak tanaman yang rusak, mis. `2`.
   final int jumlah;
@@ -210,6 +227,8 @@ class V2KerusakanItem {
     String? varietas,
     String? meja,
     String? keterangan,
+    String? id,
+    String? transferId,
   }) {
     return V2KerusakanItem(
       jumlah: jumlah ?? this.jumlah,
@@ -218,6 +237,8 @@ class V2KerusakanItem {
       varietas: varietas ?? this.varietas,
       meja: meja ?? this.meja,
       keterangan: keterangan ?? this.keterangan,
+      id: id ?? this.id,
+      transferId: transferId ?? this.transferId,
     );
   }
 }

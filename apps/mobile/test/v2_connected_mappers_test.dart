@@ -120,6 +120,35 @@ void main() {
       expect(item.tanaman, isEmpty);
       expect(item.terisi, 0);
     });
+
+    test('membawa laporan kerusakan nyata ke daftar rusak', () {
+      final item = v2MejaItemFromRecord(
+        _table(),
+        transfers: [_transfer()],
+        sowings: [_sowing()],
+        inventaris: [_inventory()],
+        damages: const [
+          DamageRecord(
+            id: '4',
+            transferId: '10',
+            date: '2026-11-12',
+            plantCount: 12,
+            category: 'Busuk akar',
+            note: 'Daun menguning',
+          ),
+        ],
+      );
+
+      expect(item.tanaman.single.transferId, '10');
+      final rusak = item.rusak.single;
+      expect(rusak.id, '4');
+      expect(rusak.transferId, '10');
+      expect(rusak.jenis, 'Busuk akar');
+      expect(rusak.jumlah, 12);
+      expect(rusak.varietas, 'Romaine');
+      expect(rusak.meja, 'A2');
+      expect(rusak.keterangan, 'Daun menguning');
+    });
   });
 
   group('v2PanenItemFromRecord', () {
@@ -174,6 +203,58 @@ void main() {
       final item = v2PanenItemFromRecord(record(includeTotals: false));
       expect(item.beratTotal, 2.3);
       expect(item.beratReject, 0);
+    });
+
+    test('rincian per detail dipakai koreksi multi-rincian', () {
+      final multi = HarvestRecord(
+        id: '9',
+        userId: '1',
+        date: '2026-11-12',
+        details: [
+          HarvestDetail(
+            id: '5',
+            transferId: '10',
+            tableId: '1',
+            tableCode: 'A2',
+            sowingDate: '2026-10-17',
+            transferDate: '2026-11-01',
+            plantCount: 40,
+            saleable: _kg('2.30'),
+            total: _kg('2.50'),
+            reject: _kg('0.20'),
+          ),
+          HarvestDetail(
+            id: '6',
+            transferId: '11',
+            tableId: '2',
+            tableCode: 'B1',
+            sowingDate: '2026-10-18',
+            transferDate: '2026-11-02',
+            plantCount: 30,
+            saleable: _kg('1.00'),
+            total: _kg('1.10'),
+            reject: _kg('0.10'),
+          ),
+        ],
+        saleable: _kg('3.30'),
+        total: _kg('3.60'),
+        reject: _kg('0.30'),
+      );
+
+      final item = v2PanenItemFromRecord(
+        multi,
+        tables: [_table(), _table(id: '2', code: 'B1')],
+      );
+
+      expect(item.rincian, hasLength(2));
+      expect(item.rincian[0].detailId, '5');
+      expect(item.rincian[0].label, 'Meja A2');
+      expect(item.rincian[0].beratTotal, 2.5);
+      expect(item.rincian[0].beratReject, 0.2);
+      expect(item.rincian[1].detailId, '6');
+      expect(item.rincian[1].label, 'Meja B1');
+      expect(item.rincian[1].beratTotal, 1.1);
+      expect(item.rincian[1].beratReject, 0.1);
     });
   });
 

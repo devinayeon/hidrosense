@@ -56,6 +56,8 @@ V2InventarisItem v2InventarisItemFromRecord(
     arsip: !record.active,
     minimum: minimum,
     riwayat: riwayat,
+    medicineId: record.medicineId,
+    medicineName: record.medicineName,
   );
 }
 
@@ -162,9 +164,11 @@ class V2InventarisConnectedTab extends ConsumerWidget {
   }
 
   Future<void> _tambah(BuildContext context, WidgetRef ref) async {
-    final result = await Navigator.of(
-      context,
-    ).push<V2InventarisItem>(V2InventarisFormPage.route());
+    final obat = await _obatPilihan(ref);
+    if (!context.mounted) return;
+    final result = await Navigator.of(context).push<V2InventarisItem>(
+      V2InventarisFormPage.route(obatPilihan: obat),
+    );
     if (result == null || !context.mounted) return;
     try {
       final kategori = await ref.read(inventoryCategoriesProvider.future);
@@ -185,6 +189,7 @@ class V2InventarisConnectedTab extends ConsumerWidget {
                   ? ''
                   : _angkaDraft(result.minimum!),
               initialStock: _angkaDraft(result.jumlah),
+              medicineId: result.medicineId,
             ),
           );
       if (!context.mounted) return;
@@ -212,6 +217,17 @@ void _pesan(BuildContext context, String pesan) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(pesan)));
+}
+
+/// Daftar obat untuk sheet "Pilih obat"; kosong bila layanan tidak tersedia
+/// supaya penambahan barang jenis lain tetap jalan.
+Future<List<V2ObatPilihan>> _obatPilihan(WidgetRef ref) async {
+  try {
+    final obat = await ref.read(inventoryMedicinesProvider.future);
+    return v2ObatPilihanDari(obat);
+  } catch (_) {
+    return const <V2ObatPilihan>[];
+  }
 }
 
 /// Detail barang yang membaca riwayat dan menulis aksi ke backend.
@@ -266,9 +282,13 @@ class _V2InventarisConnectedDetailPageState
   }
 
   Future<void> _ubah() async {
+    final obat = await _obatPilihan(ref);
+    if (!mounted) return;
     final updated = await Navigator.of(
       context,
-    ).push<V2InventarisItem>(V2InventarisFormPage.routeUbah(_item));
+    ).push<V2InventarisItem>(
+      V2InventarisFormPage.routeUbah(_item, obatPilihan: obat),
+    );
     if (!mounted || updated == null) return;
     final record = _record();
     try {
@@ -292,6 +312,7 @@ class _V2InventarisConnectedDetailPageState
                   ? ''
                   : _angkaDraft(updated.minimum!),
               initialStock: '',
+              medicineId: updated.medicineId,
             ),
           );
       if (!mounted) return;

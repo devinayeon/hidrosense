@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/inventory_record.dart';
 import '../data/models/jenis_inventaris_record.dart';
+import '../data/models/obat_record.dart';
 import '../data/repositories/inventory_repository.dart';
 import '../data/services/api_client.dart';
 import '../data/services/inventory_cache.dart';
@@ -217,6 +218,7 @@ class ConnectedInventoryViewModel
         final item = input.id == null
             ? await _repository.createItem(
                 categoryId: input.categoryId,
+                medicineId: input.medicineId,
                 name: input.name,
                 unit: input.unit,
                 minimum: input.minimum.isEmpty ? null : input.minimum,
@@ -225,6 +227,7 @@ class ConnectedInventoryViewModel
             : await _repository.updateItem(
                 input.id!,
                 categoryId: input.categoryId,
+                medicineId: input.medicineId,
                 name: input.name,
                 unit: input.unit,
                 minimum: input.minimum,
@@ -450,4 +453,13 @@ final inventoryCategoriesProvider =
         throw StateError('Kategori inventaris memerlukan sesi.');
       }
       return fetchInventoryCategories(ref.watch(apiClientProvider));
+    });
+
+final inventoryMedicinesProvider =
+    FutureProvider.autoDispose<List<ObatRecord>>((ref) async {
+      final user = ref.watch(sessionProvider.select((state) => state.user));
+      if (user == null) {
+        throw StateError('Daftar obat memerlukan sesi.');
+      }
+      return fetchMedicines(ref.watch(apiClientProvider));
     });
