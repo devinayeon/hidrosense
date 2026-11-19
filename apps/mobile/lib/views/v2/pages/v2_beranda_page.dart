@@ -95,7 +95,7 @@ class V2BerandaPage extends StatefulWidget {
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
     this.tanamTab,
-    this.stokTab,
+    this.stokTabBuilder,
     this.rawatTab,
     this.onLowStock,
     this.onOpenNotifications,
@@ -125,7 +125,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
-       stokTab = null,
+       stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.loading,
        siapPindahSubtitle = '1 semaian, HSS 17',
@@ -156,7 +156,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
-       stokTab = null,
+       stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.offline,
        siapPindahSubtitle = '2 semaian, HSS 15',
@@ -187,7 +187,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
-       stokTab = null,
+       stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.weatherUnavailable,
        siapPindahSubtitle = '2 semaian, HSS 15',
@@ -243,7 +243,11 @@ class V2BerandaPage extends StatefulWidget {
   /// Hanya halaman penghubung (`V2BerandaConnectedPage`) yang mengisinya,
   /// sehingga galeri tetap memakai data contoh per frame.
   final Widget? tanamTab;
-  final Widget? stokTab;
+
+  /// Isi tab Stok versi backend; menerima jenis dan indeks keadaan terpilih
+  /// supaya kartu "stok menipis" bisa langsung membuka Benih + Menipis.
+  final Widget Function(V2JenisBarang? jenis, int statusIndex)? stokTabBuilder;
+
   final Widget? rawatTab;
 
   final VoidCallback? onLowStock;
@@ -271,6 +275,14 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   String? _rawatToast;
   Timer? _rawatToastTimer;
   int _activeTab = 0;
+
+  /// Saringan awal tab Stok saat dibuka lewat kartu "stok menipis".
+  ///
+  /// Dinaikkan setiap permintaan supaya tab Stok dibangun ulang dengan
+  /// saringan baru meskipun pengguna sudah pernah membuka tab itu.
+  int _stokPermintaan = 0;
+  V2JenisBarang? _stokJenis;
+  int _stokStatus = 0;
 
   @override
   void dispose() {
@@ -315,10 +327,33 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         index == v2TanamTabIndex ||
         index == v2StokTabIndex ||
         (index == v2RawatTabIndex && _petani)) {
-      setState(() => _activeTab = index);
+      setState(() {
+        _activeTab = index;
+        // Ketukan langsung ke tab Stok menampilkan semua barang lagi, bukan
+        // saringan "Benih + Menipis" yang dipakai kartu Beranda.
+        if (index == v2StokTabIndex) _resetStokFilter();
+      });
       return;
     }
     _notice('Tab ${index + 1} alur v2 belum tersedia di halaman ini.');
+  }
+
+  /// Membuka tab Stok dengan saringan Benih + Menipis, sama seperti daftar yang
+  /// dihitung kartu "stok menipis" di Beranda.
+  void _openLowStock() {
+    widget.onLowStock?.call();
+    setState(() {
+      _activeTab = v2StokTabIndex;
+      _stokJenis = V2JenisBarang.benih;
+      _stokStatus = 1;
+      _stokPermintaan++;
+    });
+  }
+
+  void _resetStokFilter() {
+    _stokJenis = null;
+    _stokStatus = 0;
+    _stokPermintaan++;
   }
 
   /// Buka alur foto tanaman 9.5 dari tab Rawat; hasilnya menyisip paling atas.
@@ -530,12 +565,21 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                             onTapItem: _openDetailSemaian,
                           ))
                     : stok
-                    ? (widget.stokTab ??
-                          V2InventarisTabView(
-                            items: _inventaris,
-                            onAdd: _openTambahBarang,
-                            onTapItem: _openDetailBarang,
-                          ))
+                    ? KeyedSubtree(
+                        key: ValueKey('stok-$_stokPermintaan'),
+                        child:
+                            widget.stokTabBuilder?.call(
+                              _stokJenis,
+                              _stokStatus,
+                            ) ??
+                            V2InventarisTabView(
+                              items: _inventaris,
+                              initialJenis: _stokJenis,
+                              initialStatusIndex: _stokStatus,
+                              onAdd: _openTambahBarang,
+                              onTapItem: _openDetailBarang,
+                            ),
+                      )
                     : rawat
                     ? (widget.rawatTab ??
                           V2RawatTabView(
@@ -608,13 +652,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         V2BerandaStats(
           lowStock: widget.lowStock,
           filledHoles: widget.filledHoles,
-          onLowStock:
-              widget.onLowStock ??
-              () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const V2InventarisListPage.menipisBenih(),
-                ),
-              ),
+          onLowStock: _openLowStock,
         ),
         if (_petani) ...[
           const SizedBox(height: V2Space.lg),

@@ -42,9 +42,7 @@ V2SemaianItem v2SemaianItemFromRecord(
   final material = record.materials.firstOrNull;
   final benih = material == null
       ? null
-      : inventaris
-            .where((item) => item.id == material.inventoryId)
-            .firstOrNull;
+      : inventaris.where((item) => item.id == material.inventoryId).firstOrNull;
   final pindah = record.seedCount - record.remainingSeedCount;
   return V2SemaianItem(
     id: record.id,
@@ -56,6 +54,7 @@ V2SemaianItem v2SemaianItemFromRecord(
     sisaBenih: pindah > 0 ? record.remainingSeedCount : null,
     jumlahPindah: pindah > 0 ? pindah : null,
     keterangan: record.note,
+    hssDariServer: record.ageDays,
     bahanInventoryId: material?.inventoryId,
     bahanAmount: material?.amount,
     bahanUnit: material?.unit,
@@ -100,7 +99,9 @@ class V2SemaianConnectedTab extends ConsumerWidget {
       connectedInventoryProvider.select((value) => value.activeRecords),
     );
     final items = state.records
-        .map((record) => v2SemaianItemFromRecord(record, inventaris: inventaris))
+        .map(
+          (record) => v2SemaianItemFromRecord(record, inventaris: inventaris),
+        )
         .toList();
     final viewState = switch (state) {
       ConnectedNurseryState(loading: true) when items.isEmpty =>
@@ -127,9 +128,7 @@ class V2SemaianConnectedTab extends ConsumerWidget {
       _pesan(context, 'Belum ada benih aktif di inventaris.');
       return;
     }
-    final result = await Navigator.of(
-      context,
-    ).push<V2SemaianItem>(
+    final result = await Navigator.of(context).push<V2SemaianItem>(
       V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
     );
     if (result == null) return;

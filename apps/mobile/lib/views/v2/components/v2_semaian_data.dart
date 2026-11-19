@@ -84,6 +84,7 @@ class V2SemaianItem {
     this.pindahKe,
     this.tidakDipindah,
     this.keterangan,
+    this.hssDariServer,
     this.bahanInventoryId,
     this.bahanAmount,
     this.bahanUnit,
@@ -126,6 +127,12 @@ class V2SemaianItem {
   /// Catatan bebas, mis. `Rak 2` (form ubah 5.25/5.27).
   final String? keterangan;
 
+  /// Umur semaian dari server (`usia_hari`) untuk data tersambung.
+  ///
+  /// Null berarti data contoh galeri; umurnya dihitung dari [tanggalSemai]
+  /// terhadap [v2SemaianHariIni] supaya angka frame tidak bergeser.
+  final int? hssDariServer;
+
   /// Baris inventaris benih yang dipakai saat menyemai; hanya diisi form
   /// tersambung supaya draft backend punya `id_inventaris`.
   final String? bahanInventoryId;
@@ -135,7 +142,7 @@ class V2SemaianItem {
   final String? bahanUnit;
 
   /// Umur semaian dalam hari (HSS).
-  int get hss => hssSemaian(tanggalSemai);
+  int get hss => hssDariServer ?? hssSemaian(tanggalSemai);
 
   /// Siap pindah saat umurnya genap 15 hari dan belum ditandai selesai.
   bool get siapPindah => !selesai && hss >= v2SemaianHssSiapPindah;

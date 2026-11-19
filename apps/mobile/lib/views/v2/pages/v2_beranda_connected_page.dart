@@ -69,7 +69,11 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         _ => null,
       },
       tanamTab: const V2TanamConnectedTab(),
-      stokTab: const V2InventarisConnectedTab(),
+      stokTabBuilder: (jenis, status) => V2InventarisConnectedTab(
+        key: ValueKey('stok-${jenis?.name}-$status'),
+        initialJenis: jenis,
+        initialStatusIndex: status,
+      ),
       rawatTab: const V2RawatConnectedTab(),
       onOpenWeather: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),

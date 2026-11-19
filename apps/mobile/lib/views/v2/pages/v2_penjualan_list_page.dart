@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/business_date.dart';
 import '../../../data/models/sync_queue_item.dart';
+import '../../../viewmodels/session_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_mappers.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
@@ -191,7 +192,11 @@ class V2PenjualanListPage extends StatefulWidget {
 }
 
 class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
-  static const List<String> _filters = <String>['Semua', 'Belum lunas', 'Lunas'];
+  static const List<String> _filters = <String>[
+    'Semua',
+    'Belum lunas',
+    'Lunas',
+  ];
 
   late List<V2Penjualan> _items = widget.initialPenjualan ?? designPenjualan;
   late V2PenjualanRingkasan _ringkasan = widget.ringkasan;
@@ -211,9 +216,9 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
   bool get _loading =>
       _fetching || widget.state == V2PenjualanListState.loading;
-  bool get _error => _loadError != null || widget.state == V2PenjualanListState.error;
-  bool get _emptyList =>
-      !_loading && !_error && _displayItems.isEmpty;
+  bool get _error =>
+      _loadError != null || widget.state == V2PenjualanListState.error;
+  bool get _emptyList => !_loading && !_error && _displayItems.isEmpty;
   bool get _offline => widget.state == V2PenjualanListState.offline;
 
   /// Ikon grafik hanya muncul saat daftar siap dibaca (frame 8.1/8.6/8.14/
@@ -263,6 +268,10 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   }
 
   /// Memuat daftar, pilihan panen, dan ringkasan bulan berjalan.
+  ///
+  /// Semua galat harus menutup kerangka pemuatan: galat tak terduga (mis.
+  /// respons yang bentuknya berubah) tidak boleh meninggalkan layar di keadaan
+  /// "memuat" selamanya.
   Future<void> _load() async {
     final store = widget.store;
     if (store == null) return;
@@ -277,14 +286,15 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
         _items = snapshot.items;
         _panenOptions = snapshot.panen;
         _ringkasan = _ringkasanFor(_displayItems);
-        _fetching = false;
       });
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _fetching = false;
-        _loadError = error.message;
-      });
+      setState(() => _loadError = error.message);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loadError = serviceError(error));
+    } finally {
+      if (mounted) setState(() => _fetching = false);
     }
   }
 
@@ -334,10 +344,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
   Future<void> _openCreate() async {
     final created = await Navigator.of(context).push<V2Penjualan>(
-      V2PenjualanFormPage.route(
-        panen: _panenOptions,
-        store: widget.store,
-      ),
+      V2PenjualanFormPage.route(panen: _panenOptions, store: widget.store),
     );
     if (created == null || !mounted) return;
     setState(() {
@@ -559,10 +566,8 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     );
   }
 
-  EdgeInsets get _scrollPadding => const EdgeInsets.only(
-    top: V2Space.sm,
-    bottom: V2Space.xl,
-  );
+  EdgeInsets get _scrollPadding =>
+      const EdgeInsets.only(top: V2Space.sm, bottom: V2Space.xl);
 
   Widget _buildSummary() {
     return V2SummaryCard(

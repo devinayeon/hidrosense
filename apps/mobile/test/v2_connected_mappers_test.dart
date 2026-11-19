@@ -7,9 +7,11 @@ import 'package:hidrosense_mobile/data/models/nursery_record.dart';
 import 'package:hidrosense_mobile/data/models/table_record.dart';
 import 'package:hidrosense_mobile/data/models/transfer_record.dart';
 import 'package:hidrosense_mobile/views/v2/components/v2_meja_data.dart';
+import 'package:hidrosense_mobile/views/v2/components/v2_semaian_data.dart';
 import 'package:hidrosense_mobile/views/v2/connected/v2_meja_connected.dart';
 import 'package:hidrosense_mobile/views/v2/connected/v2_panen_connected.dart';
 import 'package:hidrosense_mobile/views/v2/connected/v2_rawat_connected.dart';
+import 'package:hidrosense_mobile/views/v2/connected/v2_semaian_connected.dart';
 
 TableRecord _table({
   String id = '1',
@@ -79,6 +81,43 @@ InventoryRecord _inventory({String id = '3', String name = 'Benih Romaine'}) =>
 HarvestWeight _kg(String value) => HarvestWeight.parse(value);
 
 void main() {
+  group('v2SemaianItemFromRecord', () {
+    test('memakai usia_hari server, bukan tanggal acuan desain', () {
+      final item = v2SemaianItemFromRecord(
+        SowingRecord(
+          id: '7',
+          userId: '1',
+          sowingDate: '2026-11-12',
+          seedCount: 200,
+          status: 'aktif',
+          ageDays: 7,
+          isReadyToMove: false,
+        ),
+      );
+
+      expect(item.hss, 7);
+      expect(item.status, V2SemaianStatus.berjalan);
+      expect(item.siapPindah, isFalse);
+    });
+
+    test('semaian siap pindah mengikuti usia dari server', () {
+      final item = v2SemaianItemFromRecord(
+        SowingRecord(
+          id: '8',
+          userId: '1',
+          sowingDate: '2026-10-17',
+          seedCount: 42,
+          status: 'aktif',
+          ageDays: 33,
+          isReadyToMove: true,
+        ),
+      );
+
+      expect(item.hss, 33);
+      expect(item.status, V2SemaianStatus.siapPindah);
+    });
+  });
+
   group('v2StatusMeja', () {
     test('memetakan status backend ke tiga keadaan desain', () {
       expect(v2StatusMeja(_table(status: 'tersedia')), V2MejaStatus.tersedia);
@@ -243,7 +282,10 @@ void main() {
 
       final item = v2PanenItemFromRecord(
         multi,
-        tables: [_table(), _table(id: '2', code: 'B1')],
+        tables: [
+          _table(),
+          _table(id: '2', code: 'B1'),
+        ],
       );
 
       expect(item.rincian, hasLength(2));

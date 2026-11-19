@@ -98,6 +98,7 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
 
   String? _kodeError;
   String? _lubangError;
+  String? _keteranganError;
   late bool _showKonflik = widget.previewKonflik;
 
   bool get _ubah => widget.meja != null;
@@ -131,10 +132,25 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
     final lubang = int.tryParse(_lubang.text.trim()) ?? 0;
 
     setState(() {
-      _kodeError = kode.isEmpty ? 'Isi kode meja' : null;
-      _lubangError = lubang <= 0 ? 'Isi angka lebih dari 0' : null;
+      _kodeError = kode.isEmpty
+          ? 'Isi kode meja'
+          : kode.length > 30
+          ? 'Maksimal 30 karakter'
+          : null;
+      _lubangError = lubang <= 0
+          ? 'Isi angka lebih dari 0'
+          : lubang > 1000
+          ? 'Maksimal 1.000 lubang'
+          : null;
+      _keteranganError = _keterangan.text.trim().length > 1000
+          ? 'Maksimal 1.000 karakter'
+          : null;
     });
-    if (_kodeError != null || _lubangError != null) return;
+    if (_kodeError != null ||
+        _lubangError != null ||
+        _keteranganError != null) {
+      return;
+    }
 
     final meja =
         widget.meja ??
@@ -190,7 +206,7 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
                           const SizedBox(height: V2Space.lg),
                           V2TextField(
                             label: 'Jumlah lubang',
-                            hint: 'Contoh: 240',
+                            hint: 'Contoh: 240 (maksimal 1.000)',
                             controller: _lubang,
                             keyboardType: TextInputType.number,
                             error: _lubangError,
@@ -200,8 +216,12 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
                             label: 'Keterangan (opsional)',
                             hint: 'Contoh: dekat pintu',
                             controller: _keterangan,
+                            error: _keteranganError,
                           ),
-                          if (_ubah && _kodeError == null && _lubangError == null) ...[
+                          if (_ubah &&
+                              _kodeError == null &&
+                              _lubangError == null &&
+                              _keteranganError == null) ...[
                             const SizedBox(height: V2Space.lg),
                             Text(
                               'Status diubah lewat Ubah status.',
@@ -215,9 +235,7 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
                     ),
                   ),
                   V2ActionBar(
-                    actions: [
-                      V2Button(label: 'Simpan', onPressed: _simpan),
-                    ],
+                    actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
                   ),
                 ],
               ),

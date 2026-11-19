@@ -81,11 +81,30 @@ String serviceError(Object error) {
   if (kDebugMode) {
     debugPrint('[SessionViewModel] Request error: $error');
   }
-  return error is ApiException
-      ? error.message
-      : error is FormatException
+  if (error is ApiException) return _friendlyApiMessage(error);
+  return error is FormatException
       ? 'Data layanan tidak sesuai. Coba lagi.'
       : 'Tidak dapat menghubungi layanan. Periksa koneksi lalu coba lagi.';
+}
+
+/// Mengganti pesan layanan yang memakai istilah teknis dengan kalimat yang
+/// bisa ditindaklanjuti pengguna.
+///
+/// Backend memakai satu kalimat "Input tidak sesuai kontrak API." untuk semua
+/// kegagalan validasi tanpa menyebut field mana. Aplikasi tetap memvalidasi
+/// isian penting lebih dulu (mis. batas jumlah lubang meja); pesan ini hanya
+/// jaring pengaman untuk isian lain yang belum tercakup.
+String _friendlyApiMessage(ApiException error) {
+  if (error.code == 'VALIDATION_ERROR') {
+    final message = error.message.toLowerCase();
+    if (message.contains('kontrak api') || message.contains('body json')) {
+      return 'Ada isian yang belum sesuai. Periksa kembali data yang Anda masukkan.';
+    }
+    if (message.contains('header sinkronisasi')) {
+      return 'Sinkronisasi data gagal. Coba lagi sebentar.';
+    }
+  }
+  return error.message;
 }
 
 SessionFailure classifyFailure(Object error) {
