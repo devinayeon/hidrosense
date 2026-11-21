@@ -1,0 +1,267 @@
+{
+  "generated_at_utc": "2026-11-21T14:57:01Z",
+  "zero_synthetic_confirmed": true,
+  "synthetic_images_count": 0,
+  "canonical_classes": {
+    "0": "thrips",
+    "1": "whitefly",
+    "2": "aphids"
+  },
+  "split_config": {
+    "train_ratio": 0.8,
+    "val_ratio": 0.1,
+    "test_ratio": 0.1,
+    "seed": 42,
+    "max_hamming_distance": 2
+  },
+  "sources_probed": [
+    {
+      "workspace": "puzzle-piece-detection",
+      "project": "lettuce-pests",
+      "slug": "puzzle-piece-detection/lettuce-pests",
+      "version": 6,
+      "format": "yolov11",
+      "required": true,
+      "accessible": true,
+      "status": "cached",
+      "status_code": 200,
+      "error_type": null,
+      "error": null,
+      "destination": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pests_v6",
+      "raw_class_map": {
+        "0": "aphid",
+        "1": "whitefly"
+      },
+      "raw_split_image_counts": {
+        "train": 1584,
+        "valid": 155,
+        "test": 77
+      }
+    },
+    {
+      "workspace": "puzzle-piece-detection",
+      "project": "lettuce-pest-detection",
+      "slug": "puzzle-piece-detection/lettuce-pest-detection",
+      "version": 1,
+      "format": "yolov11",
+      "required": true,
+      "accessible": true,
+      "status": "cached",
+      "status_code": 200,
+      "error_type": null,
+      "error": null,
+      "destination": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pest-detection_v1",
+      "raw_class_map": {
+        "0": "thrips"
+      },
+      "raw_split_image_counts": {
+        "train": 1396,
+        "valid": 397,
+        "test": 200
+      }
+    },
+    {
+      "workspace": "agrivision-2025",
+      "project": "lettuce-pests-wieje",
+      "slug": "agrivision-2025/lettuce-pests-wieje",
+      "version": 1,
+      "format": "yolov11",
+      "required": false,
+      "accessible": true,
+      "status": "cached",
+      "status_code": 200,
+      "error_type": null,
+      "error": null,
+      "destination": "ml\\data\\raw_roboflow\\agrivision-2025_lettuce-pests-wieje_v1",
+      "raw_class_map": {
+        "0": "aphid",
+        "1": "whitefly"
+      },
+      "raw_split_image_counts": {
+        "train": 1584,
+        "valid": 155,
+        "test": 77
+      }
+    }
+  ],
+  "deduplication": {
+    "total_scanned": 5625,
+    "duplicates_removed": 802,
+    "sha256_duplicates_removed": 518,
+    "phash_duplicates_removed": 284,
+    "empty_or_unmapped_skipped": 2716,
+    "boxes_kept": 52056,
+    "boxes_dropped": 1,
+    "boxes_dropped_unmapped": 0,
+    "boxes_dropped_invalid": 1,
+    "per_source_details": {
+      "puzzle-piece-detection_lettuce-pests_v6": {
+        "source_dir": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pests_v6",
+        "raw_class_map": {
+          "0": "aphid",
+          "1": "whitefly"
+        },
+        "images_scanned": 1816,
+        "images_kept": 1169,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 161,
+        "empty_or_unmapped_skipped": 486,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 35654,
+        "boxes_kept": 31439,
+        "boxes_dropped": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [
+          "aphid",
+          "whitefly"
+        ],
+        "unmapped_class_names_seen": []
+      },
+      "puzzle-piece-detection_lettuce-pest-detection_v1": {
+        "source_dir": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pest-detection_v1",
+        "raw_class_map": {
+          "0": "thrips"
+        },
+        "images_scanned": 1993,
+        "images_kept": 229,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 20,
+        "empty_or_unmapped_skipped": 1744,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 1069,
+        "boxes_kept": 1007,
+        "boxes_dropped": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [
+          "thrips"
+        ],
+        "unmapped_class_names_seen": []
+      },
+      "agrivision-2025_lettuce-pests-wieje_v1": {
+        "source_dir": "ml\\data\\raw_roboflow\\agrivision-2025_lettuce-pests-wieje_v1",
+        "raw_class_map": {
+          "0": "aphid",
+          "1": "whitefly"
+        },
+        "images_scanned": 1816,
+        "images_kept": 709,
+        "sha256_duplicates_removed": 518,
+        "phash_duplicates_removed": 103,
+        "empty_or_unmapped_skipped": 486,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 35642,
+        "boxes_kept": 19610,
+        "boxes_dropped": 1,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 1,
+        "mapped_class_names_seen": [
+          "aphid",
+          "whitefly"
+        ],
+        "unmapped_class_names_seen": []
+      }
+    }
+  },
+  "splits": {
+    "train": {
+      "images": 1687,
+      "instances": 42273,
+      "per_class_instances": {
+        "thrips": 775,
+        "whitefly": 21097,
+        "aphids": 20401
+      },
+      "per_source_images": {
+        "agrivision-2025_lettuce-pests-wieje_v1": 561,
+        "puzzle-piece-detection_lettuce-pest-detection_v1": 183,
+        "puzzle-piece-detection_lettuce-pests_v6": 943
+      },
+      "small_object_ratio": 0.0788,
+      "manifest_sha256": "588698047fb58464fb264d07a714d7bf1f355d0caaee81b264d0bcb2a62702bb"
+    },
+    "val": {
+      "images": 210,
+      "instances": 4748,
+      "per_class_instances": {
+        "thrips": 70,
+        "whitefly": 2416,
+        "aphids": 2262
+      },
+      "per_source_images": {
+        "agrivision-2025_lettuce-pests-wieje_v1": 78,
+        "puzzle-piece-detection_lettuce-pest-detection_v1": 23,
+        "puzzle-piece-detection_lettuce-pests_v6": 109
+      },
+      "small_object_ratio": 0.0539,
+      "manifest_sha256": "cf51422a780a123c9e32137cef38deafd0e4435641c8f62ae71f395f6fd6c743"
+    },
+    "test": {
+      "images": 210,
+      "instances": 5035,
+      "per_class_instances": {
+        "thrips": 162,
+        "whitefly": 2397,
+        "aphids": 2476
+      },
+      "per_source_images": {
+        "agrivision-2025_lettuce-pests-wieje_v1": 70,
+        "puzzle-piece-detection_lettuce-pest-detection_v1": 23,
+        "puzzle-piece-detection_lettuce-pests_v6": 117
+      },
+      "small_object_ratio": 0.1124,
+      "manifest_sha256": "a22331d111f99b88e97169b8e83ca84018d92ea7cf1aeb9d82f0b1969f6c10b7"
+    }
+  },
+  "totals": {
+    "images": 2107,
+    "instances": 52056,
+    "per_class_instances": {
+      "thrips": 1007,
+      "whitefly": 25910,
+      "aphids": 25139
+    }
+  },
+  "verification": {
+    "status": "passed",
+    "data_yaml_path_omitted": true,
+    "data_yaml_portable_relative_paths": true,
+    "cross_split_sha256_overlaps": 0,
+    "cross_split_phash_overlaps": 0,
+    "intra_split_sha256_duplicates": 0,
+    "intra_split_phash_duplicates": 0,
+    "unpaired_files": 0,
+    "invalid_labels": 0,
+    "all_canonical_classes_present_in_all_splits": true,
+    "splits": {
+      "train": {
+        "images": 1687,
+        "instances": 42273,
+        "per_class_instances": {
+          "thrips": 775,
+          "whitefly": 21097,
+          "aphids": 20401
+        }
+      },
+      "val": {
+        "images": 210,
+        "instances": 4748,
+        "per_class_instances": {
+          "thrips": 70,
+          "whitefly": 2416,
+          "aphids": 2262
+        }
+      },
+      "test": {
+        "images": 210,
+        "instances": 5035,
+        "per_class_instances": {
+          "thrips": 162,
+          "whitefly": 2397,
+          "aphids": 2476
+        }
+      }
+    }
+  }
+}

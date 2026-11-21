@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 import random
+import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -41,23 +45,57 @@ SYNONYM_MAP: dict[str, int] = {
     "kutu daun": 2,
 }
 
-ROBOFLOW_SOURCES: tuple[dict[str, str], ...] = (
+ROBOFLOW_SOURCES: tuple[dict[str, Any], ...] = (
     {
         "workspace": "puzzle-piece-detection",
         "project": "lettuce-pests",
-        "version": "1",
-    },
-    {
-        "workspace": "agrivision-2025",
-        "project": "lettuce-pests-wieje",
-        "version": "1",
+        "version": 6,
+        "format": "yolov11",
+        "required": True,
     },
     {
         "workspace": "puzzle-piece-detection",
         "project": "lettuce-pest-detection",
-        "version": "1",
+        "version": 1,
+        "format": "yolov11",
+        "required": True,
+    },
+    {
+        "workspace": "agrivision-2025",
+        "project": "lettuce-pests-wieje",
+        "version": 1,
+        "format": "yolov11",
+        "required": False,
     },
 )
+
+NEGATION_EXCLUSION_TOKENS: frozenset[str] = frozenset(
+    {
+        "non",
+        "not",
+        "no",
+        "without",
+        "predator",
+        "parasitoid",
+        "mummy",
+        "healthy",
+        "background",
+        "negative",
+        "unlabeled",
+        "unknown",
+        "none",
+        "other",
+    }
+)
+
+
+def _normalize_label_text(raw_name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", raw_name.strip().lower()).strip()
+
+
+_NORMALIZED_SYNONYMS: dict[str, int] = {
+    _normalize_label_text(token): class_id for token, class_id in SYNONYM_MAP.items()
+}
 
 IMAGE_EXTENSIONS: frozenset[str] = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp"})
 MIN_BOX_DIMENSION: float = 0.002
@@ -81,6 +119,7 @@ class DatasetRecord:
     phash_hex: str
     boxes: tuple[BoxAnnotation, ...]
     source_name: str
+    sha256_hex: str = ""
 
     @property
     def primary_class(self) -> int:
@@ -93,12 +132,21 @@ class DatasetRecord:
 
 
 def canonicalize_label_name(raw_name: str) -> int | None:
-    cleaned = raw_name.strip().lower().replace("_", " ").replace("-", " ")
-    if cleaned in SYNONYM_MAP:
-        return SYNONYM_MAP[cleaned]
-    for token, class_id in SYNONYM_MAP.items():
-        if token in cleaned:
-            return class_id
+    cleaned = _normalize_label_text(raw_name)
+    if not cleaned:
+        return None
+    tokens = set(cleaned.split())
+    if tokens & NEGATION_EXCLUSION_TOKENS:
+        return None
+    if cleaned in _NORMALIZED_SYNONYMS:
+        return _NORMALIZED_SYNONYMS[cleaned]
+    matched_ids = {
+        class_id
+        for token, class_id in _NORMALIZED_SYNONYMS.items()
+        if re.search(rf"(?<![a-z0-9]){re.escape(token)}(?![a-z0-9])", cleaned)
+    }
+    if len(matched_ids) == 1:
+        return next(iter(matched_ids))
     return None
 
 
@@ -168,16 +216,55 @@ def load_source_class_map(dataset_dir: Path) -> dict[int, str]:
     return dict(CANONICAL_CLASSES)
 
 
+def _sanitize_text(text: str, extra_secrets: tuple[str, ...] = ()) -> str:
+    sanitized = str(text)
+    candidates = [s.strip() for s in (*extra_secrets, os.environ.get("ROBOFLOW_API_KEY", "")) if s and s.strip()]
+    for secret in candidates:
+        sanitized = sanitized.replace(secret, "[REDACTED]")
+    sanitized = re.sub(
+        r"(?i)\b(api_key|roboflow_api_key|access_token|token|secret)\b(\s*[=:]\s*)([^\s&\"'`,;]+)",
+        r"\1\2[REDACTED]",
+        sanitized,
+    )
+    return sanitized
+
+
+def load_env_file(env_path: Path | None = None, override: bool = False) -> list[str]:
+    target = env_path if env_path is not None else (Path(__file__).resolve().parent / ".env")
+    if not target.is_file():
+        return []
+    loaded_names: list[str] = []
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        if "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        key = key.strip()
+        val = val.strip()
+        if not key:
+            continue
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
+            val = val[1:-1]
+        if override or not os.environ.get(key):
+            os.environ[key] = val
+            loaded_names.append(key)
+    return sorted(set(loaded_names))
+
+
 def _iter_source_image_label_pairs(source_dir: Path) -> list[tuple[Path, Path]]:
     pairs: list[tuple[Path, Path]] = []
     for img_path in sorted(source_dir.rglob("*")):
         if not img_path.is_file() or img_path.suffix.lower() not in IMAGE_EXTENSIONS:
             continue
-        if "images" in img_path.parts:
-            idx = list(img_path.parts).index("images")
-            rel_parts = list(img_path.parts)
+        rel_parts = list(img_path.relative_to(source_dir).parts)
+        if "images" in rel_parts:
+            idx = len(rel_parts) - 1 - rel_parts[::-1].index("images")
             rel_parts[idx] = "labels"
-            label_path = Path(*rel_parts).with_suffix(".txt")
+            label_path = (source_dir / Path(*rel_parts)).with_suffix(".txt")
         else:
             label_path = img_path.with_suffix(".txt")
         if label_path.exists():
@@ -189,58 +276,156 @@ def _hamming_distance(hex_a: str, hex_b: str) -> int:
     return (int(hex_a, 16) ^ int(hex_b, 16)).bit_count()
 
 
+def _classify_dropped_yolo_line(
+    line: str,
+    source_id_to_name: dict[int, str],
+) -> tuple[str, str | None]:
+    parts = line.strip().split()
+    if len(parts) < 5:
+        return ("invalid", None)
+    try:
+        raw_class_id = int(float(parts[0]))
+    except ValueError:
+        return ("invalid", None)
+    raw_name = source_id_to_name.get(raw_class_id)
+    if raw_name is None:
+        return ("unmapped", f"class_id_{raw_class_id}")
+    if canonicalize_label_name(raw_name) is None:
+        return ("unmapped", raw_name)
+    return ("invalid", raw_name)
+
+
 def deduplicate_and_merge_sources(
     source_dirs: list[Path],
     max_hamming_distance: int = 2,
+    *,
+    source_details_out: dict[str, Any] | None = None,
 ) -> tuple[list[DatasetRecord], dict[str, int]]:
     merged: list[DatasetRecord] = []
+    seen_sha256: set[str] = set()
+    kept_phash_ints: list[int] = []
+
     stats = {
         "total_scanned": 0,
         "duplicates_removed": 0,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 0,
         "empty_or_unmapped_skipped": 0,
         "boxes_kept": 0,
+        "boxes_dropped": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
     }
+    per_source: dict[str, dict[str, Any]] = {}
 
     for source_dir in source_dirs:
         if not source_dir.exists():
             continue
         class_map = load_source_class_map(source_dir)
+        src_entry = per_source.setdefault(
+            source_dir.name,
+            {
+                "source_dir": str(source_dir),
+                "raw_class_map": {str(k): v for k, v in sorted(class_map.items())},
+                "images_scanned": 0,
+                "images_kept": 0,
+                "sha256_duplicates_removed": 0,
+                "phash_duplicates_removed": 0,
+                "empty_or_unmapped_skipped": 0,
+                "unreadable_images_skipped": 0,
+                "boxes_total_lines": 0,
+                "boxes_kept": 0,
+                "boxes_dropped": 0,
+                "boxes_dropped_unmapped": 0,
+                "boxes_dropped_invalid": 0,
+                "mapped_class_names_seen": [],
+                "unmapped_class_names_seen": [],
+            },
+        )
+        mapped_names_seen: set[str] = set(src_entry["mapped_class_names_seen"])
+        unmapped_names_seen: set[str] = set(src_entry["unmapped_class_names_seen"])
+
         for img_path, label_path in _iter_source_image_label_pairs(source_dir):
             stats["total_scanned"] += 1
+            src_entry["images_scanned"] += 1
             try:
+                sha256_hex = hashlib.sha256(img_path.read_bytes()).hexdigest()
                 with Image.open(img_path) as img:
                     phash_hex = str(imagehash.phash(img.convert("RGB")))
+                phash_int = int(phash_hex, 16)
             except Exception:
                 stats["empty_or_unmapped_skipped"] += 1
+                src_entry["empty_or_unmapped_skipped"] += 1
+                src_entry["unreadable_images_skipped"] += 1
                 continue
 
-            raw_lines = label_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-            boxes = tuple(
-                box
-                for line in raw_lines
-                if (box := parse_and_sanitize_yolo_line(line, class_map)) is not None
-            )
+            raw_lines = [
+                ln.strip()
+                for ln in label_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+                if ln.strip()
+            ]
+            parsed_boxes: list[BoxAnnotation] = []
+            for line in raw_lines:
+                src_entry["boxes_total_lines"] += 1
+                box = parse_and_sanitize_yolo_line(line, class_map)
+                if box is not None:
+                    parsed_boxes.append(box)
+                    raw_cls_id = int(float(line.split()[0]))
+                    if raw_cls_id in class_map:
+                        mapped_names_seen.add(class_map[raw_cls_id])
+                else:
+                    stats["boxes_dropped"] += 1
+                    src_entry["boxes_dropped"] += 1
+                    reason, raw_name = _classify_dropped_yolo_line(line, class_map)
+                    if reason == "unmapped":
+                        stats["boxes_dropped_unmapped"] += 1
+                        src_entry["boxes_dropped_unmapped"] += 1
+                        if raw_name:
+                            unmapped_names_seen.add(raw_name)
+                    else:
+                        stats["boxes_dropped_invalid"] += 1
+                        src_entry["boxes_dropped_invalid"] += 1
+
+            boxes = tuple(parsed_boxes)
             if not boxes:
                 stats["empty_or_unmapped_skipped"] += 1
+                src_entry["empty_or_unmapped_skipped"] += 1
                 continue
 
-            is_duplicate = any(
-                _hamming_distance(phash_hex, existing.phash_hex) <= max_hamming_distance
-                for existing in merged
-            )
-            if is_duplicate:
+            if sha256_hex in seen_sha256:
                 stats["duplicates_removed"] += 1
+                stats["sha256_duplicates_removed"] += 1
+                src_entry["sha256_duplicates_removed"] += 1
                 continue
 
+            if any((phash_int ^ existing_int).bit_count() <= max_hamming_distance for existing_int in kept_phash_ints):
+                stats["duplicates_removed"] += 1
+                stats["phash_duplicates_removed"] += 1
+                src_entry["phash_duplicates_removed"] += 1
+                continue
+
+            seen_sha256.add(sha256_hex)
+            kept_phash_ints.append(phash_int)
             stats["boxes_kept"] += len(boxes)
+            src_entry["boxes_kept"] += len(boxes)
+            src_entry["images_kept"] += 1
             merged.append(
                 DatasetRecord(
                     image_path=img_path,
                     phash_hex=phash_hex,
                     boxes=boxes,
                     source_name=source_dir.name,
+                    sha256_hex=sha256_hex,
                 )
             )
+
+        src_entry["mapped_class_names_seen"] = sorted(mapped_names_seen)
+        src_entry["unmapped_class_names_seen"] = sorted(unmapped_names_seen)
+
+    if source_details_out is not None:
+        source_details_out.clear()
+        source_details_out.update(per_source)
+
     return merged, stats
 
 
@@ -265,7 +450,14 @@ def stratified_split_records(
         if n >= 3:
             n_val = max(1, int(round(n * val_ratio)))
             n_test = max(1, int(round(n * (1.0 - train_ratio - val_ratio))))
-            n_train = max(1, n - n_val - n_test)
+            while n_val + n_test >= n:
+                if n_val >= n_test and n_val > 1:
+                    n_val -= 1
+                elif n_test > 1:
+                    n_test -= 1
+                else:
+                    break
+            n_train = n - n_val - n_test
         else:
             n_train, n_val, n_test = n, 0, 0
 
@@ -297,11 +489,14 @@ def export_merged_dataset(
         lbl_out.mkdir(parents=True, exist_ok=True)
 
         class_counts = {name: 0 for name in CANONICAL_CLASSES.values()}
+        per_source_images: dict[str, int] = {}
+        manifest_entries: list[str] = []
         small_boxes = 0
         total_boxes = 0
 
         for idx, rec in enumerate(records):
-            digest = hashlib.sha1(f"{rec.phash_hex}_{idx}".encode("utf-8")).hexdigest()[:10]
+            id_seed = f"{rec.sha256_hex or rec.phash_hex}_{idx}"
+            digest = hashlib.sha1(id_seed.encode("utf-8")).hexdigest()[:10]
             stem = f"{rec.source_name}_{digest}"
             target_img = img_out / f"{stem}{rec.image_path.suffix.lower()}"
             target_lbl = lbl_out / f"{stem}.txt"
@@ -311,21 +506,26 @@ def export_merged_dataset(
                 "\n".join(b.to_yolo_line() for b in rec.boxes) + "\n",
                 encoding="utf-8",
             )
+            img_sha = rec.sha256_hex or hashlib.sha256(target_img.read_bytes()).hexdigest()
+            manifest_entries.append(f"{target_img.name}:{img_sha}")
+            per_source_images[rec.source_name] = per_source_images.get(rec.source_name, 0) + 1
             for box in rec.boxes:
                 total_boxes += 1
                 class_counts[CANONICAL_CLASSES[box.class_id]] += 1
                 if box.w * box.h < (32.0 / 640.0) ** 2:
                     small_boxes += 1
 
+        manifest_sha256 = hashlib.sha256("\n".join(sorted(manifest_entries)).encode("utf-8")).hexdigest()
         report["splits"][split_name] = {
             "images": len(records),
             "instances": total_boxes,
             "per_class_instances": class_counts,
+            "per_source_images": dict(sorted(per_source_images.items())),
             "small_object_ratio": round(small_boxes / max(1, total_boxes), 4),
+            "manifest_sha256": manifest_sha256,
         }
 
     yaml_payload = {
-        "path": str(output_dir.resolve()),
         "train": "train/images",
         "val": "val/images",
         "test": "test/images",
@@ -337,20 +537,593 @@ def export_merged_dataset(
     return report
 
 
-def download_roboflow_sources(raw_root: Path, api_key: str | None = None) -> list[Path]:
-    key = api_key or os.environ.get("ROBOFLOW_API_KEY")
-    downloaded: list[Path] = []
+def _has_valid_source_dir(dest: Path) -> bool:
+    if not dest.is_dir():
+        return False
+    has_yaml = (dest / "data.yaml").is_file() or (dest / "dataset.yaml").is_file()
+    if not has_yaml:
+        return False
+    return len(_iter_source_image_label_pairs(dest)) > 0
+
+
+def _count_raw_split_images(dataset_dir: Path) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for split_candidate in ("train", "valid", "val", "test"):
+        img_dir = dataset_dir / split_candidate / "images"
+        if img_dir.is_dir():
+            counts[split_candidate] = sum(
+                1 for p in img_dir.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+            )
+    if not counts:
+        counts["all"] = sum(
+            1 for p in dataset_dir.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+        )
+    return counts
+
+
+def _extract_status_code(exc: Exception) -> int | None:
+    code = getattr(exc, "status_code", None)
+    if isinstance(code, int):
+        return code
+    match = re.search(r"\b(400|401|403|404|429|500|502|503)\b", str(exc))
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def download_roboflow_sources(
+    raw_root: Path,
+    api_key: str | None = None,
+    sources: tuple[dict[str, Any], ...] | list[dict[str, Any]] = ROBOFLOW_SOURCES,
+    probe_results_out: list[dict[str, Any]] | None = None,
+    env_file: Path | None = None,
+    force_download: bool = False,
+) -> list[Path]:
+    if api_key is None and not os.environ.get("ROBOFLOW_API_KEY", "").strip():
+        load_env_file(env_file)
+
+    key = (api_key if api_key is not None else os.environ.get("ROBOFLOW_API_KEY", "")).strip()
     if not key:
-        return [p for p in sorted(raw_root.iterdir()) if p.is_dir()] if raw_root.exists() else []
+        raise RuntimeError("ROBOFLOW_API_KEY is required; synthetic or local fallback is disabled.")
 
     from roboflow import Roboflow
 
-    rf = Roboflow(api_key=key)
-    for spec in ROBOFLOW_SOURCES:
-        dest = raw_root / f"{spec['workspace']}_{spec['project']}"
-        if not dest.exists():
-            project = rf.workspace(spec["workspace"]).project(spec["project"])
-            version = project.version(int(spec["version"]))
-            version.download("yolov11", location=str(dest))
+    try:
+        rf = Roboflow(api_key=key)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Roboflow authentication failed ({type(exc).__name__}): {_sanitize_text(str(exc), (key,))}"
+        ) from None
+
+    if getattr(rf, "onboarding", False):
+        raise RuntimeError(
+            "Invalid ROBOFLOW_API_KEY (Roboflow SDK entered onboarding mode); synthetic or local fallback is disabled."
+        )
+
+    raw_root.mkdir(parents=True, exist_ok=True)
+    downloaded: list[Path] = []
+    if probe_results_out is not None:
+        probe_results_out.clear()
+
+    for spec in sources:
+        workspace = str(spec["workspace"])
+        project_slug = str(spec["project"])
+        version_num = int(spec["version"])
+        export_format = str(spec.get("format", "yolov11"))
+        required = bool(spec.get("required", True))
+        slug = f"{workspace}/{project_slug}"
+        dest = raw_root / f"{workspace}_{project_slug}_v{version_num}"
+
+        used_cache = False
+        try:
+            if not force_download and _has_valid_source_dir(dest):
+                used_cache = True
+            else:
+                ws = rf.workspace(workspace)
+                proj = ws.project(project_slug)
+                ver = proj.version(version_num)
+                ver.download(export_format, location=str(dest), overwrite=True)
+                if not _has_valid_source_dir(dest):
+                    raise RuntimeError(
+                        f"Downloaded Roboflow dataset {slug} v{version_num} lacks valid data.yaml or image/label pairs."
+                    )
+        except Exception as exc:
+            sanitized_err = _sanitize_text(str(exc), (key,))
+            status_code = _extract_status_code(exc)
+            entry = {
+                "workspace": workspace,
+                "project": project_slug,
+                "slug": slug,
+                "version": version_num,
+                "format": export_format,
+                "required": required,
+                "accessible": False,
+                "status": "failed" if required else "unavailable",
+                "status_code": status_code,
+                "error_type": type(exc).__name__,
+                "error": sanitized_err,
+                "destination": str(dest),
+                "raw_class_map": {},
+                "raw_split_image_counts": {},
+            }
+            if probe_results_out is not None:
+                probe_results_out.append(entry)
+            if required:
+                raise RuntimeError(
+                    f"Required Roboflow source {slug} v{version_num} failed ({type(exc).__name__}): {sanitized_err}"
+                ) from None
+            continue
+
+        raw_class_map = {str(k): v for k, v in sorted(load_source_class_map(dest).items())}
+        raw_split_counts = _count_raw_split_images(dest)
+        entry = {
+            "workspace": workspace,
+            "project": project_slug,
+            "slug": slug,
+            "version": version_num,
+            "format": export_format,
+            "required": required,
+            "accessible": True,
+            "status": "cached" if used_cache else "downloaded",
+            "status_code": 200,
+            "error_type": None,
+            "error": None,
+            "destination": str(dest),
+            "raw_class_map": raw_class_map,
+            "raw_split_image_counts": raw_split_counts,
+        }
+        if probe_results_out is not None:
+            probe_results_out.append(entry)
         downloaded.append(dest)
+
+    if not downloaded:
+        raise RuntimeError("No Roboflow datasets were downloaded.")
     return downloaded
+
+
+def verify_exported_dataset(
+    output_dir: Path,
+    max_hamming_distance: int = 2,
+    require_all_classes: bool = False,
+) -> dict[str, Any]:
+    violations: list[str] = []
+    data_yaml_path = output_dir / "data.yaml"
+    if not data_yaml_path.is_file():
+        raise ValueError(f"Missing data.yaml in {output_dir}")
+
+    yaml_data = yaml.safe_load(data_yaml_path.read_text(encoding="utf-8")) or {}
+    if "path" in yaml_data:
+        violations.append(f"data.yaml must omit 'path' for portable relative resolution, got {yaml_data.get('path')!r}")
+    for split_key in ("train", "val", "test"):
+        expected_rel = f"{split_key}/images"
+        if yaml_data.get(split_key) != expected_rel:
+            violations.append(f"data.yaml {split_key} must be {expected_rel!r}, got {yaml_data.get(split_key)!r}")
+    if yaml_data.get("nc") != len(CANONICAL_CLASSES):
+        violations.append(f"data.yaml nc must be {len(CANONICAL_CLASSES)}, got {yaml_data.get('nc')!r}")
+    raw_names = yaml_data.get("names", {})
+    norm_names = (
+        {int(k): str(v) for k, v in raw_names.items()}
+        if isinstance(raw_names, dict)
+        else {idx: str(v) for idx, v in enumerate(raw_names)}
+    )
+    if norm_names != CANONICAL_CLASSES:
+        violations.append(f"data.yaml names mismatch: {norm_names!r}")
+
+    split_sha256: dict[str, set[str]] = {}
+    split_phashes: dict[str, list[int]] = {}
+    split_summaries: dict[str, Any] = {}
+    intra_sha256_duplicates = 0
+    intra_phash_duplicates = 0
+    unpaired_files = 0
+    invalid_labels = 0
+
+    for split_name in ("train", "val", "test"):
+        img_dir = output_dir / split_name / "images"
+        lbl_dir = output_dir / split_name / "labels"
+        if not img_dir.is_dir() or not lbl_dir.is_dir():
+            violations.append(f"Split {split_name} missing images/ or labels/ directory")
+            split_sha256[split_name] = set()
+            split_phashes[split_name] = []
+            continue
+
+        img_files = sorted(
+            p for p in img_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+        )
+        lbl_files = sorted(p for p in lbl_dir.iterdir() if p.is_file() and p.suffix.lower() == ".txt")
+        if not img_files:
+            violations.append(f"Split {split_name} has 0 images")
+
+        img_by_stem: dict[str, Path] = {}
+        for p in img_files:
+            if p.stem in img_by_stem:
+                violations.append(f"Split {split_name} duplicate image stem {p.stem}")
+                unpaired_files += 1
+            img_by_stem[p.stem] = p
+        lbl_by_stem = {p.stem: p for p in lbl_files}
+
+        missing_lbls = set(img_by_stem) - set(lbl_by_stem)
+        extra_lbls = set(lbl_by_stem) - set(img_by_stem)
+        if missing_lbls or extra_lbls:
+            unpaired_files += len(missing_lbls) + len(extra_lbls)
+            violations.append(
+                f"Split {split_name} image/label mismatch: missing_labels={len(missing_lbls)}, extra_labels={len(extra_lbls)}"
+            )
+
+        seen_split_sha: set[str] = set()
+        split_phash_ints: list[int] = []
+        per_class_instances = {name: 0 for name in CANONICAL_CLASSES.values()}
+        total_boxes = 0
+
+        for stem, img_path in sorted(img_by_stem.items()):
+            lbl_path = lbl_by_stem.get(stem)
+            if lbl_path is None:
+                continue
+            try:
+                sha256_hex = hashlib.sha256(img_path.read_bytes()).hexdigest()
+                with Image.open(img_path) as img:
+                    phash_int = int(str(imagehash.phash(img.convert("RGB"))), 16)
+            except Exception as exc:
+                violations.append(f"Unreadable image {img_path.name}: {exc}")
+                continue
+
+            if sha256_hex in seen_split_sha:
+                intra_sha256_duplicates += 1
+                violations.append(f"Intra-split SHA-256 duplicate in {split_name}: {img_path.name}")
+            seen_split_sha.add(sha256_hex)
+
+            if any((phash_int ^ prev_int).bit_count() <= max_hamming_distance for prev_int in split_phash_ints):
+                intra_phash_duplicates += 1
+                violations.append(f"Intra-split pHash duplicate in {split_name}: {img_path.name}")
+            split_phash_ints.append(phash_int)
+
+            lines = [ln.strip() for ln in lbl_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+            if not lines:
+                invalid_labels += 1
+                violations.append(f"Empty label file {split_name}/{lbl_path.name}")
+                continue
+            for line in lines:
+                parts = line.split()
+                if len(parts) != 5:
+                    invalid_labels += 1
+                    violations.append(f"Invalid YOLO token count in {split_name}/{lbl_path.name}: {line!r}")
+                    continue
+                try:
+                    cls_id = int(parts[0])
+                    cx, cy, w, h = (float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4]))
+                except ValueError:
+                    invalid_labels += 1
+                    violations.append(f"Non-numeric YOLO line in {split_name}/{lbl_path.name}: {line!r}")
+                    continue
+                if cls_id not in CANONICAL_CLASSES:
+                    invalid_labels += 1
+                    violations.append(f"Invalid class_id {cls_id} in {split_name}/{lbl_path.name}")
+                    continue
+                if not all(math.isfinite(val) for val in (cx, cy, w, h)):
+                    invalid_labels += 1
+                    violations.append(f"Non-finite coords in {split_name}/{lbl_path.name}")
+                    continue
+                if not (0.0 <= cx <= 1.0 and 0.0 <= cy <= 1.0 and MIN_BOX_DIMENSION <= w <= 1.0 and MIN_BOX_DIMENSION <= h <= 1.0):
+                    invalid_labels += 1
+                    violations.append(f"Out-of-bounds box in {split_name}/{lbl_path.name}: {line!r}")
+                    continue
+                if (cx - w / 2.0) < -1e-5 or (cx + w / 2.0) > 1.0 + 1e-5 or (cy - h / 2.0) < -1e-5 or (cy + h / 2.0) > 1.0 + 1e-5:
+                    invalid_labels += 1
+                    violations.append(f"Box edges exceed [0,1] in {split_name}/{lbl_path.name}: {line!r}")
+                    continue
+                total_boxes += 1
+                per_class_instances[CANONICAL_CLASSES[cls_id]] += 1
+
+        if require_all_classes:
+            for cls_name in CANONICAL_CLASSES.values():
+                if per_class_instances[cls_name] <= 0:
+                    violations.append(f"Split {split_name} has 0 instances for class {cls_name!r}")
+
+        split_sha256[split_name] = seen_split_sha
+        split_phashes[split_name] = split_phash_ints
+        split_summaries[split_name] = {
+            "images": len(img_by_stem),
+            "instances": total_boxes,
+            "per_class_instances": per_class_instances,
+        }
+
+    cross_split_sha256_overlaps = 0
+    cross_split_phash_overlaps = 0
+    for left, right in (("train", "val"), ("train", "test"), ("val", "test")):
+        sha_overlap = split_sha256[left] & split_sha256[right]
+        if sha_overlap:
+            cross_split_sha256_overlaps += len(sha_overlap)
+            violations.append(f"Cross-split SHA-256 overlap between {left} and {right}: {len(sha_overlap)}")
+
+        right_phashes = split_phashes[right]
+        phash_matches = sum(
+            1
+            for lp in split_phashes[left]
+            if any((lp ^ rp).bit_count() <= max_hamming_distance for rp in right_phashes)
+        )
+        if phash_matches:
+            cross_split_phash_overlaps += phash_matches
+            violations.append(f"Cross-split pHash (<= {max_hamming_distance}) overlap between {left} and {right}: {phash_matches}")
+
+    all_classes_present = all(
+        split_summaries.get(split_name, {}).get("per_class_instances", {}).get(cls_name, 0) > 0
+        for split_name in ("train", "val", "test")
+        for cls_name in CANONICAL_CLASSES.values()
+    )
+
+    if not violations:
+        try:
+            from ultralytics.data.utils import check_det_dataset
+
+            resolved_cfg = check_det_dataset(str(data_yaml_path), autodownload=False)
+            for split_key in ("train", "val", "test"):
+                expected_dir = (output_dir / split_key / "images").resolve()
+                if Path(resolved_cfg[split_key]).resolve() != expected_dir:
+                    violations.append(
+                        f"Ultralytics check_det_dataset resolved {split_key} to {resolved_cfg[split_key]!r}, expected {str(expected_dir)!r}"
+                    )
+        except ImportError:
+            pass
+
+    if violations:
+        raise ValueError("Dataset verification failed:\n- " + "\n- ".join(violations[:20]))
+
+    return {
+        "status": "passed",
+        "data_yaml_path_omitted": True,
+        "data_yaml_portable_relative_paths": True,
+        "cross_split_sha256_overlaps": cross_split_sha256_overlaps,
+        "cross_split_phash_overlaps": cross_split_phash_overlaps,
+        "intra_split_sha256_duplicates": intra_sha256_duplicates,
+        "intra_split_phash_duplicates": intra_phash_duplicates,
+        "unpaired_files": unpaired_files,
+        "invalid_labels": invalid_labels,
+        "all_canonical_classes_present_in_all_splits": all_classes_present,
+        "splits": split_summaries,
+    }
+
+
+def write_provenance_reports(
+    report_dir: Path,
+    output_dir: Path,
+    probe_results: list[dict[str, Any]],
+    scan_stats: dict[str, int],
+    source_details: dict[str, Any],
+    export_report: dict[str, Any],
+    verification_result: dict[str, Any],
+    *,
+    max_hamming_distance: int,
+    seed: int,
+    train_ratio: float,
+    val_ratio: float,
+) -> tuple[Path, Path]:
+    report_dir.mkdir(parents=True, exist_ok=True)
+    total_images = sum(v["images"] for v in export_report["splits"].values())
+    total_instances = sum(v["instances"] for v in export_report["splits"].values())
+    total_per_class = {
+        cls_name: sum(split_info["per_class_instances"][cls_name] for split_info in export_report["splits"].values())
+        for cls_name in CANONICAL_CLASSES.values()
+    }
+
+    provenance_payload: dict[str, Any] = {
+        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "zero_synthetic_confirmed": True,
+        "synthetic_images_count": 0,
+        "canonical_classes": {str(k): v for k, v in CANONICAL_CLASSES.items()},
+        "split_config": {
+            "train_ratio": train_ratio,
+            "val_ratio": val_ratio,
+            "test_ratio": round(1.0 - train_ratio - val_ratio, 4),
+            "seed": seed,
+            "max_hamming_distance": max_hamming_distance,
+        },
+        "sources_probed": probe_results,
+        "deduplication": {
+            **scan_stats,
+            "per_source_details": source_details,
+        },
+        "splits": export_report["splits"],
+        "totals": {
+            "images": total_images,
+            "instances": total_instances,
+            "per_class_instances": total_per_class,
+        },
+        "verification": verification_result,
+    }
+
+    json_text = _sanitize_text(json.dumps(provenance_payload, indent=2))
+    md_lines = [
+        "# HidroSense Lettuce Pests Dataset Provenance",
+        "",
+        f"- **Generated (UTC)**: `{provenance_payload['generated_at_utc']}`",
+        f"- **Zero Synthetic Confirmed**: `{provenance_payload['zero_synthetic_confirmed']}` (`synthetic_images_count = 0`)",
+        f"- **Canonical Classes**: `0: thrips`, `1: whitefly`, `2: aphids`",
+        f"- **Split Config**: `train={train_ratio}`, `val={val_ratio}`, `test={provenance_payload['split_config']['test_ratio']}`, `seed={seed}`, `phash_hamming_threshold={max_hamming_distance}`",
+        "",
+        "## Roboflow Sources Probed & Downloaded",
+        "",
+        "| Workspace / Project | Version | Required | Status | HTTP / Error | Raw Split Images | Raw Classes |",
+        "|---|---:|---|---|---|---|---|",
+    ]
+    for src in probe_results:
+        http_info = str(src.get("status_code") or "-")
+        if src.get("error"):
+            http_info = f"{http_info} ({src['error_type']}: {src['error']})"
+        raw_splits_str = ", ".join(f"{k}:{v}" for k, v in src.get("raw_split_image_counts", {}).items()) or "-"
+        raw_cls_str = ", ".join(f"{k}:{v}" for k, v in src.get("raw_class_map", {}).items()) or "-"
+        md_lines.append(
+            f"| `{src['slug']}` | {src['version']} | {src['required']} | `{src['status']}` | {http_info} | {raw_splits_str} | {raw_cls_str} |"
+        )
+
+    md_lines.extend(
+        [
+            "",
+            "## Class Mapping & Deduplication Summary",
+            "",
+            f"- **Total images scanned**: {scan_stats['total_scanned']}",
+            f"- **Exact SHA-256 duplicates removed**: {scan_stats['sha256_duplicates_removed']}",
+            f"- **Perceptual hash (Hamming <= {max_hamming_distance}) duplicates removed**: {scan_stats['phash_duplicates_removed']}",
+            f"- **Total duplicates removed**: {scan_stats['duplicates_removed']}",
+            f"- **Empty or unmapped images skipped**: {scan_stats['empty_or_unmapped_skipped']}",
+            f"- **Boxes kept**: {scan_stats['boxes_kept']}",
+            f"- **Boxes dropped (total / unmapped / invalid)**: {scan_stats['boxes_dropped']} / {scan_stats['boxes_dropped_unmapped']} / {scan_stats['boxes_dropped_invalid']}",
+            "",
+            "| Source Dir | Scanned | Kept | SHA-256 Dup | pHash Dup | Empty/Unmapped | Boxes Kept | Boxes Dropped (Unmapped / Invalid) |",
+            "|---|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for src_name, det in source_details.items():
+        md_lines.append(
+            f"| `{src_name}` | {det['images_scanned']} | {det['images_kept']} | {det['sha256_duplicates_removed']} | {det['phash_duplicates_removed']} | {det['empty_or_unmapped_skipped']} | {det['boxes_kept']} | {det['boxes_dropped']} ({det['boxes_dropped_unmapped']} / {det['boxes_dropped_invalid']}) |"
+        )
+
+    md_lines.extend(
+        [
+            "",
+            "## Final Split Counts & Class Distribution",
+            "",
+            "| Split | Images | Instances | thrips | whitefly | aphids | Small Obj Ratio | Manifest SHA-256 (prefix) |",
+            "|---|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for split_name in ("train", "val", "test"):
+        sp = export_report["splits"][split_name]
+        pci = sp["per_class_instances"]
+        md_lines.append(
+            f"| `{split_name}` | {sp['images']} | {sp['instances']} | {pci['thrips']} | {pci['whitefly']} | {pci['aphids']} | {sp['small_object_ratio']} | `{sp['manifest_sha256'][:12]}` |"
+        )
+    md_lines.append(
+        f"| **Total** | **{total_images}** | **{total_instances}** | **{total_per_class['thrips']}** | **{total_per_class['whitefly']}** | **{total_per_class['aphids']}** | - | - |"
+    )
+
+    md_lines.extend(
+        [
+            "",
+            "## Split Integrity & Leakage Verification",
+            "",
+            f"- **Status**: `{verification_result['status']}`",
+            f"- **`data.yaml` portable relative paths (`path` omitted)**: `{verification_result['data_yaml_path_omitted']}`",
+            f"- **Cross-split SHA-256 overlaps**: `{verification_result['cross_split_sha256_overlaps']}`",
+            f"- **Cross-split pHash (<= {max_hamming_distance}) overlaps**: `{verification_result['cross_split_phash_overlaps']}`",
+            f"- **Intra-split SHA-256 / pHash duplicates**: `{verification_result['intra_split_sha256_duplicates']}` / `{verification_result['intra_split_phash_duplicates']}`",
+            f"- **Unpaired files / invalid labels**: `{verification_result['unpaired_files']}` / `{verification_result['invalid_labels']}`",
+            f"- **All canonical classes present in every split**: `{verification_result['all_canonical_classes_present_in_all_splits']}`",
+        ]
+    )
+    md_text = _sanitize_text("\n".join(md_lines) + "\n")
+
+    json_path = report_dir / "dataset_provenance.json"
+    md_path = report_dir / "dataset_provenance.md"
+    json_path.write_text(json_text, encoding="utf-8")
+    md_path.write_text(md_text, encoding="utf-8")
+    (output_dir / "dataset_provenance.json").write_text(json_text, encoding="utf-8")
+    return json_path, md_path
+
+
+def _build_sources_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], ...]:
+    return (
+        {
+            "workspace": "puzzle-piece-detection",
+            "project": "lettuce-pests",
+            "version": args.lettuce_pests_version,
+            "format": "yolov11",
+            "required": True,
+        },
+        {
+            "workspace": "puzzle-piece-detection",
+            "project": "lettuce-pest-detection",
+            "version": args.lettuce_pest_detection_version,
+            "format": "yolov11",
+            "required": True,
+        },
+        {
+            "workspace": "agrivision-2025",
+            "project": "lettuce-pests-wieje",
+            "version": args.wieje_version,
+            "format": "yolov11",
+            "required": False,
+        },
+    )
+
+
+def main(argv: list[str] | None = None) -> dict[str, Any]:
+    parser = argparse.ArgumentParser(description="Download, deduplicate, split, and verify real Roboflow lettuce pest datasets.")
+    parser.add_argument("--raw-root", type=Path, default=Path("ml/data/raw_roboflow"))
+    parser.add_argument("--output-dir", type=Path, default=Path("ml/data/merged_lettuce_pests"))
+    parser.add_argument("--report-dir", type=Path, default=Path("ml/reports"))
+    parser.add_argument("--env-file", type=Path, default=Path("ml/.env"))
+    parser.add_argument("--max-hamming-distance", type=int, default=2)
+    parser.add_argument("--train-ratio", type=float, default=0.8)
+    parser.add_argument("--val-ratio", type=float, default=0.1)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--force-download", action="store_true")
+    parser.add_argument("--lettuce-pests-version", type=int, default=6)
+    parser.add_argument("--lettuce-pest-detection-version", type=int, default=1)
+    parser.add_argument("--wieje-version", type=int, default=1)
+    args = parser.parse_args(argv)
+
+    if not (0.0 < args.train_ratio < 1.0 and 0.0 < args.val_ratio < 1.0 and args.train_ratio + args.val_ratio < 1.0):
+        raise ValueError("train_ratio and val_ratio must be in (0, 1) and sum to < 1.0")
+
+    sources = _build_sources_from_args(args)
+    probe_results: list[dict[str, Any]] = []
+    source_dirs = download_roboflow_sources(
+        raw_root=args.raw_root,
+        sources=sources,
+        probe_results_out=probe_results,
+        env_file=args.env_file,
+        force_download=args.force_download,
+    )
+
+    source_details: dict[str, Any] = {}
+    records, scan_stats = deduplicate_and_merge_sources(
+        source_dirs=source_dirs,
+        max_hamming_distance=args.max_hamming_distance,
+        source_details_out=source_details,
+    )
+    if not records:
+        raise RuntimeError("No valid records remained after deduplication and class filtering.")
+
+    splits = stratified_split_records(
+        records=records,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio,
+        seed=args.seed,
+    )
+    export_report = export_merged_dataset(
+        splits=splits,
+        output_dir=args.output_dir,
+        scan_stats=scan_stats,
+    )
+    verification_result = verify_exported_dataset(
+        output_dir=args.output_dir,
+        max_hamming_distance=args.max_hamming_distance,
+        require_all_classes=True,
+    )
+    json_path, md_path = write_provenance_reports(
+        report_dir=args.report_dir,
+        output_dir=args.output_dir,
+        probe_results=probe_results,
+        scan_stats=scan_stats,
+        source_details=source_details,
+        export_report=export_report,
+        verification_result=verification_result,
+        max_hamming_distance=args.max_hamming_distance,
+        seed=args.seed,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio,
+    )
+    return {
+        "provenance_json": str(json_path),
+        "provenance_md": str(md_path),
+        "output_dir": str(args.output_dir),
+        "totals": {
+            "images": sum(v["images"] for v in export_report["splits"].values()),
+            "instances": sum(v["instances"] for v in export_report["splits"].values()),
+        },
+        "verification": verification_result,
+    }
+
+
+if __name__ == "__main__":
+    summary = main()
+    print(json.dumps(summary, indent=2))
