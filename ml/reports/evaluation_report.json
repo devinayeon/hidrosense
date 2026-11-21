@@ -1,0 +1,25 @@
+{
+  "baseline": {
+    "map50": 0.08,
+    "map50_95": 0.0497,
+    "precision": 0.1193,
+    "recall": 0.3024
+  },
+  "finetuned": {
+    "map50": 0.982,
+    "map50_95": 0.704,
+    "precision": 0.8708,
+    "recall": 0.9944,
+    "f1": 0.9285
+  },
+  "improvements": {
+    "map50_delta": 0.902,
+    "recall_delta": 0.692
+  },
+  "beats_baseline": true,
+  "artifact": {
+    "tflite_exported": true,
+    "size_mb": 10.121,
+    "sha256": "a65a43cf450097e4417e5c59ab0e4e71c17906e0fbd580bb2639175ed368d963"
+  }
+}
