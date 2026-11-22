@@ -59,19 +59,21 @@ class V2PenjualanChartCard extends StatelessWidget {
         children: [
           Text(title, style: V2Type.bodyStrong),
           const SizedBox(height: V2Space.sm),
-          SizedBox(
-            height: 168,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 168),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (var index = 0; index < bars.length; index++) ...[
-                  if (index > 0) const SizedBox(width: V2Space.xl),
-                  _Bar(
-                    bar: bars[index],
-                    height: maxValue == 0
-                        ? 0
-                        : bars[index].value / maxValue * _maxBarHeight,
+                  if (index > 0) const SizedBox(width: V2Space.lg),
+                  Flexible(
+                    child: _Bar(
+                      bar: bars[index],
+                      height: maxValue == 0
+                          ? 0
+                          : bars[index].value / maxValue * _maxBarHeight,
+                    ),
                   ),
                 ],
               ],

@@ -34,7 +34,7 @@ class V2BentoTile extends StatelessWidget {
 
     final content = Container(
       width: size,
-      height: size,
+      constraints: BoxConstraints(minHeight: size),
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
         color: V2Colors.white,
@@ -44,6 +44,7 @@ class V2BentoTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 40,
@@ -54,6 +55,7 @@ class V2BentoTile extends StatelessWidget {
             ),
             child: Center(child: V2Icon(icon, size: 22, color: iconColor)),
           ),
+          const SizedBox(height: V2Space.sm),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

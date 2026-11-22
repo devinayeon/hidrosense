@@ -146,13 +146,8 @@ class _V2RawatObatPageState extends State<V2RawatObatPage> {
   /// Kartu putih 120: judul “Rotasi obat” dan isi 16/24 muted.
   Widget _kartuRotasi() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(
-        V2Space.xl,
-        V2Space.xl,
-        V2Space.xl,
-        0,
-      ),
+      constraints: const BoxConstraints(minHeight: 120),
+      padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue50,
         borderRadius: BorderRadius.circular(V2Radius.card),

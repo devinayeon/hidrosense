@@ -47,13 +47,15 @@ class CustomBottomNavigationBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (index) {
-              return _GlassNavItem(
-                item: items[index],
-                isSelected: index == currentIndex,
-                onTap: () {
-                  if (index != currentIndex) HapticFeedback.selectionClick();
-                  onTap(index);
-                },
+              return Expanded(
+                child: _GlassNavItem(
+                  item: items[index],
+                  isSelected: index == currentIndex,
+                  onTap: () {
+                    if (index != currentIndex) HapticFeedback.selectionClick();
+                    onTap(index);
+                  },
+                ),
               );
             }),
           ),
@@ -147,7 +149,12 @@ class _GlassNavItem extends StatelessWidget {
                 color: isSelected ? activeColor : inactiveColor,
                 fontSize: 10.5,
               ),
-              child: Text(item.label ?? ''),
+              child: Text(
+                item.label ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),

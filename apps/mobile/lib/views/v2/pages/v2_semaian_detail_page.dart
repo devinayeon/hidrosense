@@ -237,7 +237,7 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
     };
 
     return Container(
-      height: 28,
+      constraints: const BoxConstraints(minHeight: 28),
       padding: const EdgeInsets.only(
         left: V2Space.sm,
         right: V2Space.lg,
@@ -253,7 +253,14 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
         children: [
           V2Icon(icon, size: V2Icons.small, color: foreground),
           const SizedBox(width: V2Space.xs),
-          Text(label, style: V2Type.label.copyWith(color: foreground)),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: V2Type.label.copyWith(color: foreground),
+            ),
+          ),
         ],
       ),
     );

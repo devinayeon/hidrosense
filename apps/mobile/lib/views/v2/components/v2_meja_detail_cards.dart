@@ -53,15 +53,16 @@ class V2MejaGridCard extends StatelessWidget {
             style: V2Type.h2.copyWith(color: V2Colors.white),
           ),
           const SizedBox(height: V2Space.sm),
-          SizedBox(
-            height: 164,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 164),
             child: _LubangGrid(filled: item.terisi, total: item.jumlahLubang),
           ),
           const SizedBox(height: V2Space.sm),
-          Row(
+          Wrap(
+            spacing: V2Space.lg,
+            runSpacing: V2Space.xs,
             children: [
               _Legenda(terisi: true, label: 'Terisi ${item.terisi}'),
-              const SizedBox(width: V2Space.lg),
               _Legenda(terisi: false, label: 'Kosong ${item.kosong}'),
             ],
           ),

@@ -15,7 +15,7 @@ class V2RawatCekHamaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      height: 136,
+      constraints: const BoxConstraints(minHeight: 136),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue500,

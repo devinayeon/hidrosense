@@ -38,8 +38,8 @@ class V2TimelineStep extends StatelessWidget {
       ),
     };
 
-    return SizedBox(
-      height: 56,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
       child: Row(
         children: [
           Container(

@@ -458,7 +458,7 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
   /// 28/36 Bold.
   Widget _kartuLayak() {
     return Container(
-      height: 120,
+      constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue50,

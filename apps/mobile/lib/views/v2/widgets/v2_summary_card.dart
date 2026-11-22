@@ -36,17 +36,30 @@ class V2SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  kicker,
-                  style: V2Type.label.copyWith(color: V2Colors.white),
-                ),
-              ),
-              if (badge != null) ...[const SizedBox(width: V2Space.sm), badge!],
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final maxBadgeWidth = constraints.maxWidth.isFinite
+                  ? (constraints.maxWidth * 0.55).clamp(80.0, double.infinity)
+                  : double.infinity;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      kicker,
+                      style: V2Type.label.copyWith(color: V2Colors.white),
+                    ),
+                  ),
+                  if (badge != null) ...[
+                    const SizedBox(width: V2Space.sm),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxBadgeWidth),
+                      child: badge!,
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
           const SizedBox(height: V2Space.sm),
           Text(value, style: V2Type.display.copyWith(color: V2Colors.white)),

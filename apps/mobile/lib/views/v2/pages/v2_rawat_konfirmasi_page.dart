@@ -310,13 +310,8 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
   /// Kartu 120 “Stok berkurang” (frame 9.21/9.28).
   Widget _kartuStok() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(
-        V2Space.xl,
-        V2Space.xl,
-        V2Space.xl,
-        0,
-      ),
+      constraints: const BoxConstraints(minHeight: 120),
+      padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.card),

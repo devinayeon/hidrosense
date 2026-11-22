@@ -398,8 +398,13 @@ class V2PindahMejaResultPage extends StatelessWidget {
                 // Layar hasil tanpa AppBar tetap memulai konten di y116.
                 const SizedBox(height: 72),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    V2Space.xl,
+                    0,
+                    V2Space.xl,
+                    V2Space.xl,
+                  ),
                   child: Column(
                     children: [
                       SizedBox(height: topOffset),

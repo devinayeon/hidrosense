@@ -38,18 +38,26 @@ class _SkeletonCard extends StatelessWidget {
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.card),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          V2Skeleton.circle(size: 48),
-          SizedBox(width: V2Space.lg),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              V2Skeleton.line(width: 180),
-              SizedBox(height: V2Space.sm),
-              V2Skeleton.line(width: 120),
-            ],
+          const V2Skeleton.circle(size: 48),
+          const SizedBox(width: V2Space.lg),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: const V2Skeleton.line(width: double.infinity),
+                ),
+                const SizedBox(height: V2Space.sm),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: const V2Skeleton.line(width: double.infinity),
+                ),
+              ],
+            ),
           ),
         ],
       ),

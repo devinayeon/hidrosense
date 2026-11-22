@@ -44,8 +44,8 @@ class V2TabBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              height: 56,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
               child: Row(
                 children: [
                   for (var index = 0; index < items.length; index++)

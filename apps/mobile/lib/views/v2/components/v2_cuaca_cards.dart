@@ -27,7 +27,14 @@ class V2CuacaLokasiHeader extends StatelessWidget {
     final label = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(lokasi, style: V2Type.bodyStrong),
+        Flexible(
+          child: Text(
+            lokasi,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: V2Type.bodyStrong,
+          ),
+        ),
         const SizedBox(width: V2Space.xs),
         const V2Icon(V2IconName.chevronDown),
       ],
@@ -37,18 +44,26 @@ class V2CuacaLokasiHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 48,
-          child: onTap == null
-              ? label
-              : Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(V2Radius.sm),
-                    child: label,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: onTap == null
+                ? label
+                : Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(V2Radius.sm),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: V2Space.sm,
+                        ),
+                        child: label,
+                      ),
+                    ),
                   ),
-                ),
+          ),
         ),
         Text(
           caption,
@@ -149,17 +164,22 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        Flexible(
           child: Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: V2Type.label.copyWith(color: V2Colors.muted),
           ),
         ),
         const SizedBox(width: V2Space.sm),
-        Text(value, style: V2Type.bodyStrong),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: V2Type.bodyStrong,
+          ),
+        ),
       ],
     );
   }

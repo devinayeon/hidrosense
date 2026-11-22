@@ -46,7 +46,7 @@ class V2Button extends StatelessWidget {
       _ => V2Colors.white,
     },
     V2ButtonType.destructive => switch (state) {
-      V2ButtonState.pressed => const Color(0xFF8F1D17),
+      V2ButtonState.pressed => V2Colors.red800,
       V2ButtonState.disabled => V2Colors.gray200,
       _ => V2Colors.red700,
     },

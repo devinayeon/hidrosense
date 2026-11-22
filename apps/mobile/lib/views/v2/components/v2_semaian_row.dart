@@ -26,7 +26,10 @@ class V2SemaianRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (item.selesai) return _selesai();
-    return SizedBox(height: 80, child: _berjalan());
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 80),
+      child: _berjalan(),
+    );
   }
 
   Widget _berjalan() {
@@ -115,7 +118,7 @@ class V2SemaianRow extends StatelessWidget {
 
   Widget _kartu(Widget child) {
     return Container(
-      height: 80,
+      constraints: const BoxConstraints(minHeight: 80),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: V2Colors.gray200,

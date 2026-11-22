@@ -30,52 +30,58 @@ class V2BerandaHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      height: 160,
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue500,
         borderRadius: BorderRadius.circular(V2Radius.sheet),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  kicker,
-                  style: V2Type.label.copyWith(color: V2Colors.white),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final ringSize = constraints.maxWidth < 260 ? 92.0 : 112.0;
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      kicker,
+                      style: V2Type.label.copyWith(color: V2Colors.white),
+                    ),
+                    const SizedBox(height: V2Space.xs),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.h1.copyWith(color: V2Colors.white),
+                    ),
+                    const SizedBox(height: V2Space.xs),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.body.copyWith(color: V2Colors.white),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: V2Space.xs),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.h1.copyWith(color: V2Colors.white),
-                ),
-                const SizedBox(height: V2Space.xs),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.body.copyWith(color: V2Colors.white),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: V2Space.lg),
-          V2CycleRing(
-            value: value,
-            total: total,
-            windowEnd: windowEnd,
-            trackColor: V2Colors.white.withValues(alpha: 0.22),
-            windowColor: V2Colors.white.withValues(alpha: 0.30),
-            progressColor: V2Colors.lime400,
-            contentColor: V2Colors.white,
-            unitColor: V2Colors.white,
-          ),
-        ],
+              ),
+              const SizedBox(width: V2Space.lg),
+              V2CycleRing(
+                size: ringSize,
+                value: value,
+                total: total,
+                windowEnd: windowEnd,
+                trackColor: V2Colors.white.withValues(alpha: 0.22),
+                windowColor: V2Colors.white.withValues(alpha: 0.30),
+                progressColor: V2Colors.lime400,
+                contentColor: V2Colors.white,
+                unitColor: V2Colors.white,
+              ),
+            ],
+          );
+        },
       ),
     );
 

@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
+import '../../../features/accounts/presentation/viewmodels/profile_viewmodel.dart';
+import '../../../viewmodels/session_viewmodel.dart';
+import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
-import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import '../connected/v2_cuaca_connected.dart';
 import '../connected/v2_inventaris_connected.dart';
+import '../connected/v2_notifications_connected.dart';
 import '../connected/v2_rawat_connected.dart';
 import '../connected/v2_tanam_connected.dart';
 import 'v2_beranda_page.dart';
@@ -15,10 +18,10 @@ import 'v2_beranda_page.dart';
 /// Beranda v2 yang diisi data nyata (frame 2.1–2.6).
 ///
 /// Angka dan teks diambil dari provider yang sudah ada: semaian siap pindah
-/// (penyemaian), stok menipis (inventaris), lubang terisi (meja), dan cuaca
-/// BMKG. Halaman ini yang dipakai `AppGate`; versi fixture di
-/// `v2_beranda_page.dart` tetap dipakai galeri untuk mencocokkan frame.
-class V2BerandaConnectedPage extends ConsumerWidget {
+/// (penyemaian), stok menipis (inventaris), lubang terisi (meja), profil akun,
+/// notifikasi, dan cuaca BMKG. Halaman ini yang dipakai `AppGate`; versi
+/// fixture di `v2_beranda_page.dart` tetap dipakai galeri.
+class V2BerandaConnectedPage extends ConsumerStatefulWidget {
   const V2BerandaConnectedPage({
     super.key,
     this.userName = 'Budi',
@@ -35,8 +38,36 @@ class V2BerandaConnectedPage extends ConsumerWidget {
   final Future<void> Function()? onLogOut;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<V2BerandaConnectedPage> createState() =>
+      _V2BerandaConnectedPageState();
+}
+
+class _V2BerandaConnectedPageState
+    extends ConsumerState<V2BerandaConnectedPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(() {
+      if (!mounted) return;
+      final canReadProfile =
+          ref
+              .read(sessionProvider)
+              .user
+              ?.permissions
+              .contains('profil:read') ??
+          false;
+      if (canReadProfile) {
+        ref.read(profileViewModelProvider.notifier).load();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final data = ref.watch(v2BerandaDataProvider);
+    final profile = ref.watch(
+      profileViewModelProvider.select((state) => state.profile),
+    );
     final syncItems = ref.watch(v2SyncQueueProvider);
     final gagal = syncItems
         .where((item) => item.status == SyncQueueStatus.gagal)
@@ -49,15 +80,24 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       _ => V2BerandaState.ready,
     };
 
+    final phone = profile?.noTelepon?.trim();
+    final address = profile?.alamat?.trim();
+
     return V2BerandaPage(
-      userName: userName,
-      fullName: fullName,
-      username: username,
-      role: role,
+      userName: widget.userName,
+      fullName: profile?.nama ?? widget.fullName,
+      username: profile?.username ?? widget.username,
+      phone: phone == null || phone.isEmpty ? '-' : phone,
+      address: address == null || address.isEmpty ? '-' : address,
+      role: widget.role,
       state: state,
       siapPindahSubtitle: data.readySeedlingSubtitle,
       lowStock: data.lowStockCount,
       filledHoles: data.filledHoles,
+      heroTitle: data.heroTitle,
+      heroSubtitle: data.heroSubtitle,
+      heroValue: data.heroValue,
+      heroTotal: data.heroTotal,
       weatherTitle: data.weatherTitle ?? 'Berawan, 29°C',
       weatherSubtitle: data.weatherSubtitle ?? 'Hujan 14.00',
       employeeStore: ref.watch(v2EmployeeStoreProvider),
@@ -75,17 +115,19 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         initialStatusIndex: status,
       ),
       rawatTab: const V2RawatConnectedTab(),
+      onOpenNotifications: () =>
+          Navigator.of(context).push(V2NotificationsConnectedPage.route()),
       onOpenWeather: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
       syncLabel: syncItems.isEmpty
-          ? 'Terakhir 09.40'
+          ? 'Semua data tersinkron'
           : '${syncItems.length} data menunggu',
       syncBadge: syncItems.isEmpty
           ? null
           : gagal > 0
           ? 'Gagal $gagal'
           : 'Antrean $menunggu',
-      onLogOut: onLogOut,
+      onLogOut: widget.onLogOut,
     );
   }
 }

@@ -40,19 +40,21 @@ class V2PanenChartCard extends StatelessWidget {
         children: [
           Text('Berat layak per panen (kg)', style: V2Type.bodyStrong),
           const SizedBox(height: V2Space.sm),
-          SizedBox(
-            height: 128,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 128),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (var index = 0; index < bars.length; index++) ...[
-                  if (index > 0) const SizedBox(width: V2Space.xl),
-                  _Batang(
-                    bar: bars[index],
-                    tinggi: maxBerat == 0
-                        ? 0
-                        : bars[index].berat / maxBerat * _maxBarHeight,
+                  if (index > 0) const SizedBox(width: V2Space.lg),
+                  Flexible(
+                    child: _Batang(
+                      bar: bars[index],
+                      tinggi: maxBerat == 0
+                          ? 0
+                          : bars[index].berat / maxBerat * _maxBarHeight,
+                    ),
                   ),
                 ],
               ],

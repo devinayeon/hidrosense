@@ -78,7 +78,7 @@ class V2QtyField extends StatelessWidget {
         const SizedBox(width: V2Space.sm),
         Expanded(
           child: Container(
-            height: 56,
+            constraints: const BoxConstraints(minHeight: 56),
             padding: const EdgeInsets.symmetric(horizontal: V2Space.md),
             decoration: BoxDecoration(
               color: enabled ? V2Colors.white : V2Colors.gray200,
@@ -91,18 +91,26 @@ class V2QtyField extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  '$value',
-                  style: V2Type.bodyStrong.copyWith(
-                    // Angka abu saat biasa, jadi ink saat galat (component `Qty`).
-                    color: error ? V2Colors.ink : V2Colors.muted,
+                Flexible(
+                  child: Text(
+                    '$value',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: V2Type.bodyStrong.copyWith(
+                      // Angka abu saat biasa, jadi ink saat galat (component `Qty`).
+                      color: error ? V2Colors.ink : V2Colors.muted,
+                    ),
                   ),
                 ),
                 if (unit.isNotEmpty) ...[
                   const SizedBox(width: V2Space.sm),
-                  Text(
-                    unit,
-                    style: V2Type.body.copyWith(color: V2Colors.muted),
+                  Flexible(
+                    child: Text(
+                      unit,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.body.copyWith(color: V2Colors.muted),
+                    ),
                   ),
                 ],
               ],

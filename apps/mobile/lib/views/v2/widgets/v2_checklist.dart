@@ -128,11 +128,17 @@ class V2WeatherCard extends StatelessWidget {
           ),
           if (unavailable) ...[
             const SizedBox(width: V2Space.xs),
-            V2Button(
-              label: 'Coba lagi',
-              type: V2ButtonType.ghost,
-              expand: false,
-              onPressed: onRetry,
+            Flexible(
+              flex: 0,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 140),
+                child: V2Button(
+                  label: 'Coba lagi',
+                  type: V2ButtonType.ghost,
+                  expand: false,
+                  onPressed: onRetry,
+                ),
+              ),
             ),
           ] else
             const V2Icon(V2IconName.chevronRight, color: V2Colors.muted),

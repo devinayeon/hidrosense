@@ -33,6 +33,10 @@ abstract final class V2Colors {
   static const Color amber800 = Color(0xFF8A5200);
   static const Color red100 = Color(0xFFFDE7E4);
   static const Color red700 = Color(0xFFB3261E);
+  // Not Figma variables: component fills used by the Card "bone" tone and the
+  // destructive Button pressed state. Kept here so widgets hold no raw hex.
+  static const Color red800 = Color(0xFF8F1D17);
+  static const Color bone = Color(0xFFF7F3EA);
 
   // Semantics
   static const Color canvas = gray50;

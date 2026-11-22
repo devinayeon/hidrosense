@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/pages/app_gate.dart';
-import 'package:hidrosense_mobile/views/theme/app_theme.dart';
+import 'package:hidrosense_mobile/views/v2/theme/v2_tokens.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: V2Theme.light,
       home: const AppGate(),
     );
   }

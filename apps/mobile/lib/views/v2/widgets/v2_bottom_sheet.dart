@@ -28,33 +28,38 @@ class V2BottomSheet extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 36,
-              height: 5,
-              decoration: BoxDecoration(
-                color: V2Colors.slate400,
-                borderRadius: BorderRadius.circular(2.5),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: V2Colors.slate400,
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
               ),
-            ),
-            if (title != null) ...[
-              // Semua komponen `Sheet/*` di Foundations memakai jarak 16
-              // setelah handle (judul duduk di y=45 dari atas sheet).
-              const SizedBox(height: V2Space.lg),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(title!, style: V2Type.h2),
-              ),
+              if (title != null) ...[
+                // Semua komponen `Sheet/*` di Foundations memakai jarak 16
+                // setelah handle (judul duduk di y=45 dari atas sheet).
+                const SizedBox(height: V2Space.lg),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(title!, style: V2Type.h2),
+                ),
+              ],
+              if (child != null) ...[
+                const SizedBox(height: V2Space.lg),
+                child!,
+              ],
+              if (actions != null) ...[
+                const SizedBox(height: V2Space.lg),
+                actions!,
+              ],
             ],
-            if (child != null) ...[const SizedBox(height: V2Space.lg), child!],
-            if (actions != null) ...[
-              const SizedBox(height: V2Space.lg),
-              actions!,
-            ],
-          ],
+          ),
         ),
       ),
     );

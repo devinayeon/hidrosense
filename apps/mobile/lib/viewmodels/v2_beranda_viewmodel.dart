@@ -21,6 +21,10 @@ class V2BerandaData {
     this.readySeedlingSubtitle = 'Belum ada semaian siap pindah',
     this.lowStockCount = '0',
     this.filledHoles = '0',
+    this.heroTitle = 'Belum ada siklus',
+    this.heroSubtitle = 'Mulai dari semai benih',
+    this.heroValue = 0,
+    this.heroTotal = 60,
     this.weatherTitle,
     this.weatherSubtitle,
   });
@@ -42,6 +46,18 @@ class V2BerandaData {
 
   /// Total lubang terisi dari semua meja aktif.
   final String filledHoles;
+
+  /// Judul kartu hero siklus berjalan (nama meja aktif / semaian aktif).
+  final String heroTitle;
+
+  /// Subjudul kartu hero siklus berjalan.
+  final String heroSubtitle;
+
+  /// Nilai HSS pada cincin siklus.
+  final int heroValue;
+
+  /// Total hari siklus (bawaan 60 HSS).
+  final int heroTotal;
 
   /// Judul kartu cuaca, mis. `Berawan, 29°C`. Null saat cuaca tak tersedia.
   final String? weatherTitle;
@@ -76,9 +92,40 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
 
   final ready = nursery.records.where((item) => item.canTransfer).toList();
   final lowStock = inventory.activeRecords.where((item) => item.isLow).length;
-  final filledHoles = tables.records
+  final activeTables = tables.records
       .where((table) => table.isActive)
-      .fold<int>(0, (sum, table) => sum + table.activePlants);
+      .toList();
+  final filledHoles = activeTables.fold<int>(
+    0,
+    (sum, table) => sum + table.activePlants,
+  );
+  final populatedTable = activeTables
+      .where((table) => table.activePlants > 0)
+      .firstOrNull;
+  final activeNursery = nursery.records
+      .where((item) => item.remainingSeedCount > 0)
+      .firstOrNull;
+
+  final String heroTitle;
+  final String heroSubtitle;
+  final int heroValue;
+  if (populatedTable != null) {
+    final hss = (activeNursery?.ageDays ?? 15).clamp(0, 60);
+    final remaining = (60 - hss).clamp(0, 60);
+    heroTitle = populatedTable.displayName;
+    heroSubtitle = remaining == 0 ? 'Siap panen' : '$remaining hari lagi';
+    heroValue = hss;
+  } else if (activeNursery != null) {
+    final hss = (activeNursery.ageDays ?? 0).clamp(0, 60);
+    final remaining = (60 - hss).clamp(0, 60);
+    heroTitle = 'Semaian aktif';
+    heroSubtitle = '$remaining hari lagi';
+    heroValue = hss;
+  } else {
+    heroTitle = 'Belum ada siklus';
+    heroSubtitle = 'Mulai dari semai benih';
+    heroValue = 0;
+  }
 
   return V2BerandaData(
     loading: nursery.loading || inventory.isInitialLoading,
@@ -87,6 +134,9 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
     readySeedlingSubtitle: _readySubtitle(ready),
     lowStockCount: '$lowStock',
     filledHoles: '$filledHoles',
+    heroTitle: heroTitle,
+    heroSubtitle: heroSubtitle,
+    heroValue: heroValue,
     weatherTitle: _weatherTitle(weather.data),
     weatherSubtitle: _weatherSubtitle(weather.data),
   );

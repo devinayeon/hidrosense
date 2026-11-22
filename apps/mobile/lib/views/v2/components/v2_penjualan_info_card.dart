@@ -35,15 +35,22 @@ class V2PenjualanInfoCard extends StatelessWidget {
           for (var index = 0; index < rows.length; index++) ...[
             if (index > 0) const SizedBox(height: V2Space.md),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
+                Flexible(
                   child: Text(
                     rows[index].label,
                     style: V2Type.label.copyWith(color: V2Colors.muted),
                   ),
                 ),
                 const SizedBox(width: V2Space.sm),
-                Text(rows[index].value, style: V2Type.bodyStrong),
+                Expanded(
+                  child: Text(
+                    rows[index].value,
+                    textAlign: TextAlign.end,
+                    style: V2Type.bodyStrong,
+                  ),
+                ),
               ],
             ),
           ],

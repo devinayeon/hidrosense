@@ -57,54 +57,70 @@ class V2StockItem extends StatelessWidget {
             horizontal: V2Space.lg,
             vertical: V2Space.md,
           ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: leadBackground,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: V2Icon(icon, size: iconSize, color: leadColor),
-            ),
-          ),
-          const SizedBox(width: V2Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.bodyStrong,
-                ),
-                const SizedBox(height: V2Space.xs),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.label.copyWith(color: V2Colors.muted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: V2Space.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxTrailingWidth = constraints.maxWidth.isFinite
+              ? (constraints.maxWidth * 0.45).clamp(72.0, double.infinity)
+              : double.infinity;
+          return Row(
             children: [
-              Text(quantity, style: V2Type.bodyStrong),
-              if (badge != null) ...[
-                const SizedBox(height: V2Space.xs),
-                badge!,
-              ],
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: leadBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: V2Icon(icon, size: iconSize, color: leadColor),
+                ),
+              ),
+              const SizedBox(width: V2Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.bodyStrong,
+                    ),
+                    const SizedBox(height: V2Space.xs),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.label.copyWith(color: V2Colors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: V2Space.md),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxTrailingWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      quantity,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: V2Type.bodyStrong,
+                    ),
+                    if (badge != null) ...[
+                      const SizedBox(height: V2Space.xs),
+                      badge!,
+                    ],
+                  ],
+                ),
+              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
 
