@@ -13,6 +13,35 @@ http.Response jsonResponse(int status, Object body) => http.Response(
 );
 
 void main() {
+  test('error.details becomes ApiException.details; bad entries are skipped', () async {
+    final api = ApiClient(
+      MockClient((request) async {
+        return jsonResponse(400, {
+          'error': {
+            'code': 'VALIDATION_ERROR',
+            'message': 'Input tidak sesuai kontrak API.',
+            'details': [
+              {'field': 'jumlah_lubang', 'message': 'Maksimal 1000.'},
+              {'field': 7, 'message': 'bukan string'},
+              'bukan objek',
+            ],
+          },
+        });
+      }),
+      baseUri: Uri.parse('https://example.test/api/v1'),
+    )..setTokens(accessToken: 'token', refreshToken: 'refresh');
+    await expectLater(
+      api.post('meja-tanam', headers: {'Idempotency-Key': 'k'}, body: const {}),
+      throwsA(
+        isA<ApiException>()
+            .having((e) => e.code, 'code', 'VALIDATION_ERROR')
+            .having((e) => e.details.length, 'details', 1)
+            .having((e) => e.details.single.field, 'field', 'jumlah_lubang')
+            .having((e) => e.details.single.message, 'message', 'Maksimal 1000.'),
+      ),
+    );
+  });
+
   test('POST auth retry preserves extension headers and exact body', () async {
     const key = '46375a8e-4687-4ff2-9ba0-28b51872bd10';
     final requests = <http.Request>[];

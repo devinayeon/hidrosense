@@ -137,6 +137,36 @@ Left for the legacy-removal step (Prompt 3): `v2UiModeProvider` and `views/v2/v2
 now unused except by the v1 `LoginPage`, so they go with it. The remaining legacy-importing tests
 still pass because the v1 files still exist.
 
+## 7b. Prompt 3 result: v1 removed (branch `chore/remove-v1`, commit 863e83c)
+
+- Deleted 89 unreachable v1 lib files plus `views/v2/v2_ui_mode.dart`, and 27 v1-UI test files
+  (237 test cases) that only exercised the removed screens. Kept `main.dart` and
+  `views/pages/app_gate.dart` (the entry). Kept all SHARED code (core, data, models, viewmodels
+  that v2 imports).
+- Removed the v1-only top-level `assets/` folder and its 6 `pubspec.yaml` entries (2 pointed at
+  folders that did not exist). v2 uses `lib/views/v2/assets`.
+- `tool/harvest_device_qa.dart` now uses `V2Theme`.
+- Result: `flutter analyze` no issues; 233 tests pass (470 before removal).
+- Coverage note: the data layer keeps its repository and viewmodel tests. The removed tests were
+  widget tests of v1 screens, so v1-only layout and flow checks are gone with the screens.
+
+## 7c. Prompt 4 result: backend (non-AI) (branch `feat/backend-ui-gaps`)
+
+- `VALIDATION_ERROR` now carries `error.details[{field,message}]` (Indonesian, capped at 20, never
+  echoes submitted values). Six new tests in `apps/backend/test/validation-details.test.js`.
+- `API.md` documents `details`, the notifications routes (`GET /notifications`,
+  `POST /notifications/read-all`) and the meja field limits.
+- Notifications feature (migration 0019, store, routes, test) was already in the working tree as
+  uncommitted work. It is verified (suite green) and committed with this branch.
+- Mobile: `ApiException` parses `details`; `serviceError` shows "Ada isian yang belum sesuai
+  (jumlah lubang): Maksimal 1000." when the backend sends it, and the generic sentence otherwise.
+- Not built, by decision: treatment records (`/perawatan`). The `perawatan` table requires a
+  recommendation (`id_rekomendasi NOT NULL`), which belongs to the AI detection chain, so it
+  stays out of scope.
+- Not changed: the low-stock card count (aggregate over all types) still needs a product
+  decision (option A or B).
+- Result: backend typecheck, lint, line limit and 368 tests pass; mobile analyze clean, 236 tests pass.
+
 ## 7. Prioritised plan
 
 1. Decide the treatment-record question (section 4).
