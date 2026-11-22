@@ -10,9 +10,11 @@ Kirim `Authorization: Bearer <access_token>`. Tanpa token yang sah, server memba
 ### Format respons
 ```json
 { "data": {}, "meta": { "page": 1, "limit": 20, "total": 1, "total_pages": 1 } }
-{ "error": { "code": "VALIDATION_ERROR", "message": "...", "request_id": "..." } }
+{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [{ "field": "jumlah_lubang", "message": "Maksimal 1000." }], "request_id": "..." } }
 ```
 `meta` hanya ada pada daftar. Pakai `code` untuk logika klien, dan `message` untuk ditampilkan.
+
+`details` hanya ada pada `VALIDATION_ERROR` dari body atau query. Tiap entri menyebut satu field (`field`, dengan titik untuk field bersarang) dan masalahnya (`message`, bahasa Indonesia, misalnya `Wajib diisi.`, `Maksimal 30 karakter.`, `Field tidak dikenal.`). Isinya tidak pernah memuat nilai yang dikirim klien. Paling banyak 20 entri. Klien yang tidak membacanya tetap bekerja dengan `code` dan `message`.
 
 ### Format nilai
 | Jenis | Format |
@@ -224,6 +226,19 @@ Izin: `penjualan:read`, `penjualan:write`. Hanya petani.
 
 Saat mengirim antrean, kirim induk lebih dulu, misalnya penyemaian sebelum pemindahan, karena anak merujuk ID server milik induk. Kalau respons hilang, kirim ulang dengan kunci yang sama untuk mendapatkan ID itu.
 
+## Notifikasi
+
+Dihitung dari data semaian, stok, dan panen. Setiap pengguna yang masuk boleh memanggilnya. Status baca disimpan per pengguna (tabel `notification_reads`), jadi "tandai semua dibaca" bertahan lintas perangkat dan sesi.
+
+| Endpoint | Catatan |
+|---|---|
+| `GET /notifications` | Tanpa query. `data` berisi daftar `{ id, category, title, subtitle, resource_id, read }`. `category`: `nursery`, `inventory`, atau `harvest` |
+| `POST /notifications/read-all` | Tanpa query. Menandai semua notifikasi saat ini sebagai dibaca |
+
+## Batas isian
+
+Meja tanam: `kode_meja` 1–30 karakter, `jumlah_lubang` bilangan bulat 1–1000, `keterangan` paling banyak 1000 karakter. Batas fitur lain ada di `src/features/*/contracts.ts`. Pelanggaran dibalas `400 VALIDATION_ERROR` dengan `details` yang menyebut field dan batasnya.
+
 ## Belum tersedia
 
-Deteksi hama, rekomendasi, dan perawatan belum dibangun. Cuaca BMKG berjalan di aplikasi mobile, bukan di backend.
+Deteksi hama, rekomendasi, dan perawatan belum dibangun. Tabel `perawatan` mengacu ke rekomendasi (`id_rekomendasi` wajib), jadi pencatatan perawatan baru bisa dibuat setelah deteksi dan rekomendasi ada. Cuaca BMKG berjalan di aplikasi mobile, bukan di backend.
