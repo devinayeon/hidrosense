@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -12,8 +13,10 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import numpy as np
 from PIL import Image
 import imagehash
+import scipy.fftpack
 import yaml
 
 CANONICAL_CLASSES: dict[int, str] = {
@@ -99,6 +102,169 @@ _NORMALIZED_SYNONYMS: dict[str, int] = {
 
 IMAGE_EXTENSIONS: frozenset[str] = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp"})
 MIN_BOX_DIMENSION: float = 0.002
+_ROBOFLOW_RF_STEM_RE = re.compile(r"^(?P<base>.+?)\.rf\.[A-Za-z0-9_-]+$")
+_DCT_SIGN_1D = np.array([1.0 if i % 2 == 0 else -1.0 for i in range(8)], dtype=np.float64)
+_DCT_SIGN_V = _DCT_SIGN_1D[None, :]
+_DCT_SIGN_U = _DCT_SIGN_1D[:, None]
+_DCT_SIGN_UV = _DCT_SIGN_U * _DCT_SIGN_V
+_HASH_POW2 = 1 << np.arange(63, -1, -1, dtype=np.uint64)
+_MIH_5_SLICES: tuple[tuple[int, int], ...] = (
+    (0, 0x1FFF),
+    (13, 0x1FFF),
+    (26, 0x1FFF),
+    (39, 0x1FFF),
+    (52, 0xFFF),
+)
+_POPCOUNT_LUT = np.array([bin(x).count("1") for x in range(256)], dtype=np.uint8)
+
+
+def extract_roboflow_base_stem(stem_or_filename: str) -> str | None:
+    lowered = stem_or_filename.lower()
+    if any(lowered.endswith(ext) for ext in (*IMAGE_EXTENSIONS, ".txt")):
+        stem = Path(stem_or_filename).stem
+    else:
+        stem = stem_or_filename
+    match = _ROBOFLOW_RF_STEM_RE.match(stem)
+    return match.group("base") if match else None
+
+
+def compute_dihedral_phashes(img: Image.Image) -> tuple[int, ...]:
+    gray32 = img.convert("RGB").convert("L").resize((32, 32), Image.Resampling.LANCZOS)
+    pixels = np.asarray(gray32)
+    dct = scipy.fftpack.dct(scipy.fftpack.dct(pixels, axis=0), axis=1)[:8, :8]
+    dt = dct.T
+    blocks = (
+        dct,                # r0
+        dt * _DCT_SIGN_U,   # r90
+        dct * _DCT_SIGN_UV, # r180
+        dt * _DCT_SIGN_V,   # r270
+        dct * _DCT_SIGN_V,  # hflip
+        dct * _DCT_SIGN_U,  # vflip
+        dt * _DCT_SIGN_UV,  # r90 + hflip
+        dt,                 # r270 + hflip
+    )
+    return tuple(
+        int(((blk > np.median(blk)).ravel().astype(np.uint64) * _HASH_POW2).sum())
+        for blk in blocks
+    )
+
+
+def _min_dihedral_distance(phs_a: tuple[int, ...], phs_b: tuple[int, ...]) -> int:
+    r0_a = phs_a[0]
+    r0_b = phs_b[0]
+    return min(
+        min((r0_a ^ h).bit_count() for h in phs_b),
+        min((r0_b ^ h).bit_count() for h in phs_a),
+    )
+
+
+class _UnionFind:
+    def __init__(self, size: int) -> None:
+        self._parent = list(range(size))
+
+    def find(self, idx: int) -> int:
+        root = idx
+        while self._parent[root] != root:
+            root = self._parent[root]
+        while self._parent[idx] != root:
+            nxt = self._parent[idx]
+            self._parent[idx] = root
+            idx = nxt
+        return root
+
+    def union(self, a: int, b: int) -> None:
+        ra = self.find(a)
+        rb = self.find(b)
+        if ra == rb:
+            return
+        if ra > rb:
+            ra, rb = rb, ra
+        self._parent[rb] = ra
+
+
+class _DihedralHashIndex:
+    def __init__(self, threshold: int) -> None:
+        self.threshold = threshold
+        self._items: list[tuple[int, ...]] = []
+        self._use_mih = 0 <= threshold <= 4
+        self._r0_tables: list[dict[int, list[int]]] = [defaultdict(list) for _ in _MIH_5_SLICES]
+        self._all8_tables: list[dict[int, list[int]]] = [defaultdict(list) for _ in _MIH_5_SLICES]
+
+    def add(self, phs: tuple[int, ...]) -> int:
+        idx = len(self._items)
+        self._items.append(phs)
+        if self._use_mih:
+            r0 = phs[0]
+            unique_phs = set(phs)
+            for slice_idx, (shift, mask) in enumerate(_MIH_5_SLICES):
+                self._r0_tables[slice_idx][(r0 >> shift) & mask].append(idx)
+                seen_keys: set[int] = set()
+                for h in unique_phs:
+                    key = (h >> shift) & mask
+                    if key not in seen_keys:
+                        seen_keys.add(key)
+                        self._all8_tables[slice_idx][key].append(idx)
+        return idx
+
+    def _mih_candidates(self, phs_q: tuple[int, ...]) -> set[int]:
+        cands: set[int] = set()
+        r0_q = phs_q[0]
+        unique_q = set(phs_q)
+        for slice_idx, (shift, mask) in enumerate(_MIH_5_SLICES):
+            r0_table = self._r0_tables[slice_idx]
+            for h in unique_q:
+                hits = r0_table.get((h >> shift) & mask)
+                if hits:
+                    cands.update(hits)
+            all8_hits = self._all8_tables[slice_idx].get((r0_q >> shift) & mask)
+            if all8_hits:
+                cands.update(all8_hits)
+        return cands
+
+    def _numpy_matches(self, phs_q: tuple[int, ...], *, first_only: bool) -> list[int]:
+        if not self._items or self.threshold < 0:
+            return []
+        chunk_size = 2048
+        q_arr = np.asarray(phs_q, dtype=np.uint64)
+        r0_q = np.uint64(phs_q[0])
+        matches: list[int] = []
+        total = len(self._items)
+        for start in range(0, total, chunk_size):
+            end = min(start + chunk_size, total)
+            block = np.asarray(self._items[start:end], dtype=np.uint64)
+            n = block.shape[0]
+            r0_block = block[:, 0]
+            xor_1 = r0_block[:, None] ^ q_arr[None, :]
+            dist_1 = _POPCOUNT_LUT[xor_1.view(np.uint8).reshape(n, 8, 8)].sum(axis=-1).min(axis=-1)
+            xor_2 = block ^ r0_q
+            dist_2 = _POPCOUNT_LUT[xor_2.view(np.uint8).reshape(n, 8, 8)].sum(axis=-1).min(axis=-1)
+            hit_indices = np.flatnonzero(np.minimum(dist_1, dist_2) <= self.threshold)
+            if hit_indices.size > 0:
+                if first_only:
+                    return [start + int(hit_indices[0])]
+                matches.extend(start + int(idx) for idx in hit_indices)
+        return matches
+
+    def find_matches(self, phs_q: tuple[int, ...]) -> list[int]:
+        if self.threshold < 0 or not self._items:
+            return []
+        if self._use_mih:
+            return [
+                idx
+                for idx in sorted(self._mih_candidates(phs_q))
+                if _min_dihedral_distance(self._items[idx], phs_q) <= self.threshold
+            ]
+        return self._numpy_matches(phs_q, first_only=False)
+
+    def has_match(self, phs_q: tuple[int, ...]) -> bool:
+        if self.threshold < 0 or not self._items:
+            return False
+        if self._use_mih:
+            for idx in self._mih_candidates(phs_q):
+                if _min_dihedral_distance(self._items[idx], phs_q) <= self.threshold:
+                    return True
+            return False
+        return bool(self._numpy_matches(phs_q, first_only=True))
 
 
 @dataclass(frozen=True)
@@ -120,6 +286,9 @@ class DatasetRecord:
     boxes: tuple[BoxAnnotation, ...]
     source_name: str
     sha256_hex: str = ""
+    group_id: str = ""
+    base_stem: str = ""
+    dihedral_phashes: tuple[int, ...] = ()
 
     @property
     def primary_class(self) -> int:
@@ -151,6 +320,8 @@ def canonicalize_label_name(raw_name: str) -> int | None:
 
 
 def _clamp01(value: float) -> float:
+    if not math.isfinite(value):
+        raise ValueError(f"Non-finite coordinate passed to _clamp01: {value!r}")
     return max(0.0, min(1.0, value))
 
 
@@ -162,9 +333,14 @@ def parse_and_sanitize_yolo_line(
     if len(parts) < 5:
         return None
     try:
-        raw_class_id = int(float(parts[0]))
+        raw_class_float = float(parts[0])
+        if not math.isfinite(raw_class_float):
+            return None
+        raw_class_id = int(raw_class_float)
         coords = [float(val) for val in parts[1:]]
-    except ValueError:
+    except (ValueError, OverflowError):
+        return None
+    if not all(math.isfinite(c) for c in coords):
         return None
 
     raw_name = source_id_to_name.get(raw_class_id)
@@ -284,8 +460,11 @@ def _classify_dropped_yolo_line(
     if len(parts) < 5:
         return ("invalid", None)
     try:
-        raw_class_id = int(float(parts[0]))
-    except ValueError:
+        raw_class_float = float(parts[0])
+        if not math.isfinite(raw_class_float):
+            return ("invalid", None)
+        raw_class_id = int(raw_class_float)
+    except (ValueError, OverflowError):
         return ("invalid", None)
     raw_name = source_id_to_name.get(raw_class_id)
     if raw_name is None:
@@ -295,15 +474,28 @@ def _classify_dropped_yolo_line(
     return ("invalid", raw_name)
 
 
+@dataclass(frozen=True)
+class _CandidateRecord:
+    image_path: Path
+    phash_hex: str
+    dihedral_phashes: tuple[int, ...]
+    boxes: tuple[BoxAnnotation, ...]
+    source_name: str
+    sha256_hex: str
+    base_stem: str | None
+    src_entry: dict[str, Any]
+
+
 def deduplicate_and_merge_sources(
     source_dirs: list[Path],
     max_hamming_distance: int = 2,
     *,
+    group_hamming_distance: int = 4,
     source_details_out: dict[str, Any] | None = None,
 ) -> tuple[list[DatasetRecord], dict[str, int]]:
-    merged: list[DatasetRecord] = []
+    effective_group_hamming = max(group_hamming_distance, max_hamming_distance)
     seen_sha256: set[str] = set()
-    kept_phash_ints: list[int] = []
+    candidates: list[_CandidateRecord] = []
 
     stats = {
         "total_scanned": 0,
@@ -315,6 +507,8 @@ def deduplicate_and_merge_sources(
         "boxes_dropped": 0,
         "boxes_dropped_unmapped": 0,
         "boxes_dropped_invalid": 0,
+        "groups_formed": 0,
+        "roboflow_base_stems_grouped": 0,
     }
     per_source: dict[str, dict[str, Any]] = {}
 
@@ -348,16 +542,6 @@ def deduplicate_and_merge_sources(
         for img_path, label_path in _iter_source_image_label_pairs(source_dir):
             stats["total_scanned"] += 1
             src_entry["images_scanned"] += 1
-            try:
-                sha256_hex = hashlib.sha256(img_path.read_bytes()).hexdigest()
-                with Image.open(img_path) as img:
-                    phash_hex = str(imagehash.phash(img.convert("RGB")))
-                phash_int = int(phash_hex, 16)
-            except Exception:
-                stats["empty_or_unmapped_skipped"] += 1
-                src_entry["empty_or_unmapped_skipped"] += 1
-                src_entry["unreadable_images_skipped"] += 1
-                continue
 
             raw_lines = [
                 ln.strip()
@@ -392,41 +576,108 @@ def deduplicate_and_merge_sources(
                 src_entry["empty_or_unmapped_skipped"] += 1
                 continue
 
+            try:
+                sha256_hex = hashlib.sha256(img_path.read_bytes()).hexdigest()
+            except Exception:
+                stats["empty_or_unmapped_skipped"] += 1
+                src_entry["empty_or_unmapped_skipped"] += 1
+                src_entry["unreadable_images_skipped"] += 1
+                continue
+
             if sha256_hex in seen_sha256:
                 stats["duplicates_removed"] += 1
                 stats["sha256_duplicates_removed"] += 1
                 src_entry["sha256_duplicates_removed"] += 1
                 continue
 
-            if any((phash_int ^ existing_int).bit_count() <= max_hamming_distance for existing_int in kept_phash_ints):
-                stats["duplicates_removed"] += 1
-                stats["phash_duplicates_removed"] += 1
-                src_entry["phash_duplicates_removed"] += 1
+            try:
+                with Image.open(img_path) as img:
+                    dihedral_phashes = compute_dihedral_phashes(img)
+            except Exception:
+                stats["empty_or_unmapped_skipped"] += 1
+                src_entry["empty_or_unmapped_skipped"] += 1
+                src_entry["unreadable_images_skipped"] += 1
                 continue
 
             seen_sha256.add(sha256_hex)
-            kept_phash_ints.append(phash_int)
-            stats["boxes_kept"] += len(boxes)
-            src_entry["boxes_kept"] += len(boxes)
-            src_entry["images_kept"] += 1
-            merged.append(
-                DatasetRecord(
+            phash_hex = f"{dihedral_phashes[0]:016x}"
+            base_stem = extract_roboflow_base_stem(img_path.stem)
+            candidates.append(
+                _CandidateRecord(
                     image_path=img_path,
                     phash_hex=phash_hex,
+                    dihedral_phashes=dihedral_phashes,
                     boxes=boxes,
                     source_name=source_dir.name,
                     sha256_hex=sha256_hex,
+                    base_stem=base_stem,
+                    src_entry=src_entry,
                 )
             )
 
         src_entry["mapped_class_names_seen"] = sorted(mapped_names_seen)
         src_entry["unmapped_class_names_seen"] = sorted(unmapped_names_seen)
 
+    # Pass 2: Pre-dedup Union-Find over (8-dihedral pHash <= effective_group_hamming) U (.rf. base_stem)
+    uf = _UnionFind(len(candidates))
+    group_index = _DihedralHashIndex(effective_group_hamming)
+    stem_first_idx: dict[str, int] = {}
+    for idx, cand in enumerate(candidates):
+        for match_idx in group_index.find_matches(cand.dihedral_phashes):
+            uf.union(idx, match_idx)
+        group_index.add(cand.dihedral_phashes)
+        if cand.base_stem:
+            existing_idx = stem_first_idx.get(cand.base_stem)
+            if existing_idx is not None:
+                uf.union(idx, existing_idx)
+            else:
+                stem_first_idx[cand.base_stem] = idx
+
+    # Pass 3: 8-dihedral hard deduplication at <= max_hamming_distance
+    merged: list[DatasetRecord] = []
+    dedup_index = _DihedralHashIndex(max_hamming_distance)
+    for idx, cand in enumerate(candidates):
+        if dedup_index.has_match(cand.dihedral_phashes):
+            stats["duplicates_removed"] += 1
+            stats["phash_duplicates_removed"] += 1
+            cand.src_entry["phash_duplicates_removed"] += 1
+            continue
+
+        dedup_index.add(cand.dihedral_phashes)
+        stats["boxes_kept"] += len(cand.boxes)
+        cand.src_entry["boxes_kept"] += len(cand.boxes)
+        cand.src_entry["images_kept"] += 1
+        merged.append(
+            DatasetRecord(
+                image_path=cand.image_path,
+                phash_hex=cand.phash_hex,
+                boxes=cand.boxes,
+                source_name=cand.source_name,
+                sha256_hex=cand.sha256_hex,
+                group_id=f"grp_{uf.find(idx):06d}",
+                base_stem=cand.base_stem or "",
+                dihedral_phashes=cand.dihedral_phashes,
+            )
+        )
+
+    stats["groups_formed"] = len({r.group_id for r in merged})
+    stats["roboflow_base_stems_grouped"] = len({r.base_stem for r in merged if r.base_stem})
+
     if source_details_out is not None:
         source_details_out.clear()
         source_details_out.update(per_source)
 
     return merged, stats
+
+
+def _group_primary_class(group_recs: list[DatasetRecord]) -> int:
+    counts: dict[int, int] = {}
+    for rec in group_recs:
+        for box in rec.boxes:
+            counts[box.class_id] = counts.get(box.class_id, 0) + 1
+    if not counts:
+        return -1
+    return max(counts.items(), key=lambda item: (item[1], -item[0]))[0]
 
 
 def stratified_split_records(
@@ -436,15 +687,27 @@ def stratified_split_records(
     seed: int = 42,
 ) -> dict[str, list[DatasetRecord]]:
     rng = random.Random(seed)
-    by_class: dict[int, list[DatasetRecord]] = {0: [], 1: [], 2: []}
-    for rec in records:
-        by_class.setdefault(rec.primary_class, []).append(rec)
+    grouped: dict[str, list[DatasetRecord]] = {}
+    for idx, rec in enumerate(records):
+        group_key = rec.group_id or rec.phash_hex or f"__idx_{idx}"
+        grouped.setdefault(group_key, []).append(rec)
+
+    by_class: dict[int, list[list[DatasetRecord]]] = {0: [], 1: [], 2: []}
+    for group_recs in grouped.values():
+        cls_id = _group_primary_class(group_recs)
+        by_class.setdefault(cls_id, []).append(group_recs)
 
     splits: dict[str, list[DatasetRecord]] = {"train": [], "val": [], "test": []}
-    for _, group in sorted(by_class.items()):
-        shuffled = list(group)
-        rng.shuffle(shuffled)
-        n = len(shuffled)
+    for _, class_groups in sorted(by_class.items()):
+        ordered_groups = sorted(
+            class_groups,
+            key=lambda g: (
+                g[0].group_id or g[0].phash_hex,
+                tuple(r.sha256_hex or r.phash_hex or str(r.image_path) for r in g),
+            ),
+        )
+        rng.shuffle(ordered_groups)
+        n = len(ordered_groups)
         if n == 0:
             continue
         if n >= 3:
@@ -461,9 +724,12 @@ def stratified_split_records(
         else:
             n_train, n_val, n_test = n, 0, 0
 
-        splits["train"].extend(shuffled[:n_train])
-        splits["val"].extend(shuffled[n_train : n_train + n_val])
-        splits["test"].extend(shuffled[n_train + n_val :])
+        for grp in ordered_groups[:n_train]:
+            splits["train"].extend(grp)
+        for grp in ordered_groups[n_train : n_train + n_val]:
+            splits["val"].extend(grp)
+        for grp in ordered_groups[n_train + n_val :]:
+            splits["test"].extend(grp)
 
     return splits
 
@@ -497,7 +763,12 @@ def export_merged_dataset(
         for idx, rec in enumerate(records):
             id_seed = f"{rec.sha256_hex or rec.phash_hex}_{idx}"
             digest = hashlib.sha1(id_seed.encode("utf-8")).hexdigest()[:10]
-            stem = f"{rec.source_name}_{digest}"
+            raw_base = rec.base_stem or extract_roboflow_base_stem(rec.image_path.stem)
+            if raw_base:
+                safe_base = re.sub(r"[^A-Za-z0-9_.-]+", "_", raw_base).lstrip(".") or "image"
+                stem = f"{safe_base}.rf.{digest}"
+            else:
+                stem = f"{rec.source_name}_{digest}"
             target_img = img_out / f"{stem}{rec.image_path.suffix.lower()}"
             target_lbl = lbl_out / f"{stem}.txt"
 
@@ -518,6 +789,7 @@ def export_merged_dataset(
         manifest_sha256 = hashlib.sha256("\n".join(sorted(manifest_entries)).encode("utf-8")).hexdigest()
         report["splits"][split_name] = {
             "images": len(records),
+            "groups": len({r.group_id for r in records if r.group_id}) or len(records),
             "instances": total_boxes,
             "per_class_instances": class_counts,
             "per_source_images": dict(sorted(per_source_images.items())),
@@ -685,7 +957,9 @@ def verify_exported_dataset(
     output_dir: Path,
     max_hamming_distance: int = 2,
     require_all_classes: bool = False,
+    group_hamming_distance: int = 4,
 ) -> dict[str, Any]:
+    effective_group_hamming = max(group_hamming_distance, max_hamming_distance)
     violations: list[str] = []
     data_yaml_path = output_dir / "data.yaml"
     if not data_yaml_path.is_file():
@@ -710,7 +984,8 @@ def verify_exported_dataset(
         violations.append(f"data.yaml names mismatch: {norm_names!r}")
 
     split_sha256: dict[str, set[str]] = {}
-    split_phashes: dict[str, list[int]] = {}
+    split_dihedral_phashes: dict[str, list[tuple[int, ...]]] = {}
+    split_base_stems: dict[str, set[str]] = {}
     split_summaries: dict[str, Any] = {}
     intra_sha256_duplicates = 0
     intra_phash_duplicates = 0
@@ -723,7 +998,8 @@ def verify_exported_dataset(
         if not img_dir.is_dir() or not lbl_dir.is_dir():
             violations.append(f"Split {split_name} missing images/ or labels/ directory")
             split_sha256[split_name] = set()
-            split_phashes[split_name] = []
+            split_dihedral_phashes[split_name] = []
+            split_base_stems[split_name] = set()
             continue
 
         img_files = sorted(
@@ -750,7 +1026,9 @@ def verify_exported_dataset(
             )
 
         seen_split_sha: set[str] = set()
-        split_phash_ints: list[int] = []
+        split_dihedral_list: list[tuple[int, ...]] = []
+        intra_index = _DihedralHashIndex(max_hamming_distance)
+        seen_base_stems: set[str] = set()
         per_class_instances = {name: 0 for name in CANONICAL_CLASSES.values()}
         total_boxes = 0
 
@@ -761,7 +1039,7 @@ def verify_exported_dataset(
             try:
                 sha256_hex = hashlib.sha256(img_path.read_bytes()).hexdigest()
                 with Image.open(img_path) as img:
-                    phash_int = int(str(imagehash.phash(img.convert("RGB"))), 16)
+                    dihedral_phs = compute_dihedral_phashes(img)
             except Exception as exc:
                 violations.append(f"Unreadable image {img_path.name}: {exc}")
                 continue
@@ -771,10 +1049,15 @@ def verify_exported_dataset(
                 violations.append(f"Intra-split SHA-256 duplicate in {split_name}: {img_path.name}")
             seen_split_sha.add(sha256_hex)
 
-            if any((phash_int ^ prev_int).bit_count() <= max_hamming_distance for prev_int in split_phash_ints):
+            if intra_index.has_match(dihedral_phs):
                 intra_phash_duplicates += 1
-                violations.append(f"Intra-split pHash duplicate in {split_name}: {img_path.name}")
-            split_phash_ints.append(phash_int)
+                violations.append(f"Intra-split 8-dihedral pHash duplicate in {split_name}: {img_path.name}")
+            intra_index.add(dihedral_phs)
+            split_dihedral_list.append(dihedral_phs)
+
+            base_stem = extract_roboflow_base_stem(img_path.stem)
+            if base_stem:
+                seen_base_stems.add(base_stem)
 
             lines = [ln.strip() for ln in lbl_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
             if not lines:
@@ -790,7 +1073,7 @@ def verify_exported_dataset(
                 try:
                     cls_id = int(parts[0])
                     cx, cy, w, h = (float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4]))
-                except ValueError:
+                except (ValueError, OverflowError):
                     invalid_labels += 1
                     violations.append(f"Non-numeric YOLO line in {split_name}/{lbl_path.name}: {line!r}")
                     continue
@@ -819,7 +1102,8 @@ def verify_exported_dataset(
                     violations.append(f"Split {split_name} has 0 instances for class {cls_name!r}")
 
         split_sha256[split_name] = seen_split_sha
-        split_phashes[split_name] = split_phash_ints
+        split_dihedral_phashes[split_name] = split_dihedral_list
+        split_base_stems[split_name] = seen_base_stems
         split_summaries[split_name] = {
             "images": len(img_by_stem),
             "instances": total_boxes,
@@ -828,21 +1112,38 @@ def verify_exported_dataset(
 
     cross_split_sha256_overlaps = 0
     cross_split_phash_overlaps = 0
+    cross_split_group_phash_overlaps = 0
+    cross_split_base_stem_overlaps = 0
     for left, right in (("train", "val"), ("train", "test"), ("val", "test")):
         sha_overlap = split_sha256[left] & split_sha256[right]
         if sha_overlap:
             cross_split_sha256_overlaps += len(sha_overlap)
             violations.append(f"Cross-split SHA-256 overlap between {left} and {right}: {len(sha_overlap)}")
 
-        right_phashes = split_phashes[right]
-        phash_matches = sum(
-            1
-            for lp in split_phashes[left]
-            if any((lp ^ rp).bit_count() <= max_hamming_distance for rp in right_phashes)
-        )
+        right_dedup_idx = _DihedralHashIndex(max_hamming_distance)
+        for rp in split_dihedral_phashes[right]:
+            right_dedup_idx.add(rp)
+        phash_matches = sum(1 for lp in split_dihedral_phashes[left] if right_dedup_idx.has_match(lp))
         if phash_matches:
             cross_split_phash_overlaps += phash_matches
-            violations.append(f"Cross-split pHash (<= {max_hamming_distance}) overlap between {left} and {right}: {phash_matches}")
+            violations.append(
+                f"Cross-split 8-dihedral pHash (<= {max_hamming_distance}) overlap between {left} and {right}: {phash_matches}"
+            )
+
+        right_group_idx = _DihedralHashIndex(effective_group_hamming)
+        for rp in split_dihedral_phashes[right]:
+            right_group_idx.add(rp)
+        group_phash_matches = sum(1 for lp in split_dihedral_phashes[left] if right_group_idx.has_match(lp))
+        if group_phash_matches:
+            cross_split_group_phash_overlaps += group_phash_matches
+            violations.append(
+                f"Cross-split 8-dihedral group pHash (<= {effective_group_hamming}) overlap between {left} and {right}: {group_phash_matches}"
+            )
+
+        stem_overlap = split_base_stems[left] & split_base_stems[right]
+        if stem_overlap:
+            cross_split_base_stem_overlaps += len(stem_overlap)
+            violations.append(f"Cross-split Roboflow base-stem overlap between {left} and {right}: {len(stem_overlap)}")
 
     all_classes_present = all(
         split_summaries.get(split_name, {}).get("per_class_instances", {}).get(cls_name, 0) > 0
@@ -873,6 +1174,10 @@ def verify_exported_dataset(
         "data_yaml_portable_relative_paths": True,
         "cross_split_sha256_overlaps": cross_split_sha256_overlaps,
         "cross_split_phash_overlaps": cross_split_phash_overlaps,
+        "cross_split_group_phash_overlaps": cross_split_group_phash_overlaps,
+        "cross_split_base_stem_overlaps": cross_split_base_stem_overlaps,
+        "group_hamming_distance": effective_group_hamming,
+        "dihedral_orientations_checked": 8,
         "intra_split_sha256_duplicates": intra_sha256_duplicates,
         "intra_split_phash_duplicates": intra_phash_duplicates,
         "unpaired_files": unpaired_files,
@@ -895,8 +1200,10 @@ def write_provenance_reports(
     seed: int,
     train_ratio: float,
     val_ratio: float,
+    group_hamming_distance: int = 4,
 ) -> tuple[Path, Path]:
     report_dir.mkdir(parents=True, exist_ok=True)
+    effective_group_hamming = max(group_hamming_distance, max_hamming_distance)
     total_images = sum(v["images"] for v in export_report["splits"].values())
     total_instances = sum(v["instances"] for v in export_report["splits"].values())
     total_per_class = {
@@ -915,6 +1222,9 @@ def write_provenance_reports(
             "test_ratio": round(1.0 - train_ratio - val_ratio, 4),
             "seed": seed,
             "max_hamming_distance": max_hamming_distance,
+            "group_hamming_distance": effective_group_hamming,
+            "dihedral_orientations_checked": 8,
+            "group_aware_split": True,
         },
         "sources_probed": probe_results,
         "deduplication": {
@@ -937,7 +1247,7 @@ def write_provenance_reports(
         f"- **Generated (UTC)**: `{provenance_payload['generated_at_utc']}`",
         f"- **Zero Synthetic Confirmed**: `{provenance_payload['zero_synthetic_confirmed']}` (`synthetic_images_count = 0`)",
         f"- **Canonical Classes**: `0: thrips`, `1: whitefly`, `2: aphids`",
-        f"- **Split Config**: `train={train_ratio}`, `val={val_ratio}`, `test={provenance_payload['split_config']['test_ratio']}`, `seed={seed}`, `phash_hamming_threshold={max_hamming_distance}`",
+        f"- **Split Config**: `train={train_ratio}`, `val={val_ratio}`, `test={provenance_payload['split_config']['test_ratio']}`, `seed={seed}`, `phash_hamming_threshold={max_hamming_distance}`, `group_hamming_threshold={effective_group_hamming}`, `group_aware_split=True`",
         "",
         "## Roboflow Sources Probed & Downloaded",
         "",
@@ -961,8 +1271,12 @@ def write_provenance_reports(
             "",
             f"- **Total images scanned**: {scan_stats['total_scanned']}",
             f"- **Exact SHA-256 duplicates removed**: {scan_stats['sha256_duplicates_removed']}",
-            f"- **Perceptual hash (Hamming <= {max_hamming_distance}) duplicates removed**: {scan_stats['phash_duplicates_removed']}",
+            f"- **8-dihedral perceptual hash (Hamming <= {max_hamming_distance}) duplicates removed**: {scan_stats['phash_duplicates_removed']}",
             f"- **Total duplicates removed**: {scan_stats['duplicates_removed']}",
+            f"- **Dihedral orientations checked**: {verification_result.get('dihedral_orientations_checked', 8)}",
+            f"- **Group Hamming threshold**: {effective_group_hamming}",
+            f"- **Connected component groups formed**: {scan_stats.get('groups_formed', 0)}",
+            f"- **Roboflow base stems grouped**: {scan_stats.get('roboflow_base_stems_grouped', 0)}",
             f"- **Empty or unmapped images skipped**: {scan_stats['empty_or_unmapped_skipped']}",
             f"- **Boxes kept**: {scan_stats['boxes_kept']}",
             f"- **Boxes dropped (total / unmapped / invalid)**: {scan_stats['boxes_dropped']} / {scan_stats['boxes_dropped_unmapped']} / {scan_stats['boxes_dropped_invalid']}",
@@ -981,18 +1295,19 @@ def write_provenance_reports(
             "",
             "## Final Split Counts & Class Distribution",
             "",
-            "| Split | Images | Instances | thrips | whitefly | aphids | Small Obj Ratio | Manifest SHA-256 (prefix) |",
-            "|---|---:|---:|---:|---:|---:|---:|---|",
+            "| Split | Images | Groups | Instances | thrips | whitefly | aphids | Small Obj Ratio | Manifest SHA-256 (prefix) |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---|",
         ]
     )
     for split_name in ("train", "val", "test"):
         sp = export_report["splits"][split_name]
         pci = sp["per_class_instances"]
         md_lines.append(
-            f"| `{split_name}` | {sp['images']} | {sp['instances']} | {pci['thrips']} | {pci['whitefly']} | {pci['aphids']} | {sp['small_object_ratio']} | `{sp['manifest_sha256'][:12]}` |"
+            f"| `{split_name}` | {sp['images']} | {sp.get('groups', sp['images'])} | {sp['instances']} | {pci['thrips']} | {pci['whitefly']} | {pci['aphids']} | {sp['small_object_ratio']} | `{sp['manifest_sha256'][:12]}` |"
         )
+    total_groups = sum(v.get("groups", v["images"]) for v in export_report["splits"].values())
     md_lines.append(
-        f"| **Total** | **{total_images}** | **{total_instances}** | **{total_per_class['thrips']}** | **{total_per_class['whitefly']}** | **{total_per_class['aphids']}** | - | - |"
+        f"| **Total** | **{total_images}** | **{total_groups}** | **{total_instances}** | **{total_per_class['thrips']}** | **{total_per_class['whitefly']}** | **{total_per_class['aphids']}** | - | - |"
     )
 
     md_lines.extend(
@@ -1002,9 +1317,12 @@ def write_provenance_reports(
             "",
             f"- **Status**: `{verification_result['status']}`",
             f"- **`data.yaml` portable relative paths (`path` omitted)**: `{verification_result['data_yaml_path_omitted']}`",
+            f"- **Dihedral orientations checked**: `{verification_result.get('dihedral_orientations_checked', 8)}`",
             f"- **Cross-split SHA-256 overlaps**: `{verification_result['cross_split_sha256_overlaps']}`",
-            f"- **Cross-split pHash (<= {max_hamming_distance}) overlaps**: `{verification_result['cross_split_phash_overlaps']}`",
-            f"- **Intra-split SHA-256 / pHash duplicates**: `{verification_result['intra_split_sha256_duplicates']}` / `{verification_result['intra_split_phash_duplicates']}`",
+            f"- **Cross-split 8-dihedral pHash (<= {max_hamming_distance}) overlaps**: `{verification_result['cross_split_phash_overlaps']}`",
+            f"- **Cross-split 8-dihedral group pHash (<= {effective_group_hamming}) overlaps**: `{verification_result.get('cross_split_group_phash_overlaps', 0)}`",
+            f"- **Cross-split Roboflow base-stem overlaps**: `{verification_result.get('cross_split_base_stem_overlaps', 0)}`",
+            f"- **Intra-split SHA-256 / 8-dihedral pHash duplicates**: `{verification_result['intra_split_sha256_duplicates']}` / `{verification_result['intra_split_phash_duplicates']}`",
             f"- **Unpaired files / invalid labels**: `{verification_result['unpaired_files']}` / `{verification_result['invalid_labels']}`",
             f"- **All canonical classes present in every split**: `{verification_result['all_canonical_classes_present_in_all_splits']}`",
         ]
@@ -1052,6 +1370,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     parser.add_argument("--report-dir", type=Path, default=Path("ml/reports"))
     parser.add_argument("--env-file", type=Path, default=Path("ml/.env"))
     parser.add_argument("--max-hamming-distance", type=int, default=2)
+    parser.add_argument("--group-hamming-distance", type=int, default=4)
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--val-ratio", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
@@ -1078,6 +1397,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     records, scan_stats = deduplicate_and_merge_sources(
         source_dirs=source_dirs,
         max_hamming_distance=args.max_hamming_distance,
+        group_hamming_distance=args.group_hamming_distance,
         source_details_out=source_details,
     )
     if not records:
@@ -1098,6 +1418,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         output_dir=args.output_dir,
         max_hamming_distance=args.max_hamming_distance,
         require_all_classes=True,
+        group_hamming_distance=args.group_hamming_distance,
     )
     json_path, md_path = write_provenance_reports(
         report_dir=args.report_dir,
@@ -1111,6 +1432,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         seed=args.seed,
         train_ratio=args.train_ratio,
         val_ratio=args.val_ratio,
+        group_hamming_distance=args.group_hamming_distance,
     )
     return {
         "provenance_json": str(json_path),

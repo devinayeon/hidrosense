@@ -13,12 +13,18 @@ import yaml
 from ml.prepare_dataset import (
     CANONICAL_CLASSES,
     ROBOFLOW_SOURCES,
+    _DihedralHashIndex,
+    _classify_dropped_yolo_line,
+    _clamp01,
     _iter_source_image_label_pairs,
+    _min_dihedral_distance,
     canonicalize_label_name,
+    compute_dihedral_phashes,
     deduplicate_and_merge_sources,
     download_roboflow_sources,
     export_merged_dataset,
     load_env_file,
+    parse_and_sanitize_yolo_line,
     stratified_split_records,
     verify_exported_dataset,
     write_provenance_reports,
@@ -423,3 +429,245 @@ class TestCommittedProvenanceArtifact:
             assert data["splits"][split_name]["images"] > 0
             for cls_name in CANONICAL_CLASSES.values():
                 assert data["splits"][split_name]["per_class_instances"][cls_name] > 0
+
+
+class TestDihedralGroupLeakageAndGuards:
+    @staticmethod
+    def _make_asymmetric_image(seed_idx: int, size: tuple[int, int] = (128, 128)) -> Image.Image:
+        img = Image.new(
+            "RGB",
+            size,
+            color=((seed_idx * 47) % 255, (seed_idx * 97) % 255, (seed_idx * 151) % 255),
+        )
+        draw = ImageDraw.Draw(img)
+        x0 = 10 + (seed_idx * 13) % 50
+        y0 = 10 + (seed_idx * 19) % 50
+        draw.rectangle((x0, y0, x0 + 40, y0 + 35), fill=(255, 255 - (seed_idx * 23) % 200, 30))
+        draw.ellipse((x0 + 15, y0 + 10, x0 + 60, y0 + 55), fill=(20, 40, 240))
+        draw.line((0, 0, size[0], size[1] // 2), fill=(255, 255, 255), width=4)
+        draw.polygon([(8, 110), (35, 95), (25, 122)], fill=(10, 230, 120))
+        return img
+
+    def test_8_dihedral_dedup_catches_all_rotations_and_flips(self, tmp_path: Path) -> None:
+        src1 = tmp_path / "src1"
+        src2 = tmp_path / "src2"
+        for src in (src1, src2):
+            (src / "train" / "images").mkdir(parents=True)
+            (src / "train" / "labels").mkdir(parents=True)
+            (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+
+        base_img = self._make_asymmetric_image(1)
+        base_img.save(src1 / "train" / "images" / "orig.png")
+        (src1 / "train" / "labels" / "orig.txt").write_text("0 0.5 0.5 0.3 0.3\n", encoding="utf-8")
+
+        dihedral_variants = [
+            ("r90", base_img.transpose(Image.Transpose.ROTATE_90)),
+            ("r180", base_img.transpose(Image.Transpose.ROTATE_180)),
+            ("r270", base_img.transpose(Image.Transpose.ROTATE_270)),
+            ("hflip", base_img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)),
+            ("vflip", base_img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)),
+            ("r90_hflip", base_img.transpose(Image.Transpose.ROTATE_90).transpose(Image.Transpose.FLIP_LEFT_RIGHT)),
+            ("r270_hflip", base_img.transpose(Image.Transpose.ROTATE_270).transpose(Image.Transpose.FLIP_LEFT_RIGHT)),
+        ]
+        for idx, (tag, variant) in enumerate(dihedral_variants):
+            target_src = src1 if idx < 3 else src2
+            variant.save(target_src / "train" / "images" / f"var_{tag}.png")
+            (target_src / "train" / "labels" / f"var_{tag}.txt").write_text("0 0.5 0.5 0.3 0.3\n", encoding="utf-8")
+
+        records, stats = deduplicate_and_merge_sources([src1, src2])
+        assert len(records) == 1
+        assert stats["phash_duplicates_removed"] == 7
+        assert stats["duplicates_removed"] == 7
+
+        # Verify symmetric MIH lookup handles median-boundary shifts regardless of insertion order
+        a_phs = (0x0000000000000000, 0x000000000000000F, 0, 0, 0, 0, 0, 0)
+        b_phs = (0x0000000000000001, 0xFFFF000000000000, 0, 0, 0, 0, 0, 0)
+        idx_ab = _DihedralHashIndex(threshold=1)
+        idx_ab.add(a_phs)
+        assert idx_ab.has_match(b_phs) is True
+        idx_ba = _DihedralHashIndex(threshold=1)
+        idx_ba.add(b_phs)
+        assert idx_ba.has_match(a_phs) is True
+
+    def test_group_aware_split_prevents_rescaled_phash4_and_rf_stem_cross_split_leak(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        src = tmp_path / "src"
+        (src / "train" / "images").mkdir(parents=True)
+        (src / "train" / "labels").mkdir(parents=True)
+        (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+
+        # 9 distinct base scenes (3 per canonical class) well separated in 8-dihedral pHash
+        base_seeds = [1, 7, 13, 21, 29, 37, 45, 53, 61]
+        for idx, seed_val in enumerate(base_seeds):
+            img = self._make_asymmetric_image(seed_val)
+            stem = f"scene_{idx}_jpg.rf.base{idx:04d}"
+            img.save(src / "train" / "images" / f"{stem}.png")
+            (src / "train" / "labels" / f"{stem}.txt").write_text(f"{idx % 3} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+
+        # 1) Rescaled/cropped variant of scene_0 with 2 < 8-dihedral pHash <= 4
+        scene0_img = self._make_asymmetric_image(base_seeds[0])
+        scene0_phs = compute_dihedral_phashes(scene0_img)
+        rescaled_variant = None
+        for dx in range(1, 20):
+            cand = scene0_img.crop((dx, 0, 128, 128)).resize((128, 128), Image.Resampling.BILINEAR)
+            dist = _min_dihedral_distance(scene0_phs, compute_dihedral_phashes(cand))
+            if 2 < dist <= 4:
+                rescaled_variant = cand
+                break
+        assert rescaled_variant is not None
+        rescaled_variant.save(src / "train" / "images" / "scene0_rescaled_jpg.rf.var0001.png")
+        (src / "train" / "labels" / "scene0_rescaled_jpg.rf.var0001.txt").write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+
+        # 2) Same .rf. base stem as scene_1 but heavy zoom/crop (pHash > 4)
+        scene1_img = self._make_asymmetric_image(base_seeds[1])
+        scene1_crop = scene1_img.crop((28, 28, 108, 108)).resize((128, 128), Image.Resampling.BILINEAR)
+        assert _min_dihedral_distance(compute_dihedral_phashes(scene1_img), compute_dihedral_phashes(scene1_crop)) > 4
+        scene1_crop.save(src / "train" / "images" / "scene_1_jpg.rf.crop9999.png")
+        (src / "train" / "labels" / "scene_1_jpg.rf.crop9999.txt").write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+
+        # 3) Transitive bridge: orig.rf.111 --(ROTATE_90, d=0)--> orig_rot90.rf.222 --(base_stem)--> orig_rot90.rf.333 (cropped, d>4)
+        bridge_orig = self._make_asymmetric_image(99)
+        bridge_rot90 = bridge_orig.transpose(Image.Transpose.ROTATE_90)
+        bridge_crop = bridge_rot90.crop((28, 28, 108, 108)).resize((128, 128), Image.Resampling.BILINEAR)
+        assert _min_dihedral_distance(compute_dihedral_phashes(bridge_orig), compute_dihedral_phashes(bridge_crop)) > 4
+        bridge_orig.save(src / "train" / "images" / "orig_jpg.rf.111.png")
+        (src / "train" / "labels" / "orig_jpg.rf.111.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        bridge_rot90.save(src / "train" / "images" / "orig_rot90_jpg.rf.222.png")
+        (src / "train" / "labels" / "orig_rot90_jpg.rf.222.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        bridge_crop.save(src / "train" / "images" / "orig_rot90_jpg.rf.333.png")
+        (src / "train" / "labels" / "orig_rot90_jpg.rf.333.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+
+        records, stats = deduplicate_and_merge_sources([src])
+        # orig_rot90.rf.222 is dropped by 8-dihedral hard dedup (d=0), while bridge_crop survives (d>4)
+        # and MUST still share the same group_id as orig.rf.111 via pre-dedup Union-Find!
+        by_stem = {r.image_path.stem: r for r in records}
+        assert "orig_jpg.rf.111" in by_stem
+        assert "orig_rot90_jpg.rf.333" in by_stem
+        assert "orig_rot90_jpg.rf.222" not in by_stem
+        assert by_stem["orig_jpg.rf.111"].group_id == by_stem["orig_rot90_jpg.rf.333"].group_id
+        assert by_stem["scene_0_jpg.rf.base0000"].group_id == by_stem["scene0_rescaled_jpg.rf.var0001"].group_id
+        assert by_stem["scene_1_jpg.rf.base0001"].group_id == by_stem["scene_1_jpg.rf.crop9999"].group_id
+
+        splits = stratified_split_records(records, train_ratio=0.8, val_ratio=0.1, seed=42)
+        for family_stems in (
+            {"orig_jpg.rf.111", "orig_rot90_jpg.rf.333"},
+            {"scene_0_jpg.rf.base0000", "scene0_rescaled_jpg.rf.var0001"},
+            {"scene_1_jpg.rf.base0001", "scene_1_jpg.rf.crop9999"},
+        ):
+            splits_containing = [
+                sp for sp, recs in splits.items() if any(r.image_path.stem in family_stems for r in recs)
+            ]
+            assert len(splits_containing) == 1
+
+        out_dir = tmp_path / "merged"
+        export_merged_dataset(splits, out_dir, stats)
+        exported_names = [p.name for p in (out_dir / "train" / "images").iterdir()]
+        assert any(".rf." in name for name in exported_names)
+
+        verif = verify_exported_dataset(out_dir, require_all_classes=True)
+        assert verif["status"] == "passed"
+        assert verif["cross_split_phash_overlaps"] == 0
+        assert verif["cross_split_group_phash_overlaps"] == 0
+        assert verif["cross_split_base_stem_overlaps"] == 0
+
+    def test_parse_yolo_line_rejects_nan_inf_early_including_polygons_and_class_id(self) -> None:
+        source_map = {0: "thrips", 1: "whitefly", 2: "aphids"}
+        for bad_line in (
+            "0 nan 0.5 0.2 0.2",
+            "0 0.5 inf 0.2 0.2",
+            "0 0.5 -inf 0.2 0.2",
+            "nan 0.5 0.5 0.2 0.2",
+            "inf 0.5 0.5 0.2 0.2",
+            "-inf 0.5 0.5 0.2 0.2",
+            "0 nan 0.1 0.2 0.3 0.4 0.5",
+            "0 0.1 inf 0.2 0.3 0.4 0.5",
+        ):
+            assert parse_and_sanitize_yolo_line(bad_line, source_map) is None
+
+        assert _classify_dropped_yolo_line("nan 0.5 0.5 0.2 0.2", source_map) == ("invalid", None)
+        assert _classify_dropped_yolo_line("inf 0.5 0.5 0.2 0.2", source_map) == ("invalid", None)
+
+        with pytest.raises(ValueError, match="Non-finite"):
+            _clamp01(float("nan"))
+        with pytest.raises(ValueError, match="Non-finite"):
+            _clamp01(float("inf"))
+
+    def test_verify_exported_dataset_catches_rotated_phash4_and_rf_stem_leaks(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        (src / "train" / "images").mkdir(parents=True)
+        (src / "train" / "labels").mkdir(parents=True)
+        (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+
+        for i in range(9):
+            img = self._make_asymmetric_image(i * 7 + 1)
+            img.save(src / "train" / "images" / f"clean_{i}.png")
+            (src / "train" / "labels" / f"clean_{i}.txt").write_text(f"{i % 3} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+
+        records, stats = deduplicate_and_merge_sources([src])
+        splits = stratified_split_records(records, seed=42)
+        out_dir = tmp_path / "merged"
+        export_merged_dataset(splits, out_dir, stats)
+        assert verify_exported_dataset(out_dir, require_all_classes=True)["status"] == "passed"
+
+        train_img_path = next((out_dir / "train" / "images").iterdir())
+        train_lbl_text = (out_dir / "train" / "labels" / f"{train_img_path.stem}.txt").read_text(encoding="utf-8")
+
+        # 1. ROTATE_90 copy of train image in val
+        rot_img = out_dir / "val" / "images" / "leak_rot90.png"
+        rot_lbl = out_dir / "val" / "labels" / "leak_rot90.txt"
+        with Image.open(train_img_path) as im:
+            im.transpose(Image.Transpose.ROTATE_90).save(rot_img)
+        rot_lbl.write_text(train_lbl_text, encoding="utf-8")
+        with pytest.raises(ValueError, match="Cross-split.*pHash"):
+            verify_exported_dataset(out_dir)
+        rot_img.unlink()
+        rot_lbl.unlink()
+
+        # 2. FLIP_LEFT_RIGHT copy of train image in test
+        flip_img = out_dir / "test" / "images" / "leak_hflip.png"
+        flip_lbl = out_dir / "test" / "labels" / "leak_hflip.txt"
+        with Image.open(train_img_path) as im:
+            im.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(flip_img)
+        flip_lbl.write_text(train_lbl_text, encoding="utf-8")
+        with pytest.raises(ValueError, match="Cross-split.*pHash"):
+            verify_exported_dataset(out_dir)
+        flip_img.unlink()
+        flip_lbl.unlink()
+
+        # 3. Rescaled/cropped pHash=3..4 copy of train image in val
+        ph4_img = out_dir / "val" / "images" / "leak_ph4.png"
+        ph4_lbl = out_dir / "val" / "labels" / "leak_ph4.txt"
+        with Image.open(train_img_path) as im:
+            base_phs = compute_dihedral_phashes(im)
+            ph4_cand = None
+            for dx in range(1, 20):
+                cand = im.crop((dx, 0, im.width, im.height)).resize(im.size, Image.Resampling.BILINEAR)
+                dist = _min_dihedral_distance(base_phs, compute_dihedral_phashes(cand))
+                if 2 < dist <= 4:
+                    ph4_cand = cand
+                    break
+            assert ph4_cand is not None
+            ph4_cand.save(ph4_img)
+        ph4_lbl.write_text(train_lbl_text, encoding="utf-8")
+        with pytest.raises(ValueError, match="Cross-split.*4"):
+            verify_exported_dataset(out_dir)
+        ph4_img.unlink()
+        ph4_lbl.unlink()
+
+        # 4. Distinct images sharing Roboflow .rf. base stem across train and val
+        rf_train_img = out_dir / "train" / "images" / "sample_x.rf.aaaa1111.png"
+        rf_train_lbl = out_dir / "train" / "labels" / "sample_x.rf.aaaa1111.txt"
+        rf_val_img = out_dir / "val" / "images" / "sample_x.rf.bbbb2222.png"
+        rf_val_lbl = out_dir / "val" / "labels" / "sample_x.rf.bbbb2222.txt"
+        self._make_asymmetric_image(121).save(rf_train_img)
+        rf_train_lbl.write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        self._make_asymmetric_image(157).save(rf_val_img)
+        rf_val_lbl.write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="Cross-split Roboflow base-stem overlap"):
+            verify_exported_dataset(out_dir)
+        rf_train_img.unlink()
+        rf_train_lbl.unlink()
+        rf_val_img.unlink()
+        rf_val_lbl.unlink()
