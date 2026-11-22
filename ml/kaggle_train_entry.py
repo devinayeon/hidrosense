@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -22,8 +23,8 @@ KAGGLE_DATASET_ID = "adityadwiferdiansyah/hidrosense-lettuce-pests-real"
 def _parse_version_tuple(raw: str) -> tuple[int, int, int]:
     parts: list[int] = []
     for token in raw.split("+")[0].split(".")[:3]:
-        digits = "".join(ch for ch in token if ch.isdigit())
-        parts.append(int(digits) if digits else 0)
+        match = re.match(r"(\d+)", token.strip())
+        parts.append(int(match.group(1)) if match else 0)
     while len(parts) < 3:
         parts.append(0)
     return (parts[0], parts[1], parts[2])

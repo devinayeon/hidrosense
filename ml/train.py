@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -199,10 +200,20 @@ def poll_kaggle_kernel(
             continue
 
         status_text = (proc.stdout or "").strip()
-        upper = status_text.upper()
-        if "COMPLETE" in upper:
+        status_token = ""
+        worker_match = re.search(r"KernelWorkerStatus\.([A-Z_]+)", status_text, re.IGNORECASE)
+        if worker_match:
+            status_token = worker_match.group(1).upper()
+        else:
+            quoted_match = re.search(r'has status\s+"([^"]+)"', status_text, re.IGNORECASE)
+            if quoted_match:
+                status_token = quoted_match.group(1).upper()
+            else:
+                status_token = re.sub(re.escape(kernel_ref), "", status_text, flags=re.IGNORECASE).upper()
+
+        if "COMPLETE" in status_token:
             return status_text
-        if "ERROR" in upper or "CANCEL" in upper:
+        if "ERROR" in status_token or "CANCEL" in status_token:
             raise RuntimeError(f"Kaggle kernel {kernel_ref} failed: {status_text}")
         if time.monotonic() >= deadline:
             raise TimeoutError(

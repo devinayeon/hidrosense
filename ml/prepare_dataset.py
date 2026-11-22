@@ -334,7 +334,7 @@ def parse_and_sanitize_yolo_line(
         return None
     try:
         raw_class_float = float(parts[0])
-        if not math.isfinite(raw_class_float):
+        if not math.isfinite(raw_class_float) or not raw_class_float.is_integer():
             return None
         raw_class_id = int(raw_class_float)
         coords = [float(val) for val in parts[1:]]
@@ -383,23 +383,44 @@ def load_source_class_map(dataset_dir: Path) -> dict[int, str]:
         yaml_path = dataset_dir / yaml_name
         if not yaml_path.exists():
             continue
-        content = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+        raw_content = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+        content = {} if raw_content is None else raw_content
+        if not isinstance(content, dict):
+            raise ValueError(f"Invalid YAML root in {yaml_path}: expected mapping, got {type(content).__name__}")
         names = content.get("names", {})
         if isinstance(names, list):
             return {idx: str(name) for idx, name in enumerate(names)}
         if isinstance(names, dict):
-            return {int(k): str(v) for k, v in names.items()}
+            try:
+                return {int(k): str(v) for k, v in names.items()}
+            except (ValueError, TypeError) as exc:
+                raise ValueError(f"Invalid 'names' keys in {yaml_path}: {names!r}") from exc
+        raise ValueError(f"Invalid 'names' field in {yaml_path}: expected list or dict, got {type(names).__name__}")
     return dict(CANONICAL_CLASSES)
 
 
 def _sanitize_text(text: str, extra_secrets: tuple[str, ...] = ()) -> str:
     sanitized = str(text)
-    candidates = [s.strip() for s in (*extra_secrets, os.environ.get("ROBOFLOW_API_KEY", "")) if s and s.strip()]
+    candidates = [
+        s.strip()
+        for s in (
+            *extra_secrets,
+            os.environ.get("ROBOFLOW_API_KEY", ""),
+            os.environ.get("KAGGLE_KEY", ""),
+            os.environ.get("KAGGLE_API_TOKEN", ""),
+        )
+        if s and s.strip()
+    ]
     for secret in candidates:
         sanitized = sanitized.replace(secret, "[REDACTED]")
     sanitized = re.sub(
-        r"(?i)\b(api_key|roboflow_api_key|access_token|token|secret)\b(\s*[=:]\s*)([^\s&\"'`,;]+)",
-        r"\1\2[REDACTED]",
+        r'(?i)(["\']?\b(?:api_key|roboflow_api_key|access_token|kaggle_key|kaggle_api_token|secret_key|token|secret)\b["\']?\s*[=:]\s*)(?:(["\'])(?:(?!\2).)+\2|([^\s&"\'`,;}]+))',
+        lambda m: f"{m.group(1)}{m.group(2) or ''}[REDACTED]{m.group(2) or ''}",
+        sanitized,
+    )
+    sanitized = re.sub(
+        r'(?i)(["\']?\bAuthorization\b["\']?\s*:\s*["\']?\s*Bearer\s+|(?<!\w)Bearer\s+)([^\s"\'`,;}]+)',
+        r"\1[REDACTED]",
         sanitized,
     )
     return sanitized
@@ -461,7 +482,7 @@ def _classify_dropped_yolo_line(
         return ("invalid", None)
     try:
         raw_class_float = float(parts[0])
-        if not math.isfinite(raw_class_float):
+        if not math.isfinite(raw_class_float) or not raw_class_float.is_integer():
             return ("invalid", None)
         raw_class_id = int(raw_class_float)
     except (ValueError, OverflowError):
@@ -965,23 +986,33 @@ def verify_exported_dataset(
     if not data_yaml_path.is_file():
         raise ValueError(f"Missing data.yaml in {output_dir}")
 
-    yaml_data = yaml.safe_load(data_yaml_path.read_text(encoding="utf-8")) or {}
-    if "path" in yaml_data:
-        violations.append(f"data.yaml must omit 'path' for portable relative resolution, got {yaml_data.get('path')!r}")
-    for split_key in ("train", "val", "test"):
-        expected_rel = f"{split_key}/images"
-        if yaml_data.get(split_key) != expected_rel:
-            violations.append(f"data.yaml {split_key} must be {expected_rel!r}, got {yaml_data.get(split_key)!r}")
-    if yaml_data.get("nc") != len(CANONICAL_CLASSES):
-        violations.append(f"data.yaml nc must be {len(CANONICAL_CLASSES)}, got {yaml_data.get('nc')!r}")
-    raw_names = yaml_data.get("names", {})
-    norm_names = (
-        {int(k): str(v) for k, v in raw_names.items()}
-        if isinstance(raw_names, dict)
-        else {idx: str(v) for idx, v in enumerate(raw_names)}
-    )
-    if norm_names != CANONICAL_CLASSES:
-        violations.append(f"data.yaml names mismatch: {norm_names!r}")
+    raw_yaml = yaml.safe_load(data_yaml_path.read_text(encoding="utf-8"))
+    yaml_data = {} if raw_yaml is None else raw_yaml
+    if not isinstance(yaml_data, dict):
+        violations.append(f"data.yaml must be a YAML mapping, got {type(yaml_data).__name__}")
+    else:
+        if "path" in yaml_data:
+            violations.append(f"data.yaml must omit 'path' for portable relative resolution, got {yaml_data.get('path')!r}")
+        for split_key in ("train", "val", "test"):
+            expected_rel = f"{split_key}/images"
+            if yaml_data.get(split_key) != expected_rel:
+                violations.append(f"data.yaml {split_key} must be {expected_rel!r}, got {yaml_data.get(split_key)!r}")
+        if yaml_data.get("nc") != len(CANONICAL_CLASSES):
+            violations.append(f"data.yaml nc must be {len(CANONICAL_CLASSES)}, got {yaml_data.get('nc')!r}")
+        raw_names = yaml_data.get("names")
+        if isinstance(raw_names, dict):
+            try:
+                norm_names = {int(k): str(v) for k, v in raw_names.items()}
+                if norm_names != CANONICAL_CLASSES:
+                    violations.append(f"data.yaml names mismatch: {norm_names!r}")
+            except (ValueError, TypeError):
+                violations.append(f"data.yaml names has non-integer keys: {raw_names!r}")
+        elif isinstance(raw_names, list):
+            norm_names = {idx: str(v) for idx, v in enumerate(raw_names)}
+            if norm_names != CANONICAL_CLASSES:
+                violations.append(f"data.yaml names mismatch: {norm_names!r}")
+        else:
+            violations.append(f"data.yaml names must be a dict or list, got {type(raw_names).__name__}")
 
     split_sha256: dict[str, set[str]] = {}
     split_dihedral_phashes: dict[str, list[tuple[int, ...]]] = {}

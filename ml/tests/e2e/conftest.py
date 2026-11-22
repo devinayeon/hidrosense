@@ -20,9 +20,10 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "hardcoded_secret_assignment",
         re.compile(
-            rf"""(?im)(?:{_SECRET_KEY_NAMES}[ \t]*[:=][ \t]*(?:"[^\s"]{{8,}}"|'[^\s']{{8,}}')|^[ \t]*(?:[+-]+[ \t]*)?export[ \t]+{_SECRET_KEY_NAMES}[ \t]*=[ \t]*(?!None\b|True\b|False\b)[A-Za-z0-9_\-+/=.]{{8,}}(?=[ \t]*(?:$|#|\r|\n))|^[ \t]*(?:[+-]+[ \t]*)?{_SECRET_KEY_NAMES}[ \t]*[:=][ \t]*(?!None\b|True\b|False\b)(?=[A-Za-z0-9_\-+/=.]*[0-9+/=])[A-Za-z0-9_\-+/=.]{{12,}}(?=[ \t]*(?:$|#|\r|\n)))"""
+            rf"""(?im)(?:["']?{_SECRET_KEY_NAMES}["']?[ \t]*[:=][ \t]*(?:"[^\s"]{{8,}}"|'[^\s']{{8,}}')|^[ \t]*(?:[+-]+[ \t]*)?export[ \t]+{_SECRET_KEY_NAMES}[ \t]*=[ \t]*(?!None\b|True\b|False\b)[A-Za-z0-9_\-+/=.]{{8,}}(?=[ \t]*(?:$|#|\r|\n))|^[ \t]*(?:[+-]+[ \t]*)?{_SECRET_KEY_NAMES}[ \t]*[:=][ \t]*(?!None\b|True\b|False\b)(?=[A-Za-z0-9_\-+/=.]*[0-9+/=])[A-Za-z0-9_\-+/=.]{{12,}}(?=[ \t]*(?:$|#|\r|\n)))"""
         ),
     ),
+    ("bearer_token", re.compile(r"(?i)\bBearer[ \t]+[A-Za-z0-9._\-+/=]{12,}")),
     ("private_key_block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
 )
 

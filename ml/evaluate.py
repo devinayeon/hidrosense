@@ -3,11 +3,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import time
 from typing import Any
 
-from ml.export_tflite import decode_yolov11_output, inspect_tflite_model
+from ml.export_tflite import _default_yolo_anchors, decode_yolov11_output, inspect_tflite_model
 from ml.prepare_dataset import CANONICAL_CLASSES
 
 PROMOTION_GATES: dict[str, tuple[str, float]] = {
@@ -26,11 +27,21 @@ def assert_promotion_ready(metrics: dict[str, float]) -> None:
     if missing:
         raise ValueError(f"Model promotion metrics missing required gates: {missing}")
 
+    invalid = {
+        name: metrics[name]
+        for name in PROMOTION_GATES
+        if isinstance(metrics[name], bool)
+        or not isinstance(metrics[name], (int, float))
+        or not math.isfinite(float(metrics[name]))
+    }
+    if invalid:
+        raise ValueError(f"Model promotion metrics must be finite numbers: {invalid}")
+
     failures = {
         name: metrics[name]
         for name, (direction, threshold) in PROMOTION_GATES.items()
-        if (direction == "min" and metrics[name] < threshold)
-        or (direction == "max" and metrics[name] > threshold)
+        if (direction == "min" and float(metrics[name]) < threshold)
+        or (direction == "max" and float(metrics[name]) > threshold)
     }
     if failures:
         raise ValueError(f"Model failed promotion gates: {failures}")
@@ -155,7 +166,7 @@ def _letterbox_bgr_to_rgb_float(
 
     h0, w0 = img_bgr.shape[:2]
     r = min(target_h / max(1, h0), target_w / max(1, w0))
-    new_w, new_h = int(round(w0 * r)), int(round(h0 * r))
+    new_w, new_h = max(1, int(round(w0 * r))), max(1, int(round(h0 * r)))
     dw, dh = (target_w - new_w) / 2.0, (target_h - new_h) / 2.0
     if (w0, h0) != (new_w, new_h):
         resized = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
@@ -230,6 +241,8 @@ def evaluate_tflite_litert(
 
         if in_detail["dtype"] in {np.int8, np.int16}:
             scale, zp = in_detail["quantization"]
+            if not math.isfinite(float(scale)) or float(scale) == 0.0:
+                raise ValueError(f"Invalid input quantization scale: {scale!r}")
             limits = np.iinfo(in_detail["dtype"])
             tensor_in = np.clip(tensor_in / scale + zp, limits.min, limits.max).astype(in_detail["dtype"])
         else:
@@ -243,6 +256,8 @@ def evaluate_tflite_litert(
 
         if out_detail["dtype"] in {np.int8, np.int16}:
             scale, zp = out_detail["quantization"]
+            if not math.isfinite(float(scale)) or float(scale) == 0.0:
+                raise ValueError(f"Invalid output quantization scale: {scale!r}")
             raw_out = (raw_out.astype(np.float32) - zp) * scale
         else:
             raw_out = raw_out.astype(np.float32)
@@ -321,6 +336,9 @@ def evaluate_tflite_litert(
             }
         )
 
+    if not latencies_ms:
+        raise ValueError(f"All {len(image_files)} test images under {test_img_dir} failed to decode")
+
     metrics.process(plot=False)
     extracted = extract_eval_metrics(metrics)
     metrics.clear_stats()
@@ -353,16 +371,23 @@ def _repo_safe_path(path: Path) -> str:
         return path.name
 
 
-def _sanitize_provenance_strings(obj: Any) -> Any:
+def _assert_no_synthetic_provenance(obj: Any) -> None:
     if isinstance(obj, str):
         if "synthetic" in obj.lower():
-            return obj.replace("synthetic", "non_real").replace("Synthetic", "NonReal")
-        return obj
+            raise ValueError(f"Synthetic provenance string detected: {obj!r}")
+        return
     if isinstance(obj, dict):
-        return {k: _sanitize_provenance_strings(v) for k, v in obj.items()}
+        if obj.get("zero_synthetic_confirmed") is False:
+            raise ValueError("Provenance reports zero_synthetic_confirmed=False")
+        syn_count = obj.get("synthetic_images_count")
+        if isinstance(syn_count, int) and not isinstance(syn_count, bool) and syn_count != 0:
+            raise ValueError(f"Provenance reports non-zero synthetic_images_count: {syn_count}")
+        for val in obj.values():
+            _assert_no_synthetic_provenance(val)
+        return
     if isinstance(obj, list):
-        return [_sanitize_provenance_strings(item) for item in obj]
-    return obj
+        for item in obj:
+            _assert_no_synthetic_provenance(item)
 
 
 def build_provenance_payload(
@@ -438,7 +463,8 @@ def build_provenance_payload(
 
     if not provenance:
         return None
-    return _sanitize_provenance_strings(provenance)
+    _assert_no_synthetic_provenance(provenance)
+    return provenance
 
 
 def _strip_aggregate_metrics(raw_metrics: dict[str, Any]) -> dict[str, float]:
@@ -457,8 +483,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("ml/reports/evaluation_report.json"))
     args = parser.parse_args()
 
-    baseline_raw = dict(evaluate_ultralytics_model(args.baseline, args.data))
-    finetuned_raw = dict(evaluate_ultralytics_model(args.weights, args.data))
+    baseline_raw = dict(evaluate_ultralytics_model(args.baseline, args.data, imgsz=int(args.imgsz)))
+    finetuned_raw = dict(evaluate_ultralytics_model(args.weights, args.data, imgsz=int(args.imgsz)))
     per_class = finetuned_raw.pop("per_class", None)
     baseline_raw.pop("per_class", None)
     baseline_metrics = _strip_aggregate_metrics(baseline_raw)
@@ -469,7 +495,7 @@ def main() -> None:
     tflite_eval: dict[str, Any] | None = None
 
     if args.tflite and args.tflite.exists():
-        tflite_raw = dict(evaluate_ultralytics_model(args.tflite, args.data))
+        tflite_raw = dict(evaluate_ultralytics_model(args.tflite, args.data, imgsz=int(args.imgsz)))
         tflite_ultralytics_per_class = tflite_raw.pop("per_class", None)
         tflite_ultralytics_metrics = _strip_aggregate_metrics(tflite_raw)
 
@@ -490,9 +516,14 @@ def main() -> None:
         else:
             in_shape = [1, int(args.imgsz), int(args.imgsz), 3]
             in_dtype = "float32"
-            out_shape = [1, 4 + len(CANONICAL_CLASSES), 8400]
+            out_shape = [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(int(args.imgsz))]
             out_dtype = "float32"
 
+        if not math.isfinite(finetuned_metrics["map50"]) or not math.isfinite(tflite_ultralytics_metrics["map50"]):
+            raise ValueError(
+                "Non-finite map50 in TFLite drop calculation: "
+                f"finetuned={finetuned_metrics['map50']!r}, tflite={tflite_ultralytics_metrics['map50']!r}"
+            )
         tflite_drop = round(max(0.0, finetuned_metrics["map50"] - tflite_ultralytics_metrics["map50"]), 4)
         tflite_eval = {
             "path": _repo_safe_path(args.tflite),

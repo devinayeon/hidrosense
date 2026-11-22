@@ -5,6 +5,7 @@ import copy
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -36,6 +37,9 @@ def decode_yolov11_output(
     iou_threshold: float = 0.45,
 ) -> list[dict[str, Any]]:
     """Decode anchor-free YOLOv11 output [4 + num_classes, N] or [N, 4 + num_classes]."""
+    if isinstance(img_size, bool) or img_size <= 0:
+        raise ValueError(f"img_size must be a positive integer, got {img_size!r}")
+
     if not tensor_2d or not tensor_2d[0]:
         return []
 
@@ -48,20 +52,30 @@ def decode_yolov11_output(
     else:
         anchors = tensor_2d
 
-    candidates: list[dict[str, Any]] = []
-    scale = float(img_size)
+    valid_rows: list[tuple[float, float, float, float, list[float]]] = []
+    max_coord = 0.0
     for row in anchors:
         if len(row) < expected_channels:
             continue
-        cx, cy, w, h = row[0], row[1], row[2], row[3]
-        scores = row[4:expected_channels]
+        vals = [float(v) for v in row[:expected_channels]]
+        if not all(math.isfinite(v) for v in vals):
+            continue
+        cx, cy, w, h = vals[0], vals[1], vals[2], vals[3]
+        scores = vals[4:expected_channels]
+        max_coord = max(max_coord, cx, cy, w, h)
+        valid_rows.append((cx, cy, w, h, scores))
+
+    is_pixel_coords = max_coord > 1.5
+    scale = float(img_size)
+    candidates: list[dict[str, Any]] = []
+    for cx, cy, w, h, scores in valid_rows:
         best_cls = max(range(num_classes), key=lambda idx: scores[idx])
-        best_score = float(scores[best_cls])
+        best_score = scores[best_cls]
         if best_score < conf_threshold:
             continue
 
-        # Normalize pixel coordinates if exported in [0..img_size] space
-        if cx > 1.5 or cy > 1.5 or w > 1.5 or h > 1.5:
+        # Normalize pixel coordinates consistently across the entire anchor tensor
+        if is_pixel_coords:
             cx, cy, w, h = cx / scale, cy / scale, w / scale, h / scale
 
         x1 = max(0.0, min(1.0, cx - w / 2.0))
@@ -277,6 +291,12 @@ def _export_nhwc_tflite_via_onnx2tf(
     return output_tflite
 
 
+def _default_yolo_anchors(img_size: int) -> int:
+    if img_size >= 32 and img_size % 32 == 0:
+        return sum((img_size // stride) ** 2 for stride in (8, 16, 32))
+    return 8400
+
+
 def build_model_metadata(
     model_version: str,
     img_size: int = 640,
@@ -295,7 +315,7 @@ def build_model_metadata(
         "input_dtype": input_dtype,
         "input_normalization": "0_to_1",
         "letterbox_pad_value": 114,
-        "output_shape": output_shape or [1, 4 + len(CANONICAL_CLASSES), 8400],
+        "output_shape": output_shape or [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(img_size)],
         "confidence_threshold": conf_threshold,
         "iou_threshold": iou_threshold,
         "classes": {str(k): v for k, v in CANONICAL_CLASSES.items()},
@@ -369,7 +389,7 @@ def export_model_to_flutter_assets(
 
     input_shape = [1, img_size, img_size, 3]
     input_dtype = "float32"
-    output_shape = [1, 4 + len(CANONICAL_CLASSES), 8400]
+    output_shape = [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(img_size)]
     if len(raw_bytes) >= 8 and raw_bytes[4:8] == b"TFL3":
         inspected = inspect_tflite_model(target_tflite)
         input_shape = inspected["input_shape"]
