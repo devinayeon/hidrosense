@@ -193,3 +193,110 @@ class TestEvaluationAndExportContracts:
         assert metadata["input_shape"] == [1, 640, 640, 3]
         assert metadata["output_shape"] == [1, 7, 8400]
         assert metadata["classes"] == {"0": "thrips", "1": "whitefly", "2": "aphids"}
+
+
+class TestTrainingAndKaggleContract:
+    def test_training_config_defaults_and_yaml_resolution(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from ultralytics.data.utils import check_det_dataset
+
+        from ml.train import Yolo11TrainingConfig
+
+        cfg = Yolo11TrainingConfig()
+        assert cfg.model == "yolo11n.pt"
+        assert cfg.data == "ml/configs/lettuce_pests.yaml"
+        assert cfg.epochs == 80
+        assert cfg.patience == 20
+        assert cfg.batch == 16
+        assert cfg.imgsz == 640
+        assert cfg.seed == 42
+        assert cfg.optimizer == "AdamW"
+
+        repo_root = Path(__file__).resolve().parents[2]
+        monkeypatch.chdir(repo_root)
+        dataset_yaml = repo_root / "ml" / "configs" / "lettuce_pests.yaml"
+        if (repo_root / "ml" / "data" / "merged_lettuce_pests" / "val" / "images").is_dir():
+            resolved = check_det_dataset(str(dataset_yaml))
+            assert resolved["nc"] == 3
+            assert resolved["names"] == {0: "thrips", 1: "whitefly", 2: "aphids"}
+
+    def test_write_kaggle_kernel_bundle_contract_and_zero_secrets(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from ml.train import write_kaggle_kernel_bundle
+
+        monkeypatch.setenv("ROBOFLOW_API_KEY", "rf_" + "unit_test_sentinel_123456")
+        monkeypatch.setenv("KAGGLE_API_TOKEN", "KGAT_" + "unit_test_sentinel_123456")
+
+        bundle_dir = tmp_path / "kaggle_bundle"
+        meta_path = write_kaggle_kernel_bundle(
+            bundle_dir,
+            kaggle_username="adityadwiferdiansyah",
+            dataset_sources=["adityadwiferdiansyah/hidrosense-lettuce-pests-real"],
+        )
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        assert meta["id"] == "adityadwiferdiansyah/hidrosense-yolov11n-lettuce-pests-training"
+        assert meta["code_file"] == "kaggle_train_entry.py"
+        assert meta["is_private"] is True
+        assert meta["enable_gpu"] is True
+        assert meta["enable_tpu"] is False
+        assert meta["enable_internet"] is True
+        assert meta["dataset_sources"] == ["adityadwiferdiansyah/hidrosense-lettuce-pests-real"]
+
+        staged_entry = bundle_dir / "kaggle_train_entry.py"
+        assert staged_entry.is_file()
+        for file_path in (meta_path, staged_entry):
+            content = file_path.read_text(encoding="utf-8")
+            assert "unit_test_sentinel_123456" not in content
+
+        empty_ds_meta = write_kaggle_kernel_bundle(
+            tmp_path / "kaggle_bundle_empty",
+            kaggle_username="adityadwiferdiansyah",
+            dataset_sources=None,
+        )
+        assert json.loads(empty_ds_meta.read_text(encoding="utf-8"))["dataset_sources"] == []
+
+    def test_kaggle_entry_fails_fast_without_cuda_or_dataset(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        import torch
+
+        from ml import kaggle_train_entry
+
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+        with pytest.raises(RuntimeError, match="CUDA GPU is required"):
+            kaggle_train_entry.ensure_gpu_available()
+
+        monkeypatch.delenv("HIDROSENSE_DATASET_DIR", raising=False)
+        missing_dir = tmp_path / "nonexistent_dataset"
+        with pytest.raises(FileNotFoundError, match="Synthetic fallback is disabled"):
+            kaggle_train_entry.locate_dataset_dir(dataset_dir=missing_dir, allow_local=False)
+
+    def test_build_isolated_dataset_views_oversamples_only_train_thrips(self, tmp_path: Path) -> None:
+        from ml.kaggle_train_entry import build_isolated_dataset_views
+
+        ds = tmp_path / "ds"
+        for split_name, cls_ids in [("train", [0, 1, 2]), ("val", [0, 1]), ("test", [0, 2])]:
+            (ds / split_name / "images").mkdir(parents=True)
+            (ds / split_name / "labels").mkdir(parents=True)
+            for idx, cls_id in enumerate(cls_ids):
+                _make_test_image(
+                    ds / split_name / "images" / f"{split_name}_{idx}.jpg",
+                    (30 + idx * 20, 120, 40),
+                    (10, 10, 80, 80),
+                )
+                (ds / split_name / "labels" / f"{split_name}_{idx}.txt").write_text(
+                    f"{cls_id} 0.5 0.5 0.2 0.2\n",
+                    encoding="utf-8",
+                )
+
+        views = build_isolated_dataset_views(ds, tmp_path / "work", thrips_oversample_factor=4)
+        assert views["thrips_train_images"] == 1
+        assert views["balanced_train_images"] == 6  # 1*4 + 2*1
+        balanced_train_imgs = sorted((tmp_path / "work" / "balanced" / "train" / "images").iterdir())
+        assert len(balanced_train_imgs) == 6
+        assert len(list((tmp_path / "work" / "balanced" / "val" / "images").iterdir())) == 2
+        assert len(list((tmp_path / "work" / "balanced" / "test" / "images").iterdir())) == 2

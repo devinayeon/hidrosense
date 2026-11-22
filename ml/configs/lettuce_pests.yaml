@@ -1,4 +1,4 @@
-path: ../data/merged_lettuce_pests
+path: ml/data/merged_lettuce_pests
 train: train/images
 val: val/images
 test: test/images
