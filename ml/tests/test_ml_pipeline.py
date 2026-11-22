@@ -14,14 +14,20 @@ from ml.prepare_dataset import (
     DatasetRecord,
     BoxAnnotation,
 )
+from ml import evaluate as ml_evaluate
 from ml.evaluate import (
     PROMOTION_GATES,
     assert_promotion_ready,
+    build_provenance_payload,
     compare_baseline_vs_finetuned,
+    evaluate_tflite_litert,
+    extract_eval_metrics,
 )
 from ml.export_tflite import (
     build_model_metadata,
     decode_yolov11_output,
+    export_model_to_flutter_assets,
+    inspect_tflite_model,
 )
 
 
@@ -193,6 +199,183 @@ class TestEvaluationAndExportContracts:
         assert metadata["input_shape"] == [1, 640, 640, 3]
         assert metadata["output_shape"] == [1, 7, 8400]
         assert metadata["classes"] == {"0": "thrips", "1": "whitefly", "2": "aphids"}
+        assert "metrics" not in metadata
+
+    def test_extract_eval_metrics_computes_aggregate_and_per_class(self) -> None:
+        class _FakeBox:
+            mp = 0.88
+            mr = 0.84
+            map50 = 0.89
+            map = 0.58
+            ap_class_index = [0, 2]
+            f1 = [0.72, 0.91]
+
+            def class_result(self, pos: int) -> tuple[float, float, float, float]:
+                rows = [
+                    (0.81, 0.65, 0.72, 0.33),
+                    (0.89, 0.93, 0.96, 0.67),
+                ]
+                return rows[pos]
+
+        class _FakeValRes:
+            box = _FakeBox()
+
+        extracted = extract_eval_metrics(_FakeValRes())
+        assert extracted["aggregate"]["map50"] == pytest.approx(0.89)
+        assert extracted["aggregate"]["f1"] == pytest.approx(2 * 0.88 * 0.84 / (0.88 + 0.84), abs=1e-4)
+        assert extracted["per_class"]["thrips"]["map50"] == pytest.approx(0.72)
+        assert extracted["per_class"]["whitefly"]["map50"] == 0.0
+        assert extracted["per_class"]["aphids"]["recall"] == pytest.approx(0.93)
+
+    def test_build_model_metadata_and_export_with_tflite_syncs_metrics_and_precision(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        sample_metrics = {"map50": 0.8913, "map50_95": 0.5765, "precision": 0.8952, "recall": 0.8566, "f1": 0.8755}
+        meta = build_model_metadata(
+            model_version="yolo11n-fp16-deadbeef",
+            img_size=640,
+            sha256_hex="deadbeef" * 8,
+            input_shape=[1, 640, 640, 3],
+            output_shape=[1, 7, 8400],
+            metrics=sample_metrics,
+        )
+        assert meta["metrics"] == sample_metrics
+
+        real_tflite = Path(__file__).resolve().parents[1] / "artifacts" / "yolo11n_lettuce_pests.tflite"
+        inspected = inspect_tflite_model(real_tflite)
+        assert inspected["input_shape"] == [1, 640, 640, 3]
+        assert inspected["input_dtype"] == "float32"
+        assert inspected["output_shape"] == [1, 7, 8400]
+        assert inspected["size_mb"] <= 6.0
+
+        eval_report_path = tmp_path / "evaluation_report.json"
+        eval_report_path.write_text(json.dumps({"finetuned": sample_metrics}), encoding="utf-8")
+        out_assets = tmp_path / "assets"
+        packaged = export_model_to_flutter_assets(
+            weights_path=None,
+            flutter_assets_dir=out_assets,
+            img_size=640,
+            precision="fp16",
+            tflite_path=real_tflite,
+            evaluation_report_path=eval_report_path,
+        )
+        assert packaged.exists()
+        disk_meta = json.loads((out_assets / "model_metadata.json").read_text(encoding="utf-8"))
+        assert disk_meta["model_version"].startswith("yolo11n-fp16-")
+        assert disk_meta["sha256"] == inspected["sha256"]
+        assert disk_meta["metrics"] == sample_metrics
+
+    def test_evaluate_cli_records_per_class_tflite_eval_and_provenance(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        import sys
+        import yaml
+
+        # Build a minimal 3-image test split so evaluate_tflite_litert runs on real TFLite interpreter
+        ds_dir = tmp_path / "ds"
+        img_dir = ds_dir / "test" / "images"
+        lbl_dir = ds_dir / "test" / "labels"
+        img_dir.mkdir(parents=True)
+        lbl_dir.mkdir(parents=True)
+        for idx in range(3):
+            _make_test_image(img_dir / f"sample_{idx}.jpg", (30 + idx * 30, 120, 40), (20, 20, 90, 90))
+            (lbl_dir / f"sample_{idx}.txt").write_text(f"{idx} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        data_yaml = ds_dir / "data.yaml"
+        data_yaml.write_text(
+            yaml.safe_dump(
+                {
+                    "path": str(ds_dir),
+                    "train": "test/images",
+                    "val": "test/images",
+                    "test": "test/images",
+                    "nc": 3,
+                    "names": {0: "thrips", 1: "whitefly", 2: "aphids"},
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
+
+        real_tflite = Path(__file__).resolve().parents[1] / "artifacts" / "yolo11n_lettuce_pests.tflite"
+        litert_res = evaluate_tflite_litert(real_tflite, data_yaml, imgsz=640)
+        assert litert_res["images_evaluated"] == 3
+        assert litert_res["input_shape"] == [1, 640, 640, 3]
+        assert litert_res["output_shape"] == [1, 7, 8400]
+        assert litert_res["interpreter_verification"]["all_outputs_finite"] is True
+
+        weights_pt = tmp_path / "best.pt"
+        weights_pt.write_bytes(b"\x00" * 1024)
+        base_pt = tmp_path / "base.pt"
+        base_pt.write_bytes(b"\x00" * 1024)
+        kaggle_summary = tmp_path / "m3_summary.json"
+        kaggle_summary.write_text(
+            json.dumps(
+                {
+                    "provenance": {
+                        "enable_gpu": True,
+                        "gpu_count": 2,
+                        "device": "Tesla T4",
+                        "split_leakage": 0,
+                        "total_images": 1576,
+                        "zero_synthetic_confirmed": True,
+                        "synthetic_images_count": 0,
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        ds_prov = tmp_path / "dataset_provenance.json"
+        ds_prov.write_text(
+            json.dumps({"zero_synthetic_confirmed": True, "synthetic_images_count": 0, "sources_probed": []}),
+            encoding="utf-8",
+        )
+        out_json = tmp_path / "eval_report.json"
+
+        def _fake_eval(path: Path, d_yaml: Path, imgsz: int = 640) -> dict[str, Any]:
+            per_cls = {
+                "thrips": {"precision": 0.81, "recall": 0.66, "map50": 0.72, "map50_95": 0.33, "f1": 0.73},
+                "whitefly": {"precision": 0.98, "recall": 0.99, "map50": 0.99, "map50_95": 0.73, "f1": 0.98},
+                "aphids": {"precision": 0.89, "recall": 0.93, "map50": 0.96, "map50_95": 0.67, "f1": 0.91},
+            }
+            if path.suffix == ".tflite":
+                return {"map50": 0.889, "map50_95": 0.54, "precision": 0.89, "recall": 0.85, "f1": 0.87, "per_class": per_cls}
+            if "best" in path.name:
+                return {"map50": 0.891, "map50_95": 0.58, "precision": 0.90, "recall": 0.86, "f1": 0.88, "per_class": per_cls}
+            return {"map50": 0.85, "map50_95": 0.57, "precision": 0.91, "recall": 0.81, "f1": 0.86, "per_class": per_cls}
+
+        monkeypatch.setattr(ml_evaluate, "evaluate_ultralytics_model", _fake_eval)
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "ml.evaluate",
+                "--baseline",
+                str(base_pt),
+                "--weights",
+                str(weights_pt),
+                "--tflite",
+                str(real_tflite),
+                "--data",
+                str(data_yaml),
+                "--kaggle-summary",
+                str(kaggle_summary),
+                "--dataset-provenance",
+                str(ds_prov),
+                "--output",
+                str(out_json),
+            ],
+        )
+        ml_evaluate.main()
+        report = json.loads(out_json.read_text(encoding="utf-8"))
+        assert report["status"] == "PASSED"
+        assert "per_class" not in report["finetuned"]
+        assert set(report["per_class"].keys()) == {"thrips", "whitefly", "aphids"}
+        assert report["tflite_eval"]["tflite_map50_drop"] == pytest.approx(0.002, abs=1e-4)
+        assert report["provenance"]["device"] == "Tesla T4"
+        assert build_provenance_payload(kaggle_summary, ds_prov)["zero_synthetic_confirmed"] is True
 
 
 class TestTrainingAndKaggleContract:

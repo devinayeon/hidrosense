@@ -1,6 +1,6 @@
 {
   "architecture": "yolo11n",
-  "model_version": "yolo11n-fp16-a65a43cf",
+  "model_version": "yolo11n-fp16-cd388bda",
   "input_shape": [
     1,
     640,
@@ -22,12 +22,12 @@
     "1": "whitefly",
     "2": "aphids"
   },
+  "sha256": "cd388bdab9c24490d6d01dd336ef4f2b191f1b66032e23adcf6cf831592b2ab3",
   "metrics": {
-    "map50": 0.982,
-    "map50_95": 0.704,
-    "precision": 0.8708,
-    "recall": 0.9944,
-    "f1": 0.9285
-  },
-  "sha256": "a65a43cf450097e4417e5c59ab0e4e71c17906e0fbd580bb2639175ed368d963"
+    "map50": 0.8913,
+    "map50_95": 0.5765,
+    "precision": 0.8952,
+    "recall": 0.8566,
+    "f1": 0.8755
+  }
 }
