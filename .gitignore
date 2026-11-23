@@ -508,3 +508,5 @@ apps/**/graphify-out/
 PROMPT.md
 PLANS.md
 TASKS.md
+# QA working docs (local only, not pushed)
+mcdocs/
