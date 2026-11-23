@@ -6,7 +6,8 @@ export { idParamSchema, parseInput } from '../../common/validation.js';
 
 const directionSchema = z.enum(['masuk', 'keluar']);
 const reasonSchema = z.string().trim().min(1).max(1000);
-const lineSchema = z.strictObject({
+/** Satu baris barang stok. Dipakai juga oleh perawatan yang memakai obat dari inventaris. */
+export const stockLineSchema = z.strictObject({
   id_inventaris: integerIdSchema,
   jumlah: positiveDecimalSchema,
   satuan: z.string().trim().min(1).max(30),
@@ -14,7 +15,7 @@ const lineSchema = z.strictObject({
 
 export const createStockSchema = z.strictObject({
   jenis_stok: directionSchema,
-  details: z.array(lineSchema).min(1).max(100)
+  details: z.array(stockLineSchema).min(1).max(100)
     .refine((lines) => new Set(lines.map((line) => line.id_inventaris)).size === lines.length)
     .transform((lines) => lines.sort((left, right) => {
       const a = BigInt(left.id_inventaris);
