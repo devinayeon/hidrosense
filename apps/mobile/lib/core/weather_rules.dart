@@ -1,4 +1,5 @@
 import 'formatting.dart';
+import 'fuzzy_weather.dart';
 import '../models/weather_model.dart';
 
 class WeatherRuleEvaluation {
@@ -23,112 +24,134 @@ WeatherRuleEvaluation evaluateWeatherRules({
   final descriptions = weatherDescriptions
       .map((description) => description.toLowerCase())
       .toList(growable: false);
-  final hasRain =
-      descriptions.any((description) => description.contains('hujan')) ||
-      totalRainfallMm >= 0.5;
+  final hasRainText = descriptions.any((description) => description.contains('hujan'));
+  final fuzzy = fuzzifyWeather(
+    maxTemperature: maxTemperature,
+    maxHumidity: maxHumidity,
+    totalRainfallMm: totalRainfallMm,
+    maxWindSpeed: maxWindSpeed,
+    hasRainText: hasRainText,
+  );
 
   final actions = <TindakanRekomendasi>[];
   final highlights = <String>[];
 
-  if (maxTemperature > 32) {
+  /// Tindakan dengan derajat aturan fuzzy. Penting bila derajat ≥ 0,7, bila [canBeImportant].
+  void add({
+    required double degree,
+    required String judul,
+    required String deskripsi,
+    required String alasan,
+    required String highlight,
+    bool canBeImportant = true,
+  }) {
+    final important = canBeImportant && degree >= kImportantDegree;
     actions.add(
-      const TindakanRekomendasi(
-        judul: 'Atur Debit Nutrisi Meja NFT',
-        deskripsi:
-            'Tingkatkan sirkulasi dan debit aliran agar suhu larutan tetap stabil. Cek EC dan pH pada pagi atau sore hari.',
-        alasan: 'Prakiraan suhu melewati ambang 32°C.',
-        labelTag: 'Penting',
-        isPenting: true,
+      TindakanRekomendasi(
+        judul: judul,
+        deskripsi: deskripsi,
+        alasan: '$alasan Derajat risiko ${(degree * 100).round()}%.',
+        labelTag: important ? 'Penting' : 'Rutin',
+        isPenting: important,
+        derajat: degree,
       ),
     );
-    highlights.add('suhu panas hingga $maxTemperature°C');
-  } else if (maxTemperature >= 30) {
-    actions.add(
-      const TindakanRekomendasi(
-        judul: 'Pantau Suhu Larutan',
-        deskripsi:
-            'Catat suhu tandon dan pastikan pompa bekerja stabil saat suhu siang meningkat.',
-        alasan: 'Suhu siang diprakirakan cukup hangat.',
-        labelTag: 'Rutin',
-      ),
-    );
-    highlights.add('suhu siang hingga $maxTemperature°C');
+    highlights.add(highlight);
   }
 
-  if (hasRain) {
+  if (fuzzy.hot >= kImportantDegree) {
+    add(
+      degree: fuzzy.hot,
+      judul: 'Atur Debit Nutrisi Meja NFT',
+      deskripsi:
+          'Tingkatkan sirkulasi dan debit aliran agar suhu larutan tetap stabil. Cek EC dan pH pada pagi atau sore hari.',
+      alasan: 'Prakiraan suhu hingga $maxTemperature°C.',
+      highlight: 'suhu panas hingga $maxTemperature°C',
+    );
+  } else if ((fuzzy.hot > fuzzy.warm ? fuzzy.hot : fuzzy.warm) >= kRelevantDegree) {
+    add(
+      degree: fuzzy.hot > fuzzy.warm ? fuzzy.hot : fuzzy.warm,
+      judul: 'Pantau Suhu Larutan',
+      deskripsi: 'Catat suhu tandon dan pastikan pompa bekerja stabil saat suhu siang meningkat.',
+      alasan: 'Suhu siang diprakirakan cukup hangat.',
+      highlight: 'suhu siang hingga $maxTemperature°C',
+      canBeImportant: false,
+    );
+  }
+
+  if (fuzzy.rain >= kRelevantDegree) {
     final rainDescription = descriptions.firstWhere(
       (description) => description.contains('hujan'),
       orElse: () => 'hujan',
     );
-    actions.add(
-      TindakanRekomendasi(
-        judul: 'Lindungi Instalasi & Sesuaikan Nutrisi',
-        deskripsi:
-            'Tutup tandon, pastikan drainase lancar, dan jaga EC larutan pada 1.2–1.4 mS/cm agar tidak terdilusi air hujan.',
-        alasan:
-            'BMKG memprakirakan $rainDescription dengan akumulasi ${formatAngka(totalRainfallMm)} mm.',
-        labelTag: 'Penting',
-        isPenting: true,
-      ),
-    );
-    highlights.add('peluang hujan ${formatAngka(totalRainfallMm)} mm');
-  }
-
-  if (maxHumidity >= 85) {
-    actions.add(
-      TindakanRekomendasi(
-        judul: 'Waspadai Jamur Daun',
-        deskripsi:
-            'Lakukan inspeksi daun dan atur ventilasi greenhouse. Semprot pencegahan hanya bila gejala jamur terlihat.',
-        alasan: 'Kelembapan udara mencapai $maxHumidity%.',
-        labelTag: 'Penting',
-        isPenting: true,
-      ),
-    );
-    highlights.add('kelembapan tinggi hingga $maxHumidity%');
-  }
-
-  if (maxWindSpeed >= 20) {
-    actions.add(
-      TindakanRekomendasi(
-        judul: 'Periksa Rangka & Naungan',
-        deskripsi:
-            'Pastikan rangka meja, naungan, dan penutup greenhouse terpasang kokoh.',
-        alasan: 'Kecepatan angin diprakirakan hingga $maxWindSpeed km/jam.',
-        labelTag: 'Rutin',
-      ),
-    );
-    highlights.add('angin hingga $maxWindSpeed km/jam');
-  }
-
-  final isStable = actions.isEmpty;
-  if (isStable) {
-    actions.add(
-      const TindakanRekomendasi(
-        judul: 'Lanjutkan Perawatan Rutin',
-        deskripsi:
-            'Cek EC dan pH larutan pada pagi hari serta bersihkan area tanam dari sisa daun.',
-        alasan:
-            'Kondisi cuaca relatif stabil tanpa peringatan suhu, hujan, atau angin ekstrem.',
-        labelTag: 'Rutin',
-      ),
+    add(
+      degree: fuzzy.rain,
+      judul: 'Lindungi Instalasi & Sesuaikan Nutrisi',
+      deskripsi:
+          'Tutup tandon, pastikan drainase lancar, dan jaga EC larutan pada 1.2–1.4 mS/cm agar tidak terdilusi air hujan.',
+      alasan: 'BMKG memprakirakan $rainDescription dengan akumulasi ${formatAngka(totalRainfallMm)} mm.',
+      highlight: 'peluang hujan ${formatAngka(totalRainfallMm)} mm',
     );
   }
 
-  if (isStable) {
+  if (fuzzy.fungal >= kRelevantDegree) {
+    add(
+      degree: fuzzy.fungal,
+      judul: 'Waspadai Jamur Daun',
+      deskripsi:
+          'Lakukan inspeksi daun dan atur ventilasi greenhouse. Semprot pencegahan hanya bila gejala jamur terlihat.',
+      alasan: fuzzy.humid >= fuzzy.fungal
+          ? 'Kelembapan udara mencapai $maxHumidity%.'
+          : 'Udara lembap ($maxHumidity%) bersamaan dengan hujan.',
+      highlight: 'kelembapan tinggi hingga $maxHumidity%',
+    );
+  }
+
+  if (fuzzy.windy >= kRelevantDegree) {
+    add(
+      degree: fuzzy.windy,
+      judul: 'Periksa Rangka & Naungan',
+      deskripsi: 'Pastikan rangka meja, naungan, dan penutup greenhouse terpasang kokoh.',
+      alasan: 'Kecepatan angin diprakirakan hingga $maxWindSpeed km/jam.',
+      highlight: 'angin hingga $maxWindSpeed km/jam',
+      canBeImportant: false,
+    );
+  }
+
+  if (fuzzy.pestPressure >= kRelevantDegree) {
+    add(
+      degree: fuzzy.pestPressure,
+      judul: 'Tingkatkan Pemantauan Hama',
+      deskripsi:
+          'Periksa sisi bawah daun dan pucuk. Foto tanaman yang mencurigakan lewat menu Foto tanaman untuk saran rotasi obat.',
+      alasan: 'Cuaca hangat dan kering mendukung perkembangan thrips, kutu kebul, dan kutu daun.',
+      highlight: 'cuaca hangat dan kering yang disukai hama',
+      canBeImportant: false,
+    );
+  }
+
+  if (actions.isEmpty) {
     return WeatherRuleEvaluation(
-      summary:
-          'Cuaca relatif stabil. Waktu yang baik untuk inspeksi dan perawatan rutin.',
-      actions: List<TindakanRekomendasi>.unmodifiable(actions),
+      summary: 'Cuaca relatif stabil. Waktu yang baik untuk inspeksi dan perawatan rutin.',
+      actions: List<TindakanRekomendasi>.unmodifiable(const [
+        TindakanRekomendasi(
+          judul: 'Lanjutkan Perawatan Rutin',
+          deskripsi: 'Cek EC dan pH larutan pada pagi hari serta bersihkan area tanam dari sisa daun.',
+          alasan: 'Kondisi cuaca relatif stabil tanpa peringatan suhu, hujan, atau angin ekstrem.',
+          labelTag: 'Rutin',
+        ),
+      ]),
     );
   }
 
-  final hasImportant = actions.any((action) => action.isPenting);
+  // Urut menurut derajat: yang paling yakin dan paling mendesak di atas.
+  final ordered = [...actions]..sort((a, b) => (b.derajat ?? 0).compareTo(a.derajat ?? 0));
+  final hasImportant = ordered.any((action) => action.isPenting);
   return WeatherRuleEvaluation(
     summary:
         'Perhatikan ${_joinIndo(highlights)}. '
         '${hasImportant ? 'Utamakan tindakan berlabel Penting lebih dahulu.' : 'Lanjutkan perawatan rutin seperti biasa.'}',
-    actions: List<TindakanRekomendasi>.unmodifiable(actions),
+    actions: List<TindakanRekomendasi>.unmodifiable(ordered),
   );
 }
 
