@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../models/weather_model.dart';
-import '../../viewmodels/weather_viewmodel.dart' show notifyTodayAdvice;
 import 'bmkg_weather_service.dart';
 import 'weather_notification_service.dart';
 

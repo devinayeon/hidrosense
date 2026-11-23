@@ -1,11 +1,9 @@
 import type { Transaction } from '@libsql/client';
+import { requireCloudinary, scanFolder } from '../../common/cloudinary.js';
 import { ApiError } from '../../common/errors.js';
 import type { AppConfig } from '../../config.js';
 import type { CreateScanInput } from './contracts.js';
 import { getScan, insertScan } from './store.js';
-
-/** Folder unggah per pengguna. Sama dengan folder yang ditandatangani `POST /unggahan/tanda-tangan`. */
-export const scanFolder = (actorId: string) => `hidrosense/pindai/${actorId}`;
 
 /**
  * Hanya foto di folder pindai milik pengguna sendiri, pada akun Cloudinary aplikasi, yang diterima.
@@ -17,9 +15,7 @@ export function assertOwnCloudinaryPhoto(
   actorId: string,
   config: AppConfig,
 ) {
-  if (!config.cloudinary) {
-    throw new ApiError(503, 'UPLOAD_NOT_CONFIGURED', 'Layanan unggah foto belum dikonfigurasi.');
-  }
+  const { cloudName } = requireCloudinary(config);
   const invalid = () => new ApiError(400, 'VALIDATION_ERROR', 'Alamat foto harus berasal dari folder pindai milik akun ini.');
   let url: URL;
   try {
@@ -29,13 +25,12 @@ export function assertOwnCloudinaryPhoto(
   }
   // Bentuk secure_url hasil unggah bertanda tangan: /<cloud>/image/upload/v<versi>/<folder>/<berkas>.
   // Cloud name dan id pengguna hanya huruf, angka, '_' atau '-', jadi aman dipakai dalam pola.
-  const pattern = new RegExp(
-    `^/${config.cloudinary.cloudName}/image/upload/(v[0-9]+/)?${scanFolder(actorId)}/[A-Za-z0-9_.-]+$`,
-  );
+  const fileInFolder = `${scanFolder(actorId)}/[A-Za-z0-9_.-]+$`;
+  const pattern = new RegExp(`^/${cloudName}/image/upload/(v[0-9]+/)?${fileInFolder}`);
   if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.search !== '' || !pattern.test(url.pathname)) {
     throw invalid();
   }
-  if (publicId !== null && !new RegExp(`^${scanFolder(actorId)}/[A-Za-z0-9_.-]+$`).test(publicId)) throw invalid();
+  if (publicId !== null && !new RegExp(`^${fileInFolder}`).test(publicId)) throw invalid();
 }
 
 export async function createScan(tx: Transaction, actorId: string, input: CreateScanInput, config: AppConfig, now: number) {

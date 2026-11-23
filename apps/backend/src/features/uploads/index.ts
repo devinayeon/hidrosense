@@ -1,10 +1,9 @@
 import type { Client } from '@libsql/client';
 import type { FastifyInstance } from 'fastify';
 import { requirePermission } from '../../common/authorization.js';
-import { ApiError } from '../../common/errors.js';
+import { requireCloudinary, scanFolder } from '../../common/cloudinary.js';
 import { emptyQuerySchema, parseInput } from '../../common/validation.js';
 import type { AppConfig } from '../../config.js';
-import { scanFolder } from '../scans/service.js';
 import { signCloudinaryParams } from './signature.js';
 
 /**
@@ -23,10 +22,7 @@ export function registerUploads(
     { preHandler: requirePermission(db, 'deteksi:write', clock) },
     async (request) => {
       parseInput(emptyQuerySchema, request.query);
-      const cloudinary = config.cloudinary;
-      if (!cloudinary) {
-        throw new ApiError(503, 'UPLOAD_NOT_CONFIGURED', 'Layanan unggah foto belum dikonfigurasi.');
-      }
+      const cloudinary = requireCloudinary(config);
       const timestamp = Math.floor(clock() / 1000);
       const folder = scanFolder(request.principal!.id_user);
       return {

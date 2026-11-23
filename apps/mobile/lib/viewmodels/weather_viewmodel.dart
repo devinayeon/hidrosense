@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/bmkg_weather_service.dart';
-import '../core/weather_notice.dart';
 import '../data/services/weather_notification_service.dart';
 import '../models/weather_model.dart';
 
@@ -82,14 +81,6 @@ class WeatherViewModel extends StateNotifier<WeatherState> {
 
 /// Notifikasi saran cuaca (S6: tindakan cuaca hanya berupa notifikasi, tidak disimpan).
 final weatherNoticeSinkProvider = Provider<WeatherNoticeSink>((ref) => LocalWeatherNotifier());
-
-/// Kirim saran hari ini sebagai notifikasi. Hanya tindakan yang dipicu cuaca yang dikirim.
-/// Dipakai saat aplikasi memuat cuaca dan oleh tugas latar (`weather_background.dart`).
-Future<void> notifyTodayAdvice(WeatherData data, WeatherNoticeSink sink, DateTime now) async {
-  if (data.prakiraanHarian.isEmpty) return;
-  final notice = buildWeatherNotice(data.prakiraanHarian.first, now);
-  if (notice != null) await sink.deliver(notice);
-}
 
 final weatherViewModelProvider =
     StateNotifierProvider.autoDispose<WeatherViewModel, WeatherState>((ref) {

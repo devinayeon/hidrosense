@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/weather_notice.dart';
+import '../../models/weather_model.dart';
 import 'notification_permission_service.dart';
 
 /// Tujuan pengiriman notifikasi saran cuaca. Diganti di tes.
@@ -53,4 +54,12 @@ class LocalWeatherNotifier implements WeatherNoticeSink {
       debugPrint('Notifikasi cuaca gagal: $error');
     }
   }
+}
+
+/// Kirim saran hari ini sebagai notifikasi. Hanya tindakan yang dipicu cuaca yang dikirim.
+/// Dipakai saat aplikasi memuat cuaca dan oleh tugas latar (`weather_background.dart`).
+Future<void> notifyTodayAdvice(WeatherData data, WeatherNoticeSink sink, DateTime now) async {
+  if (data.prakiraanHarian.isEmpty) return;
+  final notice = buildWeatherNotice(data.prakiraanHarian.first, now);
+  if (notice != null) await sink.deliver(notice);
 }

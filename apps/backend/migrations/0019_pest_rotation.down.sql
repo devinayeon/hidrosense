@@ -35,3 +35,9 @@ CREATE TABLE rekomendasi_perawatan (
   FOREIGN KEY (id_hasil_deteksi) REFERENCES hasil_deteksi (id_hasil_deteksi) ON UPDATE NO ACTION ON DELETE NO ACTION,
   FOREIGN KEY (id_obat) REFERENCES obat (id_obat) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+
+CREATE INDEX idx_hasil_deteksi_id_pemindahan ON hasil_deteksi (id_pemindahan);
+
+CREATE INDEX idx_rekomendasi_perawatan_id_hasil_deteksi ON rekomendasi_perawatan (id_hasil_deteksi);
+
+CREATE INDEX idx_rekomendasi_perawatan_id_obat ON rekomendasi_perawatan (id_obat);

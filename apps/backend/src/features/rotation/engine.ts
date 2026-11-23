@@ -40,7 +40,7 @@ export interface RotationInput {
   katalog: readonly Obat[];
   /** Tindakan nyata pada meja ini, urutan bebas. */
   riwayat: readonly Aplikasi[];
-  /** Id obat yang baru ditolak pada meja ini karena tidak tersedia atau harga (R4). */
+  /** Id obat yang baru ditolak di meja mana pun karena tidak tersedia atau harga (R4): ketersediaan dan harga berlaku untuk seluruh kebun. */
   dikecualikan?: readonly string[];
 }
 
@@ -87,14 +87,14 @@ export function recommendRotation(input: RotationInput): RotationResult | null {
   const pick = (obat: Obat | undefined, rule_id: RotationResult['rule_id'], lead: string) =>
     obat ? { obat, rule_id, alasan: `${lead} ${notes}`, moa_dihindari: avoided } : null;
 
-  const of = (list: readonly Obat[], ...jenis: Jenis[]) => list.filter((o) => jenis.includes(o.jenis));
+  const ofJenis = (list: readonly Obat[], ...jenis: Jenis[]) => list.filter((o) => jenis.includes(o.jenis));
 
   const primary = input.tingkat === 'ringan'
-    ? pick(best(of(allowed, 'mekanis', 'hayati', 'nabati')), 'ROT-PHT', 'Serangan ringan: pilih cara paling ringan dahulu (PHT).')
+    ? pick(best(ofJenis(allowed, 'mekanis', 'hayati', 'nabati')), 'ROT-PHT', 'Serangan ringan: pilih cara paling ringan dahulu (PHT).')
     : input.tingkat === 'sedang'
-      ? pick(best(of(allowed, 'hayati', 'nabati')), 'ROT-PHT', 'Serangan sedang: utamakan agen hayati atau nabati (PHT).')
-        ?? pick(best(of(allowed, 'kimia')), 'ROT-MOA', 'Serangan sedang tanpa opsi hayati: pilih kelompok MoA yang berbeda.')
-      : pick(best(of(allowed, 'kimia')), 'ROT-MOA', 'Serangan berat: pilih kelompok MoA yang berbeda untuk menekan resistensi.');
+      ? pick(best(ofJenis(allowed, 'hayati', 'nabati')), 'ROT-PHT', 'Serangan sedang: utamakan agen hayati atau nabati (PHT).')
+        ?? pick(best(ofJenis(allowed, 'kimia')), 'ROT-MOA', 'Serangan sedang tanpa opsi hayati: pilih kelompok MoA yang berbeda.')
+      : pick(best(ofJenis(allowed, 'kimia')), 'ROT-MOA', 'Serangan berat: pilih kelompok MoA yang berbeda untuk menekan resistensi.');
   if (primary) return primary;
 
   // R5: jangan pernah mengulang MoA terblokir. Pakai opsi lolos mana pun, lalu abaikan pengecualian R4.
