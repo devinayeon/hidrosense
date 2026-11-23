@@ -3,14 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
+import '../../../viewmodels/connected_inventory_viewmodel.dart';
+import '../../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../../viewmodels/session_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
+import '../connected/v2_beranda_notifikasi.dart';
 import '../connected/v2_cuaca_connected.dart';
 import '../connected/v2_inventaris_connected.dart';
 import '../connected/v2_rawat_connected.dart';
 import '../connected/v2_tanam_connected.dart';
 import 'v2_beranda_page.dart';
+import 'v2_notifications_page.dart';
 
 /// Beranda v2 yang diisi data nyata (frame 2.1–2.6).
 ///
@@ -38,6 +43,15 @@ class V2BerandaConnectedPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(v2BerandaDataProvider);
     final syncItems = ref.watch(v2SyncQueueProvider);
+    // Provider inventaris/penyemaian melempar saat belum ada sesi; jaga agar
+    // transisi keluar akun tidak membangun notifikasi dari sesi kosong.
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    final notifikasi = user == null
+        ? const <V2NotificationGroup>[]
+        : v2BerandaNotifikasi(
+            nursery: ref.watch(connectedNurseryProvider).records,
+            inventaris: ref.watch(connectedInventoryProvider).activeRecords,
+          );
     final gagal = syncItems
         .where((item) => item.status == SyncQueueStatus.gagal)
         .length;
@@ -77,6 +91,12 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       rawatTab: const V2RawatConnectedTab(),
       onOpenWeather: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
+      onOpenNotifications: () => Navigator.of(context).push(
+        V2NotificationsPage.route(
+          groups: notifikasi,
+          onMarkAllRead: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       syncLabel: syncItems.isEmpty
           ? 'Terakhir 09.40'
           : '${syncItems.length} data menunggu',

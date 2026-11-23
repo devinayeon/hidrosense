@@ -338,13 +338,15 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     _notice('Tab ${index + 1} alur v2 belum tersedia di halaman ini.');
   }
 
-  /// Membuka tab Stok dengan saringan Benih + Menipis, sama seperti daftar yang
-  /// dihitung kartu "stok menipis" di Beranda.
+  /// Membuka tab Stok dengan saringan "Menipis" untuk semua jenis, sama dengan
+  /// cakupan angka kartu "Stok menipis" di Beranda.
   void _openLowStock() {
     widget.onLowStock?.call();
     setState(() {
       _activeTab = v2StokTabIndex;
-      _stokJenis = V2JenisBarang.benih;
+      // Semua jenis: kartu menghitung lintas jenis, jadi daftarnya pun begitu
+      // supaya angka kartu sama dengan jumlah baris yang muncul (BUG-06).
+      _stokJenis = null;
       _stokStatus = 1;
       _stokPermintaan++;
     });

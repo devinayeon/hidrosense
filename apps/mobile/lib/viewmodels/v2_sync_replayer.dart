@@ -184,16 +184,6 @@ class V2SyncReplayer {
       );
       try {
         await sender.send(item);
-        await queue.remove(item.key);
-        sent++;
-        onProgress?.call(
-          V2SyncProgress(
-            current: current,
-            total: total,
-            item: item,
-            stage: V2SyncProgressStage.terkirim,
-          ),
-        );
       } catch (error) {
         if (error is V2SyncConflictException) {
           await queue.markConflict(item.key, error.message);
@@ -228,6 +218,25 @@ class V2SyncReplayer {
             ),
           );
         }
+        continue;
+      }
+      // Server sudah menerima baris ini; nasibnya tidak lagi bergantung pada
+      // pembersihan antrean. Kegagalan `remove` (mis. I/O SQLite sesaat) tidak
+      // boleh menandai baris gagal (BUG-07): kunci idempoten membuat kiriman
+      // ulang aman, jadi biarkan baris di antrean untuk putaran berikutnya.
+      sent++;
+      onProgress?.call(
+        V2SyncProgress(
+          current: current,
+          total: total,
+          item: item,
+          stage: V2SyncProgressStage.terkirim,
+        ),
+      );
+      try {
+        await queue.remove(item.key);
+      } catch (_) {
+        // Diabaikan dengan sengaja; lihat catatan di atas.
       }
     }
     return V2SyncRun(

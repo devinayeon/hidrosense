@@ -612,13 +612,13 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     );
   }
 
-  /// Aksi baris 11.7: bentrok versi membuka 11.8, penjualan ditolak membuka
-  /// form perbaikan, dan baris Rusak memakai contoh dialog desain.
+  /// Aksi baris 11.7: hanya baris yang benar-benar bentrok versi membuka dialog
+  /// 11.8, dan baris penjualan yang ditolak membuka form perbaikan 11.9.
+  /// Baris gagal lain (mis. rusak tanpa bentrok) tidak punya aksi dari HP.
   VoidCallback? _actionFor(V2SinkronItem item) {
     if (item.konflik) return () => _showConflict(item);
     return switch (item.jenis) {
       V2SinkronJenis.penjualan => () => _openFix(item),
-      V2SinkronJenis.rusak => () => _showConflict(item),
       _ => null,
     };
   }
