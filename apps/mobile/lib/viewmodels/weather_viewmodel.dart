@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/bmkg_weather_service.dart';
+import '../data/services/weather_notification_service.dart';
 import '../models/weather_model.dart';
 
 class WeatherState {
@@ -35,13 +38,16 @@ final bmkgWeatherServiceProvider = Provider.autoDispose<BmkgWeatherService>((
 });
 
 class WeatherViewModel extends StateNotifier<WeatherState> {
-  WeatherViewModel({WeatherLoader? loader, bool autoLoad = true})
+  WeatherViewModel({WeatherLoader? loader, bool autoLoad = true, this.onLoaded})
     : super(const WeatherState()) {
     _loader = loader;
     if (autoLoad) fetchWeatherData();
   }
 
   late final WeatherLoader? _loader;
+
+  /// Dipanggil setiap kali cuaca berhasil dimuat, mis. untuk notifikasi saran harian.
+  final void Function(WeatherData data)? onLoaded;
   int _requestGeneration = 0;
 
   Future<void> fetchWeatherData() async {
@@ -53,6 +59,7 @@ class WeatherViewModel extends StateNotifier<WeatherState> {
       final data = await (_loader ?? service!.fetchWeather)();
       if (!mounted || generation != _requestGeneration) return;
       state = WeatherState(data: data, isLoading: false);
+      onLoaded?.call(data);
     } catch (_) {
       if (!mounted || generation != _requestGeneration) return;
       state = state.copyWith(
@@ -72,8 +79,15 @@ class WeatherViewModel extends StateNotifier<WeatherState> {
   }
 }
 
+/// Notifikasi saran cuaca (S6: tindakan cuaca hanya berupa notifikasi, tidak disimpan).
+final weatherNoticeSinkProvider = Provider<WeatherNoticeSink>((ref) => LocalWeatherNotifier());
+
 final weatherViewModelProvider =
     StateNotifierProvider.autoDispose<WeatherViewModel, WeatherState>((ref) {
       final service = ref.watch(bmkgWeatherServiceProvider);
-      return WeatherViewModel(loader: service.fetchWeather);
+      final sink = ref.watch(weatherNoticeSinkProvider);
+      return WeatherViewModel(
+        loader: service.fetchWeather,
+        onLoaded: (data) => unawaited(notifyTodayAdvice(data, sink, DateTime.now())),
+      );
     });

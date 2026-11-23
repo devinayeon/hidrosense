@@ -215,6 +215,52 @@ Izin: `penjualan:read`, `penjualan:write`. Hanya petani.
 
 `total_harga` = berat × harga. Kesalahan: `409 SALE_EXCEEDS_HARVEST_STOCK`, `409 HARVEST_NOT_SELLABLE`, `400 INVALID_SALE_DATE`.
 
+## Pindaian hama
+
+Izin: `deteksi:read`, `deteksi:write` (hanya petani). Satu baris per **foto**; hitungan per kelas ada di `deteksi`. Foto harus berada di folder pindai milik akun itu sendiri: `https://res.cloudinary.com/<cloud_name>/image/upload/v<versi>/hidrosense/pindai/<id_user>/<berkas>`, dan `cloudinary_public_id` (bila dikirim) berawalan `hidrosense/pindai/<id_user>/`. Tanpa konfigurasi Cloudinary dibalas `503 UPLOAD_NOT_CONFIGURED`.
+
+| Endpoint | Body atau query |
+|---|---|
+| `POST /pindaian` | `id_pemindahan`, `gambar`, `cloudinary_public_id?`, `versi_model`, `deteksi` (paling banyak 3: `hama`, `jumlah`, `confidence_maks?`; daftar kosong = tidak ada hama) |
+| `GET /pindaian`, `GET /pindaian/:id` | Query daftar: `id_pemindahan`, `page`, `limit` |
+
+Kesalahan: `422 TRANSFER_NOT_FOUND`, `404 DETECTION_NOT_FOUND`.
+
+## Rekomendasi rotasi obat
+
+Izin: `rekomendasi:read` (baca), `deteksi:write` (membuat), `rekomendasi:decide` (terima/tolak; menerima juga butuh `perawatan:write`). Hanya petani. Penulisan memakai `Idempotency-Key`.
+
+Rekomendasi dibuat per **meja** dan hama. Yang dirotasi adalah kelompok mode of action (MoA, skema IRAC), bukan nama produk: dua produk dengan MoA sama dianggap pilihan yang sama. Aturan mesin (forward chaining):
+
+- `ringan`: cara paling ringan dulu (mekanis, hayati, nabati).
+- `sedang`: agen hayati atau nabati dulu; bila tidak ada, kimia dengan MoA berbeda.
+- `berat`: kimia dengan MoA yang tidak dipakai pada 2 `perawatan` ber-MoA terakhir di meja itu. Semua hama dihitung, karena satu semprotan mengenai semuanya. Cara tanpa MoA (perangkap, buang daun) tidak menggeser jendela itu.
+- Obat yang ditolak dengan alasan `tidak_tersedia` atau `harga` dalam 30 hari terakhir, di meja mana pun, tidak disarankan lagi.
+- Tidak ada pilihan yang lolos: opsi lain yang aman (`ROT-FALLBACK`), tanpa mengulang MoA terblokir.
+
+| Endpoint | Body atau query |
+|---|---|
+| `POST /rekomendasi-obat` | `id_meja`, `hama` (`thrips`, `whitefly`, `aphids`), `tingkat` (`ringan`, `sedang`, `berat`), `id_hasil_deteksi?` (harus dari meja yang sama). `201` baru. `200` bila sudah ada saran menunggu untuk meja dan hama itu: dengan `tingkat` dan foto yang sama saran dikembalikan apa adanya (`replayed: true`); bila berbeda saran itu dihitung ulang (`replayed: false`) |
+| `GET /rekomendasi-obat`, `GET /rekomendasi-obat/:id` | Query daftar: `status` (`menunggu`, `diterima`, `ditolak`), `id_meja`, `hama`, `page`, `limit` |
+| `POST /rekomendasi-obat/:id/terima` | `tanggal_aplikasi?` (bawaan hari ini, tidak boleh di masa depan), `catatan?`, `bahan?` (1 sampai 5 baris unik `id_inventaris`, `jumlah`, `satuan`; butuh `inventaris:write`). Membuat `perawatan` (tindakan nyata) yang menjadi riwayat rotasi, dan memotong stok bahan dalam transaksi yang sama. Stok kurang (`409 INSUFFICIENT_STOCK`) atau satuan salah (`422 UNIT_MISMATCH`) membatalkan seluruh penerimaan. Respons memuat `bahan_terpakai` |
+| `POST /rekomendasi-obat/:id/tolak` | `alasan` (`tidak_tersedia`, `harga`, `sudah_ditangani`, `tidak_yakin_hama`, `lainnya`), `catatan?` (wajib bila `lainnya`, paling panjang 500). Penolakan bukan tindakan dan tidak memblokir MoA |
+
+Status berubah satu arah dan dijaga trigger database: yang sudah `diterima` atau `ditolak` tidak bisa diubah atau dihapus. Mengulang keputusan yang sama (termasuk catatan dan tanggal yang dikirim) dibalas `200` dengan `replayed: true`; keputusan atau isi berbeda dibalas `409 RECOMMENDATION_ALREADY_DECIDED`.
+
+Setiap rekomendasi memuat `obat.sumber`, `obat.terverifikasi`, `obat.phi_hari` dan `obat.phi_sumber`. Katalog berasal dari riset web dan belum diverifikasi pakar. `phi_hari` diisi dari label/panduan Amerika Serikat untuk selada (`phi_sumber` menyebut asalnya, wajib terisi bila `phi_hari` terisi); kosong berarti tidak ada data dan masa tunggu panen harus dicek pada label produk. Status pendaftaran untuk selada di Indonesia tidak terkonfirmasi.
+
+Kesalahan: `422 TABLE_NOT_FOUND`, `422 DETECTION_NOT_FOUND`, `422 DETECTION_TABLE_MISMATCH`, `404 RECOMMENDATION_NOT_FOUND`, `409 NO_RECOMMENDATION`, `409 RECOMMENDATION_ALREADY_DECIDED`.
+
+## Unggahan foto
+
+Izin: `deteksi:write`. Aplikasi mengunggah langsung ke Cloudinary; backend hanya menandatangani.
+
+| Endpoint | Catatan |
+|---|---|
+| `POST /unggahan/tanda-tangan` | Tanpa body. Mengembalikan `cloud_name`, `api_key`, `timestamp`, `folder`, `signature`, `upload_url`. Kirim ke Cloudinary persis `folder`, `timestamp`, `api_key`, `signature`. Folder dikunci server per pengguna. `503 UPLOAD_NOT_CONFIGURED` bila belum dikonfigurasi |
+
+Konfigurasi lewat `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`. Ketiganya diisi bersama (production gagal start bila setengah terisi). `api_secret` hanya ada di environment server.
+
 ## Sinkronisasi
 
 | Endpoint | Catatan |
@@ -226,4 +272,4 @@ Saat mengirim antrean, kirim induk lebih dulu, misalnya penyemaian sebelum pemin
 
 ## Belum tersedia
 
-Deteksi hama, rekomendasi, dan perawatan belum dibangun. Cuaca BMKG berjalan di aplikasi mobile, bukan di backend.
+Endpoint `perawatan` mandiri (daftar tindakan) dan pemotongan stok otomatis saat rekomendasi diterima belum dibangun. Cuaca BMKG berjalan di aplikasi mobile, bukan di backend.

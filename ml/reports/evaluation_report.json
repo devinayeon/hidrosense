@@ -1,0 +1,246 @@
+{
+  "baseline": {
+    "map50": 0.8539,
+    "map50_95": 0.5791,
+    "precision": 0.9196,
+    "recall": 0.8078,
+    "f1": 0.8601
+  },
+  "finetuned": {
+    "map50": 0.8913,
+    "map50_95": 0.5765,
+    "precision": 0.8952,
+    "recall": 0.8566,
+    "f1": 0.8755
+  },
+  "improvements": {
+    "map50_delta": 0.0374,
+    "map50_95_delta": -0.0026,
+    "precision_delta": -0.0244,
+    "recall_delta": 0.0488,
+    "f1_delta": 0.0154
+  },
+  "beats_baseline": true,
+  "per_class": {
+    "thrips": {
+      "precision": 0.8106,
+      "recall": 0.6562,
+      "map50": 0.7216,
+      "map50_95": 0.3284,
+      "f1": 0.7253
+    },
+    "whitefly": {
+      "precision": 0.9843,
+      "recall": 0.9865,
+      "map50": 0.9938,
+      "map50_95": 0.7319,
+      "f1": 0.9854
+    },
+    "aphids": {
+      "precision": 0.8908,
+      "recall": 0.9271,
+      "map50": 0.9585,
+      "map50_95": 0.6693,
+      "f1": 0.9086
+    }
+  },
+  "tflite_eval": {
+    "path": "ml/artifacts/yolo11n_lettuce_pests.tflite",
+    "sha256": "cd388bdab9c24490d6d01dd336ef4f2b191f1b66032e23adcf6cf831592b2ab3",
+    "size_bytes": 5409324,
+    "size_mb": 5.159,
+    "input_shape": [
+      1,
+      640,
+      640,
+      3
+    ],
+    "input_dtype": "float32",
+    "output_shape": [
+      1,
+      7,
+      8400
+    ],
+    "output_dtype": "float32",
+    "tflite_map50_drop": 0.0017,
+    "ultralytics_val_metrics": {
+      "map50": 0.8896,
+      "map50_95": 0.5424,
+      "precision": 0.893,
+      "recall": 0.8533,
+      "f1": 0.8727
+    },
+    "metrics": {
+      "map50": 0.8893,
+      "map50_95": 0.5422,
+      "precision": 0.8952,
+      "recall": 0.853,
+      "f1": 0.8736
+    },
+    "per_class": {
+      "thrips": {
+        "precision": 0.8117,
+        "recall": 0.6466,
+        "map50": 0.716,
+        "map50_95": 0.3331,
+        "f1": 0.7198
+      },
+      "whitefly": {
+        "precision": 0.9729,
+        "recall": 0.9878,
+        "map50": 0.993,
+        "map50_95": 0.6526,
+        "f1": 0.9803
+      },
+      "aphids": {
+        "precision": 0.9009,
+        "recall": 0.9247,
+        "map50": 0.9589,
+        "map50_95": 0.6409,
+        "f1": 0.9126
+      }
+    },
+    "images_evaluated": 153,
+    "latency_ms_avg": 129.65,
+    "interpreter_verification": {
+      "backend": "ai_edge_litert.interpreter.Interpreter",
+      "images_verified": 153,
+      "all_outputs_finite": true,
+      "sample_conf_threshold": 0.35,
+      "sample_iou_threshold": 0.45,
+      "sample_detections_total": 2887,
+      "classes_detected": [
+        "aphids",
+        "thrips",
+        "whitefly"
+      ]
+    }
+  },
+  "gates": {
+    "map50": 0.8913,
+    "recall": 0.8566,
+    "tflite_map50_drop": 0.0017,
+    "model_size_mb": 5.159
+  },
+  "status": "PASSED",
+  "provenance": {
+    "kaggle_kernel": "adityadwiferdiansyah/hidrosense-yolov11n-lettuce-pests-training",
+    "kaggle_dataset": "adityadwiferdiansyah/hidrosense-lettuce-pests-real",
+    "enable_gpu": true,
+    "gpu_count": 2,
+    "device": "Tesla T4",
+    "gpu_vram_gb": 14.56,
+    "torch_version": "2.11.0+cu130",
+    "cuda_version": "13.0",
+    "python_version": "3.13.16",
+    "ultralytics_version": "8.4.216",
+    "imgsz": 640,
+    "total_images": 1576,
+    "split_counts": {
+      "train": 1245,
+      "val": 178,
+      "test": 153
+    },
+    "split_leakage": 0,
+    "zero_synthetic_confirmed": true,
+    "synthetic_images_count": 0,
+    "thrips_oversample_factor": 4,
+    "thrips_train_images": 181,
+    "balanced_train_images": 1788,
+    "val_manifest_sha256": "6c05f95dc35688b92e5393003f1cd9e3ff1448452b238fd02bf72cc45a50429c",
+    "test_manifest_sha256": "ffce271b783933225f2c04f89a11ad9f1c24ba4dea5ca91c9b5e3806f175e0bf",
+    "roboflow_sources": [
+      {
+        "slug": "puzzle-piece-detection/lettuce-pests",
+        "version": 6,
+        "format": "yolov11",
+        "required": true,
+        "accessible": true,
+        "status": "cached",
+        "raw_split_image_counts": {
+          "train": 1584,
+          "valid": 155,
+          "test": 77
+        }
+      },
+      {
+        "slug": "puzzle-piece-detection/lettuce-pest-detection",
+        "version": 1,
+        "format": "yolov11",
+        "required": true,
+        "accessible": true,
+        "status": "cached",
+        "raw_split_image_counts": {
+          "train": 1396,
+          "valid": 397,
+          "test": 200
+        }
+      },
+      {
+        "slug": "agrivision-2025/lettuce-pests-wieje",
+        "version": 1,
+        "format": "yolov11",
+        "required": false,
+        "accessible": true,
+        "status": "cached",
+        "raw_split_image_counts": {
+          "train": 1584,
+          "valid": 155,
+          "test": 77
+        }
+      }
+    ],
+    "deduplication": {
+      "total_scanned": 5625,
+      "duplicates_removed": 1333,
+      "sha256_duplicates_removed": 560,
+      "phash_duplicates_removed": 773,
+      "empty_or_unmapped_skipped": 2716,
+      "boxes_kept": 35801,
+      "groups_formed": 450
+    },
+    "split_manifests": {
+      "train": {
+        "images": 1245,
+        "groups": 360,
+        "instances": 28562,
+        "per_class_instances": {
+          "thrips": 793,
+          "whitefly": 13709,
+          "aphids": 14060
+        },
+        "manifest_sha256": "3207c99649256bab826e9e72c37b51da540fbcd1743207c71392ccde52c0edc5"
+      },
+      "val": {
+        "images": 178,
+        "groups": 45,
+        "instances": 4350,
+        "per_class_instances": {
+          "thrips": 53,
+          "whitefly": 2908,
+          "aphids": 1389
+        },
+        "manifest_sha256": "745ee3abea2ae4472c2ebc4b5b258f2b37cb66418ee436ec4f7a827dd17825c4"
+      },
+      "test": {
+        "images": 153,
+        "groups": 45,
+        "instances": 2889,
+        "per_class_instances": {
+          "thrips": 160,
+          "whitefly": 1481,
+          "aphids": 1248
+        },
+        "manifest_sha256": "6b2db33b754a4c0ef6026c52dca6418e6b1db5202b43471bb061efc3d9265a44"
+      }
+    },
+    "dataset_verification": {
+      "status": "passed",
+      "cross_split_sha256_overlaps": 0,
+      "cross_split_phash_overlaps": 0,
+      "cross_split_group_phash_overlaps": 0,
+      "cross_split_base_stem_overlaps": 0,
+      "all_canonical_classes_present_in_all_splits": true
+    }
+  }
+}

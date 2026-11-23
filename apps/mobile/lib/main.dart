@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hidrosense_mobile/data/services/weather_background.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/pages/app_gate.dart';
 import 'package:hidrosense_mobile/views/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Saran cuaca harian sebagai notifikasi walau aplikasi tidak dibuka (Android).
+  unawaited(scheduleDailyWeatherAdvice());
   final container = ProviderContainer();
   // Sesi tersimpan dipulihkan sebelum layar pertama digambar supaya pengguna
   // yang sudah pernah masuk langsung tiba di beranda, tanpa melewati halaman

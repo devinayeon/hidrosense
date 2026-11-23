@@ -1,2 +1,17 @@
-ultralytics
-tensorflow
+# Core training, LiteRT inference & dataset dependencies (Windows Python 3.12 / Kaggle GPU)
+ultralytics>=8.3.0,<8.5.0
+ai-edge-litert>=2.1.4
+roboflow>=1.1.48
+
+# Dataset preparation, deduplication, Kaggle orchestration & testing
+kaggle>=2.0.0
+Pillow>=10.4.0
+ImageHash>=4.3.1
+PyYAML>=6.0.2
+numpy>=1.26.0
+requests>=2.32.0
+pytest>=8.3.0
+
+# Note: Kaggle Linux export containers may additionally use `litert-torch` or `onnx` / `onnx2tf`
+# for conversion; do not pin `tensorflow<2.20.0` or `onnx2tf` locally on Windows Python 3.12
+# because they conflict with `numpy>=2.5` and `protobuf>=7.36`.

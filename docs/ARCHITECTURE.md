@@ -10,7 +10,7 @@ HidroSense punya dua bagian dalam satu repositori:
 |---|---|---|
 | `apps/mobile` | Aplikasi di ponsel petani dan pegawai | Flutter, Riverpod, SQLite |
 | `apps/backend` | Server API dan aturan bisnis | Node, TypeScript, Fastify, SQLite (libSQL/Turso) |
-| `ml` | Model deteksi hama. Pengerjaan belum dimulai | YOLO |
+| `ml` | Pelatihan dan ekspor model deteksi hama (thrips, kutu kebul, kutu daun). Hasil `.tflite` ditanam di `apps/mobile/assets/ml/` dan berjalan di ponsel | YOLOv11n, TFLite |
 
 ```
   Ponsel                                     Server
@@ -25,7 +25,9 @@ HidroSense punya dua bagian dalam satu repositori:
 └───────────────────────────────┘         └──────────────────────────────┘
 ```
 
-Cuaca diambil aplikasi langsung dari API BMKG, tidak lewat server HidroSense.
+Cuaca diambil aplikasi langsung dari API BMKG, tidak lewat server HidroSense. Saran tindakan cuaca dihitung dengan logika fuzzy di aplikasi, hanya dikirim sebagai notifikasi, dan tidak disimpan.
+
+Deteksi hama berjalan di ponsel. Foto diunggah langsung ke Cloudinary dengan tanda tangan dari server (`api_secret` hanya di server); server menyimpan hasil pindai dan rekomendasi rotasi obat.
 
 ## Peta MVC
 
@@ -53,7 +55,7 @@ Tiap folder di `apps/backend/src/features/` mengikuti pola yang sama:
 
 `apps/backend/src/app.ts` adalah titik masuk: bacalah daftar `register*` di sana untuk melihat semua fitur. Di mobile, titik masuknya `lib/main.dart`, lalu `lib/views/pages/app_gate.dart`.
 
-## Lima alur utama
+## Enam alur utama
 
 **1. Login.** Pengguna mengisi username dan password. Server membatasi 10 percobaan per 15 menit untuk satu username dari satu alamat, memeriksa password, lalu membuat sesi. Token akses berlaku 15 menit. Sesi berakhir 7 hari setelah refresh terakhir, dan paling lama 30 hari sejak login.
 Berkas: `login_page.dart`, `session_viewmodel.dart`, `api_client.dart`, `features/auth/login.ts`.
@@ -69,6 +71,10 @@ Berkas: `seedling_transfer_sheet.dart`, `connected_nursery_viewmodel.dart`, `fea
 
 **5. Panen lalu jual.** Panen mencatat jumlah tanaman, berat total, dan berat reject per batch. Berat layak adalah total dikurangi reject. Penjualan memilih satu panen, berat, dan harga per kilogram. Berat yang dijual tidak boleh melebihi berat layak dikurangi yang sudah terjual.
 Berkas: `panen_form_body.dart`, `panen_viewmodel.dart`, `catat_penjualan_body.dart`, `penjualan_viewmodel.dart`, `features/harvest/service.ts`, `features/sales/service.ts`.
+
+**6. Pindai hama lalu rotasi obat.** Hanya petani. Foto dianalisis di ponsel (YOLOv11n). Saat disimpan, foto diunggah ke Cloudinary, hasilnya disimpan sebagai `hasil_deteksi` dengan hitungan per hama di `deteksi_hama`, lalu satu `rekomendasi_perawatan` dibuat per hama. Mesin rotasi menghindari kelompok MoA (IRAC) dari 2 `perawatan` ber-MoA terakhir di meja itu dan mengikuti urutan PHT. Menerima membuat baris `perawatan` (tindakan nyata, sumber riwayat rotasi); menolak wajib beralasan. Keputusan final dijaga trigger database.
+ERD: `docs/erd-deteksi-rotasi.dbml`.
+Berkas: `features/pest/presentation/pages/pest_scan_page.dart`, `pest_scan_viewmodel.dart`, `pest_repository.dart`, `yolo_decoder.dart`, `features/scans/service.ts`, `features/rotation/engine.ts`, `features/rotation/service.ts`.
 
 ## Daftar istilah
 
@@ -90,6 +96,10 @@ Berkas: `panen_form_body.dart`, `panen_viewmodel.dart`, `catat_penjualan_body.da
 | Idempotency-Key | Nomor tiket tulis, supaya pengiriman ulang tidak mencatat dua kali | header `Idempotency-Key` | `key` |
 | Versi | Nomor perubahan record, untuk mendeteksi dua orang mengubah data yang sama | `version`, `expected_version` | `version` |
 | Minor | Angka disimpan dalam perseratus: 2,50 menjadi 250 | `*_minor` | `minor` |
+| Hasil deteksi | Satu foto pindai beserta hitungan per hama | `hasil_deteksi`, `deteksi_hama` | `PestScanResult`, `ScanFindingDraft` |
+| MoA | Kelompok cara kerja insektisida (skema IRAC); yang dirotasi, bukan merek | `moa_groups`, `kode_moa` | `moaCode` |
+| Rekomendasi | Saran obat untuk satu meja dan hama; menunggu, diterima, atau ditolak | `rekomendasi_perawatan` | `PestRecommendation` |
+| Perawatan | Tindakan nyata saat rekomendasi diterima; sumber riwayat rotasi | `perawatan` | `appliedOn`, `careNote` |
 
 ## Aturan yang ada di dua tempat
 
@@ -98,6 +108,8 @@ Server selalu menjadi penentu. Aplikasi menyalin beberapa aturan hanya supaya fo
 | Aturan | Server | Aplikasi |
 |---|---|---|
 | 15 hari sebelum pindah, estimasi panen 45 hari dari tanggal pindah | `apps/backend/src/common/growth-rules.ts` | `apps/mobile/lib/core/growth_rules.dart` |
+| Kode hama (`thrips`, `whitefly`, `aphids`) dan urutan kelas model | `apps/backend/src/common/pests.ts`, tabel `hama` | `apps/mobile/lib/features/pest/domain/pest_summary.dart` (`PestKind`), `assets/ml/labels.txt` |
+| Tingkat serangan dan alasan penolakan | `apps/backend/src/features/rotation/contracts.ts` | `pest_summary.dart` (`PestSeverity`), `pest_models.dart` (`RejectReason`) |
 
 ## Bila respons server hilang saat menulis
 

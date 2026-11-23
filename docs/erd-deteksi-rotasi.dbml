@@ -1,0 +1,97 @@
+// ERD fitur deteksi hama dan rotasi obat (migrasi 0019 dan 0020).
+// test-support/hidrosense.dbml adalah kontrak skema 0001 yang dikunci migrations.test.js,
+// jadi perubahan setelahnya didokumentasikan di sini. Tempel ke dbdiagram.io untuk melihat diagram.
+
+Table hama {
+  kode_hama varchar(30) [pk, note: 'thrips, whitefly, aphids']
+  nama varchar(100) [not null]
+  indeks_model int [not null, unique, note: 'urutan kelas di ml/artifacts/labels.txt']
+}
+
+Table moa_groups {
+  kode_moa varchar(10) [pk, note: 'kelompok IRAC, mis. 4A, 5, 23, UNF']
+  nama varchar(150) [not null]
+}
+
+Table obat_katalog {
+  id_katalog int [pk, increment]
+  bahan_aktif varchar(100) [not null, unique]
+  jenis varchar [not null, note: 'mekanis | hayati | nabati | kimia']
+  kode_moa varchar(10) [ref: > moa_groups.kode_moa, note: 'wajib untuk kimia, kosong untuk mekanis']
+  phi_hari int [note: 'masa tunggu panen; wajib disertai phi_sumber (trigger)']
+  phi_sumber varchar(300)
+  catatan text
+  sumber varchar(300) [not null]
+  terverifikasi int [not null, default: 0]
+}
+
+Table katalog_hama {
+  id_katalog int [pk, ref: > obat_katalog.id_katalog]
+  kode_hama varchar(30) [pk, ref: > hama.kode_hama]
+}
+
+Table hasil_deteksi {
+  id_hasil_deteksi int [pk, increment, note: 'satu baris per FOTO']
+  id_pemindahan int [not null, ref: > pemindahan.id_pemindahan]
+  id_user int [not null, ref: > users.id_user]
+  gambar varchar(500) [not null, note: 'secure_url Cloudinary di folder hidrosense/pindai/<id_user>']
+  cloudinary_public_id varchar(255)
+  versi_model varchar(60) [not null]
+  tanggal_deteksi text [not null, note: 'ISO 8601']
+}
+
+Table deteksi_hama {
+  id_hasil_deteksi int [pk, ref: > hasil_deteksi.id_hasil_deteksi]
+  kode_hama varchar(30) [pk, ref: > hama.kode_hama]
+  jumlah int [not null, note: '1..100000']
+  confidence_maks real
+}
+
+Table rekomendasi_perawatan {
+  id_rekomendasi int [pk, increment]
+  id_meja int [not null, ref: > meja_tanam.id_meja]
+  id_hasil_deteksi int [ref: > hasil_deteksi.id_hasil_deteksi, note: 'harus dari meja yang sama (service)']
+  kode_hama varchar(30) [not null, ref: > hama.kode_hama]
+  tingkat varchar [not null, note: 'ringan | sedang | berat']
+  id_katalog int [not null, ref: > obat_katalog.id_katalog]
+  kode_moa varchar(10) [ref: > moa_groups.kode_moa, note: 'salinan saat direkomendasikan']
+  rule_id varchar(30) [not null]
+  alasan varchar(500) [not null]
+  status_rekomendasi varchar [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak; final setelah diputuskan (trigger)']
+  alasan_penolakan varchar [note: 'tidak_tersedia | harga | sudah_ditangani | tidak_yakin_hama | lainnya']
+  catatan_penolakan varchar(500) [note: 'wajib bila lainnya']
+  id_user int [not null, ref: > users.id_user]
+  tanggal_rekomendasi text [not null]
+  tanggal_keputusan text
+  indexes {
+    (id_meja, kode_hama) [unique, note: 'hanya status menunggu (partial index)']
+  }
+}
+
+// Tabel lama yang dipertahankan dan diperketat (unique id_rekomendasi, trigger: hanya untuk diterima).
+Table perawatan {
+  id_perawatan int [pk, increment]
+  id_rekomendasi int [not null, unique, ref: - rekomendasi_perawatan.id_rekomendasi]
+  id_user int [not null, ref: > users.id_user]
+  tanggal_perawatan text [not null, note: 'YYYY-MM-DD; sumber riwayat rotasi']
+  catatan text
+}
+
+// stok.id_perawatan (0001/0006): stok keluar milik perawatan saat rekomendasi diterima dengan bahan.
+Table stok {
+  id_stok int [pk]
+  id_perawatan int [ref: > perawatan.id_perawatan, note: 'unique bila terisi (0006)']
+}
+
+Table pemindahan {
+  id_pemindahan int [pk]
+  id_meja int [ref: > meja_tanam.id_meja]
+}
+
+Table meja_tanam {
+  id_meja int [pk]
+}
+
+Table users {
+  id_user int [pk]
+}

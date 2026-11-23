@@ -5,12 +5,16 @@ class TindakanRekomendasi {
   final String labelTag; // Contoh: "Penting", "Rutin"
   final bool isPenting;
 
+  /// Derajat kebenaran aturan fuzzy 0..1; null untuk tindakan rutin tanpa pemicu cuaca.
+  final double? derajat;
+
   const TindakanRekomendasi({
     required this.judul,
     required this.deskripsi,
     required this.alasan,
     required this.labelTag,
     this.isPenting = false,
+    this.derajat,
   });
 }
 

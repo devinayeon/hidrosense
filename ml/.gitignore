@@ -1,0 +1,23 @@
+# Virtual environments & local credentials
+venv/
+.venv/
+.env
+.env.*
+.kaggle/
+
+# Datasets, training runs & Kaggle working directories
+data/
+dataset/raw/
+runs/
+kaggle_output/
+kaggle_remote_output/
+kaggle_work/
+
+# Intermediate weights & ONNX exports (production .tflite is tracked via Git LFS)
+*.pt
+*.onnx
+
+# Python & test caches
+__pycache__/
+*.py[codz]
+.pytest_cache/

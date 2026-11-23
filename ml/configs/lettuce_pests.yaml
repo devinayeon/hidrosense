@@ -1,0 +1,10 @@
+path: ml/data/merged_lettuce_pests
+train: train/images
+val: val/images
+test: test/images
+
+nc: 3
+names:
+  0: thrips
+  1: whitefly
+  2: aphids

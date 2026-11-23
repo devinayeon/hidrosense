@@ -15,6 +15,8 @@ const readPermissions: Readonly<Record<string, string>> = {
   'meja-tanam': 'budidaya:read',
   pemindahan: 'budidaya:read',
   kerusakan_tanaman: 'budidaya:read',
+  rekomendasi_perawatan: 'rekomendasi:read',
+  hasil_deteksi: 'deteksi:read',
   panen: 'panen:read',
   penjualan: 'penjualan:read',
 };
