@@ -28,7 +28,7 @@ String formatTanggalIndo(DateTime d, {bool singkat = false}) {
 /// 50.0 -> "50", 2.5 -> "2.5"
 String formatAngka(double v) {
   if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-  return v.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+  return v.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 }
 
 /// Rupiah tanpa menghilangkan sen: Rp 20.000 atau Rp 20.000,50.

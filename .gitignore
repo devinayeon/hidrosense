@@ -9,7 +9,6 @@
 .history
 
 
-
 # Flutter repo-specific
 /bin/cache/
 /bin/internal/bootstrap.bat
@@ -506,3 +505,6 @@ apps/**/graphify-out/
 /.vscode/
 /.worktrees/
 /apps/mobile/docs/
+PROMPT.md
+PLANS.md
+TASKS.md
