@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/damage_record.dart';
 import '../../../data/models/table_record.dart';
 import '../../../viewmodels/connected_table_viewmodel.dart';
+import '../../../features/pest/presentation/pages/pest_scan_page.dart';
 import '../../../viewmodels/damage_viewmodel.dart';
 import '../components/v2_rawat_data.dart';
 import '../pages/v2_rawat_detail_page.dart';
@@ -66,11 +67,7 @@ class V2RawatConnectedTab extends ConsumerWidget {
       onRetry: () => _refresh(ref, tables.records),
       onOpenCuaca: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
-      onFotoTanaman: () => _pesan(
-        context,
-        'Analisis foto hama belum tersedia di backend. Catat kerusakan '
-        'lewat detail meja.',
-      ),
+      onFotoTanaman: () => Navigator.of(context).push(PestScanPage.route()),
       onTapItem: (item) => Navigator.of(context).push<void>(
         V2RawatDetailPage.route(item, showFoto: false),
       ),
@@ -83,10 +80,4 @@ class V2RawatConnectedTab extends ConsumerWidget {
     }
     await ref.read(connectedTableProvider.notifier).refresh();
   }
-}
-
-void _pesan(BuildContext context, String pesan) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(pesan)));
 }
