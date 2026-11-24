@@ -14,13 +14,15 @@ perubahan itu tidak mengubah perilaku produk.
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
 | S2 Major | 7 | 6 | 1 |
-| S3 Minor | 22 | 19 | 3 |
+| S3 Minor | 28 | 25 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **32** | **28** | **4** |
+| **Total** | **38** | **34** | **4** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32 (28).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38 (34).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
 BUG-12/13 (S3, harness ML & doc API usang).
+Catatan: BUG-31 tetap dihitung FIXED walau sempat dibuka ulang (OPEN) di sesi 4, karena
+sudah diperbaiki ulang dan lulus tes; hitungan menemukan/memperbaiki tidak berubah dua kali.
 Gap fitur (bukan bug kode) dicatat di `qa/rtm.md` §Gap. Tidak ada temuan **S1**.
 Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 `NEEDS-HUMAN-REVIEW` dengan alasan.
@@ -37,7 +39,9 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > Sesi 4 (24 Nov 2026): hasil uji manual dev FE masuk — BUG-26,27,29,30,32 **PASS**;
 > BUG-28 tombol PASS tetapi data basi → **BUG-34**; BUG-31 **dibuka ulang** (OPEN) dan
 > diperbaiki ulang jadi daftar per bulan. Ditambah BUG-33..BUG-38 dari temuan yang sama
-> (audit pintu masuk + invalidasi provider), plus fitur tambahan sesuai keputusan PM.
+> (audit pintu masuk + invalidasi provider), semuanya sudah **FIXED di kode** + regression
+> test, plus 3 fitur tambahan sesuai keputusan PM (Fitur-1..3, D-27/D-28/D-29).
+> Status BUG-33..38 = **FIXED di kode, belum diuji ulang di HP** (menunggu dev FE).
 
 ---
 
@@ -405,6 +409,72 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Penyebab (akar): baris filter memakai `Row` tanpa pembungkusan; entri tidak punya mode ringkas; chip punya tinggi tetap sehingga kena overflow.
 - Status: **FIXED** — filter dibungkus `Wrap` dengan jarak token; entri riwayat bisa dilipat (ringkasan ↔ rincian, tombol ≥ 48 dengan label teks+ikon); chip diberi `minHeight` 48 dan label `Flexible`. File: `rotation_history_page.dart`, `recommendation_card.dart`, `decision_sheets.dart`, `v2_chip.dart`.
 - Regression test: `apps/mobile/test/v2_rotation_history_bug32_test.dart`, `apps/mobile/test/pest_widgets_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-33 [S3] Pemilih tanaman "Catat panen" tidak bisa dipakai saat batch berulang
+- Area/PB: Tanam → Panen → Catat panen · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026) + audit pintu masuk
+- Langkah reproduksi: 1) buka Catat panen; 2) pilih tanaman yang punya dua batch/semaian dengan nama sama; 3) coba pilih yang kedua.
+- Ekspektasi: semua batch bisa dipilih (termasuk nama yang sama), pilihan jelas mana batch mana.
+- Aktual: pilihan digabung/dedup berdasarkan nama sehingga batch kedua tidak bisa dipilih.
+- Bukti: `flutter test test/v2_panen_picker_bug33_test.dart` — 6 kasus; gagal pada kode lama (API pemilih belum ada), lulus setelah perbaikan.
+- Penyebab (akar): pemilih memakai nama tanaman sebagai kunci sehingga batch bernama sama saling menimpa; ringkasan pilihan tidak cukup membedakan batch.
+- Status: **FIXED** — `V2PanenEstimasi` diberi kunci stabil + label rincian (batch/meja/tanggal); `v2DaftarEstimasiPanen()` menyusun pilihan ganda tanpa dedup nama; sheet pemilih baru `v2_panen_tanaman_sheet.dart` (bisa cari & pilih banyak), `V2BottomSheet.flexible` agar sheet tinggi ikut konten. File: `v2_panen_data.dart`, `v2_panen_connected.dart`, `v2_panen_form_page.dart`, `v2_panen_tanaman_sheet.dart`, `v2_bottom_sheet.dart`.
+- Regression test: `apps/mobile/test/v2_panen_picker_bug33_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-34 [S3] Data meja basi setelah "Pindah ke meja"
+- Area/PB: Tanam → Semaian → Pindah ke meja · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), lanjutan BUG-28
+- Langkah reproduksi: 1) pindahkan semaian ke meja lewat alur nyata; 2) kembali ke daftar meja/detail meja; 3) bandingkan jumlah lubang terisi & isi meja dengan hasil pindah.
+- Ekspektasi: daftar/detail meja menampilkan angka terbaru setelah pindah.
+- Aktual: meja tujuan masih menampilkan angka lama (butuh muat ulang manual).
+- Bukti: `flutter test test/v2_pindah_stale_bug34_test.dart` — 2 kasus; gagal pada kode lama (helper invalidasi belum ada), lulus setelah perbaikan.
+- Penyebab (akar): setelah tulis pindah, provider meja tidak di-invalidate; satu jalur (`_bukaMeja`) juga tidak menyegarkan.
+- Status: **FIXED** — helper `v2SegarkanSetelahTulis(ref, {tableIds})` di `v2_meja_connected.dart` meng-invalidate provider daftar/detail meja tujuan; dipakai di `_kirimPindah`/`_pindah`/`_bukaMeja` (`v2_semaian_connected.dart`). File: `v2_meja_connected.dart`, `v2_semaian_connected.dart`, `v2_pindah_meja_page.dart`.
+- Regression test: `apps/mobile/test/v2_pindah_stale_bug34_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-35 [S3] "Tambah tanaman" di detail meja tidak membuka alur yang benar
+- Area/PB: Tanam → Meja → detail meja → "Tambah tanaman" · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka detail meja; 2) tekan "Tambah tanaman"; 3) perhatikan alur & data yang tersimpan.
+- Ekspektasi: menambah tanaman memakai alur "Pindah ke meja" (meja ini terpilih), jumlah wajar, tersimpan konsisten.
+- Aktual: alur lama mengisi data langsung tanpa lewat form pindah, sehingga meja/ jumlah/validasi tidak konsisten.
+- Bukti: `flutter test test/v2_tambah_tanaman_bug35_test.dart` — 2 kasus; gagal pada kode lama (`showResultPage` belum ada), lulus setelah perbaikan.
+- Penyebab (akar): `_tambahTanaman` memakai jalur isi-langsung, bukan membuka form pindah.
+- Status: **FIXED** (D-25) — `_tambahTanaman` memilih semaian lalu membuka `V2PindahMejaFormPage` dengan default (meja terpilih = meja itu, semaian terpilih, jumlah = min(sisa bibit, sisa kapasitas meja)); `showResultPage:false` + `onPindahkan` supaya tetap di detail meja. File: `v2_meja_connected.dart`, `v2_pindah_meja_page.dart`.
+- Regression test: `apps/mobile/test/v2_tambah_tanaman_bug35_test.dart`, `apps/mobile/test/v2_pindah_meja_success_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-36 [S3] Data tanaman tersambung memaku tanggal contoh (perkiraan panen salah)
+- Area/PB: Tanam → Meja → detail tanaman tersambung · Ditemukan lewat: audit pintu masuk (review kode)
+- Langkah reproduksi: 1) buka tanaman yang tersambung ke data nyata; 2) lihat HST & perkiraan panen.
+- Ekspektasi: HST dihitung dari tanggal tanam nyata; perkiraan panen ikut tanggal pindah nyata.
+- Aktual: sebagian perhitungan memakai acuan galeri 15 Nov 2026, sehingga HST/perkiraan panen tidak sesuai data nyata.
+- Bukti: `flutter test test/v2_tanaman_hari_ini_bug36_test.dart` — 3 kasus; gagal pada kode lama (API `hariIni` belum ada), lulus setelah perbaikan.
+- Penyebab (akar): item tanaman tidak punya acuan "hari ini" yang bisa disuntik; halaman sukses pindah menampilkan tanggal contoh ("30 Des").
+- Status: **FIXED** — `V2TanamanItem.hariIni` (null = acuan galeri 15 Nov 2026) untuk `hst`/`hariMenujuPanen`; `v2MejaItemFromRecord(hariIni:, ...)` bawaan `jakartaToday()`; perkiraan panen halaman sukses pindah pakai tanggal pindah nyata. File: `v2_meja_data.dart`, `v2_meja_connected.dart`, `v2_pindah_meja_page.dart`.
+- Regression test: `apps/mobile/test/v2_tanaman_hari_ini_bug36_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-37 [S3] Jumlah besar tidak bisa diketik di semua pemakai `V2QtyField`
+- Area/PB: PB-08/09/10 (semua form yang memakai pengatur jumlah) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), perluasan BUG-29
+- Langkah reproduksi: 1) buka Catat stok / Tambah semaian / Catat rusak / Konfirmasi rawat / Catat panen; 2) coba ketik angka besar langsung ke pil angka.
+- Ekspektasi: angka bisa diketuk lalu diketik di semua form; nilai di bawah minimum tidak diterima.
+- Aktual (dulu): hanya sebagian form yang bisa diketik; sisanya maju satu-satu.
+- Bukti: `flutter test test/v2_qty_ketik_bug37_test.dart` — 6 kasus (termasuk skala teks 2.0); gagal pada kode lama (belum ada `onChanged`), lulus setelah perbaikan.
+- Penyebab (akar): BUG-29 hanya memperbaiki sebagian pemakai `V2QtyField`; sisanya tidak mengirim `onChanged` sehingga edit ketik tidak tersimpan.
+- Status: **FIXED** — `onChanged` ditambahkan di catat stok, semaian, rusak, rawat konfirmasi, dan panen (pindah meja sudah); setter tetap menjaga batas minimum. File: `v2_panen_form_page.dart`, `v2_semaian_form_page.dart`, `v2_tanaman_rusak_page.dart`, `v2_stepper.dart` (komponen bersama).
+- Regression test: `apps/mobile/test/v2_qty_ketik_bug37_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-38 [S3] "Tambah bahan" di form semaian hanya mengganti baris, tidak menambah
+- Area/PB: Tanam → Semaian → Tambah semaian (bahan) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026) + audit kontrak server
+- Langkah reproduksi: 1) buka form Tambah semaian; 2) isi satu bahan; 3) tekan "Tambah bahan".
+- Ekspektasi: muncul baris bahan kedua (dan seterusnya) yang ikut tersimpan.
+- Aktual: tombol mengganti bahan yang sudah ada, tidak pernah ada baris kedua.
+- Bukti: `flutter test test/v2_semaian_bahan_bug38_test.dart` — 2 kasus; gagal pada kode lama (model `V2SemaianBahanPakai`/`SowingMaterialDraft` belum ada), lulus setelah perbaikan.
+- Penyebab (akar): model form hanya punya satu slot bahan; penyimpanan hanya mengirim satu bahan.
+- Status: **FIXED** (D-26) — audit kontrak server selesai: `POST /penyemaian` menerima `materials[]` (minimal satu, tiap baris `id_inventaris` unik), **backend tidak diubah**. Form kini multi-baris (`V2SemaianBahanPakai`, `V2SemaianItem.bahanList`): pilih/hapus baris, bahan terpakai tidak ditawarkan lagi, galat stok per baris; simpan mengirim semua `materials[]` (`SowingDraft.materials` + `SowingMaterialDraft`). File: `v2_semaian_data.dart`, `v2_semaian_form_page.dart`, `sowing_draft.dart`.
+- Regression test: `apps/mobile/test/v2_semaian_bahan_bug38_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
 
 ---

@@ -11,7 +11,11 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 > Sesi 2 (24 Nov 2026) menambah BUG-22..BUG-25 dari laporan manual yang sama; total
 > `flutter test` mobile kini **632 PASS**. Sesi 3 (24 Nov 2026) menambah BUG-26..BUG-32
 > dari laporan yang sama (D-23/D-24); `flutter test` mobile kini **660 PASS**. Status
-> BUG-26..32 = **FIXED di kode**, verifikasi visual ulang di HP menunggu dev FE.
+> BUG-26..32 = **FIXED di kode**, verifikasi visual
+> ulang di HP menunggu dev FE. Sesi 4 (24 Nov 2026): mengerjakan BUG-33..BUG-38
+> (FIXED di kode + regression test) dan 3 fitur tambahan (D-27/D-28/D-29); `flutter test`
+> mobile kini **689 PASS**. Status BUG-33..38 = **FIXED di kode, belum diuji ulang di HP**.
+> Dua dokumen baru: `deployment-notes.md` & `srs-revision-guide.md`.
 
 ## Dokumen
 
@@ -25,6 +29,8 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 | `audit_queries.sql` | Kueri audit integritas data (AQ-01..AQ-28), dapat dijalankan ulang |
 | `architecture.md` | Peta arsitektur hasil orientasi (endpoint, izin, aturan domain) |
 | `decisions.md` | Asumsi & keputusan (termasuk inkonsistensi spesifikasi §6) |
+| `deployment-notes.md` | Model penyebaran & koneksi (online-only, TLS/LAN, syarat rilis) |
+| `srs-revision-guide.md` | Panduan SA merevisi SRS offline-first → online-only (G-17) |
 
 ## Skrip uji
 

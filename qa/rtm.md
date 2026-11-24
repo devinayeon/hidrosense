@@ -14,7 +14,10 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 > hasil **uji manual dev FE di HP asli** dimasukkan; aplikasi dinyatakan **online-only**
 > oleh PM → gap baru **G-17** (dokumen offline-first vs keputusan PM), kasus uji offline
 > menjadi N/A. Sesi 2 hari yang sama menutup BUG-22..BUG-25 (mobile) dan menambah gap
-> **G-18** (menu Sinkron untuk aplikasi online-only).
+> **G-18** (menu Sinkron untuk aplikasi online-only). Sesi 4 (24 Nov 2026) menutup
+> BUG-33..BUG-38 + 3 fitur (D-27/D-28/D-29) di mobile, menambah dokumen
+> `qa/deployment-notes.md` & `qa/srs-revision-guide.md`; **G-17** kini dimiliki **SA**
+> (panduan revisi SRS tersedia).
 
 ---
 
@@ -106,7 +109,7 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | G-14 | Alur perbaikan non-penjualan punya resolusi konflik | Resolver konflik hanya untuk panen/penjualan; kerusakan = "coba lagi" | OPEN | Samakan alur resolusi konflik |
 | G-15 | Dokumen API cocok dengan implementasi | `apps/backend/API.md:273-275` masih menyatakan potong-stok "belum dibangun" | OPEN | Perbarui §"Belum tersedia" (lihat BUG-13) |
 | G-16 | Repo punya satu branch alur kerja | Branch `wild-fe` memuat seluruh produk; tes ML mengasumsikan branch khusus `ml/` | OPEN | Pisahkan branch ML/CI atau longgarkan asumsi (BUG-12) |
-| G-17 | SRS/Plan menyebut "offline-first" (PB-07, §5.1 varian offline) | PM memutuskan aplikasi **online-only** (D-14): mencatat/mengakses menu saat offline tidak didukung dan itu wajar | OPEN | Selaraskan SRS/Plan dengan keputusan online-only, atau rencanakan offline-first untuk rilis berikutnya |
+| G-17 | SRS/Plan menyebut "offline-first" (PB-07, §5.1 varian offline) | PM memutuskan aplikasi **online-only** (D-14): mencatat/mengakses menu saat offline tidak didukung dan itu wajar | OPEN (owner SA) | Selaraskan SRS/Plan dengan keputusan online-only, atau rencanakan offline-first untuk rilis berikutnya. Panduan revisi untuk SA: `qa/srs-revision-guide.md`; model penyebaran: `qa/deployment-notes.md` |
 | G-18 | Menu Sinkron pada aplikasi online-only | Antrean hanya berisi kiriman gagal; saat online tombol "Sinkron sekarang" menjawab "Tidak ada data untuk disinkronkan" | OPEN (D-19) | PM memutuskan: pertahankan menu dengan kalimat "Semua data sudah tersimpan di server", atau sembunyikan menu Sinkron |
 
 ---
@@ -117,7 +120,7 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
 | 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` tersisa **BUG-04** (dependensi backend) di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **660/660** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **689/689** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |

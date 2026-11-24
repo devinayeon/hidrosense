@@ -12,6 +12,10 @@ menjalankan widget/unit tes tanpa Android.
 > keputusan online-only ditulis `N/A` (lihat `decisions.md` D-14); temuan baru dirujuk ke
 > nomor BUG di `issues.md`. Sisa `MANUAL-PENDING` belum dijalankan. Fitur deteksi hama
 > (kamera) kini ada, sehingga uji izin kamera tidak lagi `N/A`.
+>
+> Sesi 4 (24 Nov 2026): perbaikan BUG-33..BUG-38 dan Fitur-1..3 ditambahkan di §H dengan
+> status **`FIXED di kode, belum diuji ulang di HP`** — verifikasi visual di HP masih tugas
+> dev FE dan **belum diklaim PASS**.
 
 ---
 
@@ -151,7 +155,17 @@ bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat.
 | MC-FIX-30 | BUG-30 — notifikasi bisa diketuk | Buka notifikasi, ketuk baris, cek tujuan & status dibaca | `PASS` (diuji manual dev FE) |
 | MC-FIX-31 | BUG-31 — label bulan grafik penjualan | Buka Ringkasan penjualan, cek label bulan | `OPEN` (diuji manual dev FE) — label tetap tidak sejajar; diperbaiki ulang jadi daftar per bulan |
 | MC-FIX-32 | BUG-32 — riwayat rotasi | Buka Riwayat rotasi, cek filter & lipat entri | `PASS` (diuji manual dev FE) |
+| MC-FIX-33 | BUG-33 — pemilih tanaman Catat panen | Catat panen dengan dua batch bernama sama, pilih keduanya | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-34 | BUG-34 — data meja setelah pindah | Selesai pindah, buka daftar/detail meja tujuan | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-35 | BUG-35 — "Tambah tanaman" di detail meja | Tekan "Tambah tanaman", pastikan lewat form pindah | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-36 | BUG-36 — HST & perkiraan panen tanaman tersambung | Buka tanaman tersambung, cek HST & perkiraan panen | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-37 | BUG-37 — jumlah besar bisa diketik | Ketik angka besar di stok/semaian/rusak/rawat/panen | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-38 | BUG-38 — "Tambah bahan" menambah baris | Tambah semaian, tekan "Tambah bahan" 2–3×, simpan | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-1 | Fitur-1 (D-28) — riwayat rotasi per tanggal | Buka Riwayat rotasi, cek header tanggal WIB & lipat entri | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-2 | Fitur-2 (D-27) — urutan daftar meja di form pindah | Buka "Pindah ke meja", cek urutan (tersedia dulu, penuh di bawah) | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-3 | Fitur-3 (D-29) — potong stok hanya Nutrisi & Obat | Setujui rekomendasi, cek daftar bahan hanya nutrisi/obat | `FIXED di kode, belum diuji ulang di HP` |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
-> (tidak ada perangkat Android di sini). Perbaikan sesi 2 sudah lulus tes otomatis tetapi
-> verifikasi visual di perangkat tetap wajib sebelum dinyatakan tuntas untuk rilis.
+> (tidak ada perangkat Android di sini). Baris `FIXED di kode, belum diuji ulang di HP`
+> berarti sudah lulus tes otomatis tetapi **verifikasi visual di HP wajib** dilakukan dev FE
+> sebelum dinyatakan tuntas untuk rilis.

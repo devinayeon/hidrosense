@@ -229,8 +229,15 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 ## D-26 — Kontrak bahan penyemaian (BUG-38) (24 Nov 2026)
 - **Konteks:** tombol "Tambah bahan" di form Tambah semaian hanya mengganti bahan, tidak
   menambah baris kedua.
-- **Status:** menunggu hasil audit kontrak server (`apps/backend` penyemaian/stok).
-  Keputusan lengkap ditulis setelah audit selesai di sesi 4. Backend **tidak** diubah.
+- **Hasil audit kontrak server** (`apps/backend/API.md`, `POST /penyemaian`): endpoint
+  menerima **`materials[]`** — minimal **satu** baris, tiap baris punya `id_inventaris`
+  yang **unik** dalam satu kiriman. Jadi server **sudah mendukung banyak bahan**;
+  masalahnya murni di mobile yang hanya mengirim satu bahan. **Backend tidak diubah.**
+- **Keputusan:** "Tambah bahan" **menambah baris** (bukan mengganti). Form semaian
+  multi-baris: pilih/hapus baris, bahan yang sudah terpakai tidak ditawarkan lagi,
+  galat stok per baris; saat simpan, semua baris dikirim sebagai `materials[]`.
+- **Alasan:** menyesuaikan UI dengan kontrak server yang sudah ada, tanpa perubahan
+  backend.
 
 ## D-27 — Urutan daftar meja di form "Pindah ke meja" (Fitur-2) (24 Nov 2026)
 - **Konteks:** BUG-29 menanyakan urutan daftar meja. **PM menjawab: BOLEH diubah.**
