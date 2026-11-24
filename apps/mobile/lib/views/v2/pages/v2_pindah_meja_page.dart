@@ -194,24 +194,9 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
         V2PindahMejaAksi.selesai;
     if (!mounted) return;
 
-    if (aksi == V2PindahMejaAksi.pindahkanSisa && sisa > 0) {
-      final lagi = await Navigator.of(context).push<V2SemaianPindah>(
-        MaterialPageRoute<V2SemaianPindah>(
-          builder: (_) => V2PindahMejaFormPage(
-            item: widget.item.copyWith(sisaBenih: sisa),
-            mejaAwal: _mejaIndex,
-            jumlahAwal: sisa,
-            daftarMeja: widget.daftarMeja,
-            initialDate: _tanggal,
-            onPindahkan: widget.onPindahkan,
-          ),
-        ),
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(lagi ?? pindah);
-      return;
-    }
-
+    // "Pindahkan sisa" tidak lagi membuka form di sini dengan daftar meja lama:
+    // aksi dikembalikan ke pemanggil (halaman detail) supaya form dibuka ulang
+    // dengan data meja yang sudah disegarkan setelah pindah (BUG-34a).
     Navigator.of(context).pop(
       V2SemaianPindah(
         meja: pindah.meja,

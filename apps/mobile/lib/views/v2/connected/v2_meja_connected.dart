@@ -50,6 +50,29 @@ final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>(
   },
 );
 
+/// Segarkan data setelah tulis pemindahan/tanaman/rusak (BUG-34): meja
+/// (kapasitas & terisi), daftar pemindahan, dan daftar penyemaian dimuat ulang
+/// supaya Detail meja, form "sisa", dan kartu Beranda memakai data terbaru.
+///
+/// [tableIds] kosong berarti menyegarkan semua meja.
+Future<void> v2SegarkanSetelahTulis(
+  WidgetRef ref, {
+  Set<String> tableIds = const <String>{},
+}) async {
+  final tables = ref.read(connectedTableProvider.notifier);
+  if (tableIds.isEmpty) {
+    await tables.refresh();
+  } else {
+    for (final id in tableIds) {
+      await tables.refreshTable(id);
+    }
+  }
+  ref.invalidate(v2AllTransfersProvider);
+  ref.invalidate(v2AllSowingsProvider);
+  await ref.read(v2AllTransfersProvider.future);
+  await ref.read(v2AllSowingsProvider.future);
+}
+
 /// `tersedia`/`penuh`/`pemeliharaan` backend → tiga keadaan desain page 06.
 V2MejaStatus v2StatusMeja(TableRecord record) {
   if (record.isMaintenance || record.isInactive) return V2MejaStatus.perawatan;
@@ -376,9 +399,7 @@ class _V2MejaConnectedDetailPageState
           transferDate: apiDate(jakartaToday()),
           plantCount: jumlah,
         );
-    await ref.read(connectedTableProvider.notifier).refreshTable(id);
-    ref.invalidate(v2AllTransfersProvider);
-    ref.invalidate(v2AllSowingsProvider);
+    await v2SegarkanSetelahTulis(ref, tableIds: {id});
     await ref.read(connectedInventoryProvider.notifier).refresh();
     if (!mounted) return null;
     final hasil = _dariBackend() ?? _item.copyWith();
