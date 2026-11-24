@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formatting.dart';
+import '../components/v2_meja_data.dart';
 import '../components/v2_semaian_assets.dart';
 import '../components/v2_semaian_data.dart';
 import '../components/v2_semaian_date_sheet.dart';
@@ -187,6 +188,13 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
     }
 
     final sisa = (widget.item.sisaBenih ?? widget.item.jumlahBenih) - _jumlah;
+    // Perkiraan panen dihitung dari tanggal pindah nyata, bukan tanggal contoh
+    // "30 Des" yang tetap (BUG-36).
+    final perkiraanPanen = DateTime(
+      pindah.tanggal.year,
+      pindah.tanggal.month,
+      pindah.tanggal.day + v2MejaUmurPanenHst,
+    );
 
     // Tombol halaman sukses tidak boleh mati (BUG-28): masing-masing
     // mengembalikan aksi yang lalu diteruskan ke pemanggil.
@@ -199,7 +207,8 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                   : 'Sudah pindah ke ${pindah.meja}',
               body: sisa > 0
                   ? '$sisa benih masih di semaian.'
-                  : '${pindah.jumlah} tanaman. Panen sekitar 30 Des.',
+                  : '${pindah.jumlah} tanaman. '
+                        'Panen sekitar ${labelTanggalMeja(perkiraanPanen)}.',
               primaryLabel: sisa > 0 ? 'Pindahkan sisa' : 'Lihat meja',
               onPrimary: () => Navigator.of(context).pop(
                 sisa > 0

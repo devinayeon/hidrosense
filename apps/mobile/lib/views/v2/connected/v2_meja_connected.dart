@@ -101,6 +101,7 @@ V2TanamanItem _tanamanFromTransfer(
   TransferRecord transfer, {
   required List<SowingRecord> sowings,
   required List<InventoryRecord> inventaris,
+  required DateTime hariIni,
 }) {
   final pindah = DateTime.tryParse(transfer.transferDate) ?? jakartaToday();
   final panen =
@@ -121,6 +122,7 @@ V2TanamanItem _tanamanFromTransfer(
     jumlahAwal: transfer.plantCount,
     keterangan: transfer.note,
     transferId: transfer.id,
+    hariIni: hariIni,
   );
 }
 
@@ -141,13 +143,18 @@ V2KerusakanItem v2KerusakanDariDamage(
 );
 
 /// Pemetaan satu meja backend ke model daftar/detail page 06.
+///
+/// [hariIni] mengisi acuan HST dan hitung mundur panen; bawaan hari ini WIB
+/// supaya tanaman tersambung tidak memakai tanggal contoh (BUG-36).
 V2MejaItem v2MejaItemFromRecord(
   TableRecord record, {
   List<TransferRecord> transfers = const <TransferRecord>[],
   List<SowingRecord> sowings = const <SowingRecord>[],
   List<InventoryRecord> inventaris = const <InventoryRecord>[],
   List<DamageRecord> damages = const <DamageRecord>[],
+  DateTime? hariIni,
 }) {
+  final acuan = hariIni ?? jakartaToday();
   final tanaman = transfers
       .where((item) => item.tableId == record.id && item.activePlants > 0)
       .map(
@@ -155,6 +162,7 @@ V2MejaItem v2MejaItemFromRecord(
           item,
           sowings: sowings,
           inventaris: inventaris,
+          hariIni: acuan,
         ),
       )
       .toList();
