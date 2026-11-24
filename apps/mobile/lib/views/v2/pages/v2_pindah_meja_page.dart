@@ -93,12 +93,8 @@ class V2PindahMejaFormPage extends StatefulWidget {
 }
 
 class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
-  late final List<V2SemaianMeja> _meja = widget.daftarMeja?.isNotEmpty == true
-      ? widget.daftarMeja!
-      : widget.previewSisa
-      ? designMejaPindahSisa
-      : designMejaPindah;
-  late int _mejaIndex = widget.mejaAwal;
+  late final List<V2SemaianMeja> _meja;
+  late int _mejaIndex;
   late int _jumlah =
       widget.jumlahAwal ?? widget.item.sisaBenih ?? widget.item.jumlahBenih;
   late DateTime _tanggal = widget.initialDate ?? DateTime(2026, 11, 15);
@@ -109,12 +105,29 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
   @override
   void initState() {
     super.initState();
+    final sumber = widget.daftarMeja?.isNotEmpty == true
+        ? widget.daftarMeja!
+        : widget.previewSisa
+        ? designMejaPindahSisa
+        : designMejaPindah;
+    final awal = widget.mejaAwal.clamp(0, sumber.length - 1);
+    final acuan = sumber[awal];
+    // Urutkan daftar sesuai D-27, lalu cari lagi meja awal supaya pilihannya
+    // tidak meleset setelah urutan berubah.
+    _meja = urutkanMejaPindah(sumber);
+    var terpilih = _meja.indexWhere(
+      (meja) => acuan.tableId != null
+          ? meja.tableId == acuan.tableId
+          : meja.nama == acuan.nama,
+    );
+    if (terpilih < 0) terpilih = 0;
     // Bawaan tidak boleh meja penuh/perawatan: pilih meja tersedia pertama
-    // kalau pilihan awal tidak bisa dipakai (BUG-29). Urutan daftar tetap.
-    if (!_meja[_mejaIndex].tersedia) {
+    // kalau pilihan awal tidak bisa dipakai (BUG-29).
+    if (!_meja[terpilih].tersedia) {
       final pertama = _meja.indexWhere((meja) => meja.tersedia);
-      if (pertama >= 0) _mejaIndex = pertama;
+      if (pertama >= 0) terpilih = pertama;
     }
+    _mejaIndex = terpilih;
     if (widget.previewLubangKurang) {
       _error = _pesanLubang(200);
     }

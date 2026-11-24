@@ -431,6 +431,23 @@ class V2SemaianMeja {
   }
 }
 
+/// Urutan daftar meja di form "Pindah ke meja" (D-27).
+///
+/// Meja tersedia lebih dulu, di antaranya sisa lubang kosong terbanyak lalu
+/// kode/nama meja; meja penuh/perawatan diletakkan di bawah dan tetap disabled.
+List<V2SemaianMeja> urutkanMejaPindah(List<V2SemaianMeja> meja) {
+  final salinan = List<V2SemaianMeja>.of(meja);
+  salinan.sort((a, b) {
+    if (a.tersedia != b.tersedia) return a.tersedia ? -1 : 1;
+    if (a.tersedia && b.tersedia) {
+      final kosong = b.lubangKosong.compareTo(a.lubangKosong);
+      if (kosong != 0) return kosong;
+    }
+    return a.nama.toLowerCase().compareTo(b.nama.toLowerCase());
+  });
+  return salinan;
+}
+
 /// Pilihan meja form 5.17 dan 5.21: A2 (200 kosong, terpilih) / A3 (120 kosong)
 /// / B1 penuh / D1 perawatan.
 const List<V2SemaianMeja> designMejaPindah = <V2SemaianMeja>[
