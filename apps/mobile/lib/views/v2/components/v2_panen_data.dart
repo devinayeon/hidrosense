@@ -51,6 +51,9 @@ class V2PanenEstimasi {
     required this.jumlahTanaman,
     required this.hariLagi,
     this.transferId,
+    this.transferDate,
+    this.hss,
+    this.sowingLabel,
   });
 
   final String meja;
@@ -63,6 +66,15 @@ class V2PanenEstimasi {
   /// Batch backend yang dipanen; null untuk data contoh galeri.
   final String? transferId;
 
+  /// Tanggal pindah batch; null untuk data contoh galeri (BUG-33/36).
+  final DateTime? transferDate;
+
+  /// HSS (hari setelah semai) batch; null bila tidak diketahui.
+  final int? hss;
+
+  /// Asal semaian batch (mis. `Batch #12`); null bila tidak diketahui.
+  final String? sowingLabel;
+
   bool get siapPanen => hariLagi == 0;
 
   /// `Hari ini` atau `19 hari`.
@@ -70,6 +82,25 @@ class V2PanenEstimasi {
 
   /// `Romaine, 240`.
   String get labelTanaman => '$varietas, $jumlahTanaman';
+
+  /// Identitas baris: id pemindahan bila ada, jika tidak gabungan meja+varietas.
+  /// Dipakai untuk membuang baris ganda (BUG-33) dan menandai pilihan.
+  String get kunci => transferId ?? '$meja|$varietas';
+
+  /// Baris rincian yang membedakan tiap batch di pemilih "Catat panen":
+  /// asal semaian, tanggal pindah, HSS, dan sisa tanaman aktif (BUG-33).
+  String get labelRincian {
+    final bagian = <String>[];
+    if (sowingLabel != null && sowingLabel!.isNotEmpty) {
+      bagian.add('Asal $sowingLabel');
+    }
+    if (transferDate != null) {
+      bagian.add('Pindah ${labelTanggalPanen(transferDate!)}');
+    }
+    if (hss != null) bagian.add('HSS $hss');
+    bagian.add('Sisa $jumlahTanaman');
+    return bagian.join(' · ');
+  }
 }
 
 /// Status kartu ringkasan panen (frame 7.14/7.16/7.17).

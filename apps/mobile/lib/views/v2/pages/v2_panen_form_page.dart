@@ -5,13 +5,13 @@ import '../components/v2_semaian_date_sheet.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
-import '../widgets/v2_bottom_sheet.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_stepper.dart';
 import '../widgets/v2_text_field.dart';
+import 'v2_panen_tanaman_sheet.dart';
 
 /// Form "Catat panen" (frame 7.8–7.12) dan dialog buang perubahan (7.22).
 ///
@@ -244,38 +244,10 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
   }
 
   Future<void> _pickTanaman() async {
-    var draft = _tanaman ?? _pilihan.first;
-    final result = await showModalBottomSheet<V2PanenEstimasi>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: V2Colors.ink.withValues(alpha: 0.6),
-      isScrollControlled: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => V2BottomSheet(
-          title: 'Pilih tanaman',
-          actions: V2Button(
-            label: 'Pilih',
-            onPressed: () => Navigator.of(sheetContext).pop(draft),
-          ),
-          child: Column(
-            children: [
-              for (var index = 0; index < _pilihan.length; index++) ...[
-                if (index > 0) const SizedBox(height: V2Space.lg),
-                _PilihanTanamanRow(
-                  label:
-                      '${_pilihan[index].meja}, '
-                      '${_pilihan[index].varietas} '
-                      '${_pilihan[index].jumlahTanaman}',
-                  selected:
-                      _pilihan[index].meja == draft.meja &&
-                      _pilihan[index].varietas == draft.varietas,
-                  onTap: () => setSheetState(() => draft = _pilihan[index]),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+    final result = await showV2PanenTanamanSheet(
+      context,
+      pilihan: _pilihan,
+      terpilih: _tanaman,
     );
     if (!mounted || result == null) return;
     setState(() {
@@ -517,78 +489,6 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
               secondaryLabel: 'Lanjut isi',
               onSecondary: () => setState(() => _showBuang = false),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Baris pilihan tanaman di sheet 7.9.
-///
-/// Bentuknya sama dengan `OptionRow`, tetapi teks mulai 27 dan bulatan pilihan
-/// berjarak 19 dari tepi kanan seperti frame page 07. `V2OptionRow` milik
-/// komponen shared dipakai apa adanya oleh halaman lain.
-class _PilihanTanamanRow extends StatelessWidget {
-  const _PilihanTanamanRow({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(V2Radius.pill),
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.only(left: 25, right: 17),
-          decoration: BoxDecoration(
-            color: selected ? V2Colors.blue50 : V2Colors.white,
-            borderRadius: BorderRadius.circular(V2Radius.pill),
-            border: Border.all(
-              color: selected ? V2Colors.blue700 : V2Colors.slate400,
-              width: selected ? 3 : 2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.bodyStrong,
-                ),
-              ),
-              const SizedBox(width: V2Space.md),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: selected ? V2Colors.blue500 : V2Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: selected ? V2Colors.blue500 : V2Colors.slate400,
-                    width: 2,
-                  ),
-                ),
-                child: selected
-                    ? const V2Icon(
-                        V2IconName.check,
-                        size: 16,
-                        color: V2Colors.white,
-                      )
-                    : null,
-              ),
-            ],
           ),
         ),
       ),
