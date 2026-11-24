@@ -246,7 +246,10 @@ void main() {
       expect(find.text('Masa tunggu panen: cek label produk.'), findsOneWidget);
       expect(find.text('Sembunyikan detail'), findsOneWidget);
 
-      // Menutup lagi menyembunyikan rincian.
+      // Menutup lagi menyembunyikan rincian (header tanggal menggeser kartu,
+      // jadi pastikan tombolnya terlihat dulu).
+      await tester.ensureVisible(find.text('Sembunyikan detail'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sembunyikan detail'));
       await tester.pumpAndSettle();
       expect(find.text('Spinosad'), findsNothing);
