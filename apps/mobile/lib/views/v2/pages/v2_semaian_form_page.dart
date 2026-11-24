@@ -361,6 +361,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
           value: _jumlahBahan,
           unit: bahan.satuan,
           error: _jumlahError != null,
+          onChanged: _setJumlah,
           onMinus: _jumlahBahan <= 1
               ? null
               : () => _setJumlah(_jumlahBahan - 1),

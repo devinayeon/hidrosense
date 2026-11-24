@@ -369,6 +369,17 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
     setState(() => _tanggal = hasil);
   }
 
+  /// Ubah jumlah lewat minus/plus atau ketik langsung (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() {
+      _jumlah = value;
+      if (_jumlahError != null) {
+        _jumlahError = value > _aktif ? 'Tanaman aktif hanya $_aktif' : null;
+      }
+    });
+  }
+
   void _simpan() {
     setState(() {
       _jumlahError = _jumlah > _aktif ? 'Tanaman aktif hanya $_aktif' : null;
@@ -468,10 +479,9 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
           value: _jumlah,
           unit: 'tanaman',
           error: _jumlahError != null,
-          onMinus: () {
-            if (_jumlah > 1) setState(() => _jumlah--);
-          },
-          onPlus: () => setState(() => _jumlah++),
+          onChanged: _setJumlah,
+          onMinus: () => _setJumlah(_jumlah - 1),
+          onPlus: () => _setJumlah(_jumlah + 1),
         ),
         if (_jumlahError != null) ...[
           const SizedBox(height: V2Space.sm),

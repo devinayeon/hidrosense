@@ -82,6 +82,15 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
 
   bool get _stokKurang => _jumlah > _obat.stok;
 
+  /// Ketik langsung jumlah botol, atau lewat minus/plus (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() {
+      _jumlah = value;
+      _berubah = true;
+    });
+  }
+
   Future<void> _pilihTanggal() async {
     final hasil = await showV2SemaianDateSheet(
       context,
@@ -277,14 +286,9 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
           value: _jumlah,
           unit: 'botol',
           error: _stokKurang,
-          onMinus: () => setState(() {
-            if (_jumlah > 1) _jumlah -= 1;
-            _berubah = true;
-          }),
-          onPlus: () => setState(() {
-            _jumlah += 1;
-            _berubah = true;
-          }),
+          onChanged: _setJumlah,
+          onMinus: () => _setJumlah(_jumlah - 1),
+          onPlus: () => _setJumlah(_jumlah + 1),
         ),
         if (_stokKurang) ...[
           const SizedBox(height: V2Space.sm),

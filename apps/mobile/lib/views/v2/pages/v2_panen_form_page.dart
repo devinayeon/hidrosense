@@ -258,6 +258,18 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
     });
   }
 
+  /// Ubah jumlah tanaman lewat minus/plus atau ketik langsung (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() {
+      _jumlah = value;
+      if (_jumlahError != null) {
+        final aktif = _tanaman?.jumlahTanaman ?? 0;
+        _jumlahError = value > aktif ? 'Tanaman aktif hanya $aktif' : null;
+      }
+    });
+  }
+
   void _simpan() {
     final total = double.tryParse(_beratTotal.text.trim()) ?? 0;
     final reject = double.tryParse(_beratReject.text.trim()) ?? 0;
@@ -404,10 +416,9 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
           value: _jumlah,
           unit: 'tanaman',
           error: _jumlahError != null,
-          onMinus: () => setState(() {
-            if (_jumlah > 1) _jumlah -= 1;
-          }),
-          onPlus: () => setState(() => _jumlah += 1),
+          onChanged: _setJumlah,
+          onMinus: () => _setJumlah(_jumlah - 1),
+          onPlus: () => _setJumlah(_jumlah + 1),
         ),
         if (_jumlahError != null) ...[
           const SizedBox(height: V2Space.sm),
