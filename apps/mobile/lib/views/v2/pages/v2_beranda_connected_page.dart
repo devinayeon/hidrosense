@@ -7,6 +7,7 @@ import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../../viewmodels/session_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
+import '../../../viewmodels/v2_notification_read.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import '../connected/v2_beranda_notifikasi.dart';
@@ -51,6 +52,7 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         : v2BerandaNotifikasi(
             nursery: ref.watch(connectedNurseryProvider).records,
             inventaris: ref.watch(connectedInventoryProvider).activeRecords,
+            sudahDibaca: ref.watch(v2NotificationReadProvider),
           );
     final gagal = syncItems
         .where((item) => item.status == SyncQueueStatus.gagal)
@@ -92,12 +94,11 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       rawatTab: const V2RawatConnectedTab(),
       onOpenWeather: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
-      onOpenNotifications: () => Navigator.of(context).push(
-        V2NotificationsPage.route(
-          groups: notifikasi,
-          onMarkAllRead: () => Navigator.of(context).maybePop(),
-        ),
-      ),
+      notificationGroups: notifikasi,
+      onNotificationRead: (id) =>
+          ref.read(v2NotificationReadProvider.notifier).markRead(id),
+      onNotificationMarkAllRead: (ids) =>
+          ref.read(v2NotificationReadProvider.notifier).markAll(ids),
       syncLabel: syncItems.isEmpty
           ? 'Terakhir 09.40'
           : '${syncItems.length} data menunggu',

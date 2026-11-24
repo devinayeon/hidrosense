@@ -82,12 +82,22 @@ class WeatherViewModel extends StateNotifier<WeatherState> {
 /// Notifikasi saran cuaca (S6: tindakan cuaca hanya berupa notifikasi, tidak disimpan).
 final weatherNoticeSinkProvider = Provider<WeatherNoticeSink>((ref) => LocalWeatherNotifier());
 
+/// Jam yang bisa disuntik untuk menentukan "hari ini" di layar Cuaca.
+///
+/// Dipakai saat memuat prakiraan BMKG supaya label "Hari Ini • 24 Nov 2026"
+/// tidak bergantung pada `DateTime.now()` perangkat dan bisa diuji dengan
+/// tanggal tetap (BUG-26/BUG-27).
+final weatherClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
 final weatherViewModelProvider =
     StateNotifierProvider.autoDispose<WeatherViewModel, WeatherState>((ref) {
       final service = ref.watch(bmkgWeatherServiceProvider);
       final sink = ref.watch(weatherNoticeSinkProvider);
+      final clock = ref.watch(weatherClockProvider);
       return WeatherViewModel(
-        loader: service.fetchWeather,
-        onLoaded: (data) => unawaited(notifyTodayAdvice(data, sink, DateTime.now())),
+        loader: () => service.fetchWeather(fetchedAt: clock()),
+        onLoaded: (data) => unawaited(notifyTodayAdvice(data, sink, clock())),
       );
     });

@@ -177,6 +177,34 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **Alasan:** konsisten dengan tab Stok yang sudah mereset saringan saat diketuk langsung
   (BUG-06). Tidak mengubah desain kartu maupun urutan segmen.
 
+## D-23 — Notifikasi in-app: dibaca/belum, ketuk buka tujuan, simpan lokal (BUG-30) (24 Nov 2026)
+- **Konteks:** halaman "2.4 Notifikasi" hanya menampilkan baris; tidak ada status dibaca,
+  baris tidak bisa ditekan, dan "Tandai semua dibaca" selalu aktif. Tanpa push native
+  (D-06/D-17), notifikasi ini murni in-app.
+- **Pilihan:**
+  1. **Dibaca/belum** ditandai penanda **bukan warna** (titik bentuk + label semantik
+     "Belum dibaca"), supaya tetap terbaca tanpa membedakan warna.
+  2. **Ketuk baris** = tandai dibaca + tutup halaman + buka tujuan relevan. Halaman hanya
+     mengembalikan `V2NotificationTarget`; Beranda yang tahu indeks tab lalu berpindah
+     (Semaian → tab Tanam, Stok → tab Stok + saringan "Menipis").
+  3. **"Tandai semua dibaca"** nonaktif saat tidak ada yang belum dibaca.
+  4. **Status disimpan lokal per pengguna** dengan **id stabil** (`semaian-<id>`,
+     `stok-menipis`) di `notification_read.db`, terpisah per alamat layanan.
+  5. Tanpa push native (tetap D-06/D-17).
+- **Alasan:** notifikasi dibangun ulang dari data tiap kali Beranda dibuka, jadi status
+  harus disimpan terpisah dengan kunci stabil. Ketukan yang membuka tab relevan
+  menghilangkan "jalan buntu" pada baris.
+
+## D-24 — Riwayat rotasi: entri bisa dilipat, filter dibungkus (BUG-32) (24 Nov 2026)
+- **Konteks:** filter riwayat rotasi terlalu rapat (meluber pada skala teks 2.0) dan
+  daftarnya terasa sangat panjang.
+- **Pilihan:** filter dibungkus (`Wrap`) dengan jarak token; **tiap entri bisa dilipat**
+  (tertutup = ringkasan, terbuka = rincian), bukan satu dropdown besar untuk seluruh
+  daftar. Tombol lipat ≥ 48dp dengan label teks + ikon (bukan warna saja).
+- **Alasan:** per-entri menjaga konteks baris yang sedang dibaca dan tidak menyembunyikan
+  seluruh riwayat sekaligus. Alternatif pengelompokan per tanggal tetap terbuka bila PM
+  menilai lebih baik.
+
 ---
 
 ## §6 — Inkonsistensi spesifikasi (diuji kedua sisi, asumsi dicatat)

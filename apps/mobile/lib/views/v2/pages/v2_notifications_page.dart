@@ -7,19 +7,40 @@ import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
 
+/// Tujuan yang dibuka saat sebuah notifikasi ditekan.
+///
+/// Halaman notifikasi hanya mengembalikan pilihan ini lewat `Navigator.pop`;
+/// pemanggil (Beranda) yang tahu cara berpindah tab, supaya notifikasi tidak
+/// memaksa tahu susunan tab (BUG-30).
+enum V2NotificationTarget { none, semaian, stok }
+
+/// Kunci penanda "belum dibaca" (dipakai pengujian widget dan pembaca layar).
+const Key v2NotifUnreadDotKey = Key('notifikasi-belum-dibaca');
+
 /// Satu notifikasi di halaman 2.4.
 class V2Notification {
   const V2Notification({
+    required this.id,
     required this.title,
     required this.subtitle,
     this.icon = V2IconName.sprout,
-    this.onTap,
+    this.read = false,
+    this.target = V2NotificationTarget.none,
   });
+
+  /// Identitas stabil antar pemuatan (mis. `semaian-12`). Dipakai menyimpan
+  /// status "sudah dibaca" per pengguna (D-23).
+  final String id;
 
   final String title;
   final String subtitle;
   final V2IconName icon;
-  final VoidCallback? onTap;
+
+  /// True kalau pengguna sudah membuka notifikasi ini.
+  final bool read;
+
+  /// Halaman yang dibuka saat notifikasi ditekan.
+  final V2NotificationTarget target;
 }
 
 /// Kelompok notifikasi: "Baru" dan "Sebelumnya".
@@ -34,24 +55,43 @@ class V2NotificationGroup {
 ///
 /// Dibuka dari bel di beranda 2.1. Isi desain dibagi dua kelompok, lalu tombol
 /// "Tandai semua dibaca" di bawah.
-class V2NotificationsPage extends StatelessWidget {
-  const V2NotificationsPage({super.key, this.groups, this.onMarkAllRead});
+///
+/// Setiap baris bisa ditekan: baris ditandai sudah dibaca ([onMarkRead]) lalu
+/// halaman mengembalikan [V2Notification.target] ke pemanggil supaya tujuan
+/// yang relevan dibuka (BUG-30, D-23). Baris yang belum dibaca diberi penanda
+/// titik — beda bentuk, bukan hanya beda warna.
+class V2NotificationsPage extends StatefulWidget {
+  const V2NotificationsPage({
+    super.key,
+    this.groups,
+    this.onMarkRead,
+    this.onMarkAllRead,
+  });
 
   final List<V2NotificationGroup>? groups;
-  final VoidCallback? onMarkAllRead;
+
+  /// Dipanggil saat satu baris dibuka; menyimpan "sudah dibaca" ke penyimpanan.
+  final ValueChanged<String>? onMarkRead;
+
+  /// Dipanggil saat "Tandai semua dibaca" ditekan, berisi id yang belum dibaca.
+  final ValueChanged<List<String>>? onMarkAllRead;
 
   static const List<V2NotificationGroup> designGroups = [
     V2NotificationGroup(
       label: 'Baru',
       items: [
         V2Notification(
+          id: 'design-semaian-1',
           title: 'Semaian HSS 15',
           subtitle: 'Siap pindah ke meja, 08.00',
+          target: V2NotificationTarget.semaian,
         ),
         V2Notification(
+          id: 'design-stok-1',
           title: 'Stok menipis',
           subtitle: 'Butterhead sisa 2 pak, 07.30',
           icon: V2IconName.box,
+          target: V2NotificationTarget.stok,
         ),
       ],
     ),
@@ -59,31 +99,81 @@ class V2NotificationsPage extends StatelessWidget {
       label: 'Sebelumnya',
       items: [
         V2Notification(
+          id: 'design-hujan-1',
           title: 'Hujan sore',
           subtitle: 'Tunda semprot, 15.00',
           icon: V2IconName.cloud,
+          read: true,
         ),
         V2Notification(
+          id: 'design-semaian-2',
           title: 'Semaian HSS 15',
           subtitle: '12 Nov, 08.00',
+          read: true,
+          target: V2NotificationTarget.semaian,
         ),
       ],
     ),
   ];
 
-  static Route<void> route({
+  static Route<V2NotificationTarget> route({
     List<V2NotificationGroup>? groups,
-    VoidCallback? onMarkAllRead,
+    ValueChanged<String>? onMarkRead,
+    ValueChanged<List<String>>? onMarkAllRead,
   }) {
-    return MaterialPageRoute<void>(
-      builder: (_) =>
-          V2NotificationsPage(groups: groups, onMarkAllRead: onMarkAllRead),
+    return MaterialPageRoute<V2NotificationTarget>(
+      builder: (_) => V2NotificationsPage(
+        groups: groups,
+        onMarkRead: onMarkRead,
+        onMarkAllRead: onMarkAllRead,
+      ),
     );
   }
 
   @override
+  State<V2NotificationsPage> createState() => _V2NotificationsPageState();
+}
+
+class _V2NotificationsPageState extends State<V2NotificationsPage> {
+  late final List<V2NotificationGroup> _groups =
+      widget.groups ?? V2NotificationsPage.designGroups;
+
+  /// Id yang sudah dibaca selama halaman ini terbuka; diisi dari status awal.
+  late final Set<String> _read = {
+    for (final group in _groups)
+      for (final item in group.items)
+        if (item.read) item.id,
+  };
+
+  List<String> get _unreadIds => [
+    for (final group in _groups)
+      for (final item in group.items)
+        if (!_read.contains(item.id)) item.id,
+  ];
+
+  bool get _hasUnread => _unreadIds.isNotEmpty;
+
+  /// Ketukan baris: tandai dibaca, lalu tutup halaman dengan tujuan baris itu
+  /// sehingga Beranda bisa membuka tab yang relevan (BUG-30).
+  void _open(V2Notification item) {
+    if (!_read.contains(item.id)) {
+      setState(() => _read.add(item.id));
+      widget.onMarkRead?.call(item.id);
+    }
+    if (item.target != V2NotificationTarget.none) {
+      Navigator.of(context).pop(item.target);
+    }
+  }
+
+  void _markAll() {
+    final ids = _unreadIds;
+    if (ids.isEmpty) return;
+    setState(() => _read.addAll(ids));
+    widget.onMarkAllRead?.call(ids);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final data = groups ?? designGroups;
     return Theme(
       data: V2Theme.light,
       child: Scaffold(
@@ -107,7 +197,7 @@ class V2NotificationsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final group in data) ...[
+                      for (final group in _groups) ...[
                         V2GroupLabel(group.label),
                         for (final item in group.items) ...[
                           const SizedBox(height: V2Space.sm),
@@ -115,7 +205,10 @@ class V2NotificationsPage extends StatelessWidget {
                             title: item.title,
                             subtitle: item.subtitle,
                             icon: item.icon,
-                            onTap: item.onTap,
+                            trailing: _read.contains(item.id)
+                                ? null
+                                : const _UnreadDot(key: v2NotifUnreadDotKey),
+                            onTap: () => _open(item),
                           ),
                         ],
                         const SizedBox(height: V2Space.sm),
@@ -136,11 +229,34 @@ class V2NotificationsPage extends StatelessWidget {
                   child: V2Button(
                     label: 'Tandai semua dibaca',
                     type: V2ButtonType.ghost,
-                    onPressed: onMarkAllRead,
+                    // Nonaktif saat tidak ada yang belum dibaca (D-23).
+                    onPressed: _hasUnread ? _markAll : null,
                   ),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Penanda "belum dibaca": titik bentuk, bukan sekadar beda warna.
+class _UnreadDot extends StatelessWidget {
+  const _UnreadDot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Belum dibaca',
+      child: const SizedBox(
+        width: 10,
+        height: 10,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: V2Colors.blue500,
+            shape: BoxShape.circle,
           ),
         ),
       ),

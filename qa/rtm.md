@@ -116,8 +116,8 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | # | Syarat | Status | Bukti |
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
-| 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` beralasan: BUG-04 (dependensi) & BUG-16 (kredensial Cloudinary server) di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **632/632** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
+| 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` tersisa **BUG-04** (dependensi backend) di `qa/issues.md` |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **660/660** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |

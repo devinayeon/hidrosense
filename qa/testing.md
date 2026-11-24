@@ -52,7 +52,7 @@ cd apps/backend && node --import tsx qa/fuzz-invariants.mjs               # 638 
 
 # 6) Mobile
 cd apps/mobile && flutter analyze                                        # tanpa temuan
-cd apps/mobile && flutter test                                           # 632 tes
+cd apps/mobile && flutter test                                           # 660 tes
 
 # 7) AI / ML
 cd /home/eiser/coolyeah/PPL/hidrosense && python3 -m pytest ml/tests -q   # 165 lulus, 3 gagal-harness
@@ -68,7 +68,7 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 | Suite | Baseline (awal sesi) | Hasil akhir | Catatan |
 |---|---|---|---|
 | `npm test` (backend) | 432/432 PASS | **432/432 PASS** | Tidak ada tes backend yang diubah. |
-| `flutter test` (mobile) | 592 PASS | **632 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21) dan +26 tes sesi 2 (BUG-22..25) di atas 592 baseline; termasuk 61 tes fitur pest. |
+| `flutter test` (mobile) | 592 PASS | **660 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21), +26 tes sesi 2 (BUG-22..25), +28 tes sesi 3 (BUG-26..32) di atas 592 baseline; termasuk 61 tes fitur pest. |
 | `flutter analyze` | 2 warning aset | **0 temuan** (exit 0) | Entri aset yang menunjuk folder hilang dihapus dari `pubspec.yaml`. |
 | `python3 -m pytest ml/tests` | tak jalan (dep hilang) | **165 PASS / 3 FAIL / 0 SKIP** | 3 FAIL = bug harness ML, bukan model (lihat §4.8). |
 | `qa/backend-pest-rotation.sh` | — (baru) | **109/109 PASS** | Fitur baru backend. |
@@ -83,6 +83,10 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 > Sesi 2 (24 Nov 2026): baseline 606 PASS; ditambah 26 tes regresi
 > (BUG-23 2, BUG-22 8, BUG-24 15, BUG-25 1) sehingga **632 PASS**
 > (`/tmp/opencode/hsqa/s2-full-test.log`). `flutter analyze` tetap **0 temuan**.
+>
+> Sesi 3 (24 Nov 2026): baseline 632 PASS; ditambah 28 tes regresi
+> (BUG-26 3, BUG-27 6, BUG-28 3, BUG-29 3, BUG-30 7, BUG-31 4, BUG-32 2) sehingga
+> **660 PASS** (`/tmp/opencode/full_test.log`). `flutter analyze` tetap **0 temuan**.
 
 ---
 
@@ -413,12 +417,12 @@ i fail 0
 backend npm test exit=0
 ```
 
-### 4.2 `flutter test` (mobile) — 632 tes
+### 4.2 `flutter test` (mobile) — 660 tes
 ```
-01:35 +632: All tests passed!
+01:45 +660: All tests passed!
 flutter test exit=0
 ```
-Baseline sesi ini: `01:13 +592: All tests passed!` (`/tmp/opencode/hsqa/task2-baseline.log`).
+Baseline sesi 3: `+632: All tests passed!` (`/tmp/opencode/hsqa/s2-full-test.log`).
 `flutter analyze`: **0 temuan** setelah entri aset yang menunjuk folder tidak ada
 (`assets/illustrations/inventory/`, `assets/illustrations/features/`) dihapus dari
 `pubspec.yaml` (folder memang tidak ada; hanya dirujuk kode v1 yang jalurnya diputus).
@@ -433,6 +437,14 @@ Sesi 2 menambahkan 26 tes:
 `v2_stock_refresh_after_accept_test.dart` (BUG-23, 2), `v2_rawat_pindaian_test.dart`
 (BUG-22, 8), `v2_text_scale_bug24_test.dart` (BUG-24, 15 layar pada `textScaler 2.0`),
 `v2_beranda_tanam_segment_reset_test.dart` (BUG-25, 1).
+
+Sesi 3 menambahkan 28 tes (semuanya terbukti gagal pada kode lama/simulasinya):
+`v2_cuaca_entry_consistency_test.dart` (BUG-26, 3), `v2_catat_rusak_date_test.dart`
+(BUG-27, 6), `v2_pindah_meja_success_test.dart` (BUG-28, 3),
+`v2_pindah_meja_jumlah_test.dart` (BUG-29, 3), `v2_notifikasi_bug30_test.dart`
+(BUG-30, 7), `v2_penjualan_chart_align_test.dart` (BUG-31, 4),
+`v2_rotation_history_bug32_test.dart` (BUG-32, 2); `pest_widgets_test.dart`
+disesuaikan untuk BUG-32.
 
 ### 4.3 Backend adversarial
 ```

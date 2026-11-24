@@ -38,29 +38,50 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
       appBar: AppBar(title: const Text('Riwayat rotasi obat')),
       body: Column(
         children: [
-          _ChipRow(children: [
-            V2Chip(label: 'Semua', selected: state.status == null, onTap: () => notifier.setStatus(null)),
-            for (final s in RecommendationStatus.values)
-              V2Chip(label: s.label, selected: state.status == s, onTap: () => notifier.setStatus(s)),
-          ]),
-          _ChipRow(children: [
-            V2Chip(label: 'Semua hama', selected: state.pest == null, onTap: () => notifier.setPest(null)),
-            for (final k in PestKind.values)
-              V2Chip(label: k.label, selected: state.pest == k, onTap: () => notifier.setPest(k)),
-          ]),
-          if (tables.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(V2Space.lg, 0, V2Space.lg, V2Space.sm),
-              child: DropdownButtonFormField<String?>(
-                initialValue: state.tableId,
-                decoration: const InputDecoration(labelText: 'Meja tanam'),
-                items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('Semua meja')),
-                  for (final t in tables) DropdownMenuItem<String?>(value: t.id, child: Text(t.code)),
-                ],
-                onChanged: notifier.setTable,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              V2Space.lg,
+              V2Space.md,
+              V2Space.lg,
+              V2Space.xs,
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: V2Space.sm,
+                  runSpacing: V2Space.sm,
+                  children: [
+                    V2Chip(label: 'Semua', selected: state.status == null, onTap: () => notifier.setStatus(null)),
+                    for (final s in RecommendationStatus.values)
+                      V2Chip(label: s.label, selected: state.status == s, onTap: () => notifier.setStatus(s)),
+                  ],
+                ),
+                const SizedBox(height: V2Space.md),
+                Wrap(
+                  spacing: V2Space.sm,
+                  runSpacing: V2Space.sm,
+                  children: [
+                    V2Chip(label: 'Semua hama', selected: state.pest == null, onTap: () => notifier.setPest(null)),
+                    for (final k in PestKind.values)
+                      V2Chip(label: k.label, selected: state.pest == k, onTap: () => notifier.setPest(k)),
+                  ],
+                ),
+                if (tables.isNotEmpty) ...[
+                  const SizedBox(height: V2Space.md),
+                  DropdownButtonFormField<String?>(
+                    initialValue: state.tableId,
+                    decoration: const InputDecoration(labelText: 'Meja tanam'),
+                    items: [
+                      const DropdownMenuItem<String?>(value: null, child: Text('Semua meja')),
+                      for (final t in tables) DropdownMenuItem<String?>(value: t.id, child: Text(t.code)),
+                    ],
+                    onChanged: notifier.setTable,
+                  ),
+                ],
+              ],
+            ),
+          ),
           Expanded(child: _body(state, notifier)),
         ],
       ),
@@ -121,33 +142,12 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
           return DecidableRecommendationCard(
             key: ValueKey(rec.id),
             recommendation: rec,
+            collapsible: true,
             onAccept: notifier.accept,
             onReject: notifier.reject,
             stock: stockOptions(ref),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ChipRow extends StatelessWidget {
-  const _ChipRow({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(V2Space.lg, V2Space.sm, V2Space.lg, V2Space.xs),
-      child: Row(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(width: V2Space.sm),
-            children[i],
-          ],
-        ],
       ),
     );
   }

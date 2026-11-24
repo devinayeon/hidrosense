@@ -22,7 +22,7 @@ menjalankan widget/unit tes tanpa Android.
 | MC-DEV-01 | Android 8.0 (API 26) batas bawah | Pasang APK di emulator API 26 | App jalan, semua layar benar | `PASS` (diuji manual dev FE) |
 | MC-DEV-02 | Android terbaru | Pasang APK di API terbaru | App jalan tanpa anomali | `PASS` (diuji manual dev FE) |
 | MC-DEV-03 | Rotasi layar | Putar layar di tiap layar utama | Layout menyesuaikan, form tak reset | `PASS` (diuji manual dev FE) |
-| MC-DEV-04 | Font sistem besar | Set 200% font | Teks tak terpotong, tombol ≥ 48dp | `FIXED (BUG-20 + BUG-24)` — layout dibuat fleksibel; 24 uji widget skala 2.0 (9 sesi 1 + 15 sesi 2); **perlu cek visual ulang di HP** |
+| MC-DEV-04 | Font sistem besar | Set 200% font | Teks tak terpotong, tombol ≥ 48dp | `PASS` (diuji manual dev FE) — layout dibuat fleksibel; 24 uji widget skala 2.0; temuan sisa dicatat BUG-31 |
 | MC-DEV-05 | Layar 360x640 & tablet | Jalankan di layar kecil & besar | Tak rusak/overflow | `PASS` (diuji manual dev FE) — diuji lewat simulasi lebar kecil di HP, bukan perangkat 360x640 asli |
 | MC-DEV-06 | Mode gelap/terang | Ganti tema sistem | Kontras cukup, teks terbaca | `GAP (D-16)` — aplikasi hanya satu tema; bukan bug |
 | MC-DEV-07 | Background/foreground | Home lalu kembali | State form terjaga, tak crash | `MANUAL-PENDING` |
@@ -64,7 +64,7 @@ menjalankan widget/unit tes tanpa Android.
 | MC-PERF-04 | Pencocokan aturan cuaca | Dari fetch BMKG sampai kartu tampil | < 2 detik | `MANUAL-PENDING` |
 | MC-PERF-05 | Spesifikasi perangkat | Catat RAM/CPU/OS perangkat uji | RAM ≥ 3 GB, Android 8+ | `MANUAL-PENDING` |
 | MC-PERF-06 | Inferensi deteksi hama per gambar | Ukur dari foto → hasil (cold & warm) | < 5 detik | `PASS` (diuji manual dev FE) — lolos target, angka belum dicatat (host 130 ms/gambar) |
-| MC-PERF-07 | Deteksi 50× berturut-turut (memori) | Ulang 50×, pantau memori/ANR | Tak OOM/crash | `BLOCKED` — simpan/unggah foto gagal (BUG-16); uji ulang setelah layanan unggah beres. Alternatif: uji deteksi saja tanpa simpan |
+| MC-PERF-07 | Deteksi 50× berturut-turut (memori) | Ulang 50×, pantau memori/ANR | Tak OOM/crash | `MANUAL-PENDING` — blocker unggah (BUG-16) sudah hilang (env Cloudinary server terisi, dev FE berhasil simpan); uji 50× belum dijalankan |
 
 ## E. Sync/offline pada perangkat (PB-07)
 
@@ -141,8 +141,10 @@ bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat.
 | MC-FIX-17 | BUG-17 — lokasi cuaca | Buka Cuaca, lihat lokasi/prakiraan | `PASS` (diuji manual dev FE) — Sabrang/Ambulu/Jember tampil benar |
 | MC-FIX-18 | BUG-18 — kartu "Lubang terisi" | Tekan kartu di Beranda | `PASS` (diuji manual dev FE) — membuka Tanam → Meja |
 | MC-FIX-19 | BUG-19 — sesi dipulihkan | Tutup paksa lalu buka aplikasi | `PASS` (diuji manual dev FE) — langsung beranda v2 |
-| MC-FIX-20/24 | BUG-20/BUG-24 — font 200% | Set ukuran font 200%, buka layar utama | `FIXED`, **belum diuji ulang di HP** — bukti masih uji widget |
-| MC-FIX-22..25 | BUG-22..BUG-25 — temuan sesi 2 | Lihat `issues.md` per bug | `FIXED` di kode + tes regresi; **belum diuji ulang di HP** (menunggu dev FE) |
+| MC-FIX-16 | BUG-16 — simpan pindaian | Deteksi → simpan & minta saran obat | `PASS` (diuji manual dev FE) — env Cloudinary server sudah diisi; simpan berhasil |
+| MC-FIX-20/24 | BUG-20/BUG-24 — font 200% | Set ukuran font 200%, buka layar utama | `PASS` (diuji manual dev FE) — kecuali label grafik Ringkasan penjualan yang dicatat ulang sebagai BUG-31 |
+| MC-FIX-22..25 | BUG-22..BUG-25 — temuan sesi 2 | Lihat `issues.md` per bug | `PASS` (diuji manual dev FE) — 24 Nov 2026 |
+| MC-FIX-26..32 | BUG-26..BUG-32 — temuan sesi 3 | Lihat `issues.md` per bug: cuaca (26), tanggal form (27), tombol sukses Pindah ke meja (28), jumlah form pindah (29), notifikasi diketuk (30), label grafik penjualan 200% (31), filter riwayat rotasi 200% (32) | `FIXED di kode, belum diuji ulang di HP` — menunggu dev FE |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
 > (tidak ada perangkat Android di sini). Perbaikan sesi 2 sudah lulus tes otomatis tetapi

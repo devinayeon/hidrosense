@@ -16,6 +16,7 @@ import '../pages/v2_semaian_detail_page.dart';
 import '../pages/v2_semaian_edit_page.dart';
 import '../pages/v2_semaian_form_page.dart';
 import '../pages/v2_semaian_list_page.dart';
+import 'v2_meja_connected.dart';
 
 /// `Benih Selada Romaine` → `Romaine`; nama benih backend lebih panjang dari
 /// label yang dipakai desain.
@@ -268,7 +269,40 @@ class _V2SemaianConnectedDetailPageState
       ),
     );
     if (!mounted || hasil == null) return;
+    if (hasil.aksi == V2PindahMejaAksi.keDaftarSemaian) {
+      // Tombol "Ke daftar semaian" menutup detail, kembali ke daftar (BUG-28).
+      Navigator.of(context).maybePop();
+      return;
+    }
     _segarkan('Bibit dipindah');
+    if (hasil.aksi == V2PindahMejaAksi.lihatMeja && hasil.tableId != null) {
+      await _bukaMeja(context, ref, hasil.tableId!);
+    }
+  }
+
+  /// Buka detail meja tujuan setelah pindah (tombol "Lihat meja", BUG-28).
+  Future<void> _bukaMeja(
+    BuildContext context,
+    WidgetRef ref,
+    String tableId,
+  ) async {
+    final record = ref
+        .read(connectedTableProvider)
+        .records
+        .where((row) => row.id == tableId)
+        .firstOrNull;
+    if (record == null) return;
+    final item = v2MejaItemFromRecord(
+      record,
+      transfers: ref.read(v2AllTransfersProvider).valueOrNull ?? const [],
+      sowings: ref.read(v2AllSowingsProvider).valueOrNull ?? const [],
+      inventaris: ref.read(connectedInventoryProvider).activeRecords,
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => V2MejaConnectedDetailPage(item: item),
+      ),
+    );
   }
 
   Future<void> _kirimPindah(V2SemaianPindah pindah) async {

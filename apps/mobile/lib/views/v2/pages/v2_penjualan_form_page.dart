@@ -41,6 +41,7 @@ class V2PenjualanFormPage extends StatefulWidget {
     this.panen,
     this.store,
     this.forceJumlahFocus = false,
+    this.initialDate,
   });
 
   /// Frame `8.7 Catat penjualan` (form baru sudah terisi contoh).
@@ -56,7 +57,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.8 Catat penjualan, panen baru`: pilihan panen tanggal 15 Nov.
   const V2PenjualanFormPage.panenBaru({super.key})
@@ -71,7 +73,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.9 Pilih panen`: sheet pilihan panen sudah terbuka.
   const V2PenjualanFormPage.pilihPanen({super.key})
@@ -86,7 +89,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = true,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.10 Catat penjualan, keyboard`: kolom jumlah sedang difokus.
   const V2PenjualanFormPage.keyboard({super.key})
@@ -101,7 +105,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = true,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.11 Catat penjualan, validasi`.
   const V2PenjualanFormPage.validation({super.key})
@@ -116,7 +121,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.12 Melebihi sisa panen`.
   const V2PenjualanFormPage.exceeds({super.key})
@@ -131,7 +137,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.13 Tanggal sebelum panen`.
   const V2PenjualanFormPage.dateBefore({super.key})
@@ -146,7 +153,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.23 Buang perubahan`: dialog buang sudah terbuka.
   const V2PenjualanFormPage.discard({super.key})
@@ -161,7 +169,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.24 Data sudah berubah`: dialog muat ulang sudah terbuka.
   const V2PenjualanFormPage.conflict(V2Penjualan penjualan, {super.key})
@@ -176,7 +185,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `8.21 Ubah penjualan`.
   const V2PenjualanFormPage.edit(V2Penjualan penjualan, {super.key})
@@ -191,7 +201,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Frame `11.9 Perbaiki penjualan`: jumlah melebihi sisa panen, lalu dikirim
   /// ulang.
@@ -207,7 +218,8 @@ class V2PenjualanFormPage extends StatefulWidget {
       previewPanenSheet = false,
       forceJumlahFocus = false,
       panen = null,
-      store = null;
+      store = null,
+      initialDate = null;
 
   /// Data awal; null berarti mencatat penjualan baru.
   final V2Penjualan? initial;
@@ -234,18 +246,25 @@ class V2PenjualanFormPage extends StatefulWidget {
   /// Backend penjualan; null berarti mode pratinjau (hanya di memori).
   final V2PenjualanStore? store;
 
+  /// Tanggal jual awal untuk penjualan baru; null berarti tanggal contoh
+  /// galeri (15 Nov). Alur nyata mengirim "hari ini" WIB supaya form tidak
+  /// memaku tanggal contoh (BUG-27).
+  final DateTime? initialDate;
+
   bool get isEdit => initial != null;
 
   static Route<V2Penjualan> route({
     V2Penjualan? initial,
     List<V2PenjualanPanen>? panen,
     V2PenjualanStore? store,
+    DateTime? initialDate,
   }) {
     return MaterialPageRoute<V2Penjualan>(
       builder: (_) => V2PenjualanFormPage(
         initial: initial,
         panen: panen,
         store: store,
+        initialDate: initialDate,
       ),
     );
   }
@@ -378,7 +397,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
 
     _tanggal = widget.previewDateBefore
         ? DateTime(2026, 11, 4)
-        : initial?.tanggal ?? DateTime(2026, 11, 15);
+        : initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
     _pembeli = TextEditingController(
       text: empty ? '' : initial?.pembeli ?? 'Warung Sari',
     );
@@ -466,7 +485,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       controller.addListener(_onFieldChanged);
     }
     setState(() {
-      _tanggal = initial?.tanggal ?? DateTime(2026, 11, 15);
+      _tanggal = initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
       _panenPreview = null;
       _panen = _ownOption ?? (_options.isEmpty ? null : _options.first);
       _pembayaran =

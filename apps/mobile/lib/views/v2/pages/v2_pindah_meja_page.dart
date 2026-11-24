@@ -102,6 +102,12 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
   @override
   void initState() {
     super.initState();
+    // Bawaan tidak boleh meja penuh/perawatan: pilih meja tersedia pertama
+    // kalau pilihan awal tidak bisa dipakai (BUG-29). Urutan daftar tetap.
+    if (!_meja[_mejaIndex].tersedia) {
+      final pertama = _meja.indexWhere((meja) => meja.tersedia);
+      if (pertama >= 0) _mejaIndex = pertama;
+    }
     if (widget.previewLubangKurang) {
       _error = _pesanLubang(200);
     }
@@ -161,22 +167,60 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
     if (!mounted) return;
     final sisa = (widget.item.sisaBenih ?? widget.item.jumlahBenih) - _jumlah;
 
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => V2PindahMejaResultPage(
-          title: sisa > 0
-              ? 'Sudah pindah ${pindah.jumlah} ke ${pindah.meja}'
-              : 'Sudah pindah ke ${pindah.meja}',
-          body: sisa > 0
-              ? '$sisa benih masih di semaian.'
-              : '${pindah.jumlah} tanaman. Panen sekitar 30 Des.',
-          primaryLabel: sisa > 0 ? 'Pindahkan sisa' : 'Lihat meja',
-          secondaryLabel: 'Ke daftar semaian',
+    // Tombol halaman sukses tidak boleh mati (BUG-28): masing-masing
+    // mengembalikan aksi yang lalu diteruskan ke pemanggil.
+    final aksi =
+        await Navigator.of(context).push<V2PindahMejaAksi>(
+          MaterialPageRoute<V2PindahMejaAksi>(
+            builder: (_) => V2PindahMejaResultPage(
+              title: sisa > 0
+                  ? 'Sudah pindah ${pindah.jumlah} ke ${pindah.meja}'
+                  : 'Sudah pindah ke ${pindah.meja}',
+              body: sisa > 0
+                  ? '$sisa benih masih di semaian.'
+                  : '${pindah.jumlah} tanaman. Panen sekitar 30 Des.',
+              primaryLabel: sisa > 0 ? 'Pindahkan sisa' : 'Lihat meja',
+              onPrimary: () => Navigator.of(context).pop(
+                sisa > 0
+                    ? V2PindahMejaAksi.pindahkanSisa
+                    : V2PindahMejaAksi.lihatMeja,
+              ),
+              secondaryLabel: 'Ke daftar semaian',
+              onSecondary: () =>
+                  Navigator.of(context).pop(V2PindahMejaAksi.keDaftarSemaian),
+            ),
+          ),
+        ) ??
+        V2PindahMejaAksi.selesai;
+    if (!mounted) return;
+
+    if (aksi == V2PindahMejaAksi.pindahkanSisa && sisa > 0) {
+      final lagi = await Navigator.of(context).push<V2SemaianPindah>(
+        MaterialPageRoute<V2SemaianPindah>(
+          builder: (_) => V2PindahMejaFormPage(
+            item: widget.item.copyWith(sisaBenih: sisa),
+            mejaAwal: _mejaIndex,
+            jumlahAwal: sisa,
+            daftarMeja: widget.daftarMeja,
+            initialDate: _tanggal,
+            onPindahkan: widget.onPindahkan,
+          ),
         ),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(lagi ?? pindah);
+      return;
+    }
+
+    Navigator.of(context).pop(
+      V2SemaianPindah(
+        meja: pindah.meja,
+        jumlah: pindah.jumlah,
+        tanggal: pindah.tanggal,
+        tableId: pindah.tableId,
+        aksi: aksi,
       ),
     );
-    if (!mounted) return;
-    Navigator.of(context).pop(pindah);
   }
 
   @override
@@ -270,6 +314,7 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
           value: _jumlah,
           unit: 'tanaman',
           error: _error != null,
+          onChanged: _setJumlah,
           onMinus: _jumlah <= 1 ? null : () => _setJumlah(_jumlah - 1),
           onPlus: () => _setJumlah(_jumlah + 1),
         ),
@@ -283,9 +328,11 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                 color: V2Colors.red700,
               ),
               const SizedBox(width: V2Space.sm),
-              Text(
-                _error!,
-                style: V2Type.label.copyWith(color: V2Colors.red700),
+              Flexible(
+                child: Text(
+                  _error!,
+                  style: V2Type.label.copyWith(color: V2Colors.red700),
+                ),
               ),
             ],
           ),

@@ -100,7 +100,9 @@ class V2BerandaPage extends StatefulWidget {
     this.rawatTab,
     this.onLowStock,
     this.onFilledHoles,
-    this.onOpenNotifications,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   });
@@ -117,7 +119,9 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onFilledHoles,
-    this.onOpenNotifications,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -150,7 +154,9 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onFilledHoles,
-    this.onOpenNotifications,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -183,7 +189,9 @@ class V2BerandaPage extends StatefulWidget {
     this.initialEmployees = designEmployees,
     this.onLowStock,
     this.onFilledHoles,
-    this.onOpenNotifications,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -266,7 +274,15 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Membuka Tanam → Meja saat kartu "Lubang terisi" ditekan.
   final VoidCallback? onFilledHoles;
-  final VoidCallback? onOpenNotifications;
+
+  /// Isi halaman "2.4 Notifikasi"; null berarti data contoh galeri.
+  final List<V2NotificationGroup>? notificationGroups;
+
+  /// Menyimpan satu notifikasi sebagai sudah dibaca (D-23).
+  final ValueChanged<String>? onNotificationRead;
+
+  /// Menyimpan semua notifikasi yang belum dibaca sebagai sudah dibaca.
+  final ValueChanged<List<String>>? onNotificationMarkAllRead;
 
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
   final VoidCallback? onOpenWeather;
@@ -527,19 +543,30 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     await onLogOut();
   }
 
-  void _openNotifications() {
-    if (widget.onOpenNotifications != null) {
-      widget.onOpenNotifications!();
-      return;
-    }
-    Navigator.of(context).push(
+  /// Buka halaman notifikasi, lalu buka tujuan baris yang ditekan.
+  ///
+  /// Halaman mengembalikan [V2NotificationTarget] baris yang diketuk; Beranda
+  /// yang tahu indeks tab, jadi perpindahan terjadi di sini (BUG-30).
+  Future<void> _openNotifications() async {
+    final target = await Navigator.of(context).push<V2NotificationTarget>(
       V2NotificationsPage.route(
-        onMarkAllRead: () {
-          Navigator.of(context).maybePop();
-          _notice('Semua notifikasi ditandai sudah dibaca.');
-        },
+        groups: widget.notificationGroups,
+        onMarkRead: widget.onNotificationRead,
+        onMarkAllRead: widget.onNotificationMarkAllRead,
       ),
     );
+    if (!mounted || target == null) return;
+    switch (target) {
+      case V2NotificationTarget.semaian:
+        setState(() {
+          _activeTab = v2TanamTabIndex;
+          _tanamSegmen = 0;
+        });
+      case V2NotificationTarget.stok:
+        _openLowStock();
+      case V2NotificationTarget.none:
+        break;
+    }
   }
 
   void _openCycle() {
@@ -709,7 +736,14 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             V2WeatherCard(
               title: widget.weatherTitle,
               subtitle: widget.weatherSubtitle,
-              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
+              // Pintu masuk yang sama dengan hero/detail siklus: aplikasi nyata
+              // memakai `onOpenWeather` (halaman Cuaca connected, BMKG nyata).
+              // Sebelumnya kartu ini membuka halaman contoh desain sehingga
+              // tanggal prakiraan tertinggal (16/17/18 Nov) dan lokasinya beda
+              // dari pintu lain (BUG-26).
+              onTap:
+                  widget.onOpenWeather ??
+                  () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
         ],
       ],

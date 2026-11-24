@@ -92,12 +92,20 @@ class V2PenjualanChartCard extends StatelessWidget {
               for (var index = 0; index < bars.length; index++) ...[
                 if (index > 0) const SizedBox(width: V2Space.xl),
                 slot(
-                  Text(
-                    bars[index].label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: V2Type.label.copyWith(color: V2Colors.muted),
+                  // Nama bulan pendek (Sep/Okt/Nov) harus tetap satu baris dan
+                  // sejajar dengan batangnya. Di skala teks 2.0 label membesar
+                  // sampai membungkus dua baris ("Se"/"p") sehingga tidak lagi
+                  // sebaris dengan batangnya (BUG-31). FittedBox menyusutkan
+                  // sedikit agar tetap satu baris, bukan terpotong.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      bars[index].label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: V2Type.label.copyWith(color: V2Colors.muted),
+                    ),
                   ),
                 ),
               ],

@@ -13,14 +13,14 @@ perubahan itu tidak mengubah perilaku produk.
 | Severity | Ditemukan | Diperbaiki | Terbuka / review |
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
-| S2 Major | 6 | 4 | 2 |
-| S3 Minor | 16 | 13 | 3 |
+| S2 Major | 7 | 6 | 1 |
+| S3 Minor | 22 | 19 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **25** | **20** | **5** |
+| **Total** | **32** | **28** | **4** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,17,18,19,20,21,22,23,24,25 (20).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32 (28).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
-BUG-12/13 (S3, harness ML & doc API usang), BUG-16 (S2, kredensial Cloudinary server).
+BUG-12/13 (S3, harness ML & doc API usang).
 Gap fitur (bukan bug kode) dicatat di `qa/rtm.md` §Gap. Tidak ada temuan **S1**.
 Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 `NEEDS-HUMAN-REVIEW` dengan alasan.
@@ -29,6 +29,11 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > di HP asli (24 Nov 2026). BUG-14 dinaikkan dari review menjadi FIXED.
 > Sesi 2 (24 Nov 2026): BUG-22..BUG-25 ditambahkan dari laporan manual dev FE yang
 > sama dan sudah diperbaiki di `apps/mobile`. BUG-24 melanjutkan BUG-20 (lihat D-21).
+> BUG-16 naik dari `NEEDS-HUMAN-REVIEW` ke **FIXED** setelah tim backend mengisi
+> kredensial Cloudinary dan dev FE berhasil menyimpan pindaian di HP (24 Nov 2026).
+> Sesi 3 (24 Nov 2026): BUG-26..BUG-32 ditambahkan dari laporan manual dev FE yang
+> sama dan sudah diperbaiki di `apps/mobile` (D-23/D-24). Status **FIXED di kode**,
+> tetapi **verifikasi visual ulang di HP asli belum dilakukan** dan menunggu dev FE.
 
 ---
 
@@ -223,8 +228,8 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Aktual: gagal dengan pesan server `503 UPLOAD_NOT_CONFIGURED`.
 - Bukti: `apps/backend/src/common/cloudinary.ts:13` — `requireCloudinary()` melempar bila `config.cloudinary` kosong (env `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET` belum diisi di server). Mobile meneruskan pesan server apa adanya via `pestErrorMessage`.
 - Penyebab (akar): **konfigurasi backend/server** (kredensial Cloudinary belum diisi), bukan bug kode mobile.
-- Status: **NEEDS-HUMAN-REVIEW** — tim backend mengisi env Cloudinary di server, lalu verifikasi `BASE_URL=... CLOUDINARY_API_SECRET=... bash qa/backend-pest-rotation.sh`. Sisi mobile hanya diperbaiki pada pesannya: `UPLOAD_NOT_CONFIGURED`/`UPLOAD_FAILED` kini diterjemahkan menjadi kalimat yang bisa ditindaklanjuti petani.
-- Regression test: `apps/mobile/test/pest_error_message_test.dart` (pemetaan pesan, 3 kasus).
+- Status: **FIXED** — tim backend mengisi env `CLOUDINARY_*` di server; simpan pindaian berhasil di HP (uji manual dev FE, 24 Nov 2026). Sisi mobile tetap mencatat perbaikan pesannya: `UPLOAD_NOT_CONFIGURED`/`UPLOAD_FAILED` diterjemahkan menjadi kalimat yang bisa ditindaklanjuti petani.
+- Regression test: `apps/mobile/test/pest_error_message_test.dart` (pemetaan pesan, 3 kasus). Blocker unggah sudah hilang; MC-PERF-07 (deteksi 50×) berpindah dari `BLOCKED` ke `MANUAL-PENDING`.
 
 ## BUG-17 [S3] Lokasi Cuaca hanya menampilkan Malang/Batu/Pasuruan
 - Area/PB: PB-10 (cuaca BMKG) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
@@ -319,6 +324,84 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Status: **FIXED** — setiap ketukan langsung ke tab Tanam mereset `_tanamSegmen = 0` (pola sama dengan reset saringan tab Stok, BUG-06); pergantian peran juga mereset (D-22).
 - Regression test: `apps/mobile/test/v2_beranda_tanam_segment_reset_test.dart`.
 
+## BUG-26 [S3] Kartu cuaca Beranda membuka halaman contoh, bukan cuaca nyata
+- Area/PB: Beranda → kartu Cuaca · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka Beranda saat tersambung; 2) tekan kartu cuaca (atau hero/detail siklus → pintu cuaca).
+- Ekspektasi: semua pintu masuk membuka halaman Cuaca nyata (`V2CuacaConnectedPage`) dengan prakiraan BMKG terbaru dan lokasi sama.
+- Aktual: kartu cuaca di Beranda membuka halaman contoh desain (`V2CuacaPage`), sehingga tanggal prakiraan tertinggal (16/17/18 Nov) dan lokasinya beda dari pintu lain.
+- Bukti: `flutter test test/v2_cuaca_entry_consistency_test.dart` — 3 kasus; 2 gagal pada kode lama, lulus setelah perbaikan.
+- Penyebab (akar): `v2_beranda_page.dart` kartu cuaca memakai `onTap` tetap ke `V2CuacaPage.route()` dan mengabaikan `widget.onOpenWeather`.
+- Status: **FIXED** — kartu cuaca memakai `widget.onOpenWeather ?? V2CuacaPage.route()` seperti hero/detail siklus. File: `v2_beranda_page.dart`; `weather_viewmodel.dart` (jam pembaruan lewat `weatherClockProvider`).
+- Regression test: `apps/mobile/test/v2_cuaca_entry_consistency_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-27 [S2] Tanggal bawaan form bisa tertinggal (satu akar tanggal)
+- Area/PB: §5.4 (tanggal catat) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka form "Catat rusak" dari alur Tanam; 2) buka form "Catat penjualan" baru dari daftar; 3) perhatikan tanggal bawaan.
+- Ekspektasi: tanggal bawaan = hari ini menurut zona WIB (`jakartaToday()`), termasuk sekitar tengah malam.
+- Aktual: sebagian pintu form memakai tanggal tetap sehingga catatan bisa tersimpan dengan tanggal yang salah.
+- Bukti: `flutter test test/v2_catat_rusak_date_test.dart` — 6 kasus (termasuk batas tengah malam WIB); 3 gagal pada kode lama, lulus setelah perbaikan.
+- Penyebab (akar): tanggal form di-hardcode alih-alih diturunkan dari jam yang bisa disuntik. Audit: pemanggil nyata (`v2_semaian_connected.dart`, `v2_panen_connected.dart`) sudah memakai `jakartaToday()`; sisa `DateTime(2026,11,15)` di `v2_pindah_meja_page.dart:97` dan `v2_panen_form_page.dart:159` adalah galeri/contoh (`v2PanenHariIni`), bukan alur nyata.
+- Status: **FIXED** — `v2_tanaman_rusak_page.dart` memakai clock yang bisa disuntik (`initial ?? jakartaToday(clock())`); `v2_penjualan_form_page.dart` menerima `initialDate` dan `v2_penjualan_list_page.dart` mengirim `jakartaToday()` hanya saat membuat penjualan baru.
+- Regression test: `apps/mobile/test/v2_catat_rusak_date_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-28 [S3] Tombol halaman sukses "Pindah ke meja" tidak bisa ditekan
+- Area/PB: Tanam → Semaian → Pindah ke meja (5.18/5.22) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) pindahkan semaian ke meja lewat alur nyata; 2) di halaman sukses tekan "Lihat meja" / "Ke daftar semaian" / "Pindahkan sisa".
+- Ekspektasi: tiap tombol menutup halaman sukses dan menjalankan aksinya (buka detail meja tujuan, kembali ke daftar semaian, atau lanjut memindah sisa).
+- Aktual: tombol tampak normal tetapi ditekan tidak terjadi apa-apa.
+- Bukti: `flutter test test/v2_pindah_meja_success_test.dart` — 3 kasus; ketiganya gagal pada kode lama (tombol mati), lulus setelah perbaikan.
+- Penyebab (akar): `v2_pindah_meja_page.dart` `_pindahkan` membuka `V2PindahMejaResultPage` tanpa `onPrimary`/`onSecondary`, sehingga `V2Button` dibuat nonaktif.
+- Status: **FIXED** — halaman sukses mengembalikan `V2PindahMejaAksi` (selesai/lihatMeja/keDaftarSemaian/pindahkanSisa); `v2_semaian_connected.dart` menindaklanjuti (buka detail meja lewat `V2MejaConnectedDetailPage`, kembali ke daftar, atau buka lagi form untuk sisa). File: `v2_pindah_meja_page.dart`, `v2_semaian_data.dart`, `v2_semaian_connected.dart`.
+- Regression test: `apps/mobile/test/v2_pindah_meja_success_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-29 [S3] Form "Pindah ke meja": jumlah besar susah diisi; meja penuh bisa jadi bawaan
+- Area/PB: Tanam → Semaian → Pindah ke meja (5.17) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka form pindah dengan jumlah besar (mis. 200); 2) coba ubah jumlah; 3) perhatikan pilihan meja bawaan saat meja pertama penuh/perawatan.
+- Ekspektasi: jumlah besar bisa dicapai tanpa menekan plus satu-satu (tahan tombol atau ketik angka); bawaan memilih meja yang tersedia, bukan meja penuh.
+- Aktual: hanya bisa satu langkah per ketukan; meja penuh bisa terpilih sebagai bawaan.
+- Bukti: `flutter test test/v2_pindah_meja_jumlah_test.dart` — 3 kasus (tahan plus, ketik angka, bawaan meja); ketiganya gagal pada simulasi kode lama, lulus setelah perbaikan.
+- Penyebab (akar): `V2Stepper`/`V2QtyField` hanya punya `onTap` satu langkah dan pil angka tidak bisa diketik; `_mejaIndex` awal tidak menyaring meja `tersedia`.
+- Status: **FIXED** — tombol minus/plus bisa ditahan untuk berulang; angka bisa diketuk lalu diketik (dialog); meja tersedia pertama dipilih otomatis bila pilihan awal penuh/perawatan. **Urutan daftar meja tidak diubah** (menunggu PM). File: `v2_stepper.dart`, `v2_pindah_meja_page.dart`.
+- Regression test: `apps/mobile/test/v2_pindah_meja_jumlah_test.dart`.
+- Pertanyaan terbuka: apakah urutan daftar meja perlu diubah (mis. meja paling kosong di atas)? Menunggu PM.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-30 [S3] Notifikasi tidak bisa ditekan dan tanpa status dibaca
+- Area/PB: Beranda → bel Notifikasi (2.4) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka Beranda; 2) tekan bel; 3) coba ketuk satu baris notifikasi, lalu tombol "Tandai semua dibaca".
+- Ekspektasi: baris bisa ditekan → menandai sudah dibaca dan membuka tujuan relevan (Semaian/Stok); ada penanda "belum dibaca" yang bukan sekadar warna; "Tandai semua dibaca" nonaktif saat tidak ada yang belum dibaca.
+- Aktual: baris tidak bereaksi, tidak ada status dibaca, dan tombol tandai-semuanya selalu aktif.
+- Bukti: `flutter test test/v2_notifikasi_bug30_test.dart` — 7 kasus (ketuk baris, penanda, tandai semua, Beranda pindah tab, id stabil, simpanan per pengguna); 5 gagal pada simulasi kode lama, lulus setelah perbaikan.
+- Penyebab (akar): `V2Notification` tidak punya `id`/`target`/`read`; `V2ListItem` diberi `onTap` null sehingga tidak ada jalur masuk.
+- Status: **FIXED** (D-23) — `V2Notification` punya id stabil + tujuan; baris ditekan → tandai dibaca + tutup halaman dengan tujuan; Beranda membuka tab yang relevan; penanda "belum dibaca" berupa titik (bentuk, bukan warna) + label semantik; "Tandai semua dibaca" nonaktif bila bersih; status disimpan lokal per pengguna (`notification_read.db`). File: `v2_notifications_page.dart`, `v2_beranda_page.dart`, `v2_beranda_connected_page.dart`, `v2_beranda_notifikasi.dart`, `data/services/notification_read_store.dart`, `viewmodels/v2_notification_read.dart`.
+- Regression test: `apps/mobile/test/v2_notifikasi_bug30_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-31 [S3] Font 200%: label bulan grafik penjualan membungkus dua baris
+- Area/PB: Penjualan → Ringkasan penjualan (grafik) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), tercatat ulang dari BUG-24
+- Langkah reproduksi: 1) set ukuran font sistem ke 200%; 2) buka Ringkasan penjualan; 3) lihat label bulan di bawah batang.
+- Ekspektasi: tiap label bulan satu baris dan titik pusatnya sebaris dengan batangnya.
+- Aktual: label "Sep"/"Okt"/"Nov" membungkus dua baris ("Se"/"p") dan tidak sejajar batang.
+- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` — 4 kasus (lebar 320/360/411, skala 1.0 & 2.0); 2 gagal pada kode lama (tinggi label 80), lulus setelah perbaikan.
+- Penyebab (akar): label bulan bebas membungkus; di skala 2.0 tinggi label melebihi slot sehingga turun baris.
+- Status: **FIXED** — label dibungkus `FittedBox(fit: scaleDown)` dengan `maxLines: 1`/`softWrap: false`. File: `v2_penjualan_chart_card.dart`.
+- Regression test: `apps/mobile/test/v2_penjualan_chart_align_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-32 [S3] Filter riwayat rotasi rapat dan daftar terlalu panjang
+- Area/PB: Rawat/Tanaman → Riwayat rotasi (pest) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
+- Langkah reproduksi: 1) buka Riwayat rotasi; 2) perhatikan baris filter; 3) set font 200% dan buka daftar panjang.
+- Ekspektasi: filter punya jarak yang lega dan tidak meluber; entri panjang bisa dilipat supaya daftar tidak terlalu panjang; kontrol tetap ≥ 48dp di skala besar.
+- Aktual: filter terlalu rapat/meluber pada skala 2.0 dan daftar terasa sangat panjang.
+- Bukti: `flutter test test/v2_rotation_history_bug32_test.dart` — 2 kasus (termasuk skala 2.0); gagal pada kode lama saat `collapsible` dihapus, lulus setelah perbaikan.
+- Penyebab (akar): baris filter memakai `Row` tanpa pembungkusan; entri tidak punya mode ringkas; chip punya tinggi tetap sehingga kena overflow.
+- Status: **FIXED** — filter dibungkus `Wrap` dengan jarak token; entri riwayat bisa dilipat (ringkasan ↔ rincian, tombol ≥ 48 dengan label teks+ikon); chip diberi `minHeight` 48 dan label `Flexible`. File: `rotation_history_page.dart`, `recommendation_card.dart`, `decision_sheets.dart`, `v2_chip.dart`.
+- Regression test: `apps/mobile/test/v2_rotation_history_bug32_test.dart`, `apps/mobile/test/pest_widgets_test.dart`.
+- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
 ---
 
 ## Catatan (bukan bug)
@@ -341,5 +424,6 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - **Izin notifikasi (D-17):** `POST_NOTIFICATIONS` dideklarasikan tetapi tak ada alur
   permintaan izin; notifikasi native juga belum ada (D-06). Gap, **bukan bug**.
 - **Kegagalan simpan foto (BUG-16):** akar masalah = kredensial `CLOUDINARY_*` belum diisi
-  di server. Sisi mobile hanya diperbaiki pada pesan galatnya; detail langkah tim backend
-  ada di badan BUG-16.
+  di server. Tim backend sudah mengisi env-nya dan simpan pindaian berhasil di HP
+  (dev FE, 24 Nov 2026) → BUG-16 **FIXED**. Sisi mobile tetap punya pesan galat yang
+  bisa ditindaklanjuti bila layanan unggah bermasalah lagi.

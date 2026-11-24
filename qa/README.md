@@ -9,7 +9,9 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 > **11 bug baru (BUG-15..BUG-25) diperbaiki** + regression test, dan `flutter analyze` kini
 > **bersih**. Aplikasi dinyatakan **online-only** oleh PM (D-14) → kasus uji offline jadi N/A.
 > Sesi 2 (24 Nov 2026) menambah BUG-22..BUG-25 dari laporan manual yang sama; total
-> `flutter test` mobile kini **632 PASS**.
+> `flutter test` mobile kini **632 PASS**. Sesi 3 (24 Nov 2026) menambah BUG-26..BUG-32
+> dari laporan yang sama (D-23/D-24); `flutter test` mobile kini **660 PASS**. Status
+> BUG-26..32 = **FIXED di kode**, verifikasi visual ulang di HP menunggu dev FE.
 
 ## Dokumen
 

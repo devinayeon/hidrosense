@@ -157,6 +157,7 @@ class DecidableRecommendationCard extends ConsumerWidget {
     required this.onAccept,
     required this.onReject,
     this.stock = const [],
+    this.collapsible = false,
   });
 
   final PestRecommendation recommendation;
@@ -164,11 +165,15 @@ class DecidableRecommendationCard extends ConsumerWidget {
   final List<StockOption> stock;
   final Future<String?> Function(String id, RejectReason reason, {String? note}) onReject;
 
+  /// Teruskan ke [RecommendationCard]: ringkasan yang bisa dibuka (BUG-32).
+  final bool collapsible;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = recommendation.id;
     return RecommendationCard(
       recommendation: recommendation,
+      collapsible: collapsible,
       onAccept: () async {
         final decision = await showAcceptSheet(context, recommendation, stock: stock);
         if (decision == null) return null;
