@@ -110,6 +110,8 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **Pilihan:** catat sebagai **gap/keputusan** (bukan bug). **Tidak** menambah dark mode
   tanpa persetujuan tim (di luar lingkup & berisiko pada seluruh desain v2).
 - **Pertanyaan untuk tim/PM:** apakah mode gelap diperlukan untuk rilis?
+  → **Update 24 Nov 2026 (sesi 4): PM memutuskan mode gelap DITUNDA (tidak dibuat
+  sekarang).**
 
 ## D-17 — Izin notifikasi belum diminta (gap, sesuai D-06) (24 Nov 2026)
 - **Konteks:** uji manual dev FE di Android 13+ — izin notifikasi default ditolak dan
@@ -128,6 +130,8 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **Pilihan:** uji perangkat memakai build dengan flag itu; **tidak** mengubah default.
 - **Pertanyaan untuk tim/PM:** model penyebaran rilis — server HTTPS (cloud/TLS) atau LAN?
   Bila LAN, butuh sertifikat TLS lokal atau pengecualian cleartext terbatas.
+  → **Update 24 Nov 2026 (sesi 4): PM belum memutuskan; opsi dirangkum di
+  `qa/deployment-notes.md` (tetap menunggu keputusan).**
 
 ## D-19 — "Tidak ada data untuk disinkronkan" saat online adalah benar (24 Nov 2026)
 - **Konteks:** uji manual dev FE — tombol "Sinkron sekarang" menampilkan "Tidak ada data
@@ -141,6 +145,7 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
   pengguna online-only? Bila dipertahankan, kalimat yang disarankan saat antrean kosong
   dan online: **"Semua data sudah tersimpan di server"** (lebih menenangkan daripada
   "tidak ada data"). Keputusan ini menunggu PM; belum ada perubahan kode.
+  → **Update 24 Nov 2026 (sesi 4): PM masih bingung; tetap OPEN, kode tidak diubah.**
 
 ## D-20 — BUG-23 diperbaiki di sisi mobile, bukan backend (24 Nov 2026)
 - **Konteks:** setelah "Setujui" rekomendasi dengan potong stok, stok di layar tidak
@@ -153,6 +158,8 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
   jenis selain `obat` (mis. `benih`)? Pada uji manual, rekomendasi mengenai benih "test"
   (100 → 90). Aturan produknya belum terdokumentasi; untuk sementara semua jenis
   diperlakukan sama seperti server.
+  → **Update 24 Nov 2026 (sesi 4): DITUTUP. PM memutuskan potong stok dari rekomendasi
+  hanya untuk jenis NUTRISI dan OBAT (D-29).**
 
 ## D-21 — BUG-24 adalah lanjutan BUG-20 (skala teks 200%) (24 Nov 2026)
 - **Konteks:** BUG-20 (S3) sudah diperbaiki untuk Beranda/hero, Deteksi hama, Cuaca,
@@ -204,6 +211,65 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **Alasan:** per-entri menjaga konteks baris yang sedang dibaca dan tidak menyembunyikan
   seluruh riwayat sekaligus. Alternatif pengelompokan per tanggal tetap terbuka bila PM
   menilai lebih baik.
+
+> **Update 24 Nov 2026 (sesi 4):** PM **menyetujui** D-23 dan D-24. PM menilai
+> pengelompokan riwayat rotasi **per tanggal** lebih bagus → jadi fitur tambahan (D-28),
+> entri di bawah header tetap bisa dilipat.
+
+## D-25 — "Tambah tanaman" mengarah ke form "Pindah ke meja", bukan mengisi langsung (BUG-35) (24 Nov 2026)
+- **Konteks:** dari Beranda → Siklus berjalan → Detail meja → "Tambah tanaman", meja
+  langsung terlihat terisi penuh, tetapi setelah kembali data tidak tersimpan/basi.
+- **Pilihan (permintaan dev FE):** "Tambah tanaman" **tidak** mengisi langsung. Tombol
+  membuka form **Pindah ke meja** dengan default menyesuaikan konteks: meja terpilih =
+  meja tersebut, semaian terpilih = semaian yang dipilih, jumlah default =
+  `min(sisa bibit, sisa kapasitas meja)`. Penyimpanan lewat alur pindah yang sudah ada.
+- **Alasan:** satu jalur tulis (pindah) menghindari logika tulis kedua yang menyebabkan
+  data basi; form pindah sudah menangani kapasitas, validasi, dan sinkron.
+
+## D-26 — Kontrak bahan penyemaian (BUG-38) (24 Nov 2026)
+- **Konteks:** tombol "Tambah bahan" di form Tambah semaian hanya mengganti bahan, tidak
+  menambah baris kedua.
+- **Hasil audit kontrak server** (`apps/backend/API.md`, `POST /penyemaian`): endpoint
+  menerima **`materials[]`** — minimal **satu** baris, tiap baris punya `id_inventaris`
+  yang **unik** dalam satu kiriman. Jadi server **sudah mendukung banyak bahan**;
+  masalahnya murni di mobile yang hanya mengirim satu bahan. **Backend tidak diubah.**
+- **Keputusan:** "Tambah bahan" **menambah baris** (bukan mengganti). Form semaian
+  multi-baris: pilih/hapus baris, bahan yang sudah terpakai tidak ditawarkan lagi,
+  galat stok per baris; saat simpan, semua baris dikirim sebagai `materials[]`.
+- **Alasan:** menyesuaikan UI dengan kontrak server yang sudah ada, tanpa perubahan
+  backend.
+
+## D-27 — Urutan daftar meja di form "Pindah ke meja" (Fitur-2) (24 Nov 2026)
+- **Konteks:** BUG-29 menanyakan urutan daftar meja. **PM menjawab: BOLEH diubah.**
+- **Pilihan:** urutkan **meja tersedia dulu**, lalu **sisa lubang kosong terbanyak**, lalu
+  **kode meja**. Meja **penuh/perawatan diletakkan di bawah** dan tetap **disabled**.
+- **Alasan:** meja yang paling siap dipakai muncul lebih dulu; meja penuh tidak lagi
+  menghalangi di atas.
+
+## D-28 — Riwayat rotasi dikelompokkan per tanggal (Fitur-1) (24 Nov 2026)
+- **Konteks:** PM menilai pengelompokan per tanggal lebih bagus daripada daftar datar.
+- **Pilihan:** kelompokkan riwayat rotasi **per tanggal WIB** (header tanggal), entri di
+  bawah header **tetap bisa dilipat** seperti D-24. Aman pada skala teks 2.0.
+- **Alasan:** memudahkan membaca riwayat berdasarkan hari; melanjutkan D-24 tanpa
+  membuang fitur lipat.
+
+## D-29 — Potong stok dari rekomendasi hanya untuk jenis NUTRISI dan OBAT (menutup D-20) (24 Nov 2026)
+- **Konteks:** D-20 menanyakan apakah potong stok rekomendasi boleh mengenai jenis selain
+  `obat` (mis. `benih`).
+- **Keputusan PM:** potong stok dari rekomendasi **hanya** untuk jenis **nutrisi** dan
+  **obat**. Saat "Setujui" dengan potong stok, daftar barang yang ditawarkan **hanya**
+  barang berjenis nutrisi/obat; jenis lain (mis. benih) **tidak** ditawarkan. Mobile saja;
+  server tidak diubah. Bila tidak ada barang yang cocok, tampilkan pesan jelas.
+- **Alasan:** membatasi efek samping stok ke jenis yang memang dipakai perawatan.
+
+## D-30 — Keputusan PM lain (sesi 4) (24 Nov 2026)
+- **D-23/D-24:** disetujui PM (lihat update di atas).
+- **D-16 (mode gelap):** untuk sementara **ditunda** (tidak dibuat).
+- **D-19 (menu Sinkron):** PM masih bingung → **tetap OPEN**, kode tidak diubah.
+- **D-18 (TLS/LAN):** PM belum memutuskan → **cukup didokumentasikan** di
+  `qa/deployment-notes.md` (tetap menunggu keputusan).
+- **G-17 (SRS offline-first → online-only, D-14):** **SA** yang merevisi SRS → panduan
+  revisi dibuat di `qa/srs-revision-guide.md`.
 
 ---
 

@@ -133,8 +133,9 @@ class V2SemaianConnectedTab extends ConsumerWidget {
       V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
     );
     if (result == null) return;
+    final pakai = result.bahanList;
     final inventoryId = result.bahanInventoryId;
-    if (inventoryId == null) {
+    if ((pakai == null || pakai.isEmpty) && inventoryId == null) {
       if (!context.mounted) return;
       _pesan(context, 'Pilih bahan dari inventaris.');
       return;
@@ -150,6 +151,15 @@ class V2SemaianConnectedTab extends ConsumerWidget {
               inventoryId: inventoryId,
               amount: result.bahanAmount ?? '1',
               unit: result.bahanUnit ?? 'pak',
+              materials: [
+                for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
+                  if (bahan.inventoryId != null)
+                    SowingMaterialDraft(
+                      inventoryId: bahan.inventoryId!,
+                      amount: '${bahan.jumlah}',
+                      unit: bahan.satuan,
+                    ),
+              ],
             ),
           );
       if (!context.mounted) return;
@@ -241,61 +251,80 @@ class _V2SemaianConnectedDetailPageState
   }
 
   Future<void> _pindah() async {
-    final meja = ref
-        .read(connectedTableProvider)
-        .records
-        .map(
-          (table) => V2SemaianMeja(
-            nama: table.displayName,
-            lubangKosong: table.availableCapacity,
-            penuh: table.isFull,
-            perawatan: table.isMaintenance,
-            tableId: table.id,
+    var sisa = _item.sisaBenih ?? _item.jumlahBenih;
+    // Ulang selama pengguna memilih "Pindahkan sisa": daftar meja dibangun
+    // ulang tiap putaran dari data segar sehingga lubang kosong ikut
+    // berkurang sesuai yang baru dipindah (BUG-34a).
+    while (true) {
+      final meja = ref
+          .read(connectedTableProvider)
+          .records
+          .map(
+            (table) => V2SemaianMeja(
+              nama: table.displayName,
+              lubangKosong: table.availableCapacity,
+              penuh: table.isFull,
+              perawatan: table.isMaintenance,
+              tableId: table.id,
+            ),
+          )
+          .toList();
+      if (meja.isEmpty) {
+        _pesan(context, 'Belum ada meja tanam.');
+        return;
+      }
+      final hasil = await Navigator.of(context).push<V2SemaianPindah>(
+        MaterialPageRoute<V2SemaianPindah>(
+          builder: (_) => V2PindahMejaFormPage(
+            item: _item,
+            daftarMeja: meja,
+            initialDate: jakartaToday(),
+            jumlahAwal: sisa,
+            onPindahkan: _kirimPindah,
           ),
-        )
-        .toList();
-    if (meja.isEmpty) {
-      _pesan(context, 'Belum ada meja tanam.');
-      return;
-    }
-    final hasil = await Navigator.of(context).push<V2SemaianPindah>(
-      MaterialPageRoute<V2SemaianPindah>(
-        builder: (_) => V2PindahMejaFormPage(
-          item: _item,
-          daftarMeja: meja,
-          initialDate: jakartaToday(),
-          onPindahkan: _kirimPindah,
         ),
-      ),
-    );
-    if (!mounted || hasil == null) return;
-    if (hasil.aksi == V2PindahMejaAksi.keDaftarSemaian) {
-      // Tombol "Ke daftar semaian" menutup detail, kembali ke daftar (BUG-28).
-      Navigator.of(context).maybePop();
+      );
+      if (!mounted || hasil == null) return;
+      if (hasil.aksi == V2PindahMejaAksi.keDaftarSemaian) {
+        // Tombol "Ke daftar semaian" menutup detail, kembali ke daftar
+        // (BUG-28).
+        Navigator.of(context).maybePop();
+        return;
+      }
+      // Segarkan semaian ini dari data yang baru dimuat `_kirimPindah`.
+      _segarkan('Bibit dipindah');
+      if (hasil.aksi == V2PindahMejaAksi.lihatMeja && hasil.tableId != null) {
+        await _bukaMeja(ref, hasil.tableId!);
+        return;
+      }
+      if (hasil.aksi == V2PindahMejaAksi.pindahkanSisa) {
+        sisa = _item.sisaBenih ?? _item.jumlahBenih;
+        if (sisa <= 0) return;
+        continue;
+      }
       return;
-    }
-    _segarkan('Bibit dipindah');
-    if (hasil.aksi == V2PindahMejaAksi.lihatMeja && hasil.tableId != null) {
-      await _bukaMeja(context, ref, hasil.tableId!);
     }
   }
 
   /// Buka detail meja tujuan setelah pindah (tombol "Lihat meja", BUG-28).
-  Future<void> _bukaMeja(
-    BuildContext context,
-    WidgetRef ref,
-    String tableId,
-  ) async {
+  ///
+  /// Memuat pemindahan & penyemaian terbaru dulu supaya Detail meja tidak
+  /// memakai objek lama (BUG-34b): tanaman terisi dan semaian siap pindah
+  /// tampil benar.
+  Future<void> _bukaMeja(WidgetRef ref, String tableId) async {
     final record = ref
         .read(connectedTableProvider)
         .records
         .where((row) => row.id == tableId)
         .firstOrNull;
     if (record == null) return;
+    final transfers = await ref.read(v2AllTransfersProvider.future);
+    final sowings = await ref.read(v2AllSowingsProvider.future);
+    if (!mounted) return;
     final item = v2MejaItemFromRecord(
       record,
-      transfers: ref.read(v2AllTransfersProvider).valueOrNull ?? const [],
-      sowings: ref.read(v2AllSowingsProvider).valueOrNull ?? const [],
+      transfers: transfers,
+      sowings: sowings,
       inventaris: ref.read(connectedInventoryProvider).activeRecords,
     );
     await Navigator.of(context).push<void>(
@@ -323,7 +352,9 @@ class _V2SemaianConnectedDetailPageState
           )),
         );
     await ref.read(connectedNurseryProvider.notifier).refresh();
-    await ref.read(connectedTableProvider.notifier).refresh();
+    // Meja + pemindahan + penyemaian dimuat ulang supaya form sisa dan Detail
+    // meja berikutnya memakai data terbaru (BUG-34).
+    await v2SegarkanSetelahTulis(ref, tableIds: {tableId});
   }
 
   @override

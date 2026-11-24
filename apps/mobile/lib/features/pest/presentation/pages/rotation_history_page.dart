@@ -7,6 +7,7 @@ import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_chip.dart';
 import '../../data/pest_models.dart';
 import '../../domain/pest_summary.dart';
+import '../../domain/pest_history_group.dart';
 import '../viewmodels/pest_history_viewmodel.dart';
 import '../widgets/decision_sheets.dart';
 
@@ -119,36 +120,66 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
         ),
       );
     }
+    // Riwayat dikelompokkan per tanggal WIB (D-28); entri di bawah tiap header
+    // tetap bisa dilipat seperti sebelumnya.
+    final kelompok = kelompokkanRiwayatPerTanggal(state.items);
+    final anak = <Widget>[];
+    for (final grup in kelompok) {
+      anak.add(_headerTanggal(grup.label));
+      for (final rec in grup.items) {
+        anak.add(
+          Padding(
+            padding: const EdgeInsets.only(top: V2Space.md),
+            child: DecidableRecommendationCard(
+              key: ValueKey(rec.id),
+              recommendation: rec,
+              collapsible: true,
+              onAccept: notifier.accept,
+              onReject: notifier.reject,
+              stock: stockOptions(ref),
+            ),
+          ),
+        );
+      }
+    }
+    if (state.error != null) {
+      anak.add(
+        Padding(
+          padding: const EdgeInsets.only(top: V2Space.md),
+          child: Text(
+            state.error!,
+            style: V2Type.caption,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else if (state.hasMore) {
+      anak.add(
+        Padding(
+          padding: const EdgeInsets.only(top: V2Space.md),
+          child: V2Button(
+            label: 'Muat lagi',
+            type: V2ButtonType.secondary,
+            state: state.loading ? V2ButtonState.loading : V2ButtonState.normal,
+            onPressed: notifier.loadMore,
+          ),
+        ),
+      );
+    }
     return RefreshIndicator(
       onRefresh: notifier.refresh,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.all(V2Space.lg),
-        itemCount: state.items.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(height: V2Space.md),
-        itemBuilder: (context, index) {
-          if (index == state.items.length) {
-            if (state.error != null) {
-              return Text(state.error!, style: V2Type.caption, textAlign: TextAlign.center);
-            }
-            if (!state.hasMore) return const SizedBox.shrink();
-            return V2Button(
-              label: 'Muat lagi',
-              type: V2ButtonType.secondary,
-              state: state.loading ? V2ButtonState.loading : V2ButtonState.normal,
-              onPressed: notifier.loadMore,
-            );
-          }
-          final rec = state.items[index];
-          return DecidableRecommendationCard(
-            key: ValueKey(rec.id),
-            recommendation: rec,
-            collapsible: true,
-            onAccept: notifier.accept,
-            onReject: notifier.reject,
-            stock: stockOptions(ref),
-          );
-        },
+        children: anak,
       ),
+    );
+  }
+
+  /// Header tanggal kelompok riwayat; tetap satu baris dan aman di skala 2.0.
+  Widget _headerTanggal(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(top: V2Space.lg, bottom: V2Space.xs),
+      child: Text(label, style: V2Type.bodyStrong),
     );
   }
 }

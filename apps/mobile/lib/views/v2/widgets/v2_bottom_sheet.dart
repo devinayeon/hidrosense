@@ -5,11 +5,22 @@ import '../theme/v2_tokens.dart';
 /// Kerangka bottom sheet dari `BottomSheet`, `Sheet/Pilih`, `Sheet/CatatStok`,
 /// dan `Sheet/Tanggal`: sudut atas 32, handle 36x5, padding 24.
 class V2BottomSheet extends StatelessWidget {
-  const V2BottomSheet({super.key, this.title, this.child, this.actions});
+  const V2BottomSheet({
+    super.key,
+    this.title,
+    this.child,
+    this.actions,
+    this.flexible = false,
+  });
 
   final String? title;
   final Widget? child;
   final Widget? actions;
+
+  /// Bila true, [child] mengisi sisa tinggi sheet (mis. untuk daftar yang
+  /// digulir). Sheet perlu dibatasi tingginya oleh pemanggil agar tidak
+  /// meluber ke luar layar.
+  final bool flexible;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +60,10 @@ class V2BottomSheet extends StatelessWidget {
                 child: Text(title!, style: V2Type.h2),
               ),
             ],
-            if (child != null) ...[const SizedBox(height: V2Space.lg), child!],
+            if (child != null) ...[
+              const SizedBox(height: V2Space.lg),
+              if (flexible) Flexible(child: child!) else child!,
+            ],
             if (actions != null) ...[
               const SizedBox(height: V2Space.lg),
               actions!,

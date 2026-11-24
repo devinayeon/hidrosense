@@ -19,6 +19,7 @@ import '../pages/v2_meja_detail_page.dart';
 import '../pages/v2_meja_form_page.dart';
 import '../pages/v2_meja_list_page.dart';
 import '../pages/v2_pilih_semaian_page.dart';
+import '../pages/v2_pindah_meja_page.dart';
 import 'v2_semaian_connected.dart';
 
 /// Seluruh batch pemindahan, dipakai meja dan panen untuk membaca tanaman.
@@ -50,6 +51,29 @@ final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>(
   },
 );
 
+/// Segarkan data setelah tulis pemindahan/tanaman/rusak (BUG-34): meja
+/// (kapasitas & terisi), daftar pemindahan, dan daftar penyemaian dimuat ulang
+/// supaya Detail meja, form "sisa", dan kartu Beranda memakai data terbaru.
+///
+/// [tableIds] kosong berarti menyegarkan semua meja.
+Future<void> v2SegarkanSetelahTulis(
+  WidgetRef ref, {
+  Set<String> tableIds = const <String>{},
+}) async {
+  final tables = ref.read(connectedTableProvider.notifier);
+  if (tableIds.isEmpty) {
+    await tables.refresh();
+  } else {
+    for (final id in tableIds) {
+      await tables.refreshTable(id);
+    }
+  }
+  ref.invalidate(v2AllTransfersProvider);
+  ref.invalidate(v2AllSowingsProvider);
+  await ref.read(v2AllTransfersProvider.future);
+  await ref.read(v2AllSowingsProvider.future);
+}
+
 /// `tersedia`/`penuh`/`pemeliharaan` backend → tiga keadaan desain page 06.
 V2MejaStatus v2StatusMeja(TableRecord record) {
   if (record.isMaintenance || record.isInactive) return V2MejaStatus.perawatan;
@@ -77,6 +101,7 @@ V2TanamanItem _tanamanFromTransfer(
   TransferRecord transfer, {
   required List<SowingRecord> sowings,
   required List<InventoryRecord> inventaris,
+  required DateTime hariIni,
 }) {
   final pindah = DateTime.tryParse(transfer.transferDate) ?? jakartaToday();
   final panen =
@@ -97,6 +122,7 @@ V2TanamanItem _tanamanFromTransfer(
     jumlahAwal: transfer.plantCount,
     keterangan: transfer.note,
     transferId: transfer.id,
+    hariIni: hariIni,
   );
 }
 
@@ -117,13 +143,18 @@ V2KerusakanItem v2KerusakanDariDamage(
 );
 
 /// Pemetaan satu meja backend ke model daftar/detail page 06.
+///
+/// [hariIni] mengisi acuan HST dan hitung mundur panen; bawaan hari ini WIB
+/// supaya tanaman tersambung tidak memakai tanggal contoh (BUG-36).
 V2MejaItem v2MejaItemFromRecord(
   TableRecord record, {
   List<TransferRecord> transfers = const <TransferRecord>[],
   List<SowingRecord> sowings = const <SowingRecord>[],
   List<InventoryRecord> inventaris = const <InventoryRecord>[],
   List<DamageRecord> damages = const <DamageRecord>[],
+  DateTime? hariIni,
 }) {
+  final acuan = hariIni ?? jakartaToday();
   final tanaman = transfers
       .where((item) => item.tableId == record.id && item.activePlants > 0)
       .map(
@@ -131,6 +162,7 @@ V2MejaItem v2MejaItemFromRecord(
           item,
           sowings: sowings,
           inventaris: inventaris,
+          hariIni: acuan,
         ),
       )
       .toList();
@@ -352,6 +384,7 @@ class _V2MejaConnectedDetailPageState
   Future<V2MejaItem?> _tambahTanaman() async {
     final id = _item.id;
     if (id == null) throw StateError('Meja belum tersimpan di server.');
+    // Langkah 1: pilih semaian siap pindah.
     final siap = (ref.read(v2AllSowingsProvider).valueOrNull ?? const [])
         .where((row) => row.canTransfer)
         .map(
@@ -364,27 +397,85 @@ class _V2MejaConnectedDetailPageState
       ),
     );
     if (!mounted || pilihan == null) return null;
-    final jumlah = pilihan.jumlahBenih < _item.kosong
-        ? pilihan.jumlahBenih
-        : _item.kosong;
+
+    // Langkah 2: buka form "Pindah ke meja" dengan default sesuai konteks
+    // (D-25): meja ini terpilih, jumlah = min(sisa bibit, kapasitas meja).
+    final meja = _daftarMejaPindah();
+    if (meja.isEmpty) {
+      meja.add(
+        V2SemaianMeja(
+          nama: _item.nama,
+          lubangKosong: _item.kosong,
+          tableId: id,
+        ),
+      );
+    }
+    final index = meja.indexWhere((item) => item.tableId == id);
+    final sisa = pilihan.sisaBenih ?? pilihan.jumlahBenih;
+    final jumlah = sisa < _kosongMeja(id) ? sisa : _kosongMeja(id);
+    final hasil = await Navigator.of(context).push<V2SemaianPindah>(
+      MaterialPageRoute<V2SemaianPindah>(
+        builder: (_) => V2PindahMejaFormPage(
+          item: pilihan,
+          mejaAwal: index < 0 ? 0 : index,
+          jumlahAwal: jumlah,
+          daftarMeja: meja,
+          initialDate: jakartaToday(),
+          showResultPage: false,
+          onPindahkan: (pindah) => _kirimPindahKe(id, pilihan.id, pindah),
+        ),
+      ),
+    );
+    if (!mounted || hasil == null) return null;
+    final terbaru = _dariBackend() ?? _item.copyWith();
+    setState(() => _item = terbaru);
+    _pesan(context, 'Tanaman ditambahkan.');
+    return terbaru;
+  }
+
+  /// Daftar meja untuk form "Pindah ke meja" dari data backend.
+  List<V2SemaianMeja> _daftarMejaPindah() {
+    return ref
+        .read(connectedTableProvider)
+        .records
+        .map(
+          (table) => V2SemaianMeja(
+            nama: table.displayName,
+            lubangKosong: table.availableCapacity,
+            penuh: table.isFull,
+            perawatan: table.isMaintenance,
+            tableId: table.id,
+          ),
+        )
+        .toList();
+  }
+
+  /// Lubang kosong meja dari data backend; jatuh ke salinan lokal bila belum ada.
+  int _kosongMeja(String tableId) {
+    final record = ref
+        .read(connectedTableProvider)
+        .records
+        .where((row) => row.id == tableId)
+        .firstOrNull;
+    return record?.availableCapacity ?? _item.kosong;
+  }
+
+  /// Simpan satu pemindahan dan segarkan meja/pemindahan/penyemaian (BUG-34).
+  Future<void> _kirimPindahKe(
+    String tableId,
+    String sowingId,
+    V2SemaianPindah pindah,
+  ) async {
     await ref
         .read(nurseryRepositoryProvider)
         .transferSowing(
           idempotencyKey: generateUuidV4(),
-          sowingId: pilihan.id,
-          tableId: id,
-          transferDate: apiDate(jakartaToday()),
-          plantCount: jumlah,
+          sowingId: sowingId,
+          tableId: tableId,
+          transferDate: apiDate(pindah.tanggal),
+          plantCount: pindah.jumlah,
         );
-    await ref.read(connectedTableProvider.notifier).refreshTable(id);
-    ref.invalidate(v2AllTransfersProvider);
-    ref.invalidate(v2AllSowingsProvider);
-    await ref.read(connectedInventoryProvider.notifier).refresh();
-    if (!mounted) return null;
-    final hasil = _dariBackend() ?? _item.copyWith();
-    setState(() => _item = hasil);
-    _pesan(context, 'Tanaman ditambahkan.');
-    return hasil;
+    await v2SegarkanSetelahTulis(ref, tableIds: {tableId});
   }
 
   /// Simpan catatan tanaman lewat `PATCH /api/v1/pemindahan/:id` (frame 6.22).

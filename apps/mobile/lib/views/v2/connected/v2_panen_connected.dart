@@ -61,7 +61,42 @@ V2PanenEstimasi v2PanenEstimasiFromTransfer(
     jumlahTanaman: transfer.activePlants,
     hariLagi: sisa < 0 ? 0 : sisa,
     transferId: transfer.id,
+    transferDate: DateTime.tryParse(transfer.transferDate),
+    hss: transfer.hss ?? transfer.seedlingAgeDays,
+    sowingLabel: _labelSemaian(transfer.sowingId),
   );
+}
+
+/// `Batch #12` untuk asal semaian baris pemilih panen (BUG-33).
+String _labelSemaian(String sowingId) => 'Batch #$sowingId';
+
+/// Daftar estimasi panen siap dipilih: hanya batch bertanaman aktif, tanpa
+/// baris ganda (id pemindahan sama muncul sekali), lalu diurutkan siap panen
+/// lebih dulu dan HSS/hari menuju panen paling dekat di atas (BUG-33).
+List<V2PanenEstimasi> v2DaftarEstimasiPanen({
+  required List<TransferRecord> transfers,
+  required List<TableRecord> tables,
+  List<SowingRecord> sowings = const <SowingRecord>[],
+  List<InventoryRecord> inventaris = const <InventoryRecord>[],
+}) {
+  final hasil = <V2PanenEstimasi>[];
+  final terlihat = <String>{};
+  for (final row in transfers) {
+    if (row.activePlants <= 0) continue;
+    final item = v2PanenEstimasiFromTransfer(
+      row,
+      table: tables.where((table) => table.id == row.tableId).firstOrNull,
+      sowings: sowings,
+      inventaris: inventaris,
+    );
+    if (!terlihat.add(item.kunci)) continue;
+    hasil.add(item);
+  }
+  hasil.sort((a, b) {
+    if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
+    return a.hariLagi.compareTo(b.hariLagi);
+  });
+  return hasil;
 }
 
 /// Pemetaan satu panen backend ke kartu ringkasan page 07.
@@ -132,21 +167,12 @@ class V2PanenConnectedTab extends ConsumerWidget {
       connectedInventoryProvider.select((value) => value.activeRecords),
     );
     final tables = ref.watch(connectedTableProvider).records;
-    final estimasi = state.transfers
-        .where((row) => row.activePlants > 0)
-        .map(
-          (row) => v2PanenEstimasiFromTransfer(
-            row,
-            table: tables.where((table) => table.id == row.tableId).firstOrNull,
-            sowings: sowings,
-            inventaris: inventaris,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
-        return a.hariLagi.compareTo(b.hariLagi);
-      });
+    final estimasi = v2DaftarEstimasiPanen(
+      transfers: state.transfers,
+      tables: tables,
+      sowings: sowings,
+      inventaris: inventaris,
+    );
     final riwayat = state.records
         .map(
           (record) => v2PanenItemFromRecord(

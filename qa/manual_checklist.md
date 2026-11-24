@@ -12,6 +12,10 @@ menjalankan widget/unit tes tanpa Android.
 > keputusan online-only ditulis `N/A` (lihat `decisions.md` D-14); temuan baru dirujuk ke
 > nomor BUG di `issues.md`. Sisa `MANUAL-PENDING` belum dijalankan. Fitur deteksi hama
 > (kamera) kini ada, sehingga uji izin kamera tidak lagi `N/A`.
+>
+> Sesi 4 (24 Nov 2026): perbaikan BUG-33..BUG-38 dan Fitur-1..3 ditambahkan di §H dengan
+> status **`FIXED di kode, belum diuji ulang di HP`** — verifikasi visual di HP masih tugas
+> dev FE dan **belum diklaim PASS**.
 
 ---
 
@@ -25,8 +29,8 @@ menjalankan widget/unit tes tanpa Android.
 | MC-DEV-04 | Font sistem besar | Set 200% font | Teks tak terpotong, tombol ≥ 48dp | `PASS` (diuji manual dev FE) — layout dibuat fleksibel; 24 uji widget skala 2.0; temuan sisa dicatat BUG-31 |
 | MC-DEV-05 | Layar 360x640 & tablet | Jalankan di layar kecil & besar | Tak rusak/overflow | `PASS` (diuji manual dev FE) — diuji lewat simulasi lebar kecil di HP, bukan perangkat 360x640 asli |
 | MC-DEV-06 | Mode gelap/terang | Ganti tema sistem | Kontras cukup, teks terbaca | `GAP (D-16)` — aplikasi hanya satu tema; bukan bug |
-| MC-DEV-07 | Background/foreground | Home lalu kembali | State form terjaga, tak crash | `MANUAL-PENDING` |
-| MC-DEV-08 | Kill paksa | Force-stop saat alur berjalan | Data yang sudah dicatat tetap ada | `MANUAL-PENDING` |
+| MC-DEV-07 | Background/foreground | Buka form, isi sebagian, tekan Home, buka app lain, lalu kembali ke app | Isi form masih ada, tak crash | `MANUAL-PENDING` |
+| MC-DEV-08 | Kill paksa | Catat satu data (mis. panen), force-stop app, lalu buka lagi | Data yang sudah tersimpan tetap ada setelah dibuka ulang | `MANUAL-PENDING` |
 | MC-DEV-09 | Memori rendah & penyimpanan penuh | Trigger low-memory; isi penyimpanan | Tak crash; pesan jelas saat gagal simpan | `MANUAL-PENDING` |
 | MC-DEV-10 | Jam/zona waktu diubah | Set jam mundur/maju, ganti TZ | HSS/tanggal tetap WIB; sync tak rusak | `PASS` (diuji manual dev FE) |
 | MC-DEV-11 | Build release | `flutter build apk --release` lalu pasang | Tak ada banner debug; TFLite/aset utuh; ukuran wajar | `PASS` (diuji manual dev FE) |
@@ -58,13 +62,13 @@ menjalankan widget/unit tes tanpa Android.
 
 | ID | Skenario | Cara ukur | Target | Status |
 |---|---|---|---|---|
-| MC-PERF-01 | Muat halaman utama cold start | Stopwatch / DevTools | < 3 detik | `MANUAL-PENDING` |
-| MC-PERF-02 | Muat halaman utama warm start | Ulangi setelah cache | < 3 detik | `MANUAL-PENDING` |
+| MC-PERF-01 | Muat halaman utama cold start | Stopwatch / DevTools | < 3 detik | `PASS` (diuji manual dev FE) — < 3 detik |
+| MC-PERF-02 | Muat halaman utama warm start | Ulangi setelah cache | < 3 detik | `PASS` (diuji manual dev FE) — < 3 detik |
 | MC-PERF-03 | Sinkronisasi setelah koneksi kembali | Matikan data, catat offline, nyalakan | < 1 menit | `MANUAL-PENDING` |
 | MC-PERF-04 | Pencocokan aturan cuaca | Dari fetch BMKG sampai kartu tampil | < 2 detik | `MANUAL-PENDING` |
 | MC-PERF-05 | Spesifikasi perangkat | Catat RAM/CPU/OS perangkat uji | RAM ≥ 3 GB, Android 8+ | `MANUAL-PENDING` |
-| MC-PERF-06 | Inferensi deteksi hama per gambar | Ukur dari foto → hasil (cold & warm) | < 5 detik | `PASS` (diuji manual dev FE) — lolos target, angka belum dicatat (host 130 ms/gambar) |
-| MC-PERF-07 | Deteksi 50× berturut-turut (memori) | Ulang 50×, pantau memori/ANR | Tak OOM/crash | `MANUAL-PENDING` — blocker unggah (BUG-16) sudah hilang (env Cloudinary server terisi, dev FE berhasil simpan); uji 50× belum dijalankan |
+| MC-PERF-06 | Inferensi deteksi hama per gambar | Ukur dari foto → hasil (cold & warm) | < 5 detik | `PASS` (diuji manual dev FE) — inferensi rata-rata kasar **1–2 detik** (hitungan kasar dev FE, bukan pengukuran alat), di bawah target 5 detik |
+| MC-PERF-07 | Deteksi 50× berturut-turut (memori) | Ulang 50×, pantau memori/ANR | Tak OOM/crash | `PASS` (diuji manual dev FE) — 50× berturut-turut aman; memori aman karena foto hanya diunggah ke Cloudinary dan tidak disimpan di HP |
 
 ## E. Sync/offline pada perangkat (PB-07)
 
@@ -72,7 +76,7 @@ menjalankan widget/unit tes tanpa Android.
 |---|---|---|---|---|
 | MC-SYNC-01 | Catat offline lalu buka ulang | Airplane mode, catat 1 record, tutup paksa, buka | Record tetap ada & "belum tersinkron" | `N/A` (D-14 online-only) |
 | MC-SYNC-02 | Putus tepat setelah kirim | Putus data di tengah request sebelum respons | Tidak duplikat setelah sync ulang | `N/A` (D-14 online-only) |
-| MC-SYNC-03 | Dua perangkat transaksi keluar bersamaan | Dua akun keluarkan stok total > stok | Salah satu ditolak/server konsisten, tak ada stok negatif | `MANUAL-PENDING` (backend: `qa/backend-concurrency.sh` 22/22) |
+| MC-SYNC-03 | Dua perangkat transaksi keluar bersamaan | Dua akun keluarkan stok total > stok | Salah satu ditolak/server konsisten, tak ada stok negatif | `MANUAL-PENDING` — dev FE belum bisa menguji: keterbatasan perangkat (butuh dua perangkat). Sisi backend sudah lulus `qa/backend-concurrency.sh` 22/22 |
 | MC-SYNC-04 | Pertukaran jam perangkat | Set jam mundur lalu sync | Urutan sync tidak rusak | `N/A` (D-14 online-only) |
 | MC-SYNC-05 | Migrasi skema antar versi app | Pasang versi lama, isi data, upgrade | Data lama tidak hilang | `MANUAL-PENDING` |
 
@@ -90,7 +94,7 @@ menjalankan widget/unit tes tanpa Android.
 | MC-PEST-01 | Foto nyata dari kamera | Ambil foto daun bergejala | Kelas + confidence tampil, wajar | `PASS` (diuji manual dev FE) |
 | MC-PEST-02 | Foto tanpa hama | Foto daun bersih | Pesan netral "tidak ada hama terdeteksi", bukan "bebas hama" | `PASS` (diuji manual dev FE) |
 | MC-PEST-03 | Airplane mode | Matikan data, deteksi | Tetap jalan tanpa request server | `N/A` (D-14) — layar deteksi butuh internet untuk memuat data meja/batch |
-| MC-PEST-04 | Batal/putar/background saat inferensi | Batalkan & putar layar saat proses | Tidak crash, UI tidak beku | `MANUAL-PENDING` |
+| MC-PEST-04 | Batal/putar/background saat inferensi | Batalkan & putar layar saat proses | Tidak crash, UI tidak beku | `PASS` (diuji manual dev FE) — pindai yang dibatalkan tidak tersimpan; putar layar saat inferensi aman |
 
 ---
 
@@ -144,8 +148,24 @@ bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat.
 | MC-FIX-16 | BUG-16 — simpan pindaian | Deteksi → simpan & minta saran obat | `PASS` (diuji manual dev FE) — env Cloudinary server sudah diisi; simpan berhasil |
 | MC-FIX-20/24 | BUG-20/BUG-24 — font 200% | Set ukuran font 200%, buka layar utama | `PASS` (diuji manual dev FE) — kecuali label grafik Ringkasan penjualan yang dicatat ulang sebagai BUG-31 |
 | MC-FIX-22..25 | BUG-22..BUG-25 — temuan sesi 2 | Lihat `issues.md` per bug | `PASS` (diuji manual dev FE) — 24 Nov 2026 |
-| MC-FIX-26..32 | BUG-26..BUG-32 — temuan sesi 3 | Lihat `issues.md` per bug: cuaca (26), tanggal form (27), tombol sukses Pindah ke meja (28), jumlah form pindah (29), notifikasi diketuk (30), label grafik penjualan 200% (31), filter riwayat rotasi 200% (32) | `FIXED di kode, belum diuji ulang di HP` — menunggu dev FE |
+| MC-FIX-26 | BUG-26 — cuaca dari Beranda | Tekan kartu cuaca, cek tanggal/lokasi prakiraan | `PASS` (diuji manual dev FE) |
+| MC-FIX-27 | BUG-27 — tanggal bawaan form | Buka form Catat rusak & penjualan, cek tanggal | `PASS` (diuji manual dev FE) |
+| MC-FIX-28 | BUG-28 — tombol halaman sukses "Pindah ke meja" | Pindah semaian, tekan tiap tombol di halaman sukses | `PASS` untuk tombolnya (diuji manual dev FE) — tetapi data setelahnya basi, dicatat **BUG-34** |
+| MC-FIX-29 | BUG-29 — jumlah form pindah | Tahan plus/minus, ketik angka, cek bawaan meja | `PASS` (diuji manual dev FE) |
+| MC-FIX-30 | BUG-30 — notifikasi bisa diketuk | Buka notifikasi, ketuk baris, cek tujuan & status dibaca | `PASS` (diuji manual dev FE) |
+| MC-FIX-31 | BUG-31 — label bulan grafik penjualan | Buka Ringkasan penjualan, cek label bulan | `OPEN` (diuji manual dev FE) — label tetap tidak sejajar; diperbaiki ulang jadi daftar per bulan |
+| MC-FIX-32 | BUG-32 — riwayat rotasi | Buka Riwayat rotasi, cek filter & lipat entri | `PASS` (diuji manual dev FE) |
+| MC-FIX-33 | BUG-33 — pemilih tanaman Catat panen | Catat panen dengan dua batch bernama sama, pilih keduanya | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-34 | BUG-34 — data meja setelah pindah | Selesai pindah, buka daftar/detail meja tujuan | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-35 | BUG-35 — "Tambah tanaman" di detail meja | Tekan "Tambah tanaman", pastikan lewat form pindah | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-36 | BUG-36 — HST & perkiraan panen tanaman tersambung | Buka tanaman tersambung, cek HST & perkiraan panen | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-37 | BUG-37 — jumlah besar bisa diketik | Ketik angka besar di stok/semaian/rusak/rawat/panen | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-38 | BUG-38 — "Tambah bahan" menambah baris | Tambah semaian, tekan "Tambah bahan" 2–3×, simpan | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-1 | Fitur-1 (D-28) — riwayat rotasi per tanggal | Buka Riwayat rotasi, cek header tanggal WIB & lipat entri | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-2 | Fitur-2 (D-27) — urutan daftar meja di form pindah | Buka "Pindah ke meja", cek urutan (tersedia dulu, penuh di bawah) | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIT-3 | Fitur-3 (D-29) — potong stok hanya Nutrisi & Obat | Setujui rekomendasi, cek daftar bahan hanya nutrisi/obat | `FIXED di kode, belum diuji ulang di HP` |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
-> (tidak ada perangkat Android di sini). Perbaikan sesi 2 sudah lulus tes otomatis tetapi
-> verifikasi visual di perangkat tetap wajib sebelum dinyatakan tuntas untuk rilis.
+> (tidak ada perangkat Android di sini). Baris `FIXED di kode, belum diuji ulang di HP`
+> berarti sudah lulus tes otomatis tetapi **verifikasi visual di HP wajib** dilakukan dev FE
+> sebelum dinyatakan tuntas untuk rilis.

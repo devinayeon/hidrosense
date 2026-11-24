@@ -89,6 +89,12 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
     setState(() => _jumlah = berikutnya);
   }
 
+  /// Ketik langsung jumlah besar lewat dialog angka (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() => _jumlah = value);
+  }
+
   void _simpan() {
     if (_galat) return;
     Navigator.of(context).pop(V2CatatStok(masuk: _masuk, jumlah: _jumlah));
@@ -112,6 +118,7 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
             value: _jumlah,
             unit: widget.item.satuan,
             error: _galat,
+            onChanged: _setJumlah,
             onMinus: () => _ubahJumlah(-1),
             onPlus: () => _ubahJumlah(1),
           ),

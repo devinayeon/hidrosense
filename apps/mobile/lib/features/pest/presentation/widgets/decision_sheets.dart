@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
+import '../../../../data/models/inventory_record.dart';
 import '../../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../../viewmodels/session_viewmodel.dart';
 import '../../data/pest_models.dart';
@@ -17,16 +18,30 @@ class StockOption {
   final String unit;
 }
 
+/// Jenis inventaris yang boleh dipotong saat menerima rekomendasi (D-29).
+///
+/// Hanya nutrisi dan obat yang dipakai untuk perawatan; benih, media, dan
+/// jenis lain tidak ditawarkan supaya stok tanam tidak ikut terpotong.
+const Set<String> jenisPotongStok = <String>{'nutrisi', 'obat'};
+
+/// `true` bila jenis inventaris boleh dipotong dari rekomendasi (D-29).
+bool bolehPotongStok(String category) =>
+    jenisPotongStok.contains(category.trim().toLowerCase());
+
+/// Daftar stok yang boleh dipilih dari [records] aktif (D-29).
+List<StockOption> stockOptionsDari(Iterable<InventoryRecord> records) => <StockOption>[
+  for (final r in records)
+    if (r.active && bolehPotongStok(r.category))
+      StockOption(id: r.id, name: r.name, unit: r.unit),
+];
+
 /// Barang aktif dari inventaris yang sudah dimuat aplikasi. Kosong bila pengguna tidak boleh
 /// memotong stok (backend mensyaratkan `inventaris:write`) atau belum ada sesi: provider
 /// inventaris melempar galat tanpa sesi, dan itu tidak boleh meruntuhkan halaman rekomendasi.
 List<StockOption> stockOptions(WidgetRef ref) {
   final permissions = ref.watch(sessionProvider.select((s) => s.user?.permissions)) ?? const <String>[];
   if (!permissions.contains('inventaris:read') || !permissions.contains('inventaris:write')) return const [];
-  return [
-    for (final r in ref.watch(connectedInventoryProvider).records)
-      if (r.active) StockOption(id: r.id, name: r.name, unit: r.unit),
-  ];
+  return stockOptionsDari(ref.watch(connectedInventoryProvider).records);
 }
 
 /// Isi lembar terima: catatan dan bahan dari stok (keduanya opsional).
@@ -111,6 +126,14 @@ class _AcceptSheetState extends State<_AcceptSheet> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(labelText: 'Jumlah (${item.unit})', errorText: amountError),
                 ),
+            ] else ...[
+              const SizedBox(height: V2Space.md),
+              // Bila tidak ada stok nutrisi/obat, jelaskan kenapa pilihan potong
+              // stok tidak muncul alih-alih diam saja (D-29).
+              const Text(
+                'Belum ada stok nutrisi atau obat yang bisa dipotong.',
+                style: V2Type.caption,
+              ),
             ],
             TextField(
               controller: _note,

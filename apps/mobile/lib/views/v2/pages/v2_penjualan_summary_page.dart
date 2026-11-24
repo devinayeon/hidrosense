@@ -42,9 +42,6 @@ class V2PenjualanSummaryPage extends StatelessWidget {
     ];
   }
 
-  String get _caption =>
-      bulanan?.caption ?? 'Sep 5,2 juta, Okt 6,4 juta, Nov 7,5 juta.';
-
   /// Kartu info: total tiga bulan, rata-rata per kg, dan sisa belum lunas.
   List<V2PenjualanInfoRow> get _rows {
     final bulanan = this.bulanan;
@@ -98,7 +95,6 @@ class V2PenjualanSummaryPage extends StatelessWidget {
                     children: [
                       V2PenjualanChartCard(
                         title: 'Penjualan per bulan (juta Rp)',
-                        caption: _caption,
                         bars: _bars,
                       ),
                       const SizedBox(height: V2Space.lg),

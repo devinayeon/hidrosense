@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formatting.dart';
+import '../components/v2_meja_data.dart';
 import '../components/v2_semaian_assets.dart';
 import '../components/v2_semaian_data.dart';
 import '../components/v2_semaian_date_sheet.dart';
@@ -33,6 +34,7 @@ class V2PindahMejaFormPage extends StatefulWidget {
     this.daftarMeja,
     this.initialDate,
     this.onPindahkan,
+    this.showResultPage = true,
   });
 
   /// Frame `5.17 Pindah ke meja`: Meja A2 terpilih, 200 tanaman.
@@ -81,17 +83,18 @@ class V2PindahMejaFormPage extends StatefulWidget {
   /// Kirim pemindahan ke backend; null berarti hanya pratinjau galeri.
   final Future<void> Function(V2SemaianPindah pindah)? onPindahkan;
 
+  /// Buka halaman hasil (5.18/5.22) setelah pindah. `false` membuat form
+  /// langsung menutup dan mengembalikan [V2SemaianPindah] ke pemanggil — dipakai
+  /// alur "Tambah tanaman" dari Detail meja (D-25) yang punya konteksnya sendiri.
+  final bool showResultPage;
+
   @override
   State<V2PindahMejaFormPage> createState() => _V2PindahMejaFormPageState();
 }
 
 class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
-  late final List<V2SemaianMeja> _meja = widget.daftarMeja?.isNotEmpty == true
-      ? widget.daftarMeja!
-      : widget.previewSisa
-      ? designMejaPindahSisa
-      : designMejaPindah;
-  late int _mejaIndex = widget.mejaAwal;
+  late final List<V2SemaianMeja> _meja;
+  late int _mejaIndex;
   late int _jumlah =
       widget.jumlahAwal ?? widget.item.sisaBenih ?? widget.item.jumlahBenih;
   late DateTime _tanggal = widget.initialDate ?? DateTime(2026, 11, 15);
@@ -102,12 +105,29 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
   @override
   void initState() {
     super.initState();
+    final sumber = widget.daftarMeja?.isNotEmpty == true
+        ? widget.daftarMeja!
+        : widget.previewSisa
+        ? designMejaPindahSisa
+        : designMejaPindah;
+    final awal = widget.mejaAwal.clamp(0, sumber.length - 1);
+    final acuan = sumber[awal];
+    // Urutkan daftar sesuai D-27, lalu cari lagi meja awal supaya pilihannya
+    // tidak meleset setelah urutan berubah.
+    _meja = urutkanMejaPindah(sumber);
+    var terpilih = _meja.indexWhere(
+      (meja) => acuan.tableId != null
+          ? meja.tableId == acuan.tableId
+          : meja.nama == acuan.nama,
+    );
+    if (terpilih < 0) terpilih = 0;
     // Bawaan tidak boleh meja penuh/perawatan: pilih meja tersedia pertama
-    // kalau pilihan awal tidak bisa dipakai (BUG-29). Urutan daftar tetap.
-    if (!_meja[_mejaIndex].tersedia) {
+    // kalau pilihan awal tidak bisa dipakai (BUG-29).
+    if (!_meja[terpilih].tersedia) {
       final pertama = _meja.indexWhere((meja) => meja.tersedia);
-      if (pertama >= 0) _mejaIndex = pertama;
+      if (pertama >= 0) terpilih = pertama;
     }
+    _mejaIndex = terpilih;
     if (widget.previewLubangKurang) {
       _error = _pesanLubang(200);
     }
@@ -165,7 +185,29 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
       }
     }
     if (!mounted) return;
+
+    // Alur "Tambah tanaman" (D-25) tidak menampilkan halaman hasil: form
+    // langsung menutup dan aksi diteruskan ke Detail meja pemanggil.
+    if (!widget.showResultPage) {
+      Navigator.of(context).pop(
+        V2SemaianPindah(
+          meja: pindah.meja,
+          jumlah: pindah.jumlah,
+          tanggal: pindah.tanggal,
+          tableId: pindah.tableId,
+        ),
+      );
+      return;
+    }
+
     final sisa = (widget.item.sisaBenih ?? widget.item.jumlahBenih) - _jumlah;
+    // Perkiraan panen dihitung dari tanggal pindah nyata, bukan tanggal contoh
+    // "30 Des" yang tetap (BUG-36).
+    final perkiraanPanen = DateTime(
+      pindah.tanggal.year,
+      pindah.tanggal.month,
+      pindah.tanggal.day + v2MejaUmurPanenHst,
+    );
 
     // Tombol halaman sukses tidak boleh mati (BUG-28): masing-masing
     // mengembalikan aksi yang lalu diteruskan ke pemanggil.
@@ -178,7 +220,8 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                   : 'Sudah pindah ke ${pindah.meja}',
               body: sisa > 0
                   ? '$sisa benih masih di semaian.'
-                  : '${pindah.jumlah} tanaman. Panen sekitar 30 Des.',
+                  : '${pindah.jumlah} tanaman. '
+                        'Panen sekitar ${labelTanggalMeja(perkiraanPanen)}.',
               primaryLabel: sisa > 0 ? 'Pindahkan sisa' : 'Lihat meja',
               onPrimary: () => Navigator.of(context).pop(
                 sisa > 0
@@ -194,24 +237,9 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
         V2PindahMejaAksi.selesai;
     if (!mounted) return;
 
-    if (aksi == V2PindahMejaAksi.pindahkanSisa && sisa > 0) {
-      final lagi = await Navigator.of(context).push<V2SemaianPindah>(
-        MaterialPageRoute<V2SemaianPindah>(
-          builder: (_) => V2PindahMejaFormPage(
-            item: widget.item.copyWith(sisaBenih: sisa),
-            mejaAwal: _mejaIndex,
-            jumlahAwal: sisa,
-            daftarMeja: widget.daftarMeja,
-            initialDate: _tanggal,
-            onPindahkan: widget.onPindahkan,
-          ),
-        ),
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(lagi ?? pindah);
-      return;
-    }
-
+    // "Pindahkan sisa" tidak lagi membuka form di sini dengan daftar meja lama:
+    // aksi dikembalikan ke pemanggil (halaman detail) supaya form dibuka ulang
+    // dengan data meja yang sudah disegarkan setelah pindah (BUG-34a).
     Navigator.of(context).pop(
       V2SemaianPindah(
         meja: pindah.meja,

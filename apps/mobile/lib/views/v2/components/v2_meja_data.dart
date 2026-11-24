@@ -89,6 +89,7 @@ class V2TanamanItem {
     this.jumlahAwal = 42,
     this.keterangan,
     this.transferId,
+    this.hariIni,
   });
 
   /// Nama benih, mis. `Romaine`.
@@ -124,11 +125,20 @@ class V2TanamanItem {
   /// `PATCH /api/v1/pemindahan/:id` (frame 6.22/6.23).
   final String? transferId;
 
+  /// Acuan "hari ini" untuk HST dan hitung mundur panen.
+  ///
+  /// Null berarti data contoh galeri dan memakai [v2MejaHariIni]; alur
+  /// tersambung mengisi ini dengan hari ini WIB supaya angka tidak memaku
+  /// tanggal contoh (BUG-36).
+  final DateTime? hariIni;
+
+  DateTime get _acuan => hariIni ?? v2MejaHariIni;
+
   /// Umur tanaman dalam hari setelah tanam (HST).
-  int get hst => _selisihHari(tanggalTanam, v2MejaHariIni);
+  int get hst => _selisihHari(tanggalTanam, _acuan);
 
   /// Sisa hari menuju panen; nol atau negatif berarti sudah waktunya panen.
-  int get hariMenujuPanen => _selisihHari(v2MejaHariIni, tanggalPanen);
+  int get hariMenujuPanen => _selisihHari(_acuan, tanggalPanen);
 
   /// `Siap panen hari ini` atau `Panen 22 Des` (subjudul baris tanaman).
   String get labelPanen => hariMenujuPanen <= 0
@@ -162,6 +172,7 @@ class V2TanamanItem {
     int? jumlahAwal,
     String? keterangan,
     String? transferId,
+    DateTime? hariIni,
   }) {
     return V2TanamanItem(
       varietas: varietas ?? this.varietas,
@@ -174,6 +185,7 @@ class V2TanamanItem {
       jumlahAwal: jumlahAwal ?? this.jumlahAwal,
       keterangan: keterangan ?? this.keterangan,
       transferId: transferId ?? this.transferId,
+      hariIni: hariIni ?? this.hariIni,
     );
   }
 }

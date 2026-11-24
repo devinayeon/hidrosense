@@ -69,7 +69,7 @@ void main() {
     expect(hasil!.aksi, V2PindahMejaAksi.keDaftarSemaian);
   });
 
-  testWidgets('tombol "Pindahkan sisa" membuka lagi form untuk sisa benih', (
+  testWidgets('tombol "Pindahkan sisa" mengembalikan aksi ke pemanggil (BUG-34a)', (
     tester,
   ) async {
     V2SemaianPindah? hasil;
@@ -90,9 +90,9 @@ void main() {
     await tester.tap(find.text('Pindahkan sisa'));
     await tester.pumpAndSettle();
 
-    // Form dibuka lagi untuk sisa benih; form pertama belum selesai.
-    expect(find.text('Jumlah tanaman'), findsOneWidget);
-    expect(find.text('Pindahkan'), findsOneWidget);
-    expect(hasil, isNull);
+    // "Pindahkan sisa" tidak lagi membuka form di dalam form: aksi dikembalikan
+    // ke pemanggil yang membuka form baru dengan data meja tersegarkan (BUG-34a).
+    expect(hasil, isNotNull, reason: 'aksi "Pindahkan sisa" harus sampai ke pemanggil');
+    expect(hasil!.aksi, V2PindahMejaAksi.pindahkanSisa);
   });
 }
