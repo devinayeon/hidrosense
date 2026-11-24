@@ -73,8 +73,10 @@ const INVARIANTS = [
      LEFT JOIN (SELECT id_pemindahan,SUM(jumlah_tanaman) rusak FROM kerusakan_tanaman GROUP BY id_pemindahan) d ON d.id_pemindahan=p.id_pemindahan
      LEFT JOIN (SELECT id_pemindahan,SUM(jumlah_tanaman) panen FROM detail_panen GROUP BY id_pemindahan) h ON h.id_pemindahan=p.id_pemindahan
      WHERE COALESCE(d.rusak,0)+COALESCE(h.panen,0)>p.jumlah_tanaman`],
-  ['AQ-09 reject <= total', 'SELECT id_detail_panen FROM detail_panen WHERE berat_reject_minor>berat_minor'],
-  ['AQ-10 terjual <= layak per panen', `WITH layak AS (SELECT id_panen,SUM(berat_minor-berat_reject_minor) layak FROM detail_panen GROUP BY id_panen),
+  // `berat_minor` menyimpan BERAT LAYAK (total - reject), bukan total; reject ada di
+  // `berat_reject_minor` sendiri. Jadi berat layak = berat_minor (tidak dikurangi lagi).
+  ['AQ-09 cache berat konsisten', 'SELECT id_detail_panen FROM detail_panen WHERE (berat_minor IS NULL)<>(berat_reject_minor IS NULL) OR (berat_minor IS NOT NULL AND berat_minor<>CAST(ROUND(berat*100) AS INTEGER))'],
+  ['AQ-10 terjual <= layak per panen', `WITH layak AS (SELECT id_panen,SUM(berat_minor) layak FROM detail_panen GROUP BY id_panen),
      jual AS (SELECT id_panen,SUM(jumlah_kg_minor) dijual FROM detail_penjualan GROUP BY id_panen)
      SELECT l.id_panen FROM layak l LEFT JOIN jual j ON j.id_panen=l.id_panen WHERE COALESCE(j.dijual,0)>l.layak`],
   ['AQ-11(t) tiap pembalik menunjuk asli', `SELECT r.id_stok FROM stok r LEFT JOIN stok o ON o.id_stok=r.reversal_of
