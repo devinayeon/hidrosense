@@ -125,14 +125,15 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   late final TextEditingController _jumlahBenih = TextEditingController(
     text: widget.previewValidation ? '' : '200',
   );
-  late V2SemaianBahan? _bahan = widget.previewValidation
-      ? null
-      : _pilihan.first;
-  late int _jumlahBahan = widget.previewStokKurang ? 15 : 2;
+  late final List<_BarisBahan> _baris = <_BarisBahan>[
+    _BarisBahan(
+      bahan: widget.previewValidation ? null : _pilihan.first,
+      jumlah: widget.previewStokKurang ? 15 : 2,
+    ),
+  ];
 
   String? _benihError;
   String? _bahanError;
-  String? _jumlahError;
 
   final ScrollController _scroll = ScrollController();
 
@@ -147,7 +148,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
       _bahanError = 'Pilih bahan';
     }
     if (widget.previewStokKurang) {
-      _jumlahError = 'Stok hanya ${designBahanRomaine.labelStok}';
+      _baris.first.error = 'Stok hanya ${designBahanRomaine.labelStok}';
     }
     if (widget.previewDateSheet) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _pickDate());
@@ -174,8 +175,16 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   }
 
   /// Sheet "Pilih bahan"; pilihan baru dipakai setelah tombol "Pilih".
-  Future<void> _pickBahan() async {
-    var draft = _bahan ?? _pilihan.first;
+  ///
+  /// [dilewati] menyingkirkan bahan yang sudah dipakai baris lain karena
+  /// kontrak backend meminta `materials[]` berisi baris unik (BUG-38).
+  Future<void> _pickBahan({int? baris, Set<String> dilewati = const {}}) async {
+    final pilihan = _pilihan
+        .where((bahan) => !dilewati.contains(bahan.nama))
+        .toList();
+    if (pilihan.isEmpty) return;
+    final awal = baris == null ? null : _baris[baris].bahan;
+    var draft = (awal != null && pilihan.contains(awal)) ? awal : pilihan.first;
     final result = await showV2BottomSheet<V2SemaianBahan>(
       context,
       child: StatefulBuilder(
@@ -187,14 +196,14 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
           ),
           child: Column(
             children: [
-              for (var index = 0; index < _pilihan.length; index++) ...[
+              for (var index = 0; index < pilihan.length; index++) ...[
                 if (index > 0) const SizedBox(height: V2Space.lg),
                 V2OptionRow(
-                  label: _pilihan[index].nama,
-                  state: draft.nama == _pilihan[index].nama
+                  label: pilihan[index].nama,
+                  state: draft.nama == pilihan[index].nama
                       ? V2OptionState.selected
                       : V2OptionState.normal,
-                  onTap: () => setSheet(() => draft = _pilihan[index]),
+                  onTap: () => setSheet(() => draft = pilihan[index]),
                 ),
               ],
             ],
@@ -204,24 +213,47 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
     );
     if (!mounted || result == null) return;
     setState(() {
-      _bahan = result;
+      if (baris == null) {
+        _baris.add(_BarisBahan(bahan: result, jumlah: 2));
+      } else {
+        final ganti = _baris[baris];
+        if (ganti.bahan?.nama != result.nama) {
+          ganti.bahan = result;
+          ganti.jumlah = 2;
+        }
+        ganti.error = null;
+      }
       _bahanError = null;
-      _jumlahBahan = 2;
-      _jumlahError = null;
     });
   }
 
-  void _setJumlah(int value) {
+  /// "Tambah bahan": baris baru, bukan mengganti bahan baris pertama.
+  Future<void> _tambahBahan() async {
+    final terpakai = <String>{
+      for (final baris in _baris)
+        if (baris.bahan != null) baris.bahan!.nama,
+    };
+    if (terpakai.length >= _pilihan.length) return;
+    await _pickBahan(dilewati: terpakai);
+  }
+
+  void _hapusBahan(int index) {
+    if (_baris.length <= 1) return;
+    setState(() => _baris.removeAt(index));
+  }
+
+  void _setJumlah(int index, int value) {
     setState(() {
-      _jumlahBahan = value;
-      _jumlahError = _stokPesan();
+      final baris = _baris[index];
+      baris.jumlah = value;
+      baris.error = _stokPesan(baris);
     });
   }
 
   /// Pesan galat bila jumlah bahan melebihi stok bahan terpilih.
-  String? _stokPesan() {
-    final bahan = _bahan;
-    if (bahan == null || _jumlahBahan <= bahan.stok) return null;
+  String? _stokPesan(_BarisBahan baris) {
+    final bahan = baris.bahan;
+    if (bahan == null || baris.jumlah <= bahan.stok) return null;
     return 'Stok hanya ${bahan.labelStok}';
   }
 
@@ -235,26 +267,40 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
           : benih == null || benih <= 0
           ? 'Jumlah benih harus angka'
           : null;
-      _bahanError = _bahan == null ? 'Pilih bahan' : null;
-      _jumlahError = _stokPesan();
+      _bahanError = _baris.first.bahan == null ? 'Pilih bahan' : null;
+      for (final baris in _baris) {
+        baris.error = _stokPesan(baris);
+      }
     });
-    final bahan = _bahan;
+    final adaGalatJumlah = _baris.any((baris) => baris.error != null);
     if (_benihError != null ||
         _bahanError != null ||
-        _jumlahError != null ||
-        bahan == null) {
+        adaGalatJumlah ||
+        _baris.first.bahan == null) {
       return;
     }
 
+    final pakai = <V2SemaianBahanPakai>[
+      for (final baris in _baris)
+        V2SemaianBahanPakai(
+          nama: baris.bahan!.nama.replaceFirst('Benih ', ''),
+          jumlah: baris.jumlah,
+          satuan: baris.bahan!.satuan,
+          inventoryId: baris.bahan!.inventoryId,
+        ),
+    ];
+    final utama = pakai.first;
     Navigator.of(context).pop(
       V2SemaianItem(
         id: 'semaian-${_tanggal.millisecondsSinceEpoch}',
-        nama: bahan.nama.replaceFirst('Benih ', ''),
+        nama: utama.nama,
         tanggalSemai: _tanggal,
         jumlahBenih: benih!,
-        bahanInventoryId: bahan.inventoryId,
-        bahanAmount: '$_jumlahBahan',
-        bahanUnit: bahan.satuan,
+        jumlahBahan: utama.jumlah,
+        bahanInventoryId: utama.inventoryId,
+        bahanAmount: '${utama.jumlah}',
+        bahanUnit: utama.satuan,
+        bahanList: pakai,
       ),
     );
   }
@@ -307,7 +353,11 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   }
 
   List<Widget> _buildFields() {
-    final bahan = _bahan;
+    final terpakai = <String>{
+      for (final baris in _baris)
+        if (baris.bahan != null) baris.bahan!.nama,
+    };
+    final bisaTambah = terpakai.length < _pilihan.length;
     return [
       V2SelectField(
         label: 'Tanggal semai',
@@ -324,64 +374,94 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         forceFocus: widget.previewKeyboard,
       ),
       const SizedBox(height: V2Space.lg),
-      V2SelectField(
-        label: 'Bahan',
-        value: bahan?.nama,
-        hint: _bahanError == null ? 'Pilih bahan' : '',
-        error: _bahanError,
-        onTap: _pickBahan,
-      ),
-      if (bahan != null) ...[
-        const SizedBox(height: V2Space.lg),
-        _jumlahBahanField(bahan),
+      for (var index = 0; index < _baris.length; index++) ...[
+        if (index > 0) const SizedBox(height: V2Space.xl),
+        _barisBahanField(index),
       ],
       const SizedBox(height: V2Space.lg),
+      // Menambah baris bahan baru, bukan mengganti bahan baris pertama
+      // (BUG-38; kontrak server menerima `materials[]` lebih dari satu).
       V2Button(
         label: 'Tambah bahan',
         type: V2ButtonType.ghost,
-        onPressed: _pickBahan,
+        onPressed: bisaTambah ? () => _tambahBahan() : null,
       ),
       // Kartu tint menjelaskan stok yang berkurang; tidak tampil saat galat
       // (5.11) atau saat keyboard menutup ruangnya (5.9).
-      if (bahan != null && !_keyboard && _jumlahError == null) ...[
+      if (!_keyboard && _baris.any((baris) => baris.error == null)) ...[
         const SizedBox(height: V2Space.lg),
-        _tintCard(bahan),
+        _tintCard(),
       ],
     ];
   }
 
-  /// "Jumlah bahan": label hitam, stepper 56, lalu helper galat bila ada.
-  Widget _jumlahBahanField(V2SemaianBahan bahan) {
+  /// Satu baris bahan: pilih bahan, jumlah, lalu hapus bila lebih dari satu.
+  Widget _barisBahanField(int index) {
+    final baris = _baris[index];
+    final bahan = baris.bahan;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Jumlah bahan', style: V2Type.label.copyWith(color: V2Colors.ink)),
-        const SizedBox(height: V2Space.sm),
-        V2QtyField(
-          value: _jumlahBahan,
-          unit: bahan.satuan,
-          error: _jumlahError != null,
-          onChanged: _setJumlah,
-          onMinus: _jumlahBahan <= 1
-              ? null
-              : () => _setJumlah(_jumlahBahan - 1),
-          onPlus: () => _setJumlah(_jumlahBahan + 1),
+        V2SelectField(
+          label: index == 0 ? 'Bahan' : 'Bahan ${index + 1}',
+          value: bahan?.nama,
+          hint: _bahanError == null ? 'Pilih bahan' : '',
+          error: index == 0 ? _bahanError : null,
+          onTap: () => _pickBahan(
+            baris: index,
+            dilewati: <String>{
+              for (var lain = 0; lain < _baris.length; lain++)
+                if (lain != index && _baris[lain].bahan != null)
+                  _baris[lain].bahan!.nama,
+            },
+          ),
         ),
-        if (_jumlahError != null) ...[
+        if (bahan != null) ...[
+          const SizedBox(height: V2Space.lg),
+          Text(
+            'Jumlah bahan',
+            style: V2Type.label.copyWith(color: V2Colors.ink),
+          ),
           const SizedBox(height: V2Space.sm),
-          Row(
-            children: [
-              const V2Icon(
-                V2IconName.close,
-                size: V2Icons.small,
-                color: V2Colors.red700,
-              ),
-              const SizedBox(width: V2Space.sm),
-              Text(
-                _jumlahError!,
-                style: V2Type.label.copyWith(color: V2Colors.red700),
-              ),
-            ],
+          V2QtyField(
+            value: baris.jumlah,
+            unit: bahan.satuan,
+            error: baris.error != null,
+            onChanged: (value) => _setJumlah(index, value),
+            onMinus: baris.jumlah <= 1
+                ? null
+                : () => _setJumlah(index, baris.jumlah - 1),
+            onPlus: () => _setJumlah(index, baris.jumlah + 1),
+          ),
+          if (baris.error != null) ...[
+            const SizedBox(height: V2Space.sm),
+            Row(
+              children: [
+                const V2Icon(
+                  V2IconName.close,
+                  size: V2Icons.small,
+                  color: V2Colors.red700,
+                ),
+                const SizedBox(width: V2Space.sm),
+                Expanded(
+                  child: Text(
+                    baris.error!,
+                    style: V2Type.label.copyWith(color: V2Colors.red700),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+        if (_baris.length > 1) ...[
+          const SizedBox(height: V2Space.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: V2Button(
+              label: 'Hapus bahan ${index + 1}',
+              type: V2ButtonType.ghost,
+              onPressed: () => _hapusBahan(index),
+            ),
           ),
         ],
       ],
@@ -389,8 +469,10 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   }
 
   /// Kartu `Card Type=Tint` (frame 5.7): judul 20/28 dan isi 16/24.
-  Widget _tintCard(V2SemaianBahan bahan) {
-    final sisa = bahan.stok - _jumlahBahan;
+  Widget _tintCard() {
+    final baris = _baris.where(
+      (item) => item.bahan != null && item.error == null,
+    );
     return Container(
       constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.all(V2Space.xl),
@@ -404,12 +486,24 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         children: [
           Text('Stok berkurang', style: V2Type.h2),
           const SizedBox(height: V2Space.sm),
-          Text(
-            '${bahan.nama}: ${bahan.labelStok} jadi $sisa ${bahan.satuan}',
-            style: V2Type.body.copyWith(color: V2Colors.slate600),
-          ),
+          for (final item in baris) ...[
+            Text(
+              '${item.bahan!.nama}: ${item.bahan!.labelStok} jadi '
+              '${item.bahan!.stok - item.jumlah} ${item.bahan!.satuan}',
+              style: V2Type.body.copyWith(color: V2Colors.slate600),
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+/// Satu baris bahan di form Tambah semaian.
+class _BarisBahan {
+  _BarisBahan({this.bahan, this.jumlah = 2});
+
+  V2SemaianBahan? bahan;
+  int jumlah;
+  String? error;
 }

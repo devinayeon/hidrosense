@@ -133,8 +133,9 @@ class V2SemaianConnectedTab extends ConsumerWidget {
       V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
     );
     if (result == null) return;
+    final pakai = result.bahanList;
     final inventoryId = result.bahanInventoryId;
-    if (inventoryId == null) {
+    if ((pakai == null || pakai.isEmpty) && inventoryId == null) {
       if (!context.mounted) return;
       _pesan(context, 'Pilih bahan dari inventaris.');
       return;
@@ -150,6 +151,15 @@ class V2SemaianConnectedTab extends ConsumerWidget {
               inventoryId: inventoryId,
               amount: result.bahanAmount ?? '1',
               unit: result.bahanUnit ?? 'pak',
+              materials: [
+                for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
+                  if (bahan.inventoryId != null)
+                    SowingMaterialDraft(
+                      inventoryId: bahan.inventoryId!,
+                      amount: '${bahan.jumlah}',
+                      unit: bahan.satuan,
+                    ),
+              ],
             ),
           );
       if (!context.mounted) return;
