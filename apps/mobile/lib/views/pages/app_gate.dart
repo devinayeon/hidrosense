@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/session_viewmodel.dart';
 import '../v2/pages/v2_beranda_connected_page.dart';
 import '../v2/v2_roles.dart';
-import '../v2/v2_ui_mode.dart';
 import 'login_page.dart';
-import 'main_page.dart';
 
 class AppGate extends ConsumerStatefulWidget {
   const AppGate({super.key});
@@ -22,14 +20,11 @@ class _AppGateState extends ConsumerState<AppGate> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(sessionProvider.select((state) => state.user));
-    final useV2 = ref.watch(v2UiModeProvider);
-    // Tanda identitas yang menentukan kapan Navigator dibangun ulang: pengguna,
-    // dan mode v2 yang hanya berarti kalau sudah ada pengguna.
-    //
-    // Perubahan mode saat belum ada sesi (mis. alur v2 ditandai selagi login
-    // berlangsung) **tidak** ikut dibangun ulang, karena itu akan membuang
-    // tumpukan rute pratinjau yang sedang dibuka.
-    final identity = '${user?.id ?? ''}|${user == null ? '' : useV2}';
+    // Penanda identitas yang menentukan kapan Navigator dibangun ulang: hanya
+    // pengguna. Beranda v1 (MainPage) sudah **dinonaktifkan sebagai jalur masuk**
+    // (lihat D-15): begitu ada sesi, v2 selalu dipakai — termasuk saat sesi
+    // dipulihkan setelah aplikasi dibuka ulang. Berkas/kode v1 tidak dihapus.
+    final identity = user?.id ?? '';
     if (identity != _identity) {
       _identity = identity;
       _navigatorKey = GlobalKey<NavigatorState>();
@@ -42,7 +37,6 @@ class _AppGateState extends ConsumerState<AppGate> {
         onGenerateRoute: (_) => MaterialPageRoute<void>(
           builder: (_) {
             if (user == null) return const LoginPage();
-            if (!useV2) return const MainPage();
             return V2BerandaConnectedPage(
               userName: user.name,
               fullName: user.name,

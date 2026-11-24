@@ -5,6 +5,11 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 
 > Pengujian terakhir: **24 November 2026** — re-QA menyeluruh setelah backend + AI (`ml`)
 > menyusul. Fitur deteksi hama (PB-05) dan rekomendasi & perawatan (PB-06) kini dibangun.
+> Hari yang sama: hasil **uji manual dev FE di HP asli** dimasukkan (`manual_checklist.md`),
+> **11 bug baru (BUG-15..BUG-25) diperbaiki** + regression test, dan `flutter analyze` kini
+> **bersih**. Aplikasi dinyatakan **online-only** oleh PM (D-14) → kasus uji offline jadi N/A.
+> Sesi 2 (24 Nov 2026) menambah BUG-22..BUG-25 dari laporan manual yang sama; total
+> `flutter test` mobile kini **632 PASS**.
 
 ## Dokumen
 
@@ -13,7 +18,7 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 | `testing.md` | **Matriks seluruh test case** (204) + status + cara menjalankan ulang |
 | `issues.md` | Semua bug/temuan (format PROMPT §8) + statistik severity + saran perbaikan |
 | `rtm.md` | Requirements Traceability Matrix + §Gap dokumen vs implementasi + DoD |
-| `manual_checklist.md` | Uji perangkat fisik/mitra (`MANUAL-PENDING`) + lembar observasi usability |
+| `manual_checklist.md` | Uji perangkat fisik/mitra (sebagian `PASS` hasil dev FE + `MANUAL-PENDING`) + lembar observasi usability |
 | `model_evaluation.md` | Evaluasi model AI (§5.5): nilai, provenance, paritas pra-pemrosesan |
 | `audit_queries.sql` | Kueri audit integritas data (AQ-01..AQ-28), dapat dijalankan ulang |
 | `architecture.md` | Peta arsitektur hasil orientasi (endpoint, izin, aturan domain) |

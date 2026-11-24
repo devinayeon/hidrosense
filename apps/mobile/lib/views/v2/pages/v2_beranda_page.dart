@@ -95,9 +95,11 @@ class V2BerandaPage extends StatefulWidget {
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
     this.tanamTab,
+    this.tanamTabBuilder,
     this.stokTabBuilder,
     this.rawatTab,
     this.onLowStock,
+    this.onFilledHoles,
     this.onOpenNotifications,
     this.onOpenWeather,
     this.onLogOut,
@@ -114,6 +116,7 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
+    this.onFilledHoles,
     this.onOpenNotifications,
     this.onOpenWeather,
     this.onLogOut,
@@ -125,6 +128,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.loading,
@@ -145,6 +149,7 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
+    this.onFilledHoles,
     this.onOpenNotifications,
     this.onOpenWeather,
     this.onLogOut,
@@ -156,6 +161,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.offline,
@@ -176,6 +182,7 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
+    this.onFilledHoles,
     this.onOpenNotifications,
     this.onOpenWeather,
     this.onLogOut,
@@ -187,6 +194,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.weatherUnavailable,
@@ -244,6 +252,10 @@ class V2BerandaPage extends StatefulWidget {
   /// sehingga galeri tetap memakai data contoh per frame.
   final Widget? tanamTab;
 
+  /// Versi tab Tanam yang bisa dibuka langsung ke segmen tertentu (0 Semaian,
+  /// 1 Meja, 2 Panen). Dipakai kartu "Lubang terisi" membuka Tanam → Meja.
+  final Widget Function(int segmen)? tanamTabBuilder;
+
   /// Isi tab Stok versi backend; menerima jenis dan indeks keadaan terpilih
   /// supaya kartu "stok menipis" bisa langsung membuka Benih + Menipis.
   final Widget Function(V2JenisBarang? jenis, int statusIndex)? stokTabBuilder;
@@ -251,6 +263,9 @@ class V2BerandaPage extends StatefulWidget {
   final Widget? rawatTab;
 
   final VoidCallback? onLowStock;
+
+  /// Membuka Tanam → Meja saat kartu "Lubang terisi" ditekan.
+  final VoidCallback? onFilledHoles;
   final VoidCallback? onOpenNotifications;
 
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
@@ -284,6 +299,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   V2JenisBarang? _stokJenis;
   int _stokStatus = 0;
 
+  /// Segmen awal tab Tanam saat dibuka lewat kartu "Lubang terisi" (1 = Meja).
+  int _tanamSegmen = 0;
+
   @override
   void dispose() {
     _rawatToastTimer?.cancel();
@@ -294,7 +312,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   void didUpdateWidget(V2BerandaPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state != widget.state) _state = widget.state;
-    if (oldWidget.role != widget.role) _activeTab = 0;
+    if (oldWidget.role != widget.role) {
+      _activeTab = 0;
+      _tanamSegmen = 0;
+    }
   }
 
   bool get _petani => widget.role == V2BerandaRole.petani;
@@ -329,6 +350,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         (index == v2RawatTabIndex && _petani)) {
       setState(() {
         _activeTab = index;
+        // Ketukan langsung ke tab Tanam selalu mulai dari Semaian, bukan
+        // segmen Meja yang dipakai kartu "Lubang terisi" sebelumnya (BUG-25).
+        if (index == v2TanamTabIndex) _tanamSegmen = 0;
         // Ketukan langsung ke tab Stok menampilkan semua barang lagi, bukan
         // saringan "Benih + Menipis" yang dipakai kartu Beranda.
         if (index == v2StokTabIndex) _resetStokFilter();
@@ -356,6 +380,16 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     _stokJenis = null;
     _stokStatus = 0;
     _stokPermintaan++;
+  }
+
+  /// Membuka tab Tanam langsung ke segmen Meja saat kartu "Lubang terisi"
+  /// ditekan (sebelumnya kartu ini mati).
+  void _openFilledHoles() {
+    widget.onFilledHoles?.call();
+    setState(() {
+      _activeTab = v2TanamTabIndex;
+      _tanamSegmen = 1;
+    });
   }
 
   /// Buka alur foto tanaman 9.5 dari tab Rawat; hasilnya menyisip paling atas.
@@ -560,12 +594,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onLogOut: _confirmLogOut,
                       )
                     : tanam
-                    ? (widget.tanamTab ??
-                          V2SemaianTabView(
-                            items: _semaian,
-                            onAdd: _openTambahSemaian,
-                            onTapItem: _openDetailSemaian,
-                          ))
+                    ? KeyedSubtree(
+                        key: ValueKey('tanam-$_tanamSegmen'),
+                        child:
+                            widget.tanamTabBuilder?.call(_tanamSegmen) ??
+                            widget.tanamTab ??
+                            V2SemaianTabView(
+                              items: _semaian,
+                              onAdd: _openTambahSemaian,
+                              onTapItem: _openDetailSemaian,
+                            ),
+                      )
                     : stok
                     ? KeyedSubtree(
                         key: ValueKey('stok-$_stokPermintaan'),
@@ -655,6 +694,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           lowStock: widget.lowStock,
           filledHoles: widget.filledHoles,
           onLowStock: _openLowStock,
+          onFilledHoles: _openFilledHoles,
         ),
         if (_petani) ...[
           const SizedBox(height: V2Space.lg),

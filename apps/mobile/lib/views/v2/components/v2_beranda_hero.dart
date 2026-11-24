@@ -30,7 +30,9 @@ class V2BerandaHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      height: 160,
+      // Tinggi minimum (bukan tetap): teks boleh membungkus dan kartu ikut
+      // tumbuh saat skala teks sistem besar (BUG-20).
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue500,
@@ -50,14 +52,14 @@ class V2BerandaHero extends StatelessWidget {
                 const SizedBox(height: V2Space.xs),
                 Text(
                   title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: V2Type.h1.copyWith(color: V2Colors.white),
                 ),
                 const SizedBox(height: V2Space.xs),
                 Text(
                   subtitle,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: V2Type.body.copyWith(color: V2Colors.white),
                 ),

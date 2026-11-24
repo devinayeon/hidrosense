@@ -77,8 +77,6 @@ flutter:
     - assets/side-ultility/
     - assets/logo/
     - assets/ml/
-    - assets/illustrations/inventory/
-    - assets/illustrations/features/
     - assets/illustrations/avatars/
     - assets/illustrations/states/
     - lib/views/v2/assets/illustrations/

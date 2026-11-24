@@ -36,16 +36,19 @@ class V2SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // `Wrap` supaya lencana turun ke baris baru saat teks membesar,
+          // bukan terpotong di kanan kartu biru (BUG-24).
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: V2Space.sm,
+            runSpacing: V2Space.xs,
             children: [
-              Expanded(
-                child: Text(
-                  kicker,
-                  style: V2Type.label.copyWith(color: V2Colors.white),
-                ),
+              Text(
+                kicker,
+                style: V2Type.label.copyWith(color: V2Colors.white),
               ),
-              if (badge != null) ...[const SizedBox(width: V2Space.sm), badge!],
+              ?badge,
             ],
           ),
           const SizedBox(height: V2Space.sm),

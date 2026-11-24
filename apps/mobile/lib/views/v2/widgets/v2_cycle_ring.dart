@@ -77,15 +77,24 @@ class V2CycleRing extends StatelessWidget {
           tickColor: tickColor,
         ),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(unit, style: V2Type.label.copyWith(color: unitColor)),
-              Text(
-                '$value',
-                style: numberStyle.copyWith(color: contentColor),
+          child: Padding(
+            // Teks tengah dibatasi ke lingkaran dalam; `FittedBox` menyusutkan
+            // "HSS" + angka saat skala teks sistem besar, bukan meluap keluar
+            // cincin (BUG-24).
+            padding: EdgeInsets.all(stroke * 0.9),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(unit, style: V2Type.label.copyWith(color: unitColor)),
+                  Text(
+                    '$value',
+                    style: numberStyle.copyWith(color: contentColor),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

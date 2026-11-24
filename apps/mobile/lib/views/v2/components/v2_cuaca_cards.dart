@@ -27,7 +27,14 @@ class V2CuacaLokasiHeader extends StatelessWidget {
     final label = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(lokasi, style: V2Type.bodyStrong),
+        Flexible(
+          child: Text(
+            lokasi,
+            style: V2Type.bodyStrong,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         const SizedBox(width: V2Space.xs),
         const V2Icon(V2IconName.chevronDown),
       ],
@@ -37,8 +44,10 @@ class V2CuacaLokasiHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 48,
+        // Tinggi minimum 48 (bukan tetap): nama lokasi boleh membungkus dan
+        // baris ikut tinggi saat skala teks sistem besar (BUG-20).
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
           child: onTap == null
               ? label
               : Material(
@@ -149,17 +158,24 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Kedua sisi fleksibel: label panjang atau nilai panjang membungkus
+        // alih-alih meluber saat skala teks sistem besar (BUG-20).
         Expanded(
           child: Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: V2Type.label.copyWith(color: V2Colors.muted),
           ),
         ),
         const SizedBox(width: V2Space.sm),
-        Text(value, style: V2Type.bodyStrong),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: V2Type.bodyStrong,
+          ),
+        ),
       ],
     );
   }

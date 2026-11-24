@@ -457,14 +457,17 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
   /// Kartu "Berat layak" biru muda (frame 7.8): judul 14/20 muted, angka
   /// 28/36 Bold.
   Widget _kartuLayak() {
+    // Tinggi minimum, bukan tetap 120, supaya label dan angka tidak terpotong
+    // pada skala teks besar (BUG-24).
     return Container(
-      height: 120,
+      constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue50,
         borderRadius: BorderRadius.circular(V2Radius.card),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(

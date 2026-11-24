@@ -14,6 +14,7 @@ import 'package:hidrosense_mobile/features/pest/presentation/viewmodels/pest_sca
 import 'package:hidrosense_mobile/features/pest/presentation/viewmodels/recommendation_decider.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_table_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
+import 'package:hidrosense_mobile/views/v2/widgets/v2_segmented.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'pest_viewmodels_test.dart' show FakeRepo;
@@ -60,9 +61,11 @@ Future<FakeRepo> pumpPage(
   int thrips = 2,
   FakeRepo? repo,
   Future<Uint8List?> Function(ImageSource)? pick,
+  double textScale = 1,
+  Size size = const Size(800, 2400),
 }) async {
   // Layar ponsel tinggi supaya seluruh isi ListView dirender tanpa menggulir.
-  tester.view.physicalSize = const Size(800, 2400);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   final api = apiFor((r) async => throw StateError('jaringan tidak dipakai'));
@@ -76,7 +79,13 @@ Future<FakeRepo> pumpPage(
         (_) async => _result(thrips), fake, (t) async => 'batch-$t', RecommendationDecider(fake),
       )),
     ],
-    child: MaterialApp(home: PestScanPage(pickPhoto: pick ?? (_) async => _png)),
+    child: MaterialApp(
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
+      home: PestScanPage(pickPhoto: pick ?? (_) async => _png),
+    ),
   ));
   await tester.pump();
   return fake;
@@ -133,8 +142,8 @@ void main() {
     expect(find.text('Coba simpan lagi'), findsOneWidget);
     final dropdown = tester.widget<DropdownButtonFormField<String>>(find.byType(DropdownButtonFormField<String>));
     expect(dropdown.onChanged, isNull, reason: 'meja terkunci setelah tulis dikirim');
-    final segmented = tester.widget<SegmentedButton<PestSeverity>>(find.byType(SegmentedButton<PestSeverity>));
-    expect(segmented.onSelectionChanged, isNull, reason: 'tingkat terkunci setelah tulis dikirim');
+    final segmented = tester.widget<V2Segmented>(find.byType(V2Segmented));
+    expect(segmented.onChanged, isNull, reason: 'tingkat terkunci setelah tulis dikirim');
     repo.failCreateFor = null;
     await tester.tap(find.text('Coba simpan lagi'));
     await tester.pumpAndSettle();
@@ -148,5 +157,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Akses kamera atau galeri ditolak'), findsOneWidget);
     expect(find.text('Galeri'), findsOneWidget);
+  });
+
+  testWidgets('kapsul tingkat serangan tidak meluber di layar sempit', (tester) async {
+    await pumpPage(tester);
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+    expect(find.byType(V2Segmented), findsOneWidget);
+
+    // Lebar ponsel kecil lalu render ulang: dulu `SegmentedButton` bawaan
+    // (dengan ikon centang) melebihi lebar kartu dan memicu overflow (BUG-15).
+    tester.view.physicalSize = const Size(320, 2400);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('layar deteksi hama tidak meluber di skala teks 2.0', (tester) async {
+    await pumpPage(tester, textScale: 2, size: const Size(360, 3000));
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thrips: 2 terdeteksi'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

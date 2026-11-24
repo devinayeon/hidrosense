@@ -82,7 +82,8 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         final V2PenjualanRepairer repairer => repairer,
         _ => null,
       },
-      tanamTab: const V2TanamConnectedTab(),
+      tanamTabBuilder: (segmen) =>
+          V2TanamConnectedTab(initialSegmen: segmen, key: ValueKey(segmen)),
       stokTabBuilder: (jenis, status) => V2InventarisConnectedTab(
         key: ValueKey('stok-${jenis?.name}-$status'),
         initialJenis: jenis,

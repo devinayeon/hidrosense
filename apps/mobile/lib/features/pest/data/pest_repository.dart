@@ -147,6 +147,28 @@ class PestRepository {
     );
   }
 
+  /// Daftar foto deteksi tersimpan, terbaru dulu. `id_pemindahan` menyaring satu batch tanam.
+  Future<ScanPage> listScans({String? transferId, int page = 1, int limit = 20}) async {
+    final response = await _api.get(
+      'pindaian',
+      query: {
+        'page': '$page',
+        'limit': '$limit',
+        'id_pemindahan': ?transferId,
+      },
+    );
+    final rows = response['data'];
+    final meta = response['meta'];
+    if (rows is! List || meta is! Map<String, dynamic>) {
+      throw const FormatException('Respons daftar pindaian tidak valid.');
+    }
+    return ScanPage(
+      items: rows.map(PestScanRecord.fromJson).toList(growable: false),
+      page: (meta['page'] as num).toInt(),
+      totalPages: (meta['total_pages'] as num).toInt(),
+    );
+  }
+
   /// Terima = obat dipakai. [appliedOn] YYYY-MM-DD, bawaan server: hari ini.
   Future<PestRecommendation> accept(
     String id, {

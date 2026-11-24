@@ -11,14 +11,20 @@ class V2CuacaLokasi {
   final String nama;
   final String wilayah;
 
-  /// `Malang, Jawa Timur`.
+  /// `Sabrang, Ambulu, Jember`.
   String get label => '$nama, $wilayah';
 }
 
+/// Daftar lokasi cadangan saat data BMKG belum/tidak tersedia.
+///
+/// Lokasi mitra Hidro Selada ada di Desa Sabrang, Kecamatan Ambulu, Kabupaten
+/// Jember (lihat `BmkgWeatherService`), jadi Ambulu diletakkan paling depan
+/// sebagai pilihan awal. Sebelumnya daftar ini keliru menampilkan Malang/Batu/
+/// Pasuruan (BUG-17): di lokasi mitra, kartu cuaca terlihat seperti salah desa.
 const List<V2CuacaLokasi> designCuacaLokasi = <V2CuacaLokasi>[
-  V2CuacaLokasi(nama: 'Malang', wilayah: 'Jawa Timur'),
-  V2CuacaLokasi(nama: 'Batu', wilayah: 'Jawa Timur'),
-  V2CuacaLokasi(nama: 'Pasuruan', wilayah: 'Jawa Timur'),
+  V2CuacaLokasi(nama: 'Sabrang', wilayah: 'Ambulu, Jember'),
+  V2CuacaLokasi(nama: 'Ambulu', wilayah: 'Jember'),
+  V2CuacaLokasi(nama: 'Jember', wilayah: 'Jawa Timur'),
 ];
 
 /// Cuaca saat ini di kartu “Sekarang” (10.1, 10.5, 10.8).

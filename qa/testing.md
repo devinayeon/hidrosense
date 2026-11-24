@@ -4,13 +4,16 @@ Dokumen ini memuat **semua test case** beserta status nyata dan cara menjalankan
 Status yang dipakai: `PASS`, `FAIL` (temuan), `BLOCKED` (dengan alasan), `N/A` (dengan
 alasan), `MANUAL-PENDING` (uji perangkat fisik, lihat `qa/manual_checklist.md`).
 
-- Tanggal pengujian: **24 November 2026** (re-QA setelah backend + AI/`ml` menyusul).
+- Tanggal pengujian: **24 November 2026** (re-QA setelah backend + AI/`ml` menyusul,
+  lalu perbaikan bug hasil uji manual dev FE).
 - Lingkungan: Linux x86_64; Node v22.23.1; npm 10.9.8; Flutter 3.47.7 (stable);
   Python 3.14.3.
 - DB uji: `/tmp/opencode/hsqa/qa.db` (SQLite), server `http://127.0.0.1:3100`.
 - **Tidak** menyentuh data produksi; **tidak** memakai kredensial produksi
   (Cloudinary memakai kredensial palsu khusus uji).
-- Perangkat Android: **tidak ada** (`adb devices` kosong) → uji on-device `MANUAL-PENDING`.
+- Perangkat Android di lingkungan QA: **tidak ada** (`adb devices` kosong). Sebagian uji
+  on-device **sudah dijalankan manual oleh dev FE** di HP asli (24 Nov 2026) →
+  lihat `qa/manual_checklist.md`; sisanya tetap `MANUAL-PENDING`.
 
 > Catatan sesi: pada sesi ini backend (`apps/backend`), AI (`ml`) dan fitur mobile
 > deteksi/rotasi sudah dibangun. Status lamanya (`N/A`/`BLOCKED` karena "belum ada")
@@ -48,8 +51,8 @@ BASE_URL=http://127.0.0.1:3100/api/v1 REPS=12 bash qa/perf.sh            # laten
 cd apps/backend && node --import tsx qa/fuzz-invariants.mjs               # 638 pemeriksaan
 
 # 6) Mobile
-cd apps/mobile && flutter analyze
-cd apps/mobile && flutter test                                           # 584 tes
+cd apps/mobile && flutter analyze                                        # tanpa temuan
+cd apps/mobile && flutter test                                           # 632 tes
 
 # 7) AI / ML
 cd /home/eiser/coolyeah/PPL/hidrosense && python3 -m pytest ml/tests -q   # 165 lulus, 3 gagal-harness
@@ -62,14 +65,24 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 
 ## 1. Baseline & hasil akhir
 
-| Suite | Baseline (sebelum sesi ini) | Hasil akhir | Catatan |
+| Suite | Baseline (awal sesi) | Hasil akhir | Catatan |
 |---|---|---|---|
 | `npm test` (backend) | 432/432 PASS | **432/432 PASS** | Tidak ada tes backend yang diubah. |
-| `flutter test` (mobile) | 584 PASS | **584 PASS** (exit 0) | Termasuk 61 tes fitur pest baru. |
-| `flutter analyze` | 2 warning aset | **2 warning aset** | `assets/illustrations/inventory/` & `.../features/` (dir hilang); bukan dari QA. |
+| `flutter test` (mobile) | 592 PASS | **632 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21) dan +26 tes sesi 2 (BUG-22..25) di atas 592 baseline; termasuk 61 tes fitur pest. |
+| `flutter analyze` | 2 warning aset | **0 temuan** (exit 0) | Entri aset yang menunjuk folder hilang dihapus dari `pubspec.yaml`. |
 | `python3 -m pytest ml/tests` | tak jalan (dep hilang) | **165 PASS / 3 FAIL / 0 SKIP** | 3 FAIL = bug harness ML, bukan model (lihat §4.8). |
 | `qa/backend-pest-rotation.sh` | — (baru) | **109/109 PASS** | Fitur baru backend. |
 | fuzz §5.8 | 638 lulus | **638 lulus ×3 run** | Perbaikan kueri AQ-10 (bug harness, §4.7). |
+
+> Catatan sesi perbaikan (24 Nov 2026): baseline mobile awal sesi = **592 PASS**
+> (`/tmp/opencode/hsqa/task2-baseline.log`); setelah perbaikan bug hasil uji manual dev FE
+> menjadi **606 PASS** (`flutter test`, `/tmp/opencode/hsqa/task2-final.log`). Tidak ada
+> tes lama yang dihapus; beberapa tes lama disesuaikan karena jalur masuk v1→v2 (BUG-19).
+> `flutter analyze` bersih setelah entri aset yang menunjuk folder tidak ada dihapus.
+>
+> Sesi 2 (24 Nov 2026): baseline 606 PASS; ditambah 26 tes regresi
+> (BUG-23 2, BUG-22 8, BUG-24 15, BUG-25 1) sehingga **632 PASS**
+> (`/tmp/opencode/hsqa/s2-full-test.log`). `flutter analyze` tetap **0 temuan**.
 
 ---
 
@@ -81,23 +94,30 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 | PB-02 Inventaris & stok | 16 | 16 | 0 | 0 | 0 | 0 |
 | PB-03 Penyemaian bibit | 14 | 12 | 0 | 0 | 0 | 2 |
 | PB-04 Pertumbuhan & meja | 18 | 18 | 0 | 0 | 0 | 0 |
-| PB-05 Deteksi hama (YOLO TFLite) | 10 | 9 | 0 | 0 | 0 | 1 |
+| PB-05 Deteksi hama (YOLO TFLite) | 10 | 10 | 0 | 0 | 0 | 0 |
 | PB-06 Rekomendasi & perawatan | 9 | 7 | 0 | 1 | 1 | 0 |
 | PB-07 Penyimpanan lokal & sinkronisasi | 19 | 14 | 0 | 0 | 0 | 5 |
 | PB-08 Pencatatan panen | 11 | 11 | 0 | 0 | 0 | 0 |
 | PB-09 Pencatatan penjualan | 12 | 12 | 0 | 0 | 0 | 0 |
 | PB-10 Rekomendasi cuaca (BMKG) | 14 | 12 | 0 | 2 | 0 | 0 |
 | PB-11 Pengelolaan akun | 13 | 13 | 0 | 0 | 0 | 0 |
-| §5 lintas-area | 33 | 25 | 2 | 0 | 0 | 6 |
-| **Total** | **204** | **183** | **2** | **3** | **1** | **15** |
+| §5 lintas-area | 33 | 27 | 2 | 0 | 2 | 2 |
+| **Total** | **204** | **186** | **2** | **3** | **3** | **10** |
 
-> Jumlah pada kolom = 183 + 2 + 3 + 1 + 15 = **204**. Tidak ada test case berstatus kosong.
+> Jumlah pada kolom = 186 + 2 + 3 + 3 + 10 = **204**. Tidak ada test case berstatus kosong.
 > Dua **FAIL** berada di §5.3 (keamanan): `TC-5.3-10` = token plaintext (BUG-05) dan
 > `TC-5.3-11` = dependensi rentan (BUG-04) — keduanya temuan **keamanan**, bukan cacat
 > alur bisnis, dan berada di luar batas perbaikan sesi (`apps/mobile/` saja) sehingga
 > `NEEDS-HUMAN-REVIEW`. `BLOCKED`/`N/A` selalu disertai alasan; `MANUAL-PENDING` hanya
 > untuk uji perangkat/mitra. Tiga kegagalan ML pada §4.8 adalah cacat harness uji ML,
 > bukan produk — dicatat di `qa/issues.md` sebagai **BUG-12** (QA-tooling).
+>
+> Perubahan 24 Nov 2026 (hasil uji manual dev FE + keputusan online-only D-14):
+> `TC-PB05-04` (kinerja inferensi) → PASS; `TC-PB07-18`, `TC-PB07-19` tetap
+> `MANUAL-PENDING`. `TC-5.1-02`/`TC-5.1-03` (E2E offline) → **N/A** karena aplikasi
+> online-only (D-14). `TC-5.4-01` (rotasi/layar kecil/font) → PASS dengan catatan BUG-20,
+> `TC-5.4-02` (build release) → PASS. Sisa `MANUAL-PENDING`: sesi di perangkat, notifikasi
+> native (§D-06/D-17), sync/offline perangkat, usability mitra, muat halaman utama.
 
 ---
 
@@ -217,9 +237,9 @@ Model & aset: `ml/artifacts/yolo11n_lettuce_pests.tflite` (sha256 `cd388bda…b2
 | ID | Skenario | Hasil diharapkan | Hasil aktual | Status | Bukti |
 |---|---|---|---|---|---|
 | TC-PB05-01 | Ambil gambar kamera/galeri | Ada input gambar | `image_picker ^1.2.4`; izin ditolak → pesan jelas | PASS | `pest_scan_page_test.dart` ("akses kamera ditolak") |
-| TC-PB05-02 | Inferensi TFLite lokal offline | Kelas+confidence, tanpa jaringan | `Interpreter.fromAsset('assets/ml/…')`, tidak ada request jaringan | PASS | `pest_detector.dart`; `pest_viewmodels_test.dart` ("tanpa menyentuh jaringan") |
+| TC-PB05-02 | Inferensi TFLite lokal offline | Kelas+confidence, tanpa jaringan | `Interpreter.fromAsset('assets/ml/…')`, tidak ada request jaringan. **Catatan (D-14):** inferensi lokal benar, tetapi **layar** deteksi butuh internet (muat meja/batch) → pemakaian offline di level aplikasi = N/A | PASS | `pest_detector.dart`; `pest_viewmodels_test.dart` ("tanpa menyentuh jaringan") |
 | TC-PB05-03 | Hasil kosong ≠ "bebas hama" | Pesan netral | "Tidak ada hama terdeteksi / Ini bukan jaminan tanaman sehat…" | PASS | `pest_scan_page.dart:159`; `pest_scan_page_test.dart` ("nol deteksi") |
-| TC-PB05-04 | Kinerja inferensi < 5 dtk (perangkat) | Terukur | Butuh perangkat; host 129,65 ms/gambar (bukan perangkat) | MANUAL-PENDING | `manual_checklist.md` MC-PERF-06 |
+| TC-PB05-04 | Kinerja inferensi < 5 dtk (perangkat) | Terukur | Lolos target (diuji manual dev FE); angka belum dicatat (host 129,65 ms/gambar) | PASS | `manual_checklist.md` MC-PERF-06 |
 | TC-PB05-05 | UI tidak freeze / anti double-tap | Aman | Letterbox di `compute` (isolate); simpan-ganda diabaikan | PASS | `yolo_decoder.dart`; `pest_viewmodels_test.dart` |
 | TC-PB05-06 | Unggah Cloudinary tak menghambat / gagal tak hilangkan hasil | Hasil lokal tetap | `uploadPhoto` setelah inferensi; gagal → `UPLOAD_FAILED`, hasil tetap | PASS | `pest_repository_test.dart` (Cloudinary gagal) |
 | TC-PB05-07 | Pra-pemrosesan app == pelatihan | 640×640, RGB 0-1, pad 114, NMS 0.35/0.45 | Konstanta dekoder = `model_metadata.json`; golden paritas | PASS | `pest_decoder_test.dart`; `pest_summary_test.dart:79` |
@@ -348,8 +368,8 @@ Model & aset: `ml/artifacts/yolo11n_lettuce_pests.tflite` (sha256 `cd388bda…b2
 | ID | Skenario | Hasil diharapkan | Hasil aktual | Status | Bukti |
 |---|---|---|---|---|---|
 | TC-5.1-01 | E2E online penuh (inventaris→semai→pindah→rusak→panen→jual) | Angka rekonsiliasi | 28/28 langkah konsisten | PASS | `qa/backend-e2e.sh` |
-| TC-5.1-02 | E2E offline penuh lalu sync | Terkirim, angka sama | Butuh perangkat | MANUAL-PENDING | MC-E2E-01 |
-| TC-5.1-03 | E2E campuran (putus di tengah) | Tak hilang/ganda | Butuh perangkat | MANUAL-PENDING | MC-E2E-02 |
+| TC-5.1-02 | E2E offline penuh lalu sync | Terkirim, angka sama | **N/A** — aplikasi online-only (D-14) | N/A (D-14) | keputusan PM 24 Nov 2026 |
+| TC-5.1-03 | E2E campuran (putus di tengah) | Tak hilang/ganda | **N/A** — aplikasi online-only (D-14) | N/A (D-14) | keputusan PM 24 Nov 2026 |
 | TC-5.1-04 | E2E pest: unggah→pindai→rekomendasi→terima→stok turun | Rekonsiliasi | §A-E pest suite konsisten (saldo 10→8) | PASS | `qa/backend-pest-rotation.sh` |
 | TC-5.2-01 | Skema vs ERD (nama tabel/kolom) | Cocok | Selisih dicatat | PASS | `rtm.md` §Gap |
 | TC-5.2-02 | Foreign key aktif & tak ada orphan | `foreign_key_check` kosong | 0 baris | PASS | `PRAGMA foreign_key_check` |
@@ -368,8 +388,8 @@ Model & aset: `ml/artifacts/yolo11n_lettuce_pests.tflite` (sha256 `cd388bda…b2
 | TC-5.3-09 | Data sensitif tak di log | Tidak ada | Password/hash tak dicetak | PASS | review + `LOG_LEVEL` |
 | TC-5.3-10 | Penyimpanan lokal token | Secure storage | **Token plaintext** di `session.db` | FAIL (temuan) | `issues.md` BUG-05 |
 | TC-5.3-11 | Dependensi rentan | 0 advisory runtime | 3 advisory (1 low/1 mod/1 high) | FAIL (temuan) | `issues.md` BUG-04 |
-| TC-5.4-01 | Rotasi/layar kecil/font besar | Tak rusak | Butuh perangkat | MANUAL-PENDING | `manual_checklist.md` §A |
-| TC-5.4-02 | Build release tak rusak | Aman | Butuh perangkat | MANUAL-PENDING | MC-DEV-11 |
+| TC-5.4-01 | Rotasi/layar kecil/font besar | Tak rusak | Rotasi & layar kecil **lolos** (dev FE); font 200% sempat rusak → **BUG-20 FIXED**, sisa layar → **BUG-24 FIXED** (15 uji widget skala 2.0); cek visual ulang di HP | PASS (+ BUG-20/BUG-24) | `manual_checklist.md` §A/§H; `v2_text_scale_test.dart`, `v2_text_scale_bug24_test.dart` |
+| TC-5.4-02 | Build release tak rusak | Aman | Lolos (diuji manual dev FE) | PASS | MC-DEV-11 |
 | TC-5.5-01 | Evaluasi model AI | mAP per kelas dll | mAP50 0,8913; TFLite drop 0,0017; leakage 0 | PASS | `qa/model_evaluation.md` |
 | TC-5.5-02 | Pra-pemrosesan app == pelatihan | Identik | Golden paritas dekoder | PASS | `pest_decoder_test.dart` |
 | TC-5.6-01 | Heuristic usability statis | Temuan masuk akal | Dilakukan | PASS | §5.6 (di bawah) |
@@ -393,13 +413,26 @@ i fail 0
 backend npm test exit=0
 ```
 
-### 4.2 `flutter test` (mobile) — 584 tes
+### 4.2 `flutter test` (mobile) — 632 tes
 ```
-01:20 +584: All tests passed!
+01:35 +632: All tests passed!
 flutter test exit=0
 ```
-`flutter analyze`: 2 warning aset (`assets/illustrations/inventory/`,
-`assets/illustrations/features/` tidak ada).
+Baseline sesi ini: `01:13 +592: All tests passed!` (`/tmp/opencode/hsqa/task2-baseline.log`).
+`flutter analyze`: **0 temuan** setelah entri aset yang menunjuk folder tidak ada
+(`assets/illustrations/inventory/`, `assets/illustrations/features/`) dihapus dari
+`pubspec.yaml` (folder memang tidak ada; hanya dirujuk kode v1 yang jalurnya diputus).
+
+Regresi baru untuk bug hasil uji manual dev FE (semua lulus):
+`app_gate_v2_restore_test.dart` (BUG-19), `v2_beranda_filled_holes_test.dart` (BUG-18),
+`v2_cuaca_lokasi_test.dart` (BUG-17), `v2_sinkron_feedback_test.dart` (BUG-21),
+`v2_text_scale_test.dart` (BUG-20), `pest_error_message_test.dart` (BUG-16, sisi pesan),
+serta kasus tambahan di `pest_scan_page_test.dart` (BUG-15).
+
+Sesi 2 menambahkan 26 tes:
+`v2_stock_refresh_after_accept_test.dart` (BUG-23, 2), `v2_rawat_pindaian_test.dart`
+(BUG-22, 8), `v2_text_scale_bug24_test.dart` (BUG-24, 15 layar pada `textScaler 2.0`),
+`v2_beranda_tanam_segment_reset_test.dart` (BUG-25, 1).
 
 ### 4.3 Backend adversarial
 ```
@@ -486,8 +519,11 @@ Evaluasi model nyata (bukan pytest) ada di `qa/model_evaluation.md`.
   Kueri audit harus memakai `berat_minor` langsung (lihat §4.7).
 - **A-04 (terima = perawatan):** `acceptRecommendation` menyatukan keputusan & tindakan
   (membuat `perawatan` + potong stok). Deviasi SRS → G-12.
-- Uji perangkat fisik (kamera, notifikasi, kinerja nyata, dua perangkat) semuanya
-  `MANUAL-PENDING`; **tidak** diklaim lulus.
+- Uji perangkat fisik (kamera, notifikasi, kinerja nyata, dua perangkat): sebagian
+  **sudah dijalankan manual oleh dev FE** di HP asli (24 Nov 2026, lihat
+  `qa/manual_checklist.md`); sisanya tetap `MANUAL-PENDING` dan **tidak** diklaim lulus.
+- Aplikasi dirancang **online-only** (keputusan PM, D-14): kasus uji yang mengasumsikan
+  kerja offline berstatus **N/A** dengan alasan, bukan dihapus.
 - Angka kinerja backend diukur di loopback; tidak mewakili jaringan seluler mitra.
 - Fuzz default `FUZZ_STOCK_OPS=400 FUZZ_CYCLES=40` divalidasi. Run lebih besar
   (>15 menit jam simulasi) **gagal 401** karena token akses tak diperbarui di dalam

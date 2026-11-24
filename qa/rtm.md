@@ -10,7 +10,11 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 
 > Perubahan besar vs versi sebelumnya: PB-05 (deteksi hama) dan PB-06 (rekomendasi &
 > perawatan) **kini ada**; evaluasi model AI **tidak lagi BLOCKED**. Gap lama
-> G-01/G-02/G-07/G-10/G-11 sebagian besar **RESOLVED**.
+> G-01/G-02/G-07/G-10/G-11 sebagian besar **RESOLVED**. Hari yang sama (24 Nov 2026):
+> hasil **uji manual dev FE di HP asli** dimasukkan; aplikasi dinyatakan **online-only**
+> oleh PM → gap baru **G-17** (dokumen offline-first vs keputusan PM), kasus uji offline
+> menjadi N/A. Sesi 2 hari yang sama menutup BUG-22..BUG-25 (mobile) dan menambah gap
+> **G-18** (menu Sinkron untuk aplikasi online-only).
 
 ---
 
@@ -52,9 +56,9 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 | PB-02 | Simpan atribut; saldo akumulasi; tanpa transaksi ganda; tolak tak valid & > stok; riwayat tetap | TC-PB02-01..16 | PASS |
 | PB-03 | Simpan tanggal/jumlah/status; usia dari semai; konsistensi jumlah dipindah | TC-PB03-01..14 | PASS (2 manual) |
 | PB-04 | Kaitkan pindah→semai/meja; tolak > bibit/kapasitas; rusak ke batch; perbarui tanaman & kapasitas | TC-PB04-01..18 | PASS |
-| PB-05 | Inferensi lokal offline; thrips/whitefly/aphids; confidence↔batch; gambar invalid; **tak nyatakan bebas hama**; < 5 dtk; evaluasi mAP | TC-PB05-01..10 | PASS (1 manual: kecepatan perangkat) |
+| PB-05 | Inferensi lokal offline; thrips/whitefly/aphids; confidence↔batch; gambar invalid; **tak nyatakan bebas hama**; < 5 dtk; evaluasi mAP | TC-PB05-01..10 | PASS (1 manual: kecepatan perangkat). **Catatan (D-14):** inferensi TFLite tetap lokal, tetapi layar Deteksi hama memuat meja/batch dari server → butuh internet |
 | PB-06 | Rekomendasi↔deteksi/aturan; simpan keputusan+alasan; terima ≠ perawatan; kurangi stok; pesan bila kosong | TC-PB06-01..09 | PASS + 1 deviasi (G-12) |
-| PB-07 | Data tetap setelah buka ulang; kirim ulang tak ganda; gagal sync tak hapus data; konflik; sync < 1 mnt | TC-PB07-01..19 | PASS (5 manual) |
+| PB-07 | Data tetap setelah buka ulang; kirim ulang tak ganda; gagal sync tak hapus data; konflik; sync < 1 mnt | TC-PB07-01..19 | PASS (5 manual). **Catatan (D-14):** aplikasi online-only; kasus asumsi-offline jadi N/A; umpan balik sync salah tetap bug (BUG-21, FIXED) |
 | PB-08 | Kaitkan panen↔pemindahan; tolak panen > aktif; berat terpisah harga; konsisten saat panen berubah | TC-PB08-01..11 | PASS |
 | PB-09 | Kaitkan jual↔panen; tolak berat > tersedia; nilai = berat × harga; tolak invalid | TC-PB09-01..12 | PASS |
 | PB-10 | Tampil lokasi & waktu; parameter tersedia; curah hujan numerik; tak simpan riwayat; gagal tak ganggu; < 2 dtk | TC-PB10-01..14 | PASS (client) / BLOCKED (aturan server) |
@@ -65,7 +69,7 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 | # | Requirement / target | Test case | Status |
 |---|---|---|---|
 | NFR-1 | Muat halaman utama < 3 dtk | TC-5.7-02 | MANUAL-PENDING |
-| NFR-2 | Inferensi lokal per gambar < 5 dtk | TC-PB05-04 | MANUAL-PENDING (host 129,65 ms/gambar) |
+| NFR-2 | Inferensi lokal per gambar < 5 dtk | TC-PB05-04 | PASS di perangkat (diuji manual dev FE, 24 Nov 2026; angka belum dicatat) — host 129,65 ms/gambar |
 | NFR-3 | Sinkronisasi < 1 menit | TC-PB07-19 | MANUAL-PENDING |
 | NFR-4 | Pencocokan aturan cuaca < 2 dtk | TC-PB10-11 | PASS |
 | NFR-5 | 12 meja × 250 = 3.000 lubang | TC-PB04-17 | PASS |
@@ -102,6 +106,8 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | G-14 | Alur perbaikan non-penjualan punya resolusi konflik | Resolver konflik hanya untuk panen/penjualan; kerusakan = "coba lagi" | OPEN | Samakan alur resolusi konflik |
 | G-15 | Dokumen API cocok dengan implementasi | `apps/backend/API.md:273-275` masih menyatakan potong-stok "belum dibangun" | OPEN | Perbarui §"Belum tersedia" (lihat BUG-13) |
 | G-16 | Repo punya satu branch alur kerja | Branch `wild-fe` memuat seluruh produk; tes ML mengasumsikan branch khusus `ml/` | OPEN | Pisahkan branch ML/CI atau longgarkan asumsi (BUG-12) |
+| G-17 | SRS/Plan menyebut "offline-first" (PB-07, §5.1 varian offline) | PM memutuskan aplikasi **online-only** (D-14): mencatat/mengakses menu saat offline tidak didukung dan itu wajar | OPEN | Selaraskan SRS/Plan dengan keputusan online-only, atau rencanakan offline-first untuk rilis berikutnya |
+| G-18 | Menu Sinkron pada aplikasi online-only | Antrean hanya berisi kiriman gagal; saat online tombol "Sinkron sekarang" menjawab "Tidak ada data untuk disinkronkan" | OPEN (D-19) | PM memutuskan: pertahankan menu dengan kalimat "Semua data sudah tersimpan di server", atau sembunyikan menu Sinkron |
 
 ---
 
@@ -110,8 +116,8 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | # | Syarat | Status | Bukti |
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
-| 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 (BUG-04) `NEEDS-HUMAN-REVIEW` beralasan di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile 584/584 (§`testing.md` §1) |
+| 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` beralasan: BUG-04 (dependensi) & BUG-16 (kredensial Cloudinary server) di `qa/issues.md` |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **632/632** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |
