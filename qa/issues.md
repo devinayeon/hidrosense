@@ -34,6 +34,10 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > Sesi 3 (24 Nov 2026): BUG-26..BUG-32 ditambahkan dari laporan manual dev FE yang
 > sama dan sudah diperbaiki di `apps/mobile` (D-23/D-24). Status **FIXED di kode**,
 > tetapi **verifikasi visual ulang di HP asli belum dilakukan** dan menunggu dev FE.
+> Sesi 4 (24 Nov 2026): hasil uji manual dev FE masuk — BUG-26,27,29,30,32 **PASS**;
+> BUG-28 tombol PASS tetapi data basi → **BUG-34**; BUG-31 **dibuka ulang** (OPEN) dan
+> diperbaiki ulang jadi daftar per bulan. Ditambah BUG-33..BUG-38 dari temuan yang sama
+> (audit pintu masuk + invalidasi provider), plus fitur tambahan sesuai keputusan PM.
 
 ---
 
@@ -356,6 +360,7 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Status: **FIXED** — halaman sukses mengembalikan `V2PindahMejaAksi` (selesai/lihatMeja/keDaftarSemaian/pindahkanSisa); `v2_semaian_connected.dart` menindaklanjuti (buka detail meja lewat `V2MejaConnectedDetailPage`, kembali ke daftar, atau buka lagi form untuk sisa). File: `v2_pindah_meja_page.dart`, `v2_semaian_data.dart`, `v2_semaian_connected.dart`.
 - Regression test: `apps/mobile/test/v2_pindah_meja_success_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+- Update 24 Nov 2026 (uji manual dev FE): tombol **sudah hidup** (PASS untuk tombolnya), **tetapi** data yang ditampilkan setelahnya basi — dicatat terpisah sebagai **BUG-34** (bukan membuka ulang BUG-28).
 
 ## BUG-29 [S3] Form "Pindah ke meja": jumlah besar susah diisi; meja penuh bisa jadi bawaan
 - Area/PB: Tanam → Semaian → Pindah ke meja (5.17) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
@@ -366,8 +371,9 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Penyebab (akar): `V2Stepper`/`V2QtyField` hanya punya `onTap` satu langkah dan pil angka tidak bisa diketik; `_mejaIndex` awal tidak menyaring meja `tersedia`.
 - Status: **FIXED** — tombol minus/plus bisa ditahan untuk berulang; angka bisa diketuk lalu diketik (dialog); meja tersedia pertama dipilih otomatis bila pilihan awal penuh/perawatan. **Urutan daftar meja tidak diubah** (menunggu PM). File: `v2_stepper.dart`, `v2_pindah_meja_page.dart`.
 - Regression test: `apps/mobile/test/v2_pindah_meja_jumlah_test.dart`.
-- Pertanyaan terbuka: apakah urutan daftar meja perlu diubah (mis. meja paling kosong di atas)? Menunggu PM.
+- Pertanyaan terbuka: apakah urutan daftar meja perlu diubah (mis. meja paling kosong di atas)? **PM menjawab BOLEH (24 Nov 2026)** → dikerjakan sebagai fitur tambahan (Fitur-2, D-27).
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+- Update 24 Nov 2026 (uji manual dev FE): **PASS** — tahan plus/minus, ketik angka, dan bawaan meja berfungsi.
 
 ## BUG-30 [S3] Notifikasi tidak bisa ditekan dan tanpa status dibaca
 - Area/PB: Beranda → bel Notifikasi (2.4) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
@@ -380,16 +386,15 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Regression test: `apps/mobile/test/v2_notifikasi_bug30_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
 
-## BUG-31 [S3] Font 200%: label bulan grafik penjualan membungkus dua baris
+## BUG-31 [S3, DIBUKA ULANG] Ringkasan penjualan: label bulan tidak sejajar dengan grafik
 - Area/PB: Penjualan → Ringkasan penjualan (grafik) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), tercatat ulang dari BUG-24
-- Langkah reproduksi: 1) set ukuran font sistem ke 200%; 2) buka Ringkasan penjualan; 3) lihat label bulan di bawah batang.
-- Ekspektasi: tiap label bulan satu baris dan titik pusatnya sebaris dengan batangnya.
-- Aktual: label "Sep"/"Okt"/"Nov" membungkus dua baris ("Se"/"p") dan tidak sejajar batang.
-- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` — 4 kasus (lebar 320/360/411, skala 1.0 & 2.0); 2 gagal pada kode lama (tinggi label 80), lulus setelah perbaikan.
-- Penyebab (akar): label bulan bebas membungkus; di skala 2.0 tinggi label melebihi slot sehingga turun baris.
-- Status: **FIXED** — label dibungkus `FittedBox(fit: scaleDown)` dengan `maxLines: 1`/`softWrap: false`. File: `v2_penjualan_chart_card.dart`.
-- Regression test: `apps/mobile/test/v2_penjualan_chart_align_test.dart`.
-- Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+- Langkah reproduksi: 1) buka Ringkasan penjualan; 2) lihat label bulan di bawah batang (skala 1.0 dan 2.0).
+- Ekspektasi: label bulan sejajar dengan batangnya, atau tidak dipaksa sejajar.
+- Aktual: setelah perbaikan sesi 3 (FittedBox), label tetap **tidak sejajar** dengan grafik menurut dev FE.
+- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` (sesi 3) — menyejajarkan label; **tidak cukup** menurut uji manual dev FE.
+- Penyebab (akar): menyejajarkan label di bawah batang rapuh pada lebar/skala berbeda.
+- Status: **OPEN** (dibuka ulang sesi 4). Keputusan dev FE: jangan menyejajarkan lagi; ubah teks ringkasan per bulan menjadi **daftar ke bawah** (nama bulan kiri, nilai kanan rata), dan hapus label bulan yang tidak sejajar. (lihat sesi 4 / BUG-31 ulang).
+- Catatan: detail perbaikan ulang dicatat di sesi 4.
 
 ## BUG-32 [S3] Filter riwayat rotasi rapat dan daftar terlalu panjang
 - Area/PB: Rawat/Tanaman → Riwayat rotasi (pest) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
