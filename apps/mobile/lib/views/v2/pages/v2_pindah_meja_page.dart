@@ -33,6 +33,7 @@ class V2PindahMejaFormPage extends StatefulWidget {
     this.daftarMeja,
     this.initialDate,
     this.onPindahkan,
+    this.showResultPage = true,
   });
 
   /// Frame `5.17 Pindah ke meja`: Meja A2 terpilih, 200 tanaman.
@@ -80,6 +81,11 @@ class V2PindahMejaFormPage extends StatefulWidget {
 
   /// Kirim pemindahan ke backend; null berarti hanya pratinjau galeri.
   final Future<void> Function(V2SemaianPindah pindah)? onPindahkan;
+
+  /// Buka halaman hasil (5.18/5.22) setelah pindah. `false` membuat form
+  /// langsung menutup dan mengembalikan [V2SemaianPindah] ke pemanggil — dipakai
+  /// alur "Tambah tanaman" dari Detail meja (D-25) yang punya konteksnya sendiri.
+  final bool showResultPage;
 
   @override
   State<V2PindahMejaFormPage> createState() => _V2PindahMejaFormPageState();
@@ -165,6 +171,21 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
       }
     }
     if (!mounted) return;
+
+    // Alur "Tambah tanaman" (D-25) tidak menampilkan halaman hasil: form
+    // langsung menutup dan aksi diteruskan ke Detail meja pemanggil.
+    if (!widget.showResultPage) {
+      Navigator.of(context).pop(
+        V2SemaianPindah(
+          meja: pindah.meja,
+          jumlah: pindah.jumlah,
+          tanggal: pindah.tanggal,
+          tableId: pindah.tableId,
+        ),
+      );
+      return;
+    }
+
     final sisa = (widget.item.sisaBenih ?? widget.item.jumlahBenih) - _jumlah;
 
     // Tombol halaman sukses tidak boleh mati (BUG-28): masing-masing

@@ -19,6 +19,7 @@ import '../pages/v2_meja_detail_page.dart';
 import '../pages/v2_meja_form_page.dart';
 import '../pages/v2_meja_list_page.dart';
 import '../pages/v2_pilih_semaian_page.dart';
+import '../pages/v2_pindah_meja_page.dart';
 import 'v2_semaian_connected.dart';
 
 /// Seluruh batch pemindahan, dipakai meja dan panen untuk membaca tanaman.
@@ -375,6 +376,7 @@ class _V2MejaConnectedDetailPageState
   Future<V2MejaItem?> _tambahTanaman() async {
     final id = _item.id;
     if (id == null) throw StateError('Meja belum tersimpan di server.');
+    // Langkah 1: pilih semaian siap pindah.
     final siap = (ref.read(v2AllSowingsProvider).valueOrNull ?? const [])
         .where((row) => row.canTransfer)
         .map(
@@ -387,25 +389,85 @@ class _V2MejaConnectedDetailPageState
       ),
     );
     if (!mounted || pilihan == null) return null;
-    final jumlah = pilihan.jumlahBenih < _item.kosong
-        ? pilihan.jumlahBenih
-        : _item.kosong;
+
+    // Langkah 2: buka form "Pindah ke meja" dengan default sesuai konteks
+    // (D-25): meja ini terpilih, jumlah = min(sisa bibit, kapasitas meja).
+    final meja = _daftarMejaPindah();
+    if (meja.isEmpty) {
+      meja.add(
+        V2SemaianMeja(
+          nama: _item.nama,
+          lubangKosong: _item.kosong,
+          tableId: id,
+        ),
+      );
+    }
+    final index = meja.indexWhere((item) => item.tableId == id);
+    final sisa = pilihan.sisaBenih ?? pilihan.jumlahBenih;
+    final jumlah = sisa < _kosongMeja(id) ? sisa : _kosongMeja(id);
+    final hasil = await Navigator.of(context).push<V2SemaianPindah>(
+      MaterialPageRoute<V2SemaianPindah>(
+        builder: (_) => V2PindahMejaFormPage(
+          item: pilihan,
+          mejaAwal: index < 0 ? 0 : index,
+          jumlahAwal: jumlah,
+          daftarMeja: meja,
+          initialDate: jakartaToday(),
+          showResultPage: false,
+          onPindahkan: (pindah) => _kirimPindahKe(id, pilihan.id, pindah),
+        ),
+      ),
+    );
+    if (!mounted || hasil == null) return null;
+    final terbaru = _dariBackend() ?? _item.copyWith();
+    setState(() => _item = terbaru);
+    _pesan(context, 'Tanaman ditambahkan.');
+    return terbaru;
+  }
+
+  /// Daftar meja untuk form "Pindah ke meja" dari data backend.
+  List<V2SemaianMeja> _daftarMejaPindah() {
+    return ref
+        .read(connectedTableProvider)
+        .records
+        .map(
+          (table) => V2SemaianMeja(
+            nama: table.displayName,
+            lubangKosong: table.availableCapacity,
+            penuh: table.isFull,
+            perawatan: table.isMaintenance,
+            tableId: table.id,
+          ),
+        )
+        .toList();
+  }
+
+  /// Lubang kosong meja dari data backend; jatuh ke salinan lokal bila belum ada.
+  int _kosongMeja(String tableId) {
+    final record = ref
+        .read(connectedTableProvider)
+        .records
+        .where((row) => row.id == tableId)
+        .firstOrNull;
+    return record?.availableCapacity ?? _item.kosong;
+  }
+
+  /// Simpan satu pemindahan dan segarkan meja/pemindahan/penyemaian (BUG-34).
+  Future<void> _kirimPindahKe(
+    String tableId,
+    String sowingId,
+    V2SemaianPindah pindah,
+  ) async {
     await ref
         .read(nurseryRepositoryProvider)
         .transferSowing(
           idempotencyKey: generateUuidV4(),
-          sowingId: pilihan.id,
-          tableId: id,
-          transferDate: apiDate(jakartaToday()),
-          plantCount: jumlah,
+          sowingId: sowingId,
+          tableId: tableId,
+          transferDate: apiDate(pindah.tanggal),
+          plantCount: pindah.jumlah,
         );
-    await v2SegarkanSetelahTulis(ref, tableIds: {id});
-    await ref.read(connectedInventoryProvider.notifier).refresh();
-    if (!mounted) return null;
-    final hasil = _dariBackend() ?? _item.copyWith();
-    setState(() => _item = hasil);
-    _pesan(context, 'Tanaman ditambahkan.');
-    return hasil;
+    await v2SegarkanSetelahTulis(ref, tableIds: {tableId});
   }
 
   /// Simpan catatan tanaman lewat `PATCH /api/v1/pemindahan/:id` (frame 6.22).
