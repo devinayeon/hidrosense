@@ -237,12 +237,11 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
     };
 
     return Container(
-      height: 28,
       padding: const EdgeInsets.only(
         left: V2Space.sm,
         right: V2Space.lg,
-        top: V2Space.xs,
-        bottom: V2Space.xs,
+        top: V2Space.sm,
+        bottom: V2Space.sm,
       ),
       decoration: BoxDecoration(
         color: background,
@@ -253,7 +252,14 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
         children: [
           V2Icon(icon, size: V2Icons.small, color: foreground),
           const SizedBox(width: V2Space.xs),
-          Text(label, style: V2Type.label.copyWith(color: foreground)),
+          // Lencana di kartu ringkasan biru boleh membungkus; tinggi tetap 28
+          // memotong label "Siap pindah" pada skala teks besar (BUG-24).
+          Flexible(
+            child: Text(
+              label,
+              style: V2Type.label.copyWith(color: foreground),
+            ),
+          ),
         ],
       ),
     );

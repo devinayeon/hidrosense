@@ -4,9 +4,10 @@ import '../theme/v2_tokens.dart';
 
 /// Kartu Profil biru dari frame 3.1, 3.2, 3.11, dan 3.17.
 ///
-/// Tinggi tetap 88, sudut 32, `Shadow/Card`. Avatar 56 berisi inisial; di
+/// Tinggi minimum 88, sudut 32, `Shadow/Card`. Avatar 56 berisi inisial; di
 /// sebelahnya nama 16/24 SemiBold putih, lalu peran 14/20 Medium putih
-/// (3.1/3.2) atau lencana status (3.11/3.17).
+/// (3.1/3.2) atau lencana status (3.11/3.17). Tinggi minimum, bukan tetap,
+/// supaya nama dan lencana tetap terbaca pada skala teks besar (BUG-24).
 class V2AkunProfilCard extends StatelessWidget {
   const V2AkunProfilCard({
     super.key,
@@ -28,7 +29,7 @@ class V2AkunProfilCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 88,
+      constraints: const BoxConstraints(minHeight: 88),
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
         color: V2Colors.blue500,

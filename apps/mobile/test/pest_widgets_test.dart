@@ -234,7 +234,22 @@ void main() {
       for (final label in ['Semua', 'Menunggu', 'Diterima', 'Ditolak', 'Semua hama', 'Thrips', 'Kutu kebul', 'Kutu daun']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
-      expect(find.text('Spinosad'), findsNWidgets(2));
+      // Daftar riwayat tampil tertutup: ringkasan 1–2 baris per entri (BUG-32).
+      expect(find.textContaining('Spinosad'), findsNWidgets(2));
+      expect(find.text('Lihat detail'), findsNWidgets(2));
+      expect(find.text('Masa tunggu panen: cek label produk.'), findsNothing);
+
+      // Membuka satu entri memunculkan rincian lengkapnya saja.
+      await tester.tap(find.text('Lihat detail').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Spinosad'), findsOneWidget);
+      expect(find.text('Masa tunggu panen: cek label produk.'), findsOneWidget);
+      expect(find.text('Sembunyikan detail'), findsOneWidget);
+
+      // Menutup lagi menyembunyikan rincian.
+      await tester.tap(find.text('Sembunyikan detail'));
+      await tester.pumpAndSettle();
+      expect(find.text('Spinosad'), findsNothing);
     });
 
     testWidgets('mengetuk filter "Diterima" memuat ulang dengan status itu', (tester) async {

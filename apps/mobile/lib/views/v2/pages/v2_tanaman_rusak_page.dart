@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_meja_data.dart';
 import '../components/v2_semaian_date_sheet.dart';
 import '../theme/v2_tokens.dart';
@@ -15,6 +16,15 @@ import '../widgets/v2_list_item.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_stepper.dart';
 import '../widgets/v2_text_field.dart';
+
+/// Jam perangkat untuk halaman "Catat rusak".
+///
+/// Bisa diganti lewat [V2CatatRusakPage.clock] saat uji supaya "hari ini"
+/// tidak bergantung pada jam nyata.
+DateTime _v2CatatRusakSekarang() => DateTime.now();
+
+/// Jam contoh galeri: frame 6.25 tetap menampilkan 15 Nov 2026.
+DateTime _v2CatatRusakJamContoh() => DateTime.utc(2026, 11, 15, 5);
 
 /// Daftar kerusakan tanaman pada satu meja (frame 6.24, 6.27, 6.29).
 ///
@@ -256,11 +266,12 @@ class V2CatatRusakPage extends StatefulWidget {
     this.kerusakan,
     this.previewValidation = false,
     this.transferId,
+    this.clock = _v2CatatRusakSekarang,
   });
 
   /// Frame `6.25 Catat rusak`.
   V2CatatRusakPage.catat({Key? key})
-    : this(key: key, meja: designMejaA2);
+    : this(key: key, meja: designMejaA2, clock: _v2CatatRusakJamContoh);
 
   /// Frame `6.26 Catat rusak, validasi`: 45 tanaman dan jenis belum dipilih.
   V2CatatRusakPage.validation({Key? key})
@@ -280,6 +291,10 @@ class V2CatatRusakPage extends StatefulWidget {
 
   /// Batch tanaman tujuan laporan baru; dipakai mengirim ke backend.
   final String? transferId;
+
+  /// Jam yang bisa disuntik; halaman menghitung "hari ini" WIB dari sini
+  /// supaya form tanggal tidak memaku 15 Nov (BUG-27).
+  final DateTime Function() clock;
 
   static Route<V2KerusakanItem> route({
     V2MejaItem? meja,
@@ -309,7 +324,7 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
 
   late DateTime _tanggal = widget.previewValidation
       ? DateTime(2026, 11, 15)
-      : widget.kerusakan?.tanggal ?? DateTime(2026, 11, 15);
+      : widget.kerusakan?.tanggal ?? jakartaToday(widget.clock());
   late int _jumlah = widget.previewValidation
       ? 45
       : widget.kerusakan?.jumlah ?? 2;

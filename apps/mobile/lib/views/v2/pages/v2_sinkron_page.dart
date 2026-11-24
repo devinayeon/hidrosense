@@ -294,11 +294,19 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     if (!mounted) return;
     setState(() {
       _lastRun = run;
-      if (run.remaining == 0) {
+      if (run.total == 0) {
+        // Antrean kosong: tidak ada yang benar-benar terkirim, jadi jangan
+        // mengaku "Sinkron selesai" dan jangan memperbarui jam terakhir sinkron.
+        // Ini yang dulu menyesatkan saat perangkat tanpa internet (BUG-21).
+        _state = V2SinkronState.ready;
+        _toast = 'Tidak ada data untuk disinkronkan.';
+      } else if (run.remaining == 0) {
         _state = V2SinkronState.done;
         _toast = 'Sinkron selesai';
         _doneAt = DateTime.now();
-      } else if (run.sent == 0 && run.pending > 0) {
+      } else if (run.sent == 0) {
+        // Tidak ada satu pun baris yang terkirim (mis. jaringan putus): gagal,
+        // bukan sukses. Data tetap aman di antrean.
         _state = V2SinkronState.offline;
       } else {
         _state = V2SinkronState.partial;
@@ -539,7 +547,9 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
             ),
           ],
           V2SinkronState.offline => [
-            const V2Banner(message: 'Offline. Data tersimpan di HP.'),
+            const V2Banner(
+              message: 'Tidak ada koneksi internet. Data tersimpan di HP.',
+            ),
             const SizedBox(height: V2Space.lg),
             _queueList(widget.items ?? designSinkronAntrean),
           ],
@@ -630,7 +640,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   Widget _buildFooter() {
     return switch (_state) {
       V2SinkronState.offline => V2ActionBar(
-        note: 'Sinkron butuh internet. Data aman di HP.',
+        note: 'Tidak ada koneksi internet. Data aman di HP.',
         actions: [
           V2Button(
             label: 'Sinkron sekarang',

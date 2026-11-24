@@ -95,10 +95,14 @@ class V2BerandaPage extends StatefulWidget {
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
     this.tanamTab,
+    this.tanamTabBuilder,
     this.stokTabBuilder,
     this.rawatTab,
     this.onLowStock,
-    this.onOpenNotifications,
+    this.onFilledHoles,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   });
@@ -114,7 +118,10 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
-    this.onOpenNotifications,
+    this.onFilledHoles,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -125,6 +132,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.loading,
@@ -145,7 +153,10 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
-    this.onOpenNotifications,
+    this.onFilledHoles,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -156,6 +167,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.offline,
@@ -176,7 +188,10 @@ class V2BerandaPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.initialEmployees = designEmployees,
     this.onLowStock,
-    this.onOpenNotifications,
+    this.onFilledHoles,
+    this.notificationGroups,
+    this.onNotificationRead,
+    this.onNotificationMarkAllRead,
     this.onOpenWeather,
     this.onLogOut,
   }) : employeeStore = null,
@@ -187,6 +202,7 @@ class V2BerandaPage extends StatefulWidget {
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
        tanamTab = null,
+       tanamTabBuilder = null,
        stokTabBuilder = null,
        rawatTab = null,
        state = V2BerandaState.weatherUnavailable,
@@ -244,6 +260,10 @@ class V2BerandaPage extends StatefulWidget {
   /// sehingga galeri tetap memakai data contoh per frame.
   final Widget? tanamTab;
 
+  /// Versi tab Tanam yang bisa dibuka langsung ke segmen tertentu (0 Semaian,
+  /// 1 Meja, 2 Panen). Dipakai kartu "Lubang terisi" membuka Tanam → Meja.
+  final Widget Function(int segmen)? tanamTabBuilder;
+
   /// Isi tab Stok versi backend; menerima jenis dan indeks keadaan terpilih
   /// supaya kartu "stok menipis" bisa langsung membuka Benih + Menipis.
   final Widget Function(V2JenisBarang? jenis, int statusIndex)? stokTabBuilder;
@@ -251,7 +271,18 @@ class V2BerandaPage extends StatefulWidget {
   final Widget? rawatTab;
 
   final VoidCallback? onLowStock;
-  final VoidCallback? onOpenNotifications;
+
+  /// Membuka Tanam → Meja saat kartu "Lubang terisi" ditekan.
+  final VoidCallback? onFilledHoles;
+
+  /// Isi halaman "2.4 Notifikasi"; null berarti data contoh galeri.
+  final List<V2NotificationGroup>? notificationGroups;
+
+  /// Menyimpan satu notifikasi sebagai sudah dibaca (D-23).
+  final ValueChanged<String>? onNotificationRead;
+
+  /// Menyimpan semua notifikasi yang belum dibaca sebagai sudah dibaca.
+  final ValueChanged<List<String>>? onNotificationMarkAllRead;
 
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
   final VoidCallback? onOpenWeather;
@@ -284,6 +315,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   V2JenisBarang? _stokJenis;
   int _stokStatus = 0;
 
+  /// Segmen awal tab Tanam saat dibuka lewat kartu "Lubang terisi" (1 = Meja).
+  int _tanamSegmen = 0;
+
   @override
   void dispose() {
     _rawatToastTimer?.cancel();
@@ -294,7 +328,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   void didUpdateWidget(V2BerandaPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state != widget.state) _state = widget.state;
-    if (oldWidget.role != widget.role) _activeTab = 0;
+    if (oldWidget.role != widget.role) {
+      _activeTab = 0;
+      _tanamSegmen = 0;
+    }
   }
 
   bool get _petani => widget.role == V2BerandaRole.petani;
@@ -329,6 +366,9 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         (index == v2RawatTabIndex && _petani)) {
       setState(() {
         _activeTab = index;
+        // Ketukan langsung ke tab Tanam selalu mulai dari Semaian, bukan
+        // segmen Meja yang dipakai kartu "Lubang terisi" sebelumnya (BUG-25).
+        if (index == v2TanamTabIndex) _tanamSegmen = 0;
         // Ketukan langsung ke tab Stok menampilkan semua barang lagi, bukan
         // saringan "Benih + Menipis" yang dipakai kartu Beranda.
         if (index == v2StokTabIndex) _resetStokFilter();
@@ -356,6 +396,16 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     _stokJenis = null;
     _stokStatus = 0;
     _stokPermintaan++;
+  }
+
+  /// Membuka tab Tanam langsung ke segmen Meja saat kartu "Lubang terisi"
+  /// ditekan (sebelumnya kartu ini mati).
+  void _openFilledHoles() {
+    widget.onFilledHoles?.call();
+    setState(() {
+      _activeTab = v2TanamTabIndex;
+      _tanamSegmen = 1;
+    });
   }
 
   /// Buka alur foto tanaman 9.5 dari tab Rawat; hasilnya menyisip paling atas.
@@ -493,19 +543,30 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     await onLogOut();
   }
 
-  void _openNotifications() {
-    if (widget.onOpenNotifications != null) {
-      widget.onOpenNotifications!();
-      return;
-    }
-    Navigator.of(context).push(
+  /// Buka halaman notifikasi, lalu buka tujuan baris yang ditekan.
+  ///
+  /// Halaman mengembalikan [V2NotificationTarget] baris yang diketuk; Beranda
+  /// yang tahu indeks tab, jadi perpindahan terjadi di sini (BUG-30).
+  Future<void> _openNotifications() async {
+    final target = await Navigator.of(context).push<V2NotificationTarget>(
       V2NotificationsPage.route(
-        onMarkAllRead: () {
-          Navigator.of(context).maybePop();
-          _notice('Semua notifikasi ditandai sudah dibaca.');
-        },
+        groups: widget.notificationGroups,
+        onMarkRead: widget.onNotificationRead,
+        onMarkAllRead: widget.onNotificationMarkAllRead,
       ),
     );
+    if (!mounted || target == null) return;
+    switch (target) {
+      case V2NotificationTarget.semaian:
+        setState(() {
+          _activeTab = v2TanamTabIndex;
+          _tanamSegmen = 0;
+        });
+      case V2NotificationTarget.stok:
+        _openLowStock();
+      case V2NotificationTarget.none:
+        break;
+    }
   }
 
   void _openCycle() {
@@ -560,12 +621,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onLogOut: _confirmLogOut,
                       )
                     : tanam
-                    ? (widget.tanamTab ??
-                          V2SemaianTabView(
-                            items: _semaian,
-                            onAdd: _openTambahSemaian,
-                            onTapItem: _openDetailSemaian,
-                          ))
+                    ? KeyedSubtree(
+                        key: ValueKey('tanam-$_tanamSegmen'),
+                        child:
+                            widget.tanamTabBuilder?.call(_tanamSegmen) ??
+                            widget.tanamTab ??
+                            V2SemaianTabView(
+                              items: _semaian,
+                              onAdd: _openTambahSemaian,
+                              onTapItem: _openDetailSemaian,
+                            ),
+                      )
                     : stok
                     ? KeyedSubtree(
                         key: ValueKey('stok-$_stokPermintaan'),
@@ -655,6 +721,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           lowStock: widget.lowStock,
           filledHoles: widget.filledHoles,
           onLowStock: _openLowStock,
+          onFilledHoles: _openFilledHoles,
         ),
         if (_petani) ...[
           const SizedBox(height: V2Space.lg),
@@ -669,7 +736,14 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             V2WeatherCard(
               title: widget.weatherTitle,
               subtitle: widget.weatherSubtitle,
-              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
+              // Pintu masuk yang sama dengan hero/detail siklus: aplikasi nyata
+              // memakai `onOpenWeather` (halaman Cuaca connected, BMKG nyata).
+              // Sebelumnya kartu ini membuka halaman contoh desain sehingga
+              // tanggal prakiraan tertinggal (16/17/18 Nov) dan lokasinya beda
+              // dari pintu lain (BUG-26).
+              onTap:
+                  widget.onOpenWeather ??
+                  () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
         ],
       ],

@@ -143,21 +143,23 @@ class _V2RawatObatPageState extends State<V2RawatObatPage> {
     );
   }
 
-  /// Kartu putih 120: judul “Rotasi obat” dan isi 16/24 muted.
+  /// Kartu putih 120: judul “Rotasi obat” dan isi 16/24 muted. Tinggi minimum
+  /// supaya kalimat rotasi tidak terpotong pada skala teks besar (BUG-24).
   Widget _kartuRotasi() {
     return Container(
-      height: 120,
+      constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.fromLTRB(
         V2Space.xl,
         V2Space.xl,
         V2Space.xl,
-        0,
+        V2Space.xl,
       ),
       decoration: BoxDecoration(
         color: V2Colors.blue50,
         borderRadius: BorderRadius.circular(V2Radius.card),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Rotasi obat', style: V2Type.h2),

@@ -44,8 +44,11 @@ class V2TabBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              height: 56,
+            // Tinggi minimum 56 (bukan tetap): pada skala teks sistem besar
+            // label ikut membesar dan bilah boleh tumbuh, asal tidak meluber
+            // (BUG-20).
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
               child: Row(
                 children: [
                   for (var index = 0; index < items.length; index++)
@@ -79,6 +82,7 @@ class _Tab extends StatelessWidget {
     final foreground = active ? V2Colors.ink : V2Colors.muted;
     final content = Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 160),

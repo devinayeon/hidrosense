@@ -68,6 +68,43 @@ class _V2TextFieldState extends State<V2TextField> {
         ? V2Colors.blue500
         : V2Colors.slate400;
     final borderWidth = _focused || _hasError ? 3.0 : 2.0;
+    // Tombol aksi di ujung kanan (mis. "Tampilkan") bisa lebih lebar daripada
+    // sisa baris pada skala teks 2.0. Saat itu tombol turun ke baris sendiri
+    // supaya tidak meluber keluar pil (BUG-24).
+    final besar = MediaQuery.textScalerOf(context).scale(14) >= 24;
+    final turunkanAksi = besar && widget.trailing != null;
+    final input = Expanded(
+      // Kursor dan sorotan seleksi diambil dari DefaultSelectionStyle
+      // yang dibuat MaterialApp dari theme lama (teal), bukan dari
+      // Theme v2 terdekat, jadi keduanya di-set ulang di sini.
+      child: DefaultSelectionStyle(
+        cursorColor: V2Colors.blue500,
+        selectionColor: V2Colors.blue500.withValues(alpha: 0.4),
+        child: TextField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          enabled: widget.enabled,
+          obscureText: widget.obscure,
+          keyboardType: widget.keyboardType,
+          style: V2Type.body.copyWith(
+            color: widget.enabled ? V2Colors.ink : V2Colors.muted,
+          ),
+          decoration: InputDecoration(
+            isCollapsed: true,
+            filled: false,
+            contentPadding: EdgeInsets.zero,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            hintText: widget.hint,
+            hintStyle: V2Type.body.copyWith(color: V2Colors.muted),
+          ),
+        ),
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,46 +124,31 @@ class _V2TextFieldState extends State<V2TextField> {
             borderRadius: BorderRadius.circular(V2Radius.pill),
             border: Border.all(color: borderColor, width: borderWidth),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                // Kursor dan sorotan seleksi diambil dari DefaultSelectionStyle
-                // yang dibuat MaterialApp dari theme lama (teal), bukan dari
-                // Theme v2 terdekat, jadi keduanya di-set ulang di sini.
-                child: DefaultSelectionStyle(
-                  cursorColor: V2Colors.blue500,
-                  selectionColor: V2Colors.blue500.withValues(alpha: 0.4),
-                  child: TextField(
-                    controller: widget.controller,
-                    focusNode: _focusNode,
-                    enabled: widget.enabled,
-                    obscureText: widget.obscure,
-                    keyboardType: widget.keyboardType,
-                    style: V2Type.body.copyWith(
-                      color: widget.enabled ? V2Colors.ink : V2Colors.muted,
+          child: turunkanAksi
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: V2Space.sm),
+                      child: Row(children: [input]),
                     ),
-                    decoration: InputDecoration(
-                      isCollapsed: true,
-                      filled: false,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      errorBorder: InputBorder.none,
-                      focusedErrorBorder: InputBorder.none,
-                      hintText: widget.hint,
-                      hintStyle: V2Type.body.copyWith(color: V2Colors.muted),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: widget.trailing!,
                     ),
-                  ),
+                    const SizedBox(height: V2Space.xs),
+                  ],
+                )
+              : Row(
+                  children: [
+                    input,
+                    if (widget.trailing != null) ...[
+                      const SizedBox(width: V2Space.sm),
+                      widget.trailing!,
+                    ],
+                  ],
                 ),
-              ),
-              if (widget.trailing != null) ...[
-                const SizedBox(width: V2Space.sm),
-                widget.trailing!,
-              ],
-            ],
-          ),
         ),
         if (_hasError) ...[
           const SizedBox(height: V2Space.sm),

@@ -46,6 +46,11 @@ class V2PenjualanChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxValue = bars.fold<double>(0, (a, b) => b.value > a ? b.value : a);
+    // Label bulan diletakkan di baris terpisah yang lebarnya sama dengan slot
+    // batang. Kalau label ikut di dalam kolom batang, teks yang membesar di
+    // skala 2.0 menggeser garis dasar dan label tidak sejajar dengan grafiknya
+    // (BUG-24).
+    Widget slot(Widget child) => Expanded(child: child);
     return Container(
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
@@ -59,23 +64,52 @@ class V2PenjualanChartCard extends StatelessWidget {
         children: [
           Text(title, style: V2Type.bodyStrong),
           const SizedBox(height: V2Space.sm),
-          SizedBox(
-            height: 168,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 168),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (var index = 0; index < bars.length; index++) ...[
                   if (index > 0) const SizedBox(width: V2Space.xl),
-                  _Bar(
-                    bar: bars[index],
-                    height: maxValue == 0
-                        ? 0
-                        : bars[index].value / maxValue * _maxBarHeight,
+                  slot(
+                    _Bar(
+                      display: bars[index].display,
+                      height: maxValue == 0
+                          ? 0
+                          : bars[index].value / maxValue * _maxBarHeight,
+                    ),
                   ),
                 ],
               ],
             ),
+          ),
+          const SizedBox(height: V2Space.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var index = 0; index < bars.length; index++) ...[
+                if (index > 0) const SizedBox(width: V2Space.xl),
+                slot(
+                  // Nama bulan pendek (Sep/Okt/Nov) harus tetap satu baris dan
+                  // sejajar dengan batangnya. Di skala teks 2.0 label membesar
+                  // sampai membungkus dua baris ("Se"/"p") sehingga tidak lagi
+                  // sebaris dengan batangnya (BUG-31). FittedBox menyusutkan
+                  // sedikit agar tetap satu baris, bukan terpotong.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      bars[index].label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: V2Type.label.copyWith(color: V2Colors.muted),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: V2Space.sm),
           Text(caption, style: V2Type.label.copyWith(color: V2Colors.muted)),
@@ -86,22 +120,27 @@ class V2PenjualanChartCard extends StatelessWidget {
 }
 
 class _Bar extends StatelessWidget {
-  const _Bar({required this.bar, required this.height});
+  const _Bar({required this.display, required this.height});
 
-  final V2PenjualanChartBar bar;
+  final String display;
   final double height;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 64,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(bar.display, style: _chartValueStyle),
-          const SizedBox(height: V2Space.xs),
-          Container(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          display,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: _chartValueStyle,
+        ),
+        const SizedBox(height: V2Space.xs),
+        Center(
+          child: Container(
             width: 64,
             height: height,
             decoration: const BoxDecoration(
@@ -109,10 +148,8 @@ class _Bar extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
             ),
           ),
-          const SizedBox(height: V2Space.xs),
-          Text(bar.label, style: V2Type.label.copyWith(color: V2Colors.muted)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

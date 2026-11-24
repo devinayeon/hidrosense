@@ -19,6 +19,14 @@ String moaLine(Medicine m) {
   return 'MoA ${m.moaCode}${m.moaName == null ? '' : ' · ${m.moaName}'}';
 }
 
+/// Ringkasan tanggal untuk keadaan kartu tertutup: tanggal pakai bila sudah
+/// diterima, atau tanggal rekomendasi dibuat.
+String ringkasTanggalRekomendasi(PestRecommendation r) {
+  final applied = r.appliedOn;
+  if (applied != null) return 'Dipakai ${formatAppliedDate(applied)}';
+  return 'Dicatat ${formatAppliedDate(r.createdAt.toIso8601String())}';
+}
+
 /// Kartu satu rekomendasi obat. Menampilkan alasan, kelompok MoA, sumber, dan peringatan data
 /// yang belum diverifikasi, karena saran kimia salah berisiko bagi tanaman dan konsumen.
 class RecommendationCard extends StatefulWidget {
@@ -27,6 +35,7 @@ class RecommendationCard extends StatefulWidget {
     required this.recommendation,
     this.onAccept,
     this.onReject,
+    this.collapsible = false,
   });
 
   final PestRecommendation recommendation;
@@ -35,12 +44,18 @@ class RecommendationCard extends StatefulWidget {
   final Future<String?> Function()? onAccept;
   final Future<String?> Function()? onReject;
 
+  /// Bila true, rincian disembunyikan di balik ringkasan 1–2 baris yang bisa
+  /// dibuka. Dipakai daftar riwayat rotasi supaya daftar tidak terlalu panjang
+  /// (BUG-32); kartu tunggal tetap tampil penuh.
+  final bool collapsible;
+
   @override
   State<RecommendationCard> createState() => _RecommendationCardState();
 }
 
 class _RecommendationCardState extends State<RecommendationCard> {
   bool _busy = false;
+  late bool _expanded = !widget.collapsible;
 
   Future<void> _run(Future<String?> Function() action) async {
     if (_busy) return;
@@ -60,6 +75,7 @@ class _RecommendationCardState extends State<RecommendationCard> {
     final r = widget.recommendation;
     final m = r.medicine;
     final pending = r.status == RecommendationStatus.menunggu;
+    final showDetail = !widget.collapsible || _expanded;
     return V2Card(
       padding: const EdgeInsets.all(V2Space.lg),
       child: Column(
@@ -72,6 +88,17 @@ class _RecommendationCardState extends State<RecommendationCard> {
             ],
           ),
           const SizedBox(height: V2Space.sm),
+          if (!showDetail) ...[
+            Text(
+              '${m.activeIngredient} · ${moaLine(m)}',
+              style: V2Type.body,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: V2Space.xs),
+            Text(ringkasTanggalRekomendasi(r), style: V2Type.caption),
+          ],
+          if (showDetail) ...[
           Text(m.activeIngredient, style: V2Type.h2),
           const SizedBox(height: V2Space.xs),
           Text(moaLine(m), style: V2Type.caption),
@@ -142,7 +169,60 @@ class _RecommendationCardState extends State<RecommendationCard> {
               ],
             ),
           ],
+          ],
+          if (widget.collapsible)
+            _ExpandToggle(
+              expanded: _expanded,
+              onTap: () => setState(() => _expanded = !_expanded),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Tombol buka/tutup rincian kartu. Label teks + ikon (bukan warna saja) dan
+/// tinggi sentuh minimal 48 dp.
+class _ExpandToggle extends StatelessWidget {
+  const _ExpandToggle({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(V2Radius.iconBox),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: V2Space.sm,
+              horizontal: V2Space.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    expanded ? 'Sembunyikan detail' : 'Lihat detail',
+                    softWrap: true,
+                    style: V2Type.label.copyWith(color: V2Colors.blue700),
+                  ),
+                ),
+                const SizedBox(width: V2Space.xs),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: V2Colors.blue700,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

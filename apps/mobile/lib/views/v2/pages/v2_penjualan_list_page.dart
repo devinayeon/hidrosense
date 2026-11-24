@@ -344,7 +344,12 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
   Future<void> _openCreate() async {
     final created = await Navigator.of(context).push<V2Penjualan>(
-      V2PenjualanFormPage.route(panen: _panenOptions, store: widget.store),
+      V2PenjualanFormPage.route(
+        panen: _panenOptions,
+        store: widget.store,
+        // Alur nyata memakai hari ini; galeri tetap memakai tanggal contoh.
+        initialDate: widget.store == null ? null : jakartaToday(),
+      ),
     );
     if (created == null || !mounted) return;
     setState(() {

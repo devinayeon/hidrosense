@@ -283,6 +283,7 @@ class _RingkasanCard extends StatelessWidget {
           ),
           const SizedBox(height: V2Space.sm),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
@@ -290,9 +291,15 @@ class _RingkasanCard extends StatelessWidget {
                   style: V2Type.label.copyWith(color: V2Colors.white),
                 ),
               ),
-              Text(
-                'Panen HST ${tanaman.umurPanenHst}',
-                style: V2Type.label.copyWith(color: V2Colors.white),
+              const SizedBox(width: V2Space.sm),
+              // Kedua label boleh membungkus; tanpa `Expanded` label kanan
+              // meluber keluar kartu pada skala teks besar (BUG-24).
+              Expanded(
+                child: Text(
+                  'Panen HST ${tanaman.umurPanenHst}',
+                  textAlign: TextAlign.end,
+                  style: V2Type.label.copyWith(color: V2Colors.white),
+                ),
               ),
             ],
           ),

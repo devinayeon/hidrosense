@@ -307,15 +307,16 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
     );
   }
 
-  /// Kartu 120 “Stok berkurang” (frame 9.21/9.28).
+  /// Kartu 120 “Stok berkurang” (frame 9.21/9.28). Tinggi minimum supaya
+  /// kalimat sisa obat tidak terpotong pada skala teks besar (BUG-24).
   Widget _kartuStok() {
     return Container(
-      height: 120,
+      constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.fromLTRB(
         V2Space.xl,
         V2Space.xl,
         V2Space.xl,
-        0,
+        V2Space.xl,
       ),
       decoration: BoxDecoration(
         color: V2Colors.white,
@@ -323,6 +324,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
         boxShadow: V2Shadow.card,
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Stok berkurang', style: V2Type.h2),

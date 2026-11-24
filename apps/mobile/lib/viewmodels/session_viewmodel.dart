@@ -38,6 +38,24 @@ Uri resolveApiBaseUri([String? customAddress]) {
   return Uri();
 }
 
+/// Opt-in saat build untuk mengizinkan `http` (cleartext) ke host privat/LAN
+/// **pada build release**. Diperlukan untuk menguji APK release terhadap server
+/// di laptop dalam satu jaringan WiFi, misalnya `http://192.168.x.x:3000`.
+///
+/// Build normal tidak menyetel ini, sehingga release tetap hanya menerima
+/// `https` (mencegah cleartext ke internet).
+///
+///   flutter build apk --release \
+///     --dart-define=API_BASE_URL=http://192.168.1.9:3000/ \
+///     --dart-define=ALLOW_INSECURE_HTTP=true
+const bool kAllowInsecureHttp = bool.fromEnvironment('ALLOW_INSECURE_HTTP');
+
+/// Cleartext ke host privat selalu boleh saat debug; build release hanya boleh
+/// bila di-opt-in lewat [kAllowInsecureHttp]. Dipisah sebagai fungsi murni agar
+/// jalur release dapat diuji (karena `kDebugMode` tidak bisa diubah saat tes).
+bool allowInsecureHttp({required bool debugMode, required bool buildFlag}) =>
+    debugMode || buildFlag;
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   final baseUri = resolveApiBaseUri();
   if (kDebugMode) {
@@ -46,7 +64,10 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   final api = ApiClient(
     http.Client(),
     baseUri: baseUri,
-    allowInsecureLocalhost: kDebugMode,
+    allowInsecureLocalhost: allowInsecureHttp(
+      debugMode: kDebugMode,
+      buildFlag: kAllowInsecureHttp,
+    ),
   );
   ref.onDispose(api.close);
   return api;

@@ -11,6 +11,7 @@ import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_banner.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_card.dart';
+import '../../../../views/v2/widgets/v2_segmented.dart';
 import '../../domain/pest_summary.dart';
 import '../viewmodels/pest_scan_viewmodel.dart';
 import '../widgets/decision_sheets.dart';
@@ -171,11 +172,21 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                 const SizedBox(height: V2Space.md),
                 const Text('Tingkat serangan', style: V2Type.label),
                 const SizedBox(height: V2Space.xs),
-                SegmentedButton<PestSeverity>(
-                  segments: [for (final s in PestSeverity.values) ButtonSegment(value: s, label: Text(s.label))],
-                  selected: {state.severities[f.kind] ?? f.suggestedSeverity},
-                  onSelectionChanged: state.canEditSeverity && !busy
-                      ? (value) => notifier.setSeverity(f.kind, value.first)
+                // Kontrol kapsul milik desain v2, bukan `SegmentedButton` bawaan
+                // Material. Tiga kapsul Ringan/Sedang/Berat dulu bisa meluber
+                // keluar kartu (BUG-15) karena lebarnya mengikuti isi (termasuk
+                // ikon centang). V2Segmented membagi lebar sama rata dan
+                // memotong teks dengan elipsis bila ruang sempit.
+                V2Segmented(
+                  labels: [for (final s in PestSeverity.values) s.label],
+                  selectedIndex: PestSeverity.values.indexOf(
+                    state.severities[f.kind] ?? f.suggestedSeverity,
+                  ),
+                  onChanged: state.canEditSeverity && !busy
+                      ? (index) => notifier.setSeverity(
+                            f.kind,
+                            PestSeverity.values[index],
+                          )
                       : null,
                 ),
               ],

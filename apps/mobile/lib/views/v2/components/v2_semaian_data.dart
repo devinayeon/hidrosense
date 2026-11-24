@@ -426,6 +426,7 @@ class V2SemaianPindah {
     required this.jumlah,
     required this.tanggal,
     this.tableId,
+    this.aksi = V2PindahMejaAksi.selesai,
   });
 
   /// Nama meja tujuan, mis. `Meja A2`.
@@ -437,4 +438,23 @@ class V2SemaianPindah {
 
   /// Identitas meja backend; null untuk pratinjau galeri.
   final String? tableId;
+
+  /// Pilihan tombol di halaman sukses (frame 5.18/5.22). Halaman sukses
+  /// mengembalikan ini ke pemanggil supaya tombolnya tidak mati (BUG-28).
+  final V2PindahMejaAksi aksi;
+}
+
+/// Pilihan aksi di halaman hasil "Pindah ke meja".
+enum V2PindahMejaAksi {
+  /// Tidak ada pilihan khusus; pemanggil cukup menyegarkan tampilan.
+  selesai,
+
+  /// Buka detail meja tujuan (tombol "Lihat meja").
+  lihatMeja,
+
+  /// Kembali ke daftar semaian (tombol "Ke daftar semaian").
+  keDaftarSemaian,
+
+  /// Buka lagi form untuk memindah sisa benih (tombol "Pindahkan sisa").
+  pindahkanSisa,
 }

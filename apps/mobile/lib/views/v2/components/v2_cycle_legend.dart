@@ -27,7 +27,14 @@ class V2CycleLegend extends StatelessWidget {
           ),
         ),
         const SizedBox(width: V2Space.sm),
-        Text(label, style: V2Type.label.copyWith(color: V2Colors.muted)),
+        // Label boleh membungkus; tanpa `Flexible` baris ini meluber keluar
+        // layar pada skala teks besar (BUG-24).
+        Flexible(
+          child: Text(
+            label,
+            style: V2Type.label.copyWith(color: V2Colors.muted),
+          ),
+        ),
       ],
     );
   }

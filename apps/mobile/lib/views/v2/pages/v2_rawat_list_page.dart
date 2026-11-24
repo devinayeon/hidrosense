@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_rawat_assets.dart';
 import '../components/v2_rawat_data.dart';
+import '../components/v2_pindai_badge.dart';
 import '../components/v2_rawat_foto_card.dart';
 import '../theme/v2_tokens.dart';
 import '../v2_roles.dart';
@@ -52,6 +53,10 @@ class V2RawatTabView extends StatefulWidget {
     this.onTapItem,
     this.onRetry,
     this.onOpenCuaca,
+    this.pindaian = const <V2PindaiItem>[],
+    this.showPindaian = false,
+    this.onOpenRotasi,
+    this.onTapPindai,
   });
 
   /// Baris riwayat; null berarti data contoh galeri.
@@ -75,6 +80,19 @@ class V2RawatTabView extends StatefulWidget {
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
   final VoidCallback? onOpenCuaca;
 
+  /// Foto pindaian terbaru dari server, ditampilkan di atas riwayat perawatan.
+  final List<V2PindaiItem> pindaian;
+
+  /// Menampilkan bagian “Pindaian terbaru” walau daftarnya masih kosong.
+  /// Galeri desain membiarkannya `false` supaya frame lama tidak berubah.
+  final bool showPindaian;
+
+  /// Membuka riwayat rotasi obat; null berarti tombol tidak tampil.
+  final VoidCallback? onOpenRotasi;
+
+  /// Membuka detail satu pindaian; null berarti baris tidak bisa disentuh.
+  final ValueChanged<V2PindaiItem>? onTapPindai;
+
   @override
   State<V2RawatTabView> createState() => _V2RawatTabViewState();
 }
@@ -85,7 +103,10 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
 
   List<V2RawatItem> get _riwayat => widget.riwayat ?? designRawatRiwayat;
 
-  bool get _kosong => _riwayat.isEmpty && !widget.offline;
+  bool get _kosong =>
+      _riwayat.isEmpty &&
+      widget.pindaian.isEmpty &&
+      !widget.offline;
 
   bool get _showFooter => !_loading && !_error;
 
@@ -180,6 +201,10 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
             ),
           ),
         ],
+        if (widget.showPindaian) ...[
+          const SizedBox(height: V2Space.lg),
+          _pindaianSection(),
+        ],
         const SizedBox(height: V2Space.lg),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
@@ -231,6 +256,59 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
       child: V2ScreenHeader(title: 'Rawat'),
+    );
+  }
+
+  /// Bagian “Pindaian terbaru”: hasil deteksi hama yang tersimpan di server,
+  /// lengkap dengan status rekomendasinya (BUG-22).
+  Widget _pindaianSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text('Pindaian terbaru', style: V2Type.h2),
+              ),
+              if (widget.onOpenRotasi != null)
+                V2Button(
+                  label: 'Riwayat rotasi',
+                  type: V2ButtonType.ghost,
+                  expand: false,
+                  onPressed: widget.onOpenRotasi,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: V2Space.sm),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
+          child: widget.pindaian.isEmpty
+              ? Text(
+                  'Belum ada foto daun yang dipindai.',
+                  style: V2Type.body.copyWith(color: V2Colors.muted),
+                )
+              : V2GroupList(
+                  children: [
+                    for (final item in widget.pindaian)
+                      V2StockItem(
+                        title: item.hama,
+                        subtitle: item.labelKicker,
+                        quantity: item.labelKeyakinan,
+                        icon: V2IconName.camera,
+                        iconSize: 24,
+                        badge: v2PindaiBadge(item.status),
+                        withCard: false,
+                        onTap: widget.onTapPindai == null
+                            ? null
+                            : () => widget.onTapPindai!(item),
+                      ),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 

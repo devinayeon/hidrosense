@@ -79,6 +79,132 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **Pilihan:** uji dan laporkan perilaku nyata sebagai **deviasi desain** (G-12),
   **tidak** mengubahnya (di luar batas perbaikan & berisiko tinggi).
 
+## D-14 — Aplikasi dirancang ONLINE-ONLY (keputusan PM, 24 Nov 2026)
+- **Konteks:** SRS/Plan menyebut "offline-first" (PB-07, §5.1 varian offline). PM
+  memutuskan aplikasi dipakai **saat online**; ketidakmampuan mencatat/mengakses menu
+  saat offline adalah perilaku wajar, **bukan bug**.
+- **Dampak status uji:** test case yang mengasumsikan kerja offline diubah menjadi
+  **N/A** (alasan: keputusan PM online-only, 24 Nov 2026), tanpa dihapus:
+  MC-SYNC-01, MC-SYNC-02, MC-SYNC-04, MC-E2E-01, MC-E2E-02, MC-PEST-03, PB-05
+  "inferensi offline" di level aplikasi, TC-5.1-02, TC-5.1-03.
+- **Catatan (temuan informasi, bukan bug):** inferensi model TFLite tetap **lokal**
+  (tidak butuh server), tetapi layar Deteksi hama saat ini memuat data meja/batch dari
+  server, jadi membuka layar itu tetap butuh internet.
+- **Dampak dokumen:** `qa/rtm.md` menambah gap baru "SRS/Plan menyebut offline-first,
+  PM memutuskan online-only" (status OPEN) dan menyesuaikan catatan PB-07. Meski begitu,
+  umpan balik sinkron yang salah tetap bug (BUG-21).
+
+## D-15 — Jalur masuk v1 dinonaktifkan, kode v1 tidak dihapus (24 Nov 2026)
+- **Konteks:** setelah sesi dipulihkan (app dibuka ulang), aplikasi mendarat di beranda
+  v1 (`MainPage`) karena mode v2 tidak tersimpan (BUG-19).
+- **Pilihan:** `AppGate` **selalu** membuka beranda v2 (`V2BerandaConnectedPage`) bila ada
+  sesi; `v2UiModeProvider` tidak lagi menentukan jalur masuk. **File/kode v1 tidak
+  dihapus** — hanya diputus sebagai jalur masuk (permintaan client). Galeri desain v1
+  tetap bisa dirender langsung oleh tes.
+- **Alasan:** v2 adalah tampilan yang dipakai mitra; v1 disimpan untuk rujukan desain.
+
+## D-16 — Aplikasi hanya memiliki satu tema; mode gelap belum didukung (24 Nov 2026)
+- **Konteks:** uji manual dev FE — mengganti tema sistem ke gelap tidak berpengaruh.
+- **Investigasi:** aplikasi memang hanya memakai satu tema terang (`AppTheme.lightTheme`
+  dan `V2Theme.light`); tidak ada cabang dark mode.
+- **Pilihan:** catat sebagai **gap/keputusan** (bukan bug). **Tidak** menambah dark mode
+  tanpa persetujuan tim (di luar lingkup & berisiko pada seluruh desain v2).
+- **Pertanyaan untuk tim/PM:** apakah mode gelap diperlukan untuk rilis?
+
+## D-17 — Izin notifikasi belum diminta (gap, sesuai D-06) (24 Nov 2026)
+- **Konteks:** uji manual dev FE di Android 13+ — izin notifikasi default ditolak dan
+  aplikasi tidak pernah memintanya.
+- **Fakta:** `POST_NOTIFICATIONS` dideklarasikan di manifes, tetapi tidak ada alur
+  permintaan izin, dan notifikasi native belum ada (D-06).
+- **Pilihan:** catat sebagai **gap**, jangan membangun fitur notifikasi sekarang.
+
+## D-18 — Build release untuk uji LAN memakai `ALLOW_INSECURE_HTTP` (24 Nov 2026)
+- **Konteks:** APK release diuji dev FE terhadap server di laptop dalam satu WiFi
+  (`http://192.168.x.x:3000`), yang butuh cleartext.
+- **Fakta:** `session_viewmodel.dart` menyediakan `kAllowInsecureHttp`
+  (`--dart-define=ALLOW_INSECURE_HTTP=true`); default-nya **false**, sehingga build release
+  normal tetap hanya menerima `https`. Perilaku ini diuji di
+  `apps/mobile/test/session_insecure_http_test.dart`.
+- **Pilihan:** uji perangkat memakai build dengan flag itu; **tidak** mengubah default.
+- **Pertanyaan untuk tim/PM:** model penyebaran rilis — server HTTPS (cloud/TLS) atau LAN?
+  Bila LAN, butuh sertifikat TLS lokal atau pengecualian cleartext terbatas.
+
+## D-19 — "Tidak ada data untuk disinkronkan" saat online adalah benar (24 Nov 2026)
+- **Konteks:** uji manual dev FE — tombol "Sinkron sekarang" menampilkan "Tidak ada data
+  untuk disinkronkan" baik saat offline maupun online.
+- **Fakta:** sesuai D-14 aplikasi online-only. Tiap simpan langsung dikirim ke server;
+  antrean sinkron hanya berisi kiriman yang **gagal** (mis. jaringan putus di tengah
+  proses). Jadi antrean kosong saat online memang berarti semua data sudah di server.
+- **Pilihan:** **bukan bug**; perilakunya dipertahankan. Menampilkan "Tidak ada data"
+  adalah umpan balik yang jujur (BUG-21 sudah memperbaiki klaim sukses palsu).
+- **Pertanyaan untuk tim/PM:** menu Sinkron dipertahankan atau disembunyikan untuk
+  pengguna online-only? Bila dipertahankan, kalimat yang disarankan saat antrean kosong
+  dan online: **"Semua data sudah tersimpan di server"** (lebih menenangkan daripada
+  "tidak ada data"). Keputusan ini menunggu PM; belum ada perubahan kode.
+
+## D-20 — BUG-23 diperbaiki di sisi mobile, bukan backend (24 Nov 2026)
+- **Konteks:** setelah "Setujui" rekomendasi dengan potong stok, stok di layar tidak
+  berkurang sampai aplikasi di-restart.
+- **Bukti:** riwayat pemakaian menampilkan "pakai 10" dan server sudah memotong stok;
+  hanya tampilan mobile yang basi. Karena itu akar masalah ada di cache provider mobile.
+- **Pilihan:** invalidasi `connectedInventoryProvider` setelah penerimaan berhasil yang
+  memotong stok (opsi a: mobile tidak menyegarkan). Backend/DB tidak diubah.
+- **Pertanyaan untuk tim/PM:** apakah potong stok dari rekomendasi memang boleh mengenai
+  jenis selain `obat` (mis. `benih`)? Pada uji manual, rekomendasi mengenai benih "test"
+  (100 → 90). Aturan produknya belum terdokumentasi; untuk sementara semua jenis
+  diperlakukan sama seperti server.
+
+## D-21 — BUG-24 adalah lanjutan BUG-20 (skala teks 200%) (24 Nov 2026)
+- **Konteks:** BUG-20 (S3) sudah diperbaiki untuk Beranda/hero, Deteksi hama, Cuaca,
+  Sinkron. Uji manual dev FE 24 Nov 2026 menemukan layar lain masih meluber pada font
+  200% (Siklus berjalan, Siap pindah, daftar Tanaman, Detail pegawai, Ringkasan
+  penjualan, Detail meja).
+- **Pilihan:** catat sebagai BUG-24 (S3) yang melanjutkan BUG-20, bukan membuka ulang
+  BUG-20. Pola perbaikan sama: tinggi tetap → tinggi **minimum**, teks boleh membungkus
+  (`Wrap`/`Flexible`), teks di dalam bentuk tetap (cincin) diskalakan dengan
+  `FittedBox`, dan tinggi area teks dihitung dari `TextPainter` bila perlu (onboarding).
+- **Bukti:** `test/v2_text_scale_bug24_test.dart` merender 15 layar pada `textScaler 2.0`
+  di lebar 360 dan memastikan tidak ada overflow. Audit cepat juga dijalankan untuk
+  seluruh halaman v2 lain (hasil bersih) — tetapi verifikasi visual di HP asli tetap
+  tugas dev FE.
+
+## D-22 — Segmen awal tab Tanam bersifat sekali pakai (BUG-25) (24 Nov 2026)
+- **Konteks:** kartu "Lubang terisi" membuka Tanam → Meja. Setelah itu, mengetuk tab
+  Tanam selalu membuka Meja (segmen tersimpan), padahal default-nya Semaian.
+- **Pilihan:** segmen awal dari kartu hanya dipakai sekali. Setiap ketukan langsung ke
+  tab Tanam mereset segmen ke Semaian (0), dan pergantian peran juga mereset. Perilaku
+  di dalam tab (pengguna memilih Meja sendiri) tidak diubah.
+- **Alasan:** konsisten dengan tab Stok yang sudah mereset saringan saat diketuk langsung
+  (BUG-06). Tidak mengubah desain kartu maupun urutan segmen.
+
+## D-23 — Notifikasi in-app: dibaca/belum, ketuk buka tujuan, simpan lokal (BUG-30) (24 Nov 2026)
+- **Konteks:** halaman "2.4 Notifikasi" hanya menampilkan baris; tidak ada status dibaca,
+  baris tidak bisa ditekan, dan "Tandai semua dibaca" selalu aktif. Tanpa push native
+  (D-06/D-17), notifikasi ini murni in-app.
+- **Pilihan:**
+  1. **Dibaca/belum** ditandai penanda **bukan warna** (titik bentuk + label semantik
+     "Belum dibaca"), supaya tetap terbaca tanpa membedakan warna.
+  2. **Ketuk baris** = tandai dibaca + tutup halaman + buka tujuan relevan. Halaman hanya
+     mengembalikan `V2NotificationTarget`; Beranda yang tahu indeks tab lalu berpindah
+     (Semaian → tab Tanam, Stok → tab Stok + saringan "Menipis").
+  3. **"Tandai semua dibaca"** nonaktif saat tidak ada yang belum dibaca.
+  4. **Status disimpan lokal per pengguna** dengan **id stabil** (`semaian-<id>`,
+     `stok-menipis`) di `notification_read.db`, terpisah per alamat layanan.
+  5. Tanpa push native (tetap D-06/D-17).
+- **Alasan:** notifikasi dibangun ulang dari data tiap kali Beranda dibuka, jadi status
+  harus disimpan terpisah dengan kunci stabil. Ketukan yang membuka tab relevan
+  menghilangkan "jalan buntu" pada baris.
+
+## D-24 — Riwayat rotasi: entri bisa dilipat, filter dibungkus (BUG-32) (24 Nov 2026)
+- **Konteks:** filter riwayat rotasi terlalu rapat (meluber pada skala teks 2.0) dan
+  daftarnya terasa sangat panjang.
+- **Pilihan:** filter dibungkus (`Wrap`) dengan jarak token; **tiap entri bisa dilipat**
+  (tertutup = ringkasan, terbuka = rincian), bukan satu dropdown besar untuk seluruh
+  daftar. Tombol lipat ≥ 48dp dengan label teks + ikon (bukan warna saja).
+- **Alasan:** per-entri menjaga konteks baris yang sedang dibaca dan tidak menyembunyikan
+  seluruh riwayat sekaligus. Alternatif pengelompokan per tanggal tetap terbuka bila PM
+  menilai lebih baik.
+
 ---
 
 ## §6 — Inkonsistensi spesifikasi (diuji kedua sisi, asumsi dicatat)

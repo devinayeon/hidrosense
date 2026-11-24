@@ -10,8 +10,9 @@ import 'v2_meja_data.dart';
 /// 6.16, 6.17, 6.20).
 ///
 /// Berbeda dari `V2GridCard` putih: kartu ini biru `#1565FF`, lubang terisi
-/// lime `#A3F533`, dan lubang kosong bergaris putih 1,5. Grid selalu 294x164
-/// (21 kolom x 12 baris) walau meja hanya punya 180 lubang, seperti frame 6.10.
+/// lime `#A3F533`, dan lubang kosong bergaris putih 1,5. Grid membungkus sendiri
+/// sesuai jumlah lubang; sebelumnya dipaku 294x164 sehingga grid besar terpotong
+/// pada skala teks besar (BUG-24).
 class V2MejaGridCard extends StatelessWidget {
   const V2MejaGridCard({super.key, required this.item});
 
@@ -35,15 +36,16 @@ class V2MejaGridCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: V2Space.sm,
+            runSpacing: V2Space.xs,
             children: [
-              Expanded(
-                child: Text(
-                  item.nama,
-                  style: V2Type.bodyStrong.copyWith(color: V2Colors.white),
-                ),
+              Text(
+                item.nama,
+                style: V2Type.bodyStrong.copyWith(color: V2Colors.white),
               ),
-              const SizedBox(width: V2Space.sm),
               V2Badge(label: item.status.label, status: _badgeStatus),
             ],
           ),
@@ -53,15 +55,15 @@ class V2MejaGridCard extends StatelessWidget {
             style: V2Type.h2.copyWith(color: V2Colors.white),
           ),
           const SizedBox(height: V2Space.sm),
-          SizedBox(
-            height: 164,
-            child: _LubangGrid(filled: item.terisi, total: item.jumlahLubang),
-          ),
+          // Tanpa tinggi tetap: jumlah lubang menentukan tinggi grid, dan pada
+          // skala teks besar legenda ikut membungkus (BUG-24).
+          _LubangGrid(filled: item.terisi, total: item.jumlahLubang),
           const SizedBox(height: V2Space.sm),
-          Row(
+          Wrap(
+            spacing: V2Space.lg,
+            runSpacing: V2Space.xs,
             children: [
               _Legenda(terisi: true, label: 'Terisi ${item.terisi}'),
-              const SizedBox(width: V2Space.lg),
               _Legenda(terisi: false, label: 'Kosong ${item.kosong}'),
             ],
           ),
@@ -71,7 +73,8 @@ class V2MejaGridCard extends StatelessWidget {
   }
 }
 
-/// Grid 21 kolom, dot 10, jarak 4; terisi lime, kosong bergaris putih.
+/// Grid 21 kolom, dot 10, jarak 4; terisi lime, kosong bergaris putih. Grid
+/// juga dipakai sebagai penanda "indikator lubang" (BUG-24).
 class _LubangGrid extends StatelessWidget {
   const _LubangGrid({required this.filled, required this.total});
 
@@ -124,9 +127,12 @@ class _Legenda extends StatelessWidget {
           ),
         ),
         const SizedBox(width: V2Space.sm),
-        Text(
-          label,
-          style: V2Type.label.copyWith(color: V2Colors.white),
+        // Teks legenda di kartu biru boleh membungkus, bukan meluber (BUG-24).
+        Flexible(
+          child: Text(
+            label,
+            style: V2Type.label.copyWith(color: V2Colors.white),
+          ),
         ),
       ],
     );

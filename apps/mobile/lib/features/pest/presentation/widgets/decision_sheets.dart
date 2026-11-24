@@ -145,13 +145,19 @@ class _AcceptSheetState extends State<_AcceptSheet> {
 }
 
 /// Kartu rekomendasi yang membuka lembar terima/tolak lalu memanggil ViewModel.
-class DecidableRecommendationCard extends StatelessWidget {
+///
+/// Konsumer Riverpod karena "Terima" dengan potong stok mengubah saldo di server:
+/// daftar stok, kartu "Stok menipis" di Beranda dan detail barang membaca
+/// `connectedInventoryProvider`, jadi provider itu harus dimuat ulang supaya
+/// angkanya tidak tertinggal (BUG-23).
+class DecidableRecommendationCard extends ConsumerWidget {
   const DecidableRecommendationCard({
     super.key,
     required this.recommendation,
     required this.onAccept,
     required this.onReject,
     this.stock = const [],
+    this.collapsible = false,
   });
 
   final PestRecommendation recommendation;
@@ -159,16 +165,25 @@ class DecidableRecommendationCard extends StatelessWidget {
   final List<StockOption> stock;
   final Future<String?> Function(String id, RejectReason reason, {String? note}) onReject;
 
+  /// Teruskan ke [RecommendationCard]: ringkasan yang bisa dibuka (BUG-32).
+  final bool collapsible;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final id = recommendation.id;
     return RecommendationCard(
       recommendation: recommendation,
+      collapsible: collapsible,
       onAccept: () async {
         final decision = await showAcceptSheet(context, recommendation, stock: stock);
         if (decision == null) return null;
         final material = decision.material;
-        return onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+        final error = await onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+        // Sukses + ada bahan = saldo berkurang di server; muat ulang daftar/saldo.
+        if (error == null && material != null) {
+          ref.invalidate(connectedInventoryProvider);
+        }
+        return error;
       },
       onReject: () async {
         final picked = await showRejectSheet(context);

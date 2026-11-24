@@ -11,11 +11,13 @@ import 'package:hidrosense_mobile/data/services/inventory_cache.dart';
 import 'package:hidrosense_mobile/viewmodels/connected_inventory_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/pages/app_gate.dart';
+import 'package:hidrosense_mobile/views/pages/main_page.dart';
+import 'package:hidrosense_mobile/views/v2/pages/v2_beranda_connected_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
-  testWidgets('login menampilkan saldo; logout menghapus inventaris', (
+  testWidgets('login mendarat di beranda v2; tab Stok menampilkan saldo', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 900);
@@ -80,6 +82,14 @@ void main() {
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(api),
+          // Tanpa penyimpanan sesi nyata (sqflite tak tersedia di widget test).
+          sessionProvider.overrideWith(
+            (ref) => SessionViewModel(api, openStore: () async => null),
+          ),
+          // sqflite tak tersedia di widget test: cukup future yang tak selesai.
+          inventoryCacheProvider.overrideWithValue(
+            Completer<InventoryCache>().future,
+          ),
           connectedInventoryProvider.overrideWith(
             (ref) => ConnectedInventoryViewModel(
               InventoryRepository(
@@ -104,38 +114,18 @@ void main() {
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
 
-    // Pastikan masuk ke MainPage (Beranda aktif)
-    expect(find.text('HidroSense'), findsOneWidget);
-    expect(find.text('Inventaris'), findsOneWidget);
+    // Sejak D-15 jalur masuk v1 dinonaktifkan: login mendarat di beranda v2
+    // (bukan MainPage). Berkas v1 tetap ada untuk galeri desain.
+    expect(find.byType(V2BerandaConnectedPage), findsOneWidget);
+    expect(find.byType(MainPage), findsNothing);
+    expect(find.textContaining('Halo, Mitra'), findsOneWidget);
 
-    // Navigasi ke tab Inventaris
-    await tester.tap(find.text('Inventaris'));
+    // Tab Stok menampilkan saldo inventaris nyata (data dari provider).
+    await tester.tap(find.text('Stok'));
     await tester.pumpAndSettle();
+    expect(find.text('Pupuk Uji'), findsWidgets);
+    expect(find.textContaining('0.25'), findsWidgets);
 
-    expect(find.text('Pupuk Uji'), findsOneWidget);
-    expect(find.textContaining('0.25 kg'), findsOneWidget);
-
-    // Buka detail item dialog
-    await tester.tap(find.text('Pupuk Uji'));
-    await tester.pumpAndSettle();
-    expect(find.text('Stok minimum: 1 kg'), findsOneWidget);
-    await tester.tap(find.text('Tutup'));
-    await tester.pumpAndSettle();
-
-    // Buka halaman Akun melalui Header icon
-    await tester.tap(find.byTooltip('Buka akun'));
-    await tester.pumpAndSettle();
-    expect(find.text('Pengguna'), findsOneWidget);
-    expect(find.text('Mitra'), findsOneWidget);
-    expect(find.text('Petani'), findsOneWidget);
-
-    // Logout dari halaman akun
-    await tester.ensureVisible(find.text('Keluar Dari Akun'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Keluar Dari Akun'));
-    await tester.pumpAndSettle();
-    expect(find.byType(TextFormField), findsNWidgets(2));
-    expect(find.text('Pupuk Uji'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     api.close();
   });

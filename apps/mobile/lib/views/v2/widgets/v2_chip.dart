@@ -23,8 +23,13 @@ class V2Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: V2Space.lg),
+      // Tinggi dasar 48 dp (target sentuh), tapi boleh bertambah saat pengguna
+      // memperbesar teks sistem supaya label tidak terpotong (BUG-32).
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: V2Space.lg,
+        vertical: V2Space.xs,
+      ),
       decoration: BoxDecoration(
         color: disabled
             ? V2Colors.gray200
@@ -54,10 +59,13 @@ class V2Chip extends StatelessWidget {
             ),
             const SizedBox(width: V2Space.sm),
           ],
-          Text(
-            label,
-            style: V2Type.label.copyWith(
-              color: disabled ? V2Colors.muted : V2Colors.ink,
+          Flexible(
+            child: Text(
+              label,
+              softWrap: true,
+              style: V2Type.label.copyWith(
+                color: disabled ? V2Colors.muted : V2Colors.ink,
+              ),
             ),
           ),
         ],
