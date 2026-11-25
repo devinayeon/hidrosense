@@ -200,6 +200,12 @@ class ApiClient {
       );
     }
     if (json == null) {
+      // 204 No Content (deactivate/activate pegawai, logout) memang tanpa body.
+      // Perlakukan sebagai respons kosong yang sah supaya aksi void tidak
+      // dilaporkan sebagai "format salah" padahal server sudah menyimpan.
+      if (response.statusCode == 204 || response.body.trim().isEmpty) {
+        return const <String, dynamic>{};
+      }
       throw const FormatException('Respons layanan tidak valid.');
     }
     return json;

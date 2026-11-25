@@ -1,6 +1,6 @@
 # qa/decisions.md — Keputusan & asumsi (HidroSense QA)
 
-Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
+Format: tanggal, konteks, pilihan, alasan. Diperbarui 25 November 2026.
 
 ## D-01 — Bekerja solo, tanpa subagent (23 Nov 2026)
 - **Konteks:** PROMPT §3.1 mengizinkan delegasi opsional (Herdr + TokenHarbor High + automation).
@@ -292,6 +292,82 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
   Filter berjalan **di layar** lewat `saringRiwayatTanggal`; server tidak diubah.
 - **Alasan:** batas inklusif + tanggal WIB konsisten mencegah entri tengah malam masuk
   kelompok yang salah. Aman pada skala teks 2.0.
+
+## D-33 — Triase QA manual Sesi 6 (25 Nov 2026)
+- **Konteks:** pelapor QA mengirim 30 temuan (K-01..K-30) dari uji manual di HP, sebagian
+  tanpa langkah/pesan yang jelas.
+- **Pilihan:** setiap temuan diklasifikasikan **berbasis bukti** menjadi salah satu dari
+  BUG-FE / NOT-A-BUG / DATA-PRASYARAT / BACKEND-LIMIT / PERLU-KEPUTUSAN / PERLU-KLARIFIKASI.
+  Hanya BUG-FE yang diperbaiki, yaitu yang bisa direproduksi di kode dan bukan akar backend.
+- **Alasan:** menjaga batas D-02 (hanya `apps/mobile/`) dan tidak mengklaim PASS dari
+  pembacaan kode; status tetap "FIXED di kode, belum diuji ulang di HP".
+
+## D-34 — Kekuatan password & panjang minimum telepon (K-02) — **menunggu PM**
+- **Konteks:** pelapor menilai validasi akun lemah. Server: `passwordSchema` minimal 12
+  karakter tanpa aturan kompleksitas; `no_telepon` divalidasi `^\+?[0-9 ()\-]+$` + minimal 1
+  angka, ≤20 karakter; `alamat` boleh berisi apa saja (angka saja sah).
+- **Yang sudah jelas:** alamat berisi angka **bukan** bug (server memang mengizinkan).
+- **Yang menunggu keputusan:** apakah kebijakan password perlu kompleksitas (huruf besar/kecil/
+  angka/simbol) dan apakah telepon perlu panjang digit minimum. Ini kebijakan produk, bukan
+  bug; perubahan validasi menyentuh kontrak server (di luar batas FE).
+- **Alasan:** menambah aturan validasi di klien saja akan berbeda dari server dan menimbulkan
+  penolakan yang membingungkan.
+
+## D-35 — Konfirmasi sebelum menyimpan perubahan (K-03/K-18) — **menunggu keputusan produk**
+- **Konteks:** pelapor ingin pop-up "yakin mengubah?" sebelum menyimpan perubahan akun/meja.
+- **Fakta:** konfirmasi **membuang** perubahan sudah ada (`_confirmDiscard`). Meminta
+  konfirmasi sebelum **menyimpan** bukan bagian dari desain FigCraft.
+- **Pilihan yang direkomendasikan:** **tidak** menambah dialog simpan; cukup andalkan pesan
+  umpan balik "Data disimpan". Dialog simpan menambah langkah pada aksi yang sudah eksplisit
+  (menekan Simpan) dan tidak ada di desain.
+- **Status:** menunggu keputusan PM bila tetap diinginkan.
+
+## D-36 — Aktivasi ulang pegawai nonaktif (K-05) — **menunggu keputusan produk**
+- **Konteks:** pelapor bertanya cara mengaktifkan kembali pegawai yang sudah dinonaktifkan.
+- **Fakta:** server punya `POST /api/v1/employees/:id/activate` (204) dan
+  `EmployeeRepository.activateEmployee` sudah ada, tetapi `V2EmployeeStore`/layar 3.17 hanya
+  punya aksi "Ubah". FigCraft 3.16 menyatakan "Aktivasi ulang tidak ada di lingkup".
+- **Pilihan yang direkomendasikan:** tambahkan aksi "Aktifkan" pada detail pegawai nonaktif
+  (tombol, bukan fitur baru); menunggu konfirmasi karena menyimpang dari catatan desain.
+- **Alasan:** backend sudah mendukung penuh, jadi biayanya kecil dan menutup jalan buntu.
+
+## D-37 — Penyimpanan token sesi (S-02) — **menunggu keputusan**
+- **Konteks:** token sesi disimpan plaintext di `session.db` (SQLite lokal).
+- **Pilihan yang direkomendasikan:** pindah ke `flutter_secure_storage` dengan migrasi nilai
+  lama saat pertama dibuka. Menyentuh dependensi baru dan alur sesi.
+- **Status:** di luar perbaikan cepat; dicatat untuk keputusan PM/SA.
+
+## D-38 — Satu istilah untuk status data: "Nonaktifkan" (S-03/G-05) — **menunggu PM**
+- **Konteks:** UI bergantian memakai "arsip" dan "nonaktifkan" untuk hal yang sama
+  (`status_aktif`).
+- **Pilihan yang direkomendasikan:** pakai **"Nonaktifkan"** di seluruh UI inventaris (kontrak
+  server memakai `status_aktif`), tanpa mengubah data. Menunggu keputusan tetap.
+- **Alasan:** satu istilah menghindari kebingungan di panduan & pelatihan pengguna.
+
+## D-39 — Rekomendasi fitur dari perbandingan FigCraft (K-12, K-25) — **dicatat, tidak diimplementasikan**
+- **K-12:** bila maksud pelapor adalah jurnal dosis/pemakaian obat (bukan katalog inventaris),
+  itu fitur baru di luar desain 4.11/4.12; katalog obat + riwayat rotasi sudah ada.
+- **K-25:** FigCraft 8.7/8.21 tidak punya isian "Keterangan" penjualan; server mendukungnya
+  opsional. Menambahkannya = fitur baru.
+- **Pilihan:** dicatat sebagai rekomendasi ke PM; **tidak** diimplementasikan pada sesi ini
+  sesuai instruksi "fitur yang tidak ada di desain → catat, jangan implementasi".
+
+---
+
+## §7 — Pertanyaan terbuka untuk pelapor QA / PM (Sesi 6)
+
+Temuan tanpa langkah reproduksi atau di luar batas FE. Jawaban pelapor diperlukan sebelum
+bisa ditriase lebih jauh.
+
+1. **K-06** "Fitur nonaktif ngebug": akun mana, tombol apa, pesan apa? (Gejala paling dekat =
+   BUG-48 yang sudah diperbaiki.)
+2. **K-19** "Tambah tanaman ngebug": langkah persis/screenshot? (BUG-35 baru menyentuh alur ini.)
+3. **K-29** "Modelnya lucu": apa yang aneh (label salah, kotak meleset, hasil kosong, UI)?
+   Lihat `qa/model_evaluation.md` — thrips adalah kelas terlemah.
+4. **K-05** apakah tombol "Aktifkan" pegawai nonaktif diinginkan (D-36)?
+5. **K-03/K-18** apakah dialog konfirmasi sebelum menyimpan memang diminta (D-35)?
+6. **S-05/G-18** aplikasi online-only tetapi menu "Sinkron" masih tampil (D-19) — sembunyikan,
+   atau ubah kalimatnya?
 
 ---
 

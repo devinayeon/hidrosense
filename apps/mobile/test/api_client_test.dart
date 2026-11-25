@@ -155,4 +155,16 @@ void main() {
     await expectLater(api.get('inventaris'), throwsA(isA<ApiException>()));
     api.close();
   });
+
+  test('empty 204 response is accepted (deactivate, activate, logout)', () async {
+    final api = ApiClient(
+      MockClient((request) async => http.Response('', 204)),
+      baseUri: Uri.parse('https://example.test/api/v1'),
+    )..setTokens(accessToken: 'token', refreshToken: 'refresh');
+
+    expect(await api.post('employees/2/deactivate'), isEmpty);
+    expect(await api.post('employees/2/activate'), isEmpty);
+    await api.logout();
+    api.close();
+  });
 }

@@ -130,8 +130,9 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
   Future<void> save({required String tableId}) async {
     final result = state.result;
     final photo = state.photo;
-    if (result == null || photo == null || state.phase == ScanPhase.saving)
+    if (result == null || photo == null || state.phase == ScanPhase.saving) {
       return;
+    }
     // Setelah simpan dimulai meja terkunci: pindaian sudah terikat ke batch meja itu.
     final table = state.tableId ?? tableId;
     final generation = _generation;
@@ -180,8 +181,9 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
             idempotencyKey: _recKeys.putIfAbsent(f.kind, generateUuidV4),
           ),
         );
-        if (generation == _generation)
+        if (generation == _generation) {
           state = state.copyWith(recommendations: List.of(done));
+        }
       }
       if (generation != _generation) return;
       state = state.copyWith(phase: ScanPhase.saved, recommendations: done);

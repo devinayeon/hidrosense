@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_penjualan_store.dart';
 import '../components/v2_penjualan_tint_card.dart';
@@ -274,6 +275,11 @@ class V2PenjualanFormPage extends StatefulWidget {
 }
 
 class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
+  /// Isian contoh hanya untuk galeri/pratinjau. Alur nyata yang menambah
+  /// penjualan (store terisi, initial null) mulai kosong supaya nama/angka
+  /// contoh tidak ikut tersimpan tanpa disadari (K-26).
+  bool get _prefill => widget.initial != null || widget.store == null;
+
   late final TextEditingController _pembeli;
   late final TextEditingController _jumlah;
   late final TextEditingController _harga;
@@ -394,31 +400,34 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     super.initState();
     final initial = widget.initial;
     final empty = widget.previewValidation;
+    final prefill = _prefill && !empty;
 
     _tanggal = widget.previewDateBefore
         ? DateTime(2026, 11, 4)
-        : initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
+        : initial?.tanggal ??
+              widget.initialDate ??
+              (prefill ? DateTime(2026, 11, 15) : jakartaToday());
     _pembeli = TextEditingController(
-      text: empty ? '' : initial?.pembeli ?? 'Warung Sari',
+      text: prefill ? initial?.pembeli ?? 'Warung Sari' : '',
     );
     _jumlah = TextEditingController(
-      text: empty
-          ? ''
-          : widget.previewExceeds
-          ? '200'
-          : formatAngkaKg(initial?.jumlahKg ?? 60),
+      text: prefill
+          ? widget.previewExceeds
+                ? '200'
+                : formatAngkaKg(initial?.jumlahKg ?? 60)
+          : '',
     );
     _harga = TextEditingController(
-      text: empty
-          ? ''
-          : formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000),
+      text: prefill ? formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000) : '',
     );
     if (!empty) {
       if (widget.panenLabel != null) {
         _panenPreview = widget.panenLabel;
       } else {
         final own = _ownOption;
-        _panen = own ?? (_options.isEmpty ? null : _options.first);
+        // Alur nyata wajib memilih panen: jangan pilihkan yang pertama supaya
+        // berat panen tidak terpakai tanpa disadari (K-26).
+        _panen = own ?? (prefill ? _options.firstOrNull : null);
       }
     }
     _pembayaran = (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
@@ -478,16 +487,22 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       controller.removeListener(_onFieldChanged);
     }
     _dirty = false;
-    _pembeli.text = initial?.pembeli ?? 'Warung Sari';
-    _jumlah.text = formatAngkaKg(initial?.jumlahKg ?? 60);
-    _harga.text = formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000);
+    final prefill = _prefill;
+    _pembeli.text = prefill ? initial?.pembeli ?? 'Warung Sari' : '';
+    _jumlah.text = prefill ? formatAngkaKg(initial?.jumlahKg ?? 60) : '';
+    _harga.text = prefill
+        ? formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000)
+        : '';
     for (final controller in _controllers) {
       controller.addListener(_onFieldChanged);
     }
     setState(() {
-      _tanggal = initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
+      _tanggal =
+          initial?.tanggal ??
+          widget.initialDate ??
+          (prefill ? DateTime(2026, 11, 15) : jakartaToday());
       _panenPreview = null;
-      _panen = _ownOption ?? (_options.isEmpty ? null : _options.first);
+      _panen = _ownOption ?? (prefill ? _options.firstOrNull : null);
       _pembayaran =
           (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
       _tanggalError = null;

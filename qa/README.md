@@ -22,6 +22,12 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 > muncul saat potong stok (BUG-46) diperbaiki dengan pengenal stabil (D-31); **backend tidak
 > diubah**. Status BUG-39..47 & Fitur-4 = **FIXED di kode, belum diuji ulang di HP**
 > (bukan klaim PASS).
+> Sesi 6 (25 Nov 2026): men-triase **30 temuan uji manual pelapor** (K-01..K-30, D-33).
+> **8 temuan BUG-FE diperbaiki** (BUG-48..55) + regression test; sisanya NOT-A-BUG,
+> DATA-PRASYARAT, PERLU-KEPUTUSAN, atau PERLU-KLARIFIKASI (tanpa klaim PASS). `flutter analyze`
+> **0 temuan** (11 info lama di `lib/features/pest/` ikut dibersihkan); `flutter test` mobile
+> kini **816 PASS** (koreksi: jumlah nyata setelah sesi 5 adalah **808**, bukan 701). Gap baru
+> **G-19..G-21** + pertanyaan terbuka di `decisions.md` §7. **Backend tidak diubah.**
 
 ## Dokumen
 

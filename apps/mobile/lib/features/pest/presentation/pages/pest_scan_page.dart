@@ -99,6 +99,14 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                   // Terkunci sejak simpan dimulai: foto sudah terikat ke batch meja itu.
                   onChanged: busy || state.saveStarted ? null : (value) => setState(() => _tableId = value),
                 ),
+                if (tables.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: V2Space.sm),
+                    child: Text(
+                      'Belum ada meja dengan tanaman aktif. Pindahkan semaian ke meja dulu, lalu kembali ke sini.',
+                      style: V2Type.caption,
+                    ),
+                  ),
                 const SizedBox(height: V2Space.lg),
                 Row(
                   children: [
