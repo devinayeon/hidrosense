@@ -41,10 +41,17 @@ Float32List _prepare(Uint8List bytes) {
 /// Belum diuji di perangkat nyata dari sini: tes unit hanya mencakup praproses dan dekoder
 /// (paritas dengan Python). Waktu inferensi dan kompatibilitas delegate perlu diukur di ponsel.
 class PestDetector {
-  PestDetector._(this._interpreter, this.modelVersion);
+  PestDetector._(
+    this._interpreter,
+    this.modelVersion, {
+    required this.defaultConfThreshold,
+    required this.defaultIouThreshold,
+  });
 
   final Interpreter _interpreter;
   final String modelVersion;
+  final double defaultConfThreshold;
+  final double defaultIouThreshold;
 
   static Future<PestDetector> load({
     String modelAsset = kPestModelAsset,
@@ -66,13 +73,20 @@ class PestDetector {
         'Bentuk model tidak sesuai kontrak: masukan $input, keluaran $output.',
       );
     }
-    return PestDetector._(interpreter, metadata['model_version'] as String);
+    return PestDetector._(
+      interpreter,
+      metadata['model_version'] as String,
+      defaultConfThreshold:
+          (metadata['confidence_threshold'] as num?)?.toDouble() ?? 0.45,
+      defaultIouThreshold:
+          (metadata['iou_threshold'] as num?)?.toDouble() ?? 0.45,
+    );
   }
 
   Future<PestScanResult> detect(
     Uint8List photoBytes, {
-    double confThreshold = 0.35,
-    double iouThreshold = 0.45,
+    double? confThreshold,
+    double? iouThreshold,
   }) async {
     final tensor = await compute(_prepare, photoBytes);
     _interpreter.getInputTensor(0).data = tensor.buffer.asUint8List();
@@ -85,8 +99,8 @@ class PestDetector {
     );
     final detections = decodeYolov11Output(
       output,
-      confThreshold: confThreshold,
-      iouThreshold: iouThreshold,
+      confThreshold: confThreshold ?? defaultConfThreshold,
+      iouThreshold: iouThreshold ?? defaultIouThreshold,
     );
     return PestScanResult(
       findings: summarizeDetections(detections),

@@ -12,14 +12,14 @@ Map<String, dynamic> _golden() =>
     jsonDecode(File('test/fixtures/yolo_golden.json').readAsStringSync())
         as Map<String, dynamic>;
 
-/// Tensor [7, 8400] berisi nol kecuali jangkar golden. Nol berada di bawah ambang,
+/// Tensor [6, 8400] berisi nol kecuali jangkar golden. Nol berada di bawah ambang,
 /// jadi hasilnya sama dengan tensor penuh.
 Float32List _tensorFrom(List<dynamic> anchors) {
-  final out = Float32List(7 * kYoloAnchors);
+  final out = Float32List(6 * kYoloAnchors);
   for (final row in anchors) {
     final values = row as List<dynamic>;
     final index = (values[0] as num).toInt();
-    for (var ch = 0; ch < 7; ch++) {
+    for (var ch = 0; ch < 6; ch++) {
       out[ch * kYoloAnchors + index] = (values[ch + 1] as num).toDouble();
     }
   }
@@ -29,11 +29,18 @@ Float32List _tensorFrom(List<dynamic> anchors) {
 void main() {
   group('decodeYolov11Output', () {
     test('sama dengan decoder Python pada keluaran model asli', () {
-      final cases = (_golden()['cases'] as List<dynamic>).cast<Map<String, dynamic>>();
+      final golden = _golden();
+      final confThr = (golden['confidence_threshold'] as num?)?.toDouble() ?? 0.45;
+      final iouThr = (golden['iou_threshold'] as num?)?.toDouble() ?? 0.45;
+      final cases = (golden['cases'] as List<dynamic>).cast<Map<String, dynamic>>();
       expect(cases, isNotEmpty);
       for (final c in cases) {
         final expected = (c['expected'] as List<dynamic>).cast<Map<String, dynamic>>();
-        final got = decodeYolov11Output(_tensorFrom(c['anchors'] as List<dynamic>));
+        final got = decodeYolov11Output(
+          _tensorFrom(c['anchors'] as List<dynamic>),
+          confThreshold: confThr,
+          iouThreshold: iouThr,
+        );
         expect(got.length, expected.length, reason: c['source'] as String);
         for (var i = 0; i < expected.length; i++) {
           expect(got[i].classId, expected[i]['class_id'], reason: 'kelas #$i ${c['source']}');
@@ -47,70 +54,78 @@ void main() {
       }
     });
 
-    test('golden mencakup ketiga kelas', () {
+    test('golden mencakup kedua kelas hama (whitefly, aphids) dan kasus negatif nol deteksi', () {
       final classes = <int>{};
+      var hasNegativeZeroCase = false;
       for (final c in (_golden()['cases'] as List<dynamic>).cast<Map<String, dynamic>>()) {
-        for (final d in (c['expected'] as List<dynamic>).cast<Map<String, dynamic>>()) {
+        final expected = (c['expected'] as List<dynamic>).cast<Map<String, dynamic>>();
+        if (expected.isEmpty) hasNegativeZeroCase = true;
+        for (final d in expected) {
           classes.add(d['class_id'] as int);
         }
       }
-      expect(classes, {0, 1, 2});
+      expect(classes, {0, 1});
+      expect(hasNegativeZeroCase, isTrue);
     });
 
     Float32List one(double cx, double cy, double w, double h, List<double> s) {
-      final out = Float32List(7 * kYoloAnchors);
+      final out = Float32List(6 * kYoloAnchors);
       final v = [cx, cy, w, h, ...s];
-      for (var ch = 0; ch < 7; ch++) {
+      for (var ch = 0; ch < 6; ch++) {
         out[ch * kYoloAnchors] = v[ch];
       }
       return out;
     }
 
     test('tensor kosong atau semua di bawah ambang: tidak ada deteksi', () {
-      expect(decodeYolov11Output(Float32List(7 * kYoloAnchors)), isEmpty);
+      expect(decodeYolov11Output(Float32List(6 * kYoloAnchors)), isEmpty);
       expect(decodeYolov11Output(Float32List(0)), isEmpty);
     });
 
+    test('tensor 7 kanal model 3 kelas lama ditolak keras', () {
+      expect(() => decodeYolov11Output(Float32List(7 * kYoloAnchors)), throwsArgumentError);
+    });
+
     test('skor tepat di ambang lolos, sedikit di bawahnya tidak', () {
-      // 0.5 tepat di float32; 0.35 tidak (menjadi 0.34999999…), sama dengan perilaku Python.
-      expect(decodeYolov11Output(one(0.5, 0.5, 0.2, 0.2, [0.5, 0, 0]), confThreshold: 0.5), hasLength(1));
-      expect(decodeYolov11Output(one(0.5, 0.5, 0.2, 0.2, [0.4999, 0, 0]), confThreshold: 0.5), isEmpty);
+      // 0.5 tepat di float32; 0.35 tidak (menjadi 0.34999999...), sama dengan perilaku Python.
+      expect(decodeYolov11Output(one(0.5, 0.5, 0.2, 0.2, [0.5, 0]), confThreshold: 0.5), hasLength(1));
+      expect(decodeYolov11Output(one(0.5, 0.5, 0.2, 0.2, [0.4999, 0]), confThreshold: 0.5), isEmpty);
     });
 
     test('nilai NaN atau tak hingga dilewati, bukan membuat hasil rusak', () {
-      final t = one(0.5, 0.5, 0.2, 0.2, [0.9, 0, 0]);
+      final t = one(0.5, 0.5, 0.2, 0.2, [0.9, 0]);
       t[kYoloAnchors * 4] = double.nan;
       expect(decodeYolov11Output(t), isEmpty);
-      final u = one(0.5, 0.5, 0.2, 0.2, [0.9, 0, 0]);
+      final u = one(0.5, 0.5, 0.2, 0.2, [0.9, 0]);
       u[0] = double.infinity;
       expect(decodeYolov11Output(u), isEmpty);
     });
 
     test('koordinat piksel (>1.5) dinormalkan dengan ukuran gambar', () {
-      final d = decodeYolov11Output(one(320, 320, 64, 64, [0.9, 0, 0]));
+      final d = decodeYolov11Output(one(320, 320, 64, 64, [0.9, 0]));
       expect(d, hasLength(1));
       expect(d.single.x1, closeTo(0.45, 1e-6));
       expect(d.single.x2, closeTo(0.55, 1e-6));
     });
 
     test('NMS: kelas sama yang tumpang tindih disaring, kelas berbeda dipertahankan', () {
-      final out = Float32List(7 * kYoloAnchors);
+      final out = Float32List(6 * kYoloAnchors);
       void put(int i, double cx, double cy, List<double> s) {
         final v = [cx, cy, 0.2, 0.2, ...s];
-        for (var ch = 0; ch < 7; ch++) {
+        for (var ch = 0; ch < 6; ch++) {
           out[ch * kYoloAnchors + i] = v[ch];
         }
       }
 
-      put(0, 0.5, 0.5, [0.9, 0, 0]);
-      put(1, 0.51, 0.5, [0.8, 0, 0]);
-      put(2, 0.5, 0.5, [0, 0.7, 0]);
+      put(0, 0.5, 0.5, [0.9, 0]);
+      put(1, 0.51, 0.5, [0.8, 0]);
+      put(2, 0.5, 0.5, [0, 0.7]);
       final d = decodeYolov11Output(out);
       expect(d.map((e) => e.classId).toList(), [0, 1]);
     });
 
     test('kotak berukuran nol dibuang', () {
-      expect(decodeYolov11Output(one(0.5, 0.5, 0, 0, [0.9, 0, 0])), isEmpty);
+      expect(decodeYolov11Output(one(0.5, 0.5, 0, 0, [0.9, 0])), isEmpty);
     });
   });
 
