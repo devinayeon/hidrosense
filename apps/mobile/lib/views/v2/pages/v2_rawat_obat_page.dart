@@ -103,18 +103,17 @@ class _V2RawatObatPageState extends State<V2RawatObatPage> {
                         style: V2Type.label.copyWith(color: V2Colors.ink),
                       ),
                       const SizedBox(height: V2Space.sm),
-                      for (
-                        var index = 0;
-                        index < widget.obat.length;
-                        index++
-                      ) ...[
+                      for (var index = 0;
+                          index < widget.obat.length;
+                          index++) ...[
                         if (index > 0) const SizedBox(height: V2Space.sm),
                         V2RawatOptionRow(
                           label: widget.obat[index].label,
                           selected: widget.obat[index].nama == _pilih.nama,
                           enabled: !widget.obat[index].habis,
-                          onTap: () =>
-                              setState(() => _pilih = widget.obat[index]),
+                          onTap: () => setState(
+                            () => _pilih = widget.obat[index],
+                          ),
                         ),
                       ],
                       const SizedBox(height: V2Space.lg),
@@ -144,16 +143,23 @@ class _V2RawatObatPageState extends State<V2RawatObatPage> {
     );
   }
 
-  /// Kartu putih 120: judul “Rotasi obat” dan isi 16/24 muted.
+  /// Kartu putih 120: judul “Rotasi obat” dan isi 16/24 muted. Tinggi minimum
+  /// supaya kalimat rotasi tidak terpotong pada skala teks besar (BUG-24).
   Widget _kartuRotasi() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(V2Space.xl, V2Space.xl, V2Space.xl, 0),
+      constraints: const BoxConstraints(minHeight: 120),
+      padding: const EdgeInsets.fromLTRB(
+        V2Space.xl,
+        V2Space.xl,
+        V2Space.xl,
+        V2Space.xl,
+      ),
       decoration: BoxDecoration(
         color: V2Colors.blue50,
         borderRadius: BorderRadius.circular(V2Radius.card),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Rotasi obat', style: V2Type.h2),

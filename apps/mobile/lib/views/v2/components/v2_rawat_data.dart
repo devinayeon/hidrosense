@@ -30,6 +30,58 @@ String labelTanggalRawat(DateTime tanggal) =>
 String labelTanggalRawatLengkap(DateTime tanggal) =>
     '${tanggal.day} ${_bulanSingkat[tanggal.month - 1]} ${tanggal.year}';
 
+/// Status rekomendasi untuk satu pindaian di tab Rawat.
+enum V2PindaiStatus {
+  menunggu('Menunggu'),
+  diterima('Diterima'),
+  ditolak('Ditolak');
+
+  const V2PindaiStatus(this.label);
+
+  final String label;
+}
+
+/// Satu baris “Pindaian terbaru” di tab Rawat: foto yang sudah dianalisis model.
+///
+/// Data ini berasal dari `GET /pindaian`, bukan contoh desain, jadi [hama] dan
+/// [keyakinan] apa adanya dari server.
+class V2PindaiItem {
+  const V2PindaiItem({
+    required this.id,
+    required this.hama,
+    required this.meja,
+    required this.tanggal,
+    this.keyakinan,
+    this.status,
+    this.rincian = const <String>[],
+  });
+
+  final String id;
+
+  /// Nama hama yang terdeteksi, mis. `Thrips, Kutu kebul`; `Tidak ada hama` bila bersih.
+  final String hama;
+  final String meja;
+  final DateTime tanggal;
+
+  /// Keyakinan tertinggi dalam persen; null bila server tidak menyimpannya.
+  final int? keyakinan;
+
+  /// Status rekomendasi obat untuk foto ini; null bila belum ada rekomendasi.
+  final V2PindaiStatus? status;
+
+  /// Rincian per hama untuk halaman detail, mis. `Thrips · 3 ekor · 87%`.
+  final List<String> rincian;
+
+  String get labelTanggal => labelTanggalRawat(tanggal);
+
+  /// `Meja A2, 24 Nov`.
+  String get labelKicker => '$meja, $labelTanggal';
+
+  /// `87%` atau `Tanpa keyakinan`.
+  String get labelKeyakinan =>
+      keyakinan == null ? 'Tanpa keyakinan' : '$keyakinan%';
+}
+
 /// Status satu catatan perawatan.
 enum V2RawatStatus {
   /// Sudah tersimpan di server (9.1, 9.24, 9.27).

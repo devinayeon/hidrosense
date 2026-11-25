@@ -28,14 +28,19 @@ enum V2JenisBarang {
 /// Keadaan stok satu barang; menentukan badge di baris (frame 4.1).
 enum V2InventarisStatus { aman, menipis, habis }
 
-/// Keadaan stok dari jumlah vs stok minimum: nol berarti habis, menyentuh
-/// minimum berarti menipis, sisanya aman.
+/// Keadaan stok dari jumlah vs stok minimum: nol berarti habis, saldo **di
+/// bawah** minimum berarti menipis, sisanya aman.
+///
+/// Ambangnya mengikuti aturan kanonik backend `di_bawah_minimum`
+/// (`saldo < minimum`) dan `InventoryRecord.isLow`, supaya lencana baris sepakat
+/// dengan angka kartu "Stok menipis" di Beranda. Saldo yang sama persis dengan
+/// minimum tidak dianggap menipis.
 ///
 /// Dipakai setelah "Catat stok" mengubah jumlah supaya badge ikut pindah
 /// (frame 4.23 tetap "Cukup" karena 10 masih di atas minimum 3).
 V2InventarisStatus statusStok(double jumlah, double? minimum) {
   if (jumlah <= 0) return V2InventarisStatus.habis;
-  if (minimum != null && jumlah <= minimum) return V2InventarisStatus.menipis;
+  if (minimum != null && jumlah < minimum) return V2InventarisStatus.menipis;
   return V2InventarisStatus.aman;
 }
 

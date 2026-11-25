@@ -35,6 +35,8 @@ class V2BentoTile extends StatelessWidget {
     // `size` hanyalah tinggi minimum: pada huruf besar petak tumbuh ke bawah.
     final content = Container(
       width: size,
+      // Tinggi minimum `size` (bukan tetap): saat skala teks sistem besar,
+      // angka dan label boleh membungkus dan petak ikut tinggi (BUG-20).
       constraints: BoxConstraints(minHeight: size),
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
@@ -44,6 +46,7 @@ class V2BentoTile extends StatelessWidget {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(

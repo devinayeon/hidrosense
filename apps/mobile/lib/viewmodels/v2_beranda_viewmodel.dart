@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models/inventory_record.dart';
 import '../data/models/nursery_record.dart';
 import '../models/weather_model.dart';
 import 'connected_inventory_viewmodel.dart';
@@ -37,7 +38,8 @@ class V2BerandaData {
   /// Subjudul baris "Siap pindah", mis. `2 semaian, HSS 15`.
   final String readySeedlingSubtitle;
 
-  /// Jumlah barang dengan stok di bawah minimum.
+  /// Jumlah barang dengan stok di bawah minimum (termasuk yang habis), lintas
+  /// jenis — sama dengan isi daftar yang dibuka kartu di Beranda.
   final String lowStockCount;
 
   /// Total lubang terisi dari semua meja aktif.
@@ -75,7 +77,7 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
       : const WeatherState();
 
   final ready = nursery.records.where((item) => item.canTransfer).toList();
-  final lowStock = inventory.activeRecords.where((item) => item.isLow).length;
+  final lowStock = berandaLowStockCount(inventory.activeRecords);
   final filledHoles = tables.records
       .where((table) => table.isActive)
       .fold<int>(0, (sum, table) => sum + table.activePlants);
@@ -109,3 +111,16 @@ String? _weatherSubtitle(WeatherData? data) {
   if (data == null) return null;
   return 'Curah hujan ${data.curahHujan}';
 }
+
+/// Barang yang dihitung kartu "Stok menipis" di Beranda.
+///
+/// Cakupannya sama dengan daftar yang dibuka kartu itu (saringan "Menipis" =
+/// bukan aman): semua jenis barang yang **di bawah** stok minimum atau sudah
+/// habis. Dengan begitu angka kartu selalu sama dengan jumlah baris daftar
+/// (BUG-06); barang yang tepat di angka minimum tidak dihitung (BUG-03).
+bool isBerandaLowStock(InventoryRecord item) =>
+    item.isLow || item.isOutOfStock;
+
+/// Jumlah barang "Stok menipis" untuk kartu Beranda.
+int berandaLowStockCount(Iterable<InventoryRecord> records) =>
+    records.where(isBerandaLowStock).length;

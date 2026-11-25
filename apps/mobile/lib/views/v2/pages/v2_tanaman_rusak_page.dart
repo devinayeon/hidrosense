@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_meja_data.dart';
 import '../components/v2_semaian_date_sheet.dart';
 import '../theme/v2_tokens.dart';
@@ -15,6 +16,15 @@ import '../widgets/v2_list_item.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_stepper.dart';
 import '../widgets/v2_text_field.dart';
+
+/// Jam perangkat untuk halaman "Catat rusak".
+///
+/// Bisa diganti lewat [V2CatatRusakPage.clock] saat uji supaya "hari ini"
+/// tidak bergantung pada jam nyata.
+DateTime _v2CatatRusakSekarang() => DateTime.now();
+
+/// Jam contoh galeri: frame 6.25 tetap menampilkan 15 Nov 2026.
+DateTime _v2CatatRusakJamContoh() => DateTime.utc(2026, 11, 15, 5);
 
 /// Daftar kerusakan tanaman pada satu meja (frame 6.24, 6.27, 6.29).
 ///
@@ -34,7 +44,8 @@ class V2TanamanRusakPage extends StatefulWidget {
   });
 
   /// Frame `6.24 Daftar rusak`: satu catatan busuk akar.
-  V2TanamanRusakPage.biasa({Key? key}) : this(key: key, item: designMejaA2);
+  V2TanamanRusakPage.biasa({Key? key})
+    : this(key: key, item: designMejaA2);
 
   /// Frame `6.27 Kerusakan dicatat`: layu 15 Nov di atas busuk akar 10 Nov.
   V2TanamanRusakPage.setelahCatat({Key? key})
@@ -90,7 +101,8 @@ class V2TanamanRusakPage extends StatefulWidget {
 }
 
 class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
-  late List<V2KerusakanItem> _rusak = widget.rusak ?? widget.item.rusak;
+  late List<V2KerusakanItem> _rusak =
+      widget.rusak ?? widget.item.rusak;
   String? _toast;
   Timer? _toastTimer;
 
@@ -122,7 +134,10 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
 
   Future<void> _catat() async {
     final hasil = await Navigator.of(context).push<V2KerusakanItem>(
-      V2CatatRusakPage.route(meja: widget.item, transferId: widget.transferId),
+      V2CatatRusakPage.route(
+        meja: widget.item,
+        transferId: widget.transferId,
+      ),
     );
     if (!mounted || hasil == null) return;
     final simpan = widget.onCatat;
@@ -168,7 +183,10 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
     _showToast('Perubahan tersimpan');
   }
 
-  List<V2KerusakanItem> _ganti(V2KerusakanItem lama, V2KerusakanItem baru) => [
+  List<V2KerusakanItem> _ganti(
+    V2KerusakanItem lama,
+    V2KerusakanItem baru,
+  ) => [
     for (final baris in _rusak)
       if (identical(baris, lama)) baru else baris,
   ];
@@ -215,13 +233,17 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
                   child: _rusak.length == 1
                       ? _row(_rusak.first)
                       : V2GroupList(
-                          children: [for (final rusak in _rusak) _row(rusak)],
+                          children: [
+                            for (final rusak in _rusak) _row(rusak),
+                          ],
                         ),
                 ),
               ),
               V2ActionBar(
                 toast: _toast,
-                actions: [V2Button(label: 'Catat rusak', onPressed: _catat)],
+                actions: [
+                  V2Button(label: 'Catat rusak', onPressed: _catat),
+                ],
               ),
             ],
           ),
@@ -244,10 +266,12 @@ class V2CatatRusakPage extends StatefulWidget {
     this.kerusakan,
     this.previewValidation = false,
     this.transferId,
+    this.clock = _v2CatatRusakSekarang,
   });
 
   /// Frame `6.25 Catat rusak`.
-  V2CatatRusakPage.catat({Key? key}) : this(key: key, meja: designMejaA2);
+  V2CatatRusakPage.catat({Key? key})
+    : this(key: key, meja: designMejaA2, clock: _v2CatatRusakJamContoh);
 
   /// Frame `6.26 Catat rusak, validasi`: 45 tanaman dan jenis belum dipilih.
   V2CatatRusakPage.validation({Key? key})
@@ -255,7 +279,11 @@ class V2CatatRusakPage extends StatefulWidget {
 
   /// Frame `6.28 Ubah kerusakan`: busuk akar 10 Nov dengan catatan.
   V2CatatRusakPage.ubah({Key? key})
-    : this(key: key, meja: designMejaA2, kerusakan: designKerusakanBusukAkar);
+    : this(
+        key: key,
+        meja: designMejaA2,
+        kerusakan: designKerusakanBusukAkar,
+      );
 
   final V2MejaItem? meja;
   final V2KerusakanItem? kerusakan;
@@ -263,6 +291,10 @@ class V2CatatRusakPage extends StatefulWidget {
 
   /// Batch tanaman tujuan laporan baru; dipakai mengirim ke backend.
   final String? transferId;
+
+  /// Jam yang bisa disuntik; halaman menghitung "hari ini" WIB dari sini
+  /// supaya form tanggal tidak memaku 15 Nov (BUG-27).
+  final DateTime Function() clock;
 
   static Route<V2KerusakanItem> route({
     V2MejaItem? meja,
@@ -292,7 +324,7 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
 
   late DateTime _tanggal = widget.previewValidation
       ? DateTime(2026, 11, 15)
-      : widget.kerusakan?.tanggal ?? DateTime(2026, 11, 15);
+      : widget.kerusakan?.tanggal ?? jakartaToday(widget.clock());
   late int _jumlah = widget.previewValidation
       ? 45
       : widget.kerusakan?.jumlah ?? 2;
@@ -337,6 +369,17 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
     setState(() => _tanggal = hasil);
   }
 
+  /// Ubah jumlah lewat minus/plus atau ketik langsung (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() {
+      _jumlah = value;
+      if (_jumlahError != null) {
+        _jumlahError = value > _aktif ? 'Tanaman aktif hanya $_aktif' : null;
+      }
+    });
+  }
+
   void _simpan() {
     setState(() {
       _jumlahError = _jumlah > _aktif ? 'Tanaman aktif hanya $_aktif' : null;
@@ -351,7 +394,8 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
           jumlah: _jumlah,
           jenis: 'Busuk akar',
           tanggal: _tanggal,
-          varietas: widget.meja?.tanaman.firstOrNull?.varietas ?? 'Romaine',
+          varietas:
+              widget.meja?.tanaman.firstOrNull?.varietas ?? 'Romaine',
           meja: widget.meja?.kode ?? 'A2',
           transferId: widget.transferId,
         );
@@ -435,10 +479,9 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
           value: _jumlah,
           unit: 'tanaman',
           error: _jumlahError != null,
-          onMinus: () {
-            if (_jumlah > 1) setState(() => _jumlah--);
-          },
-          onPlus: () => setState(() => _jumlah++),
+          onChanged: _setJumlah,
+          onMinus: () => _setJumlah(_jumlah - 1),
+          onPlus: () => _setJumlah(_jumlah + 1),
         ),
         if (_jumlahError != null) ...[
           const SizedBox(height: V2Space.sm),
@@ -480,7 +523,11 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
   Widget _helper(String pesan) {
     return Row(
       children: [
-        const V2Icon(V2IconName.error, size: 16, color: V2Colors.red700),
+        const V2Icon(
+          V2IconName.error,
+          size: 16,
+          color: V2Colors.red700,
+        ),
         const SizedBox(width: V2Space.sm),
         Expanded(
           child: Text(

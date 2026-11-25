@@ -6,9 +6,9 @@ import 'v2_meja_data.dart';
 
 /// Baris meja di dalam `Grup daftar` (frame 6.1, 6.2, 6.8, 6.9).
 ///
-/// Semua baris dipaku 80 tinggi seperti komponen `StockItem`: lead 40 berikon
-/// tunas, judul `Meja A2`, subjudul `Lubang terisi`, lalu rasio lubang di kanan.
-/// Meja penuh menambah lencana kuning "Penuh"; meja yang lahir saat offline
+/// Semua baris memakai tinggi minimum 80 seperti komponen `StockItem`: lead 40
+/// berikon tunas, judul `Meja A2`, subjudul `Lubang terisi`, lalu rasio lubang di
+/// kanan. Meja penuh menambah lencana kuning "Penuh"; meja yang lahir saat offline
 /// memakai lencana biru "Antrean" (frame 6.9).
 class V2MejaRow extends StatelessWidget {
   const V2MejaRow({super.key, required this.item, this.onTap});

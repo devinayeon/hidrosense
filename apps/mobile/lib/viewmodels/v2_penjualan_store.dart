@@ -563,6 +563,19 @@ final v2PenjualanStoreProvider = Provider<V2PenjualanStore?>((ref) {
   );
 });
 
+/// Penyelesai konflik versi per jenis data untuk dialog 11.8.
+///
+/// Penjualan punya penyelesai sendiri di store-nya; panen menumpang
+/// pengirimnya. Jenis yang belum punya resolver akan menampilkan pesan
+/// "belum bisa diselesaikan dari HP".
+final v2SyncResolversProvider = Provider<List<V2SyncConflictResolver>>((ref) {
+  final store = ref.watch(v2PenjualanStoreProvider);
+  return <V2SyncConflictResolver>[
+    if (store is V2SyncConflictResolver) store as V2SyncConflictResolver,
+    ref.watch(v2PanenSenderProvider),
+  ];
+});
+
 /// Pengirim antrean nyata; null bila tidak ada jenis yang bisa dikirim.
 ///
 /// Semua jenis tulis (penjualan, panen, semaian, stok, dan rusak) kini punya
@@ -576,12 +589,9 @@ final v2SyncReplayerProvider = Provider<V2SyncReplayer?>((ref) {
     ref.watch(v2InventorySenderProvider),
     ref.watch(v2DamageSenderProvider),
   ];
-  final resolver = store is V2SyncConflictResolver
-      ? store as V2SyncConflictResolver
-      : null;
   return V2SyncReplayer(
     queue: ref.watch(v2SyncQueueProvider.notifier),
     senders: senders,
-    resolvers: [?resolver],
+    resolvers: ref.watch(v2SyncResolversProvider),
   );
 });

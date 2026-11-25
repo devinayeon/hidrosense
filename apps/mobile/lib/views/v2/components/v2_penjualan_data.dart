@@ -305,7 +305,7 @@ String formatAngkaDesimal(double value) => value == value.roundToDouble()
     ? value.toStringAsFixed(0)
     : value
           .toStringAsFixed(2)
-          .replaceFirst(RegExp(r'0+$'), '')
+          .replaceFirst(RegExp(r'\.?0+$'), '')
           .replaceAll('.', ',');
 
 /// Angka kg tanpa satuan; koma dipakai sebagai desimal seperti kebiasaan lokal.

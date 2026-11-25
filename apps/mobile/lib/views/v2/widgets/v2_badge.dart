@@ -62,13 +62,11 @@ class V2Badge extends StatelessWidget {
         children: [
           V2Icon(icon ?? _defaultIcon, size: V2Icons.small, color: _foreground),
           const SizedBox(width: V2Space.xs),
-          // Flexible: pada layar sempit atau huruf besar label dipotong,
-          // bukan membuat baris induknya meluap.
+          // Lencana harus ikut membungkus di skala teks besar; tanpa `Flexible`
+          // baris ini meluber keluar kartu (BUG-24).
           Flexible(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: V2Type.label.copyWith(color: _foreground),
             ),
           ),

@@ -9,13 +9,18 @@ import '../../../data/models/inventory_record.dart';
 import '../../../data/models/nursery_record.dart';
 import '../../../data/models/table_record.dart';
 import '../../../data/models/transfer_record.dart';
+import '../../../models/penjualan_model.dart';
 import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_table_viewmodel.dart';
 import '../../../viewmodels/panen_viewmodel.dart';
+import '../../../viewmodels/penjualan_viewmodel.dart';
+import '../../../viewmodels/v2_penjualan_store.dart';
 import '../components/v2_panen_data.dart';
+import '../components/v2_penjualan_data.dart';
 import '../pages/v2_panen_detail_page.dart';
 import '../pages/v2_panen_form_page.dart';
 import '../pages/v2_panen_list_page.dart';
+import '../pages/v2_penjualan_form_page.dart';
 import 'v2_meja_connected.dart';
 
 double _kg(HarvestWeight? weight) =>
@@ -53,7 +58,7 @@ V2PanenEstimasi v2PanenEstimasiFromTransfer(
           : DateTime.tryParse(
                   transfer.estimatedHarvestDate!,
                 )?.difference(jakartaToday()).inDays ??
-                0);
+              0);
   return V2PanenEstimasi(
     meja: _kodeMeja(table, transfer.tableId),
     varietas:
@@ -61,7 +66,42 @@ V2PanenEstimasi v2PanenEstimasiFromTransfer(
     jumlahTanaman: transfer.activePlants,
     hariLagi: sisa < 0 ? 0 : sisa,
     transferId: transfer.id,
+    transferDate: DateTime.tryParse(transfer.transferDate),
+    hss: transfer.hss ?? transfer.seedlingAgeDays,
+    sowingLabel: _labelSemaian(transfer.sowingId),
   );
+}
+
+/// `Batch #12` untuk asal semaian baris pemilih panen (BUG-33).
+String _labelSemaian(String sowingId) => 'Batch #$sowingId';
+
+/// Daftar estimasi panen siap dipilih: hanya batch bertanaman aktif, tanpa
+/// baris ganda (id pemindahan sama muncul sekali), lalu diurutkan siap panen
+/// lebih dulu dan HSS/hari menuju panen paling dekat di atas (BUG-33).
+List<V2PanenEstimasi> v2DaftarEstimasiPanen({
+  required List<TransferRecord> transfers,
+  required List<TableRecord> tables,
+  List<SowingRecord> sowings = const <SowingRecord>[],
+  List<InventoryRecord> inventaris = const <InventoryRecord>[],
+}) {
+  final hasil = <V2PanenEstimasi>[];
+  final terlihat = <String>{};
+  for (final row in transfers) {
+    if (row.activePlants <= 0) continue;
+    final item = v2PanenEstimasiFromTransfer(
+      row,
+      table: tables.where((table) => table.id == row.tableId).firstOrNull,
+      sowings: sowings,
+      inventaris: inventaris,
+    );
+    if (!terlihat.add(item.kunci)) continue;
+    hasil.add(item);
+  }
+  hasil.sort((a, b) {
+    if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
+    return a.hariLagi.compareTo(b.hariLagi);
+  });
+  return hasil;
 }
 
 /// Pemetaan satu panen backend ke kartu ringkasan page 07.
@@ -79,8 +119,7 @@ V2PanenItem v2PanenItemFromRecord(
   return V2PanenItem(
     id: record.id,
     tanggal: DateTime.tryParse(record.date) ?? jakartaToday(),
-    meja:
-        table?.displayName ??
+    meja: table?.displayName ??
         (detail == null ? 'Meja' : 'Meja ${detail.tableCode}'),
     varietas:
         _varietasPanen(record, transfers, sowings, inventaris) ??
@@ -133,24 +172,12 @@ class V2PanenConnectedTab extends ConsumerWidget {
       connectedInventoryProvider.select((value) => value.activeRecords),
     );
     final tables = ref.watch(connectedTableProvider).records;
-    final estimasi =
-        state.transfers
-            .where((row) => row.activePlants > 0)
-            .map(
-              (row) => v2PanenEstimasiFromTransfer(
-                row,
-                table: tables
-                    .where((table) => table.id == row.tableId)
-                    .firstOrNull,
-                sowings: sowings,
-                inventaris: inventaris,
-              ),
-            )
-            .toList()
-          ..sort((a, b) {
-            if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
-            return a.hariLagi.compareTo(b.hariLagi);
-          });
+    final estimasi = v2DaftarEstimasiPanen(
+      transfers: state.transfers,
+      tables: tables,
+      sowings: sowings,
+      inventaris: inventaris,
+    );
     final riwayat = state.records
         .map(
           (record) => v2PanenItemFromRecord(
@@ -189,7 +216,10 @@ class V2PanenConnectedTab extends ConsumerWidget {
     List<V2PanenEstimasi> pilihan,
   ) async {
     final hasil = await Navigator.of(context).push<V2PanenItem>(
-      V2PanenFormPage.route(pilihan: pilihan, initialDate: jakartaToday()),
+      V2PanenFormPage.route(
+        pilihan: pilihan,
+        initialDate: jakartaToday(),
+      ),
     );
     if (hasil == null) return;
     final transferId = hasil.transferId;
@@ -247,6 +277,20 @@ void _pesan(BuildContext context, String pesan) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(pesan)));
+}
+
+/// Berat terjual satu panen dari stok batch penjualan yang sudah dimuat.
+///
+/// Endpoint panen tidak mengembalikan angka terjual, jadi dihitung dari
+/// `stokTersedia` batch (`BatchPanen` = berat layak − terjual). BUG-43.
+double v2TerjualDariBatch(
+  HarvestRecord record,
+  List<BatchPanen> batches,
+) {
+  final batch = batches.where((row) => row.id == record.id).firstOrNull;
+  if (batch == null) return 0;
+  final terjual = _kg(record.saleable) - batch.stokTersedia;
+  return terjual > 0 ? terjual : 0;
 }
 
 /// Detail panen yang menyimpan koreksi berat ke backend.
@@ -319,7 +363,9 @@ class _V2PanenConnectedDetailPageState
     final tables = ref.read(connectedTableProvider).records;
     final transfers = ref.read(v2AllTransfersProvider).valueOrNull ?? const [];
     final sowings = ref.read(v2AllSowingsProvider).valueOrNull ?? const [];
-    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
+    final inventaris = ref
+        .read(connectedInventoryProvider)
+        .activeRecords;
     final hasil = v2PanenItemFromRecord(
       terbaru,
       transfers: transfers,
@@ -331,8 +377,58 @@ class _V2PanenConnectedDetailPageState
     return hasil;
   }
 
+  /// Hitung ulang berat terjual dari stok batch penjualan yang sudah dimuat.
+  ///
+  /// Endpoint panen tidak mengembalikan angka terjual, jadi sisa dihitung dari
+  /// `stokTersedia` batch (berat layak − terjual). Dengan begitu Detail panen
+  /// ikut berubah setelah penjualan tersimpan (BUG-43).
+  V2PanenItem _denganTerjual(V2PanenItem item) {
+    final record = _record();
+    if (record == null) return item;
+    final batches = ref.watch(
+      penjualanViewModelProvider.select((state) => state.batches),
+    );
+    return item.copyWith(terjual: v2TerjualDariBatch(record, batches));
+  }
+
+  /// Catat penjualan dari Detail panen lewat backend nyata (BUG-42): tanggal
+  /// bawaan hari ini WIB (bukan 15 Nov contoh) dan simpan benar-benar menulis.
+  Future<void> _catatPenjualan() async {
+    final store = ref.read(v2PenjualanStoreProvider);
+    if (store == null) {
+      _pesan(context, 'Tidak punya akses mencatat penjualan.');
+      return;
+    }
+    final item = _denganTerjual(_item);
+    final hasil = await Navigator.of(context).push<V2Penjualan>(
+      V2PenjualanFormPage.route(
+        panen: <V2PenjualanPanen>[
+          V2PenjualanPanen(
+            id: item.id,
+            tanggalPanen: item.tanggal,
+            sisaKg: item.sisa,
+          ),
+        ],
+        store: store,
+        initialDate: jakartaToday(),
+      ),
+    );
+    if (!mounted || hasil == null) return;
+    // Penjualan mengurangi stok batch; provider penjualan sudah dimuat ulang
+    // oleh store, jadi cukup bangun ulang supaya sisa/terjual ikut berubah.
+    setState(() {});
+    _pesan(context, 'Penjualan dicatat.');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return V2PanenDetailPage(item: _item, onUbah: _simpan);
+    // Jaga viewmodel panen tetap hidup selama halaman terbuka (autoDispose) dan
+    // bangun ulang saat daftar panen berubah.
+    ref.watch(panenViewModelProvider.select((state) => state.records));
+    return V2PanenDetailPage(
+      item: _denganTerjual(_item),
+      onUbah: _simpan,
+      onCatatPenjualan: _catatPenjualan,
+    );
   }
 }

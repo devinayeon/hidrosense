@@ -8,10 +8,10 @@ import 'v2_inventaris_data.dart';
 
 /// Baris stok di dalam `Grup daftar` (frame 4.1, 4.8, 4.9, 4.28).
 ///
-/// Semua baris dipaku 80 tinggi seperti komponen `StockItem`: lead 40 berikon
-/// jenis, judul nama barang, subjudul jenis, lalu jumlah di kanan dengan badge
-/// keadaan (`Menipis`/`Habis`). Baris tanpa badge mengisi 72 alami, jadi
-/// `SizedBox(height: 80)` dipakai supaya tinggi semua baris sama.
+/// Semua baris memakai tinggi minimum 80 seperti komponen `StockItem`. Tinggi
+/// minimum, bukan tetap, supaya nama barang dan lencana keadaan tidak terpotong
+/// pada skala teks besar (BUG-24). Lead 40 berikon jenis, judul nama barang,
+/// subjudul jenis, lalu jumlah di kanan dengan badge keadaan (`Menipis`/`Habis`).
 ///
 /// Barang arsip (frame 4.28) memakai nada `#4B5563` untuk ikon dan tulisan
 /// dengan lead tetap biru muda, tanpa badge; bentuk itu digambar di sini
@@ -25,7 +25,6 @@ class V2InventarisRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 80 adalah tinggi minimum; huruf besar atau lencana membuat baris tumbuh.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 80),
       child: item.arsip ? _archived() : _active(),

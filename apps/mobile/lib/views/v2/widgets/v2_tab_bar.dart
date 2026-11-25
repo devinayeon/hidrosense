@@ -44,8 +44,9 @@ class V2TabBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Tinggi 56 hanyalah minimum: pada skala huruf besar label tumbuh
-            // dan bilah ikut menjadi lebih tinggi, bukan meluap.
+            // Tinggi minimum 56 (bukan tetap): pada skala teks sistem besar
+            // label ikut membesar dan bilah boleh tumbuh, asal tidak meluber
+            // (BUG-20).
             ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 56),
               child: Row(
@@ -79,38 +80,33 @@ class _Tab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = active ? V2Colors.ink : V2Colors.muted;
-    // Lima label berbagi lebar layar; skala huruf dibatasi 1,3 supaya
-    // "Lainnya" tetap muat di layar 320 dp.
-    final content = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.3,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: 56,
-            height: 32,
-            decoration: BoxDecoration(
-              color: active ? V2Colors.lime400 : Colors.transparent,
-              borderRadius: BorderRadius.circular(V2Radius.pill),
-            ),
-            child: Center(
-              child: V2Icon(item.icon, size: V2Icons.size, color: foreground),
-            ),
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 56,
+          height: 32,
+          decoration: BoxDecoration(
+            color: active ? V2Colors.lime400 : Colors.transparent,
+            borderRadius: BorderRadius.circular(V2Radius.pill),
           ),
-          const SizedBox(height: V2Space.xs),
-          Text(
-            item.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: V2Type.label.copyWith(
-              color: foreground,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            ),
+          child: Center(
+            child: V2Icon(item.icon, size: V2Icons.size, color: foreground),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: V2Space.xs),
+        Text(
+          item.label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: V2Type.label.copyWith(
+            color: foreground,
+            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+      ],
     );
 
     if (onTap == null) return content;

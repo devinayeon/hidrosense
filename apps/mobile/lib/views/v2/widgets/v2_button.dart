@@ -14,10 +14,11 @@ class V2Button extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.type = V2ButtonType.primary,
-    this.state = V2ButtonState.normal,
+    V2ButtonState state = V2ButtonState.normal,
+    bool loading = false,
     this.icon,
     this.expand = true,
-  });
+  }) : state = loading ? V2ButtonState.loading : state;
 
   final String label;
   final VoidCallback? onPressed;

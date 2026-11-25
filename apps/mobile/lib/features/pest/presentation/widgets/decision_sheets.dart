@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
+import '../../../../data/models/inventory_record.dart';
 import '../../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../../viewmodels/session_viewmodel.dart';
 import '../../data/pest_models.dart';
@@ -17,20 +18,51 @@ class StockOption {
   final String unit;
 }
 
+/// Jenis inventaris yang boleh dipotong saat menerima rekomendasi (D-29).
+///
+/// Hanya nutrisi dan obat yang dipakai untuk perawatan; benih, media, dan
+/// jenis lain tidak ditawarkan supaya stok tanam tidak ikut terpotong.
+///
+/// Nama jenis mengikuti data nyata (mis. `Nutrisi`, `Obat & Pestisida`), jadi
+/// pencocokan memakai kata kunci, bukan nama persis. Keputusan D-31.
+const Set<String> jenisPotongStok = <String>{'nutrisi', 'obat'};
+
+bool _jenisCocok(String category) {
+  final jenis = category.trim().toLowerCase();
+  if (jenis.isEmpty) return false;
+  return jenis == 'nutrisi' ||
+      jenis.contains('nutrisi') ||
+      jenis == 'obat' ||
+      jenis.contains('obat') ||
+      jenis.contains('pestisida');
+}
+
+/// `true` bila jenis inventaris boleh dipotong dari rekomendasi (D-29).
+///
+/// Nama jenis dari server bisa `Obat & Pestisida`, bukan hanya `obat`.
+bool bolehPotongStok(String category) => _jenisCocok(category);
+
+/// `true` bila satu baris inventaris boleh dipotong (D-31).
+///
+/// Barang yang punya `id_obat` dikenali sebagai obat lewat pengenal stabil,
+/// jadi tidak bergantung pada ejaan nama jenis.
+bool bolehPotongStokRecord(InventoryRecord item) =>
+    item.medicineId != null || _jenisCocok(item.category);
+
+/// Daftar stok yang boleh dipilih dari [records] aktif (D-29/D-31).
+List<StockOption> stockOptionsDari(Iterable<InventoryRecord> records) => <StockOption>[
+  for (final r in records)
+    if (r.active && bolehPotongStokRecord(r))
+      StockOption(id: r.id, name: r.name, unit: r.unit),
+];
+
 /// Barang aktif dari inventaris yang sudah dimuat aplikasi. Kosong bila pengguna tidak boleh
 /// memotong stok (backend mensyaratkan `inventaris:write`) atau belum ada sesi: provider
 /// inventaris melempar galat tanpa sesi, dan itu tidak boleh meruntuhkan halaman rekomendasi.
 List<StockOption> stockOptions(WidgetRef ref) {
-  final permissions =
-      ref.watch(sessionProvider.select((s) => s.user?.permissions)) ??
-      const <String>[];
-  if (!permissions.contains('inventaris:read') ||
-      !permissions.contains('inventaris:write'))
-    return const [];
-  return [
-    for (final r in ref.watch(connectedInventoryProvider).records)
-      if (r.active) StockOption(id: r.id, name: r.name, unit: r.unit),
-  ];
+  final permissions = ref.watch(sessionProvider.select((s) => s.user?.permissions)) ?? const <String>[];
+  if (!permissions.contains('inventaris:read') || !permissions.contains('inventaris:write')) return const [];
+  return stockOptionsDari(ref.watch(connectedInventoryProvider).records);
 }
 
 /// Isi lembar terima: catatan dan bahan dari stok (keduanya opsional).
@@ -78,10 +110,7 @@ class _AcceptSheetState extends State<_AcceptSheet> {
   @override
   Widget build(BuildContext context) {
     final item = _item;
-    final amountError =
-        item != null &&
-            _amount.text.trim().isNotEmpty &&
-            normalizeQuantity(_amount.text) == null
+    final amountError = item != null && _amount.text.trim().isNotEmpty && normalizeQuantity(_amount.text) == null
         ? 'Isi angka lebih dari 0, paling banyak 2 desimal.'
         : null;
     return Padding(
@@ -95,60 +124,44 @@ class _AcceptSheetState extends State<_AcceptSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Pakai ${widget.recommendation.medicine.activeIngredient}?',
-              style: V2Type.h2,
-            ),
+            Text('Pakai ${widget.recommendation.medicine.activeIngredient}?', style: V2Type.h2),
             const SizedBox(height: V2Space.sm),
-            const Text(
-              'Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.',
-              style: V2Type.body,
-            ),
+            const Text('Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.', style: V2Type.body),
             if (widget.stock.isNotEmpty) ...[
               const SizedBox(height: V2Space.md),
               DropdownButtonFormField<String?>(
                 initialValue: item?.id,
-                decoration: const InputDecoration(
-                  labelText: 'Potong dari stok (opsional)',
-                ),
+                decoration: const InputDecoration(labelText: 'Potong dari stok (opsional)'),
                 items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Tidak memakai stok'),
-                  ),
-                  for (final o in widget.stock)
-                    DropdownMenuItem<String?>(
-                      value: o.id,
-                      child: Text('${o.name} (${o.unit})'),
-                    ),
+                  const DropdownMenuItem<String?>(value: null, child: Text('Tidak memakai stok')),
+                  for (final o in widget.stock) DropdownMenuItem<String?>(value: o.id, child: Text('${o.name} (${o.unit})')),
                 ],
                 onChanged: (id) => setState(() {
-                  _item = id == null
-                      ? null
-                      : widget.stock.firstWhere((o) => o.id == id);
+                  _item = id == null ? null : widget.stock.firstWhere((o) => o.id == id);
                 }),
               ),
               if (item != null)
                 TextField(
                   controller: _amount,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'Jumlah (${item.unit})',
-                    errorText: amountError,
-                  ),
+                  decoration: InputDecoration(labelText: 'Jumlah (${item.unit})', errorText: amountError),
                 ),
+            ] else ...[
+              const SizedBox(height: V2Space.md),
+              // Bila tidak ada stok nutrisi/obat, jelaskan kenapa pilihan potong
+              // stok tidak muncul alih-alih diam saja (D-29).
+              const Text(
+                'Belum ada stok nutrisi atau obat yang bisa dipotong.',
+                style: V2Type.caption,
+              ),
             ],
             TextField(
               controller: _note,
               maxLength: 500,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Catatan (opsional)',
-              ),
+              decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
             ),
             const SizedBox(height: V2Space.md),
             V2Button(
@@ -163,11 +176,7 @@ class _AcceptSheetState extends State<_AcceptSheet> {
                         note: note.isEmpty ? null : note,
                         material: chosen == null
                             ? null
-                            : StockLineDraft(
-                                inventoryId: chosen.id,
-                                amount: normalizeQuantity(_amount.text)!,
-                                unit: chosen.unit,
-                              ),
+                            : StockLineDraft(inventoryId: chosen.id, amount: normalizeQuantity(_amount.text)!, unit: chosen.unit),
                       ));
                     }
                   : null,
@@ -180,44 +189,45 @@ class _AcceptSheetState extends State<_AcceptSheet> {
 }
 
 /// Kartu rekomendasi yang membuka lembar terima/tolak lalu memanggil ViewModel.
-class DecidableRecommendationCard extends StatelessWidget {
+///
+/// Konsumer Riverpod karena "Terima" dengan potong stok mengubah saldo di server:
+/// daftar stok, kartu "Stok menipis" di Beranda dan detail barang membaca
+/// `connectedInventoryProvider`, jadi provider itu harus dimuat ulang supaya
+/// angkanya tidak tertinggal (BUG-23).
+class DecidableRecommendationCard extends ConsumerWidget {
   const DecidableRecommendationCard({
     super.key,
     required this.recommendation,
     required this.onAccept,
     required this.onReject,
     this.stock = const [],
+    this.collapsible = false,
   });
 
   final PestRecommendation recommendation;
-  final Future<String?> Function(
-    String id, {
-    String? note,
-    List<StockLineDraft> materials,
-  })
-  onAccept;
+  final Future<String?> Function(String id, {String? note, List<StockLineDraft> materials}) onAccept;
   final List<StockOption> stock;
-  final Future<String?> Function(String id, RejectReason reason, {String? note})
-  onReject;
+  final Future<String?> Function(String id, RejectReason reason, {String? note}) onReject;
+
+  /// Teruskan ke [RecommendationCard]: ringkasan yang bisa dibuka (BUG-32).
+  final bool collapsible;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final id = recommendation.id;
     return RecommendationCard(
       recommendation: recommendation,
+      collapsible: collapsible,
       onAccept: () async {
-        final decision = await showAcceptSheet(
-          context,
-          recommendation,
-          stock: stock,
-        );
+        final decision = await showAcceptSheet(context, recommendation, stock: stock);
         if (decision == null) return null;
         final material = decision.material;
-        return onAccept(
-          id,
-          note: decision.note,
-          materials: material == null ? const [] : [material],
-        );
+        final error = await onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+        // Sukses + ada bahan = saldo berkurang di server; muat ulang daftar/saldo.
+        if (error == null && material != null) {
+          ref.invalidate(connectedInventoryProvider);
+        }
+        return error;
       },
       onReject: () async {
         final picked = await showRejectSheet(context);
@@ -229,9 +239,7 @@ class DecidableRecommendationCard extends StatelessWidget {
 }
 
 /// Lembar alasan penolakan. Kembali null bila dibatalkan.
-Future<({RejectReason reason, String? note})?> showRejectSheet(
-  BuildContext context,
-) {
+Future<({RejectReason reason, String? note})?> showRejectSheet(BuildContext context) {
   return showModalBottomSheet<({RejectReason reason, String? note})>(
     context: context,
     isScrollControlled: true,
@@ -299,9 +307,7 @@ class _RejectSheetState extends State<_RejectSheet> {
               maxLines: 3,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: _reason?.requiresNote == true
-                    ? 'Catatan (wajib)'
-                    : 'Catatan (opsional)',
+                labelText: _reason?.requiresNote == true ? 'Catatan (wajib)' : 'Catatan (opsional)',
               ),
             ),
             const SizedBox(height: V2Space.md),
@@ -312,10 +318,7 @@ class _RejectSheetState extends State<_RejectSheet> {
               onPressed: _valid
                   ? () {
                       final note = _note.text.trim();
-                      Navigator.of(context).pop((
-                        reason: _reason!,
-                        note: note.isEmpty ? null : note,
-                      ));
+                      Navigator.of(context).pop((reason: _reason!, note: note.isEmpty ? null : note));
                     }
                   : null,
             ),

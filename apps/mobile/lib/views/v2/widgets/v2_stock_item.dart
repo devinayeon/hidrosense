@@ -50,6 +50,37 @@ class V2StockItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (leadBackground, leadColor) = _lead;
+    final lead = Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(color: leadBackground, shape: BoxShape.circle),
+      child: Center(
+        child: V2Icon(icon, size: iconSize, color: leadColor),
+      ),
+    );
+    final judul = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: V2Type.bodyStrong,
+        ),
+        const SizedBox(height: V2Space.xs),
+        Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: V2Type.label.copyWith(color: V2Colors.muted),
+        ),
+      ],
+    );
+    // Di skala teks besar jumlah dan lencana tidak muat di kanan judul. Pindahkan
+    // keduanya ke baris sendiri dan biarkan `Wrap` menurunkan lencana, bukan
+    // meluber keluar kartu (BUG-24).
+    final besar = MediaQuery.textScalerOf(context).scale(16) >= 24;
     final content = Padding(
       padding:
           contentPadding ??
@@ -57,73 +88,69 @@ class V2StockItem extends StatelessWidget {
             horizontal: V2Space.lg,
             vertical: V2Space.md,
           ),
-      child: LayoutBuilder(
-        builder: (context, constraints) => Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: leadBackground,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: V2Icon(icon, size: iconSize, color: leadColor),
-              ),
-            ),
-            const SizedBox(width: V2Space.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: V2Type.bodyStrong,
-                  ),
-                  const SizedBox(height: V2Space.xs),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: V2Type.label.copyWith(color: V2Colors.muted),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: V2Space.md),
-            // Kolom kanan (jumlah + lencana) dibatasi separuh lebar baris supaya
-            // judul di kiri tetap punya ruang; selebihnya teks membungkus atau
-            // dipotong, tidak meluap.
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: constraints.hasBoundedWidth
-                    ? constraints.maxWidth * 0.55
-                    : double.infinity,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    quantity,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: V2Type.bodyStrong,
-                  ),
-                  if (badge != null) ...[
-                    const SizedBox(height: V2Space.xs),
-                    badge!,
+      child: besar
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    lead,
+                    const SizedBox(width: V2Space.md),
+                    Expanded(child: judul),
                   ],
+                ),
+                const SizedBox(height: V2Space.sm),
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: V2Space.md,
+                  runSpacing: V2Space.xs,
+                  children: [
+                    Text(quantity, style: V2Type.bodyStrong),
+                    ?badge,
+                  ],
+                ),
+              ],
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) => Row(
+                children: [
+                  lead,
+                  const SizedBox(width: V2Space.md),
+                  Expanded(child: judul),
+                  const SizedBox(width: V2Space.md),
+                  // Kolom kanan (jumlah + lencana) dibatasi separuh lebar baris
+                  // supaya judul di kiri tetap punya ruang di layar sempit;
+                  // selebihnya teks membungkus atau dipotong, tidak meluap.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.hasBoundedWidth
+                          ? constraints.maxWidth * 0.55
+                          : double.infinity,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          quantity,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: V2Type.bodyStrong,
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(height: V2Space.xs),
+                          badge!,
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
 
     final wrapped = InkWell(

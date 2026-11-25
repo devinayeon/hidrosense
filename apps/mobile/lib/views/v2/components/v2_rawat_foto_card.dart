@@ -5,8 +5,9 @@ import 'v2_rawat_assets.dart';
 
 /// Kartu biru “Cek hama” di puncak tab Rawat (frame 9.1).
 ///
-/// Tinggi tetap 136: ilustrasi 88 di kotak biru muda bersudut 24, lalu teks
-/// “Cek hama” 28/36 dan ajakan 14/20, keduanya putih.
+/// Tinggi minimum 136: ilustrasi 88 di kotak biru muda bersudut 24, lalu teks
+/// “Cek hama” 28/36 dan ajakan 14/20, keduanya putih. Tinggi minimum, bukan
+/// tetap, supaya ajakan tidak terpotong pada skala teks besar (BUG-24).
 class V2RawatCekHamaCard extends StatelessWidget {
   const V2RawatCekHamaCard({super.key, this.onTap});
 
@@ -38,7 +39,7 @@ class V2RawatCekHamaCard extends StatelessWidget {
           const SizedBox(width: V2Space.lg),
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -87,7 +88,8 @@ class V2RawatFotoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
+      constraints: BoxConstraints(minHeight: height),
+      padding: const EdgeInsets.symmetric(vertical: V2Space.sm),
       decoration: BoxDecoration(
         color: V2Colors.gray200,
         borderRadius: BorderRadius.circular(V2Radius.card),

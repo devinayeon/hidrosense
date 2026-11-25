@@ -10,14 +10,17 @@ import 'v2_semaian_connected.dart';
 /// Galeri tetap memakai tiap `*TabView` sendiri per frame; halaman beranda
 /// tersambung memakai pembungkus ini supaya ketiga segmen bisa dibuka.
 class V2TanamConnectedTab extends StatefulWidget {
-  const V2TanamConnectedTab({super.key});
+  const V2TanamConnectedTab({super.key, this.initialSegmen = 0});
+
+  /// Segmen yang dibuka lebih dulu: 0 Semaian, 1 Meja, 2 Panen.
+  final int initialSegmen;
 
   @override
   State<V2TanamConnectedTab> createState() => _V2TanamConnectedTabState();
 }
 
 class _V2TanamConnectedTabState extends State<V2TanamConnectedTab> {
-  int _segmen = 0;
+  late int _segmen = widget.initialSegmen;
 
   void _pilihSegmen(int index) {
     if (index == _segmen) return;

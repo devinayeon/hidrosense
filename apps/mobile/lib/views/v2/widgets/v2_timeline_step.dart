@@ -8,7 +8,9 @@ enum V2TimelineState { done, active, pending }
 /// Satu langkah linimasa dari component set `TimelineStep` (342x56).
 ///
 /// Marker 32px, judul 16/24, dan sub 14/20. Tidak ada garis penghubung antar
-/// langkah: jarak antar langkah diatur pemanggil (gap 8 di frame 2.7).
+/// langkah: jarak antar langkah diatur pemanggil (gap 8 di frame 2.7). Tinggi
+/// 56 hanya minimum supaya judul dan sub tidak saling menimpa pada skala teks
+/// besar (BUG-24).
 class V2TimelineStep extends StatelessWidget {
   const V2TimelineStep({
     super.key,
@@ -38,9 +40,11 @@ class V2TimelineStep extends StatelessWidget {
       ),
     };
 
-    return SizedBox(
-      height: 56,
+    return Container(
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(vertical: V2Space.xs),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 32,

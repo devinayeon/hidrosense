@@ -353,7 +353,10 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 4));
 
         expect(find.text('Sinkron selesai'), findsNothing);
-        expect(find.text('Offline. Data tersimpan di HP.'), findsOneWidget);
+        expect(
+          find.text('Tidak ada koneksi internet. Data tersimpan di HP.'),
+          findsOneWidget,
+        );
         expect(find.text('--.--'), findsNothing); // tidak lagi di ringkasan
       },
     );

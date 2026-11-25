@@ -341,11 +341,12 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
                   seedCount: input.seedCount,
                   note: input.note,
                   materials: [
-                    {
-                      'id_inventaris': input.inventoryId!,
-                      'jumlah': input.amount,
-                      'satuan': input.unit,
-                    },
+                    for (final bahan in input.daftarBahan)
+                      {
+                        'id_inventaris': bahan.inventoryId,
+                        'jumlah': bahan.amount,
+                        'satuan': bahan.unit,
+                      },
                   ],
                   idempotencyKey: command.key,
                 )

@@ -34,15 +34,18 @@ class V2PenjualanInfoCard extends StatelessWidget {
         children: [
           for (var index = 0; index < rows.length; index++) ...[
             if (index > 0) const SizedBox(height: V2Space.md),
-            Row(
+            // `Wrap` supaya nilai yang panjang turun ke baris baru di skala teks
+            // besar, bukan meluber keluar kartu (BUG-24).
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: V2Space.sm,
+              runSpacing: V2Space.xs,
               children: [
-                Expanded(
-                  child: Text(
-                    rows[index].label,
-                    style: V2Type.label.copyWith(color: V2Colors.muted),
-                  ),
+                Text(
+                  rows[index].label,
+                  style: V2Type.label.copyWith(color: V2Colors.muted),
                 ),
-                const SizedBox(width: V2Space.sm),
                 Text(rows[index].value, style: V2Type.bodyStrong),
               ],
             ),

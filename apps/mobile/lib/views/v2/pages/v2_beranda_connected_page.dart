@@ -3,17 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
+import '../../../viewmodels/connected_inventory_viewmodel.dart';
+import '../../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../../viewmodels/session_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
+import '../../../viewmodels/v2_notification_read.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
 import '../../../viewmodels/v2_sync_status.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import '../components/v2_sinkron_data.dart';
 import 'v2_sinkron_page.dart';
+import '../connected/v2_beranda_notifikasi.dart';
 import '../connected/v2_cuaca_connected.dart';
 import '../connected/v2_inventaris_connected.dart';
 import '../connected/v2_rawat_connected.dart';
 import '../connected/v2_tanam_connected.dart';
 import 'v2_beranda_page.dart';
+import 'v2_notifications_page.dart';
 
 /// Beranda v2 yang diisi data nyata (frame 2.1–2.6).
 ///
@@ -44,6 +50,23 @@ class V2BerandaConnectedPage extends ConsumerWidget {
     final lastSync = ref.watch(v2SyncStatusProvider);
     final syncStatus = ref.read(v2SyncStatusProvider.notifier);
     final replayer = ref.watch(v2SyncReplayerProvider);
+    // Provider inventaris/penyemaian melempar saat belum ada sesi; jaga agar
+    // transisi keluar akun tidak membangun notifikasi dari sesi kosong.
+    // Provider penyemaian juga melempar bila peran tidak punya izin baca, jadi
+    // tiap sumber hanya dibaca bila izinnya ada (sama seperti beranda).
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    final permissions = user?.permissions ?? const <String>[];
+    final notifikasi = user == null
+        ? const <V2NotificationGroup>[]
+        : v2BerandaNotifikasi(
+            nursery: permissions.contains('penyemaian:read')
+                ? ref.watch(connectedNurseryProvider).records
+                : const [],
+            inventaris: permissions.contains('inventaris:read')
+                ? ref.watch(connectedInventoryProvider).activeRecords
+                : const [],
+            sudahDibaca: ref.watch(v2NotificationReadProvider),
+          );
     final gagal = syncItems
         .where((item) => item.status == SyncQueueStatus.gagal)
         .length;
@@ -75,7 +98,8 @@ class V2BerandaConnectedPage extends ConsumerWidget {
         final V2PenjualanRepairer repairer => repairer,
         _ => null,
       },
-      tanamTab: const V2TanamConnectedTab(),
+      tanamTabBuilder: (segmen) =>
+          V2TanamConnectedTab(initialSegmen: segmen, key: ValueKey(segmen)),
       stokTabBuilder: (jenis, status) => V2InventarisConnectedTab(
         key: ValueKey('stok-${jenis?.name}-$status'),
         initialJenis: jenis,
@@ -95,6 +119,11 @@ class V2BerandaConnectedPage extends ConsumerWidget {
                 markSynced: syncStatus.markSynced,
               ),
       ),
+      notificationGroups: notifikasi,
+      onNotificationRead: (id) =>
+          ref.read(v2NotificationReadProvider.notifier).markRead(id),
+      onNotificationMarkAllRead: (ids) =>
+          ref.read(v2NotificationReadProvider.notifier).markAll(ids),
       syncLabel: syncItems.isEmpty
           ? (lastSync == null
                 ? 'Belum pernah sinkron'

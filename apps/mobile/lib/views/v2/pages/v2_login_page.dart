@@ -196,7 +196,7 @@ class _V2LoginPageState extends State<V2LoginPage> {
                   ),
                   child: V2Button(
                     label: 'Masuk',
-                    state: _busy ? V2ButtonState.loading : V2ButtonState.normal,
+                    loading: _busy,
                     onPressed: _busy ? null : _submit,
                   ),
                 ),

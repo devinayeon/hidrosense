@@ -397,9 +397,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                   actions: [
                     V2Button(
                       label: 'Simpan',
-                      state: _saving
-                          ? V2ButtonState.loading
-                          : V2ButtonState.normal,
+                      loading: _saving,
                       onPressed: _saving ? null : _save,
                     ),
                   ],

@@ -8,9 +8,11 @@ import 'v2_semaian_data.dart';
 
 /// Baris semaian di dalam `Grup daftar` (frame 5.1, 5.2, 5.6).
 ///
-/// Semua baris dipaku 80 tinggi seperti komponen `StockItem`: lead 40 berikon
-/// tunas, judul nama benih, subjudul `Semai <tanggal>`, lalu HSS di kanan.
-/// Semaian yang siap pindah menambah lencana hijau "Siap pindah" (frame 5.1).
+/// Semua baris memakai tinggi minimum 80 seperti komponen `StockItem` (bukan
+/// tinggi tetap) supaya teks boleh membungkus pada skala teks besar (BUG-24).
+/// Lead 40 berikon tunas, judul nama benih, subjudul `Semai <tanggal>`, lalu HSS
+/// di kanan. Semaian yang siap pindah menambah lencana hijau "Siap pindah"
+/// (frame 5.1).
 ///
 /// Semaian selesai (frame 5.6) digambar sebagai kartu sendiri berlatar
 /// `#E5E8EC` dengan ikon dan tulisan bernada `#4B5563`; ikon lead-nya memudar
@@ -26,11 +28,7 @@ class V2SemaianRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (item.selesai) return _selesai();
-    // 80 adalah tinggi minimum; huruf besar atau lencana membuat baris tumbuh.
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 80),
-      child: _berjalan(),
-    );
+    return _berjalan();
   }
 
   Widget _berjalan() {

@@ -27,8 +27,8 @@ class V2BerandaStats extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = (constraints.maxWidth - V2Space.lg) / 2;
-        // Kedua petak selalu setinggi yang tertinggi, juga saat huruf besar
-        // membuat satu petak tumbuh.
+        // `IntrinsicHeight` + `stretch` menyamakan tinggi kedua petak walau
+        // salah satu teksnya membungkus lebih banyak baris (BUG-20).
         return IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,

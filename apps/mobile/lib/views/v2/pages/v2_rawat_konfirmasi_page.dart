@@ -37,7 +37,8 @@ class V2RawatKonfirmasiPage extends StatefulWidget {
   });
 
   /// Frame `9.21 Konfirmasi perawatan`: 1 botol Obat Nabati.
-  const V2RawatKonfirmasiPage.biasa({Key? key}) : this(key: key);
+  const V2RawatKonfirmasiPage.biasa({Key? key})
+    : this(key: key);
 
   /// Frame `9.22 Stok obat kurang`: 2 botol, stok hanya 1.
   const V2RawatKonfirmasiPage.stokKurang({Key? key})
@@ -59,8 +60,11 @@ class V2RawatKonfirmasiPage extends StatefulWidget {
     ValueChanged<V2RawatItem>? onSaved,
   }) {
     return MaterialPageRoute<void>(
-      builder: (_) =>
-          V2RawatKonfirmasiPage(hama: hama, obat: obat, onSaved: onSaved),
+      builder: (_) => V2RawatKonfirmasiPage(
+        hama: hama,
+        obat: obat,
+        onSaved: onSaved,
+      ),
     );
   }
 
@@ -78,8 +82,20 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
 
   bool get _stokKurang => _jumlah > _obat.stok;
 
+  /// Ketik langsung jumlah botol, atau lewat minus/plus (BUG-37).
+  void _setJumlah(int value) {
+    if (value < 1) return;
+    setState(() {
+      _jumlah = value;
+      _berubah = true;
+    });
+  }
+
   Future<void> _pilihTanggal() async {
-    final hasil = await showV2SemaianDateSheet(context, selected: _tanggal);
+    final hasil = await showV2SemaianDateSheet(
+      context,
+      selected: _tanggal,
+    );
     if (!mounted || hasil == null) return;
     setState(() {
       _tanggal = hasil;
@@ -142,7 +158,8 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                   V2RawatOptionRow(
                     label: pilihan[index],
                     selected: pilihan[index] == draft,
-                    onTap: () => setSheetState(() => draft = pilihan[index]),
+                    onTap: () =>
+                        setSheetState(() => draft = pilihan[index]),
                   ),
                 ],
               ],
@@ -193,7 +210,10 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                 bottom: false,
                 child: Column(
                   children: [
-                    V2AppBar(title: 'Konfirmasi perawatan', onBack: _kembali),
+                    V2AppBar(
+                      title: 'Konfirmasi perawatan',
+                      onBack: _kembali,
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         physics: const ClampingScrollPhysics(),
@@ -236,7 +256,10 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                     ),
                     V2ActionBar(
                       actions: [
-                        V2Button(label: 'Konfirmasi', onPressed: _konfirmasi),
+                        V2Button(
+                          label: 'Konfirmasi',
+                          onPressed: _konfirmasi,
+                        ),
                       ],
                     ),
                   ],
@@ -254,26 +277,28 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Jumlah obat', style: V2Type.label.copyWith(color: V2Colors.ink)),
+        Text(
+          'Jumlah obat',
+          style: V2Type.label.copyWith(color: V2Colors.ink),
+        ),
         const SizedBox(height: V2Space.sm),
         V2QtyField(
           value: _jumlah,
           unit: 'botol',
           error: _stokKurang,
-          onMinus: () => setState(() {
-            if (_jumlah > 1) _jumlah -= 1;
-            _berubah = true;
-          }),
-          onPlus: () => setState(() {
-            _jumlah += 1;
-            _berubah = true;
-          }),
+          onChanged: _setJumlah,
+          onMinus: () => _setJumlah(_jumlah - 1),
+          onPlus: () => _setJumlah(_jumlah + 1),
         ),
         if (_stokKurang) ...[
           const SizedBox(height: V2Space.sm),
           Row(
             children: [
-              const V2Icon(V2IconName.error, size: 16, color: V2Colors.red700),
+              const V2Icon(
+                V2IconName.error,
+                size: 16,
+                color: V2Colors.red700,
+              ),
               const SizedBox(width: V2Space.sm),
               Text(
                 'Stok hanya ${_obat.stok} botol',
@@ -286,17 +311,24 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
     );
   }
 
-  /// Kartu 120 “Stok berkurang” (frame 9.21/9.28).
+  /// Kartu 120 “Stok berkurang” (frame 9.21/9.28). Tinggi minimum supaya
+  /// kalimat sisa obat tidak terpotong pada skala teks besar (BUG-24).
   Widget _kartuStok() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(V2Space.xl, V2Space.xl, V2Space.xl, 0),
+      constraints: const BoxConstraints(minHeight: 120),
+      padding: const EdgeInsets.fromLTRB(
+        V2Space.xl,
+        V2Space.xl,
+        V2Space.xl,
+        V2Space.xl,
+      ),
       decoration: BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.card),
         boxShadow: V2Shadow.card,
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Stok berkurang', style: V2Type.h2),

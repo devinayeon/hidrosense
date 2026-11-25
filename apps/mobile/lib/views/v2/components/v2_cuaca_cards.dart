@@ -32,9 +32,9 @@ class V2CuacaLokasiHeader extends StatelessWidget {
         Flexible(
           child: Text(
             lokasi,
+            style: V2Type.bodyStrong,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: V2Type.bodyStrong,
           ),
         ),
         const SizedBox(width: V2Space.xs),
@@ -46,6 +46,8 @@ class V2CuacaLokasiHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Tinggi minimum 48 (bukan tetap): nama lokasi boleh membungkus dan
+        // baris ikut tinggi saat skala teks sistem besar (BUG-20).
         ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 48),
           child: onTap == null
@@ -151,32 +153,26 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Nilai (mis. "8 km/jam Dari arah Barat Daya") dibatasi 60% lebar baris
-    // dan boleh dua baris; label di kiri mengambil sisanya.
-    return LayoutBuilder(
-      builder: (context, constraints) => Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: V2Type.label.copyWith(color: V2Colors.muted),
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Kedua sisi fleksibel: label panjang atau nilai panjang membungkus
+        // alih-alih meluber saat skala teks sistem besar (BUG-20).
+        Expanded(
+          child: Text(
+            label,
+            style: V2Type.label.copyWith(color: V2Colors.muted),
           ),
-          const SizedBox(width: V2Space.sm),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
-            child: Text(
-              value,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: V2Type.bodyStrong,
-            ),
+        ),
+        const SizedBox(width: V2Space.sm),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: V2Type.bodyStrong,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

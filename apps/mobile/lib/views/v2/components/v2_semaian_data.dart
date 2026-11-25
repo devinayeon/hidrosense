@@ -70,6 +70,25 @@ const List<String> labelChipSemaian = <String>[
 ];
 
 /// Satu baris semaian.
+/// Satu bahan yang benar-benar dipakai saat menyemai; dikirim ke backend
+/// sebagai satu baris `materials[]` (kontrak BUG-38).
+class V2SemaianBahanPakai {
+  const V2SemaianBahanPakai({
+    required this.nama,
+    required this.jumlah,
+    required this.satuan,
+    this.inventoryId,
+  });
+
+  final String nama;
+  final int jumlah;
+  final String satuan;
+  final String? inventoryId;
+
+  /// `Benih Romaine 2 pak`.
+  String get label => 'Benih $nama $jumlah $satuan';
+}
+
 class V2SemaianItem {
   const V2SemaianItem({
     required this.id,
@@ -88,6 +107,7 @@ class V2SemaianItem {
     this.bahanInventoryId,
     this.bahanAmount,
     this.bahanUnit,
+    this.bahanList,
   });
 
   final String id;
@@ -141,6 +161,10 @@ class V2SemaianItem {
   final String? bahanAmount;
   final String? bahanUnit;
 
+  /// Semua bahan yang dipakai saat menyemai (form 5.7 bisa lebih dari satu
+  /// baris). Null berarti bahan tunggal dari [bahanInventoryId]/[bahanAmount].
+  final List<V2SemaianBahanPakai>? bahanList;
+
   /// Umur semaian dalam hari (HSS).
   int get hss => hssDariServer ?? hssSemaian(tanggalSemai);
 
@@ -165,7 +189,13 @@ class V2SemaianItem {
       : '$nama, sisa $sisaBenih dari $jumlahBenih benih';
 
   /// `Stok terpakai: Benih Romaine 2 pak` (baris Extra kartu detail).
-  String get labelStokTerpakai => 'Stok terpakai: Benih $nama $jumlahBahan pak';
+  String get labelStokTerpakai {
+    final daftar = bahanList;
+    if (daftar != null && daftar.isNotEmpty) {
+      return 'Stok terpakai: ${daftar.map((item) => item.label).join(', ')}';
+    }
+    return 'Stok terpakai: Benih $nama $jumlahBahan pak';
+  }
 
   /// `Sudah pindah: 120 ke Meja A3` atau `Pindah 120 ke Meja A3. 80 tidak
   /// dipindah.` (baris Extra kartu detail setelah pindah).
@@ -201,6 +231,7 @@ class V2SemaianItem {
     String? bahanInventoryId,
     String? bahanAmount,
     String? bahanUnit,
+    List<V2SemaianBahanPakai>? bahanList,
     bool hapusSisaBenih = false,
   }) {
     return V2SemaianItem(
@@ -219,6 +250,7 @@ class V2SemaianItem {
       bahanInventoryId: bahanInventoryId ?? this.bahanInventoryId,
       bahanAmount: bahanAmount ?? this.bahanAmount,
       bahanUnit: bahanUnit ?? this.bahanUnit,
+      bahanList: bahanList ?? this.bahanList,
     );
   }
 }
@@ -399,6 +431,23 @@ class V2SemaianMeja {
   }
 }
 
+/// Urutan daftar meja di form "Pindah ke meja" (D-27).
+///
+/// Meja tersedia lebih dulu, di antaranya sisa lubang kosong terbanyak lalu
+/// kode/nama meja; meja penuh/perawatan diletakkan di bawah dan tetap disabled.
+List<V2SemaianMeja> urutkanMejaPindah(List<V2SemaianMeja> meja) {
+  final salinan = List<V2SemaianMeja>.of(meja);
+  salinan.sort((a, b) {
+    if (a.tersedia != b.tersedia) return a.tersedia ? -1 : 1;
+    if (a.tersedia && b.tersedia) {
+      final kosong = b.lubangKosong.compareTo(a.lubangKosong);
+      if (kosong != 0) return kosong;
+    }
+    return a.nama.toLowerCase().compareTo(b.nama.toLowerCase());
+  });
+  return salinan;
+}
+
 /// Pilihan meja form 5.17 dan 5.21: A2 (200 kosong, terpilih) / A3 (120 kosong)
 /// / B1 penuh / D1 perawatan.
 const List<V2SemaianMeja> designMejaPindah = <V2SemaianMeja>[
@@ -426,6 +475,7 @@ class V2SemaianPindah {
     required this.jumlah,
     required this.tanggal,
     this.tableId,
+    this.aksi = V2PindahMejaAksi.selesai,
   });
 
   /// Nama meja tujuan, mis. `Meja A2`.
@@ -437,4 +487,23 @@ class V2SemaianPindah {
 
   /// Identitas meja backend; null untuk pratinjau galeri.
   final String? tableId;
+
+  /// Pilihan tombol di halaman sukses (frame 5.18/5.22). Halaman sukses
+  /// mengembalikan ini ke pemanggil supaya tombolnya tidak mati (BUG-28).
+  final V2PindahMejaAksi aksi;
+}
+
+/// Pilihan aksi di halaman hasil "Pindah ke meja".
+enum V2PindahMejaAksi {
+  /// Tidak ada pilihan khusus; pemanggil cukup menyegarkan tampilan.
+  selesai,
+
+  /// Buka detail meja tujuan (tombol "Lihat meja").
+  lihatMeja,
+
+  /// Kembali ke daftar semaian (tombol "Ke daftar semaian").
+  keDaftarSemaian,
+
+  /// Buka lagi form untuk memindah sisa benih (tombol "Pindahkan sisa").
+  pindahkanSisa,
 }
