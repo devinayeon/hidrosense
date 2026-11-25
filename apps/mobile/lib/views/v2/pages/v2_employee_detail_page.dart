@@ -216,9 +216,7 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
                     V2Button(
                       label: 'Nonaktifkan',
                       type: V2ButtonType.destructive,
-                      state: _busy
-                          ? V2ButtonState.loading
-                          : V2ButtonState.normal,
+                      loading: _busy,
                       onPressed: _busy ? null : _confirmDeactivate,
                     ),
                 ],

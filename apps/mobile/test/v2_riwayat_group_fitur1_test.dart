@@ -52,7 +52,7 @@ void main() {
         totalPages: 1,
       );
 
-    tester.view.physicalSize = const Size(360, 900);
+    tester.view.physicalSize = const Size(360, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(

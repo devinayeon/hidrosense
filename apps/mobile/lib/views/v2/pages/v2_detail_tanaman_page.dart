@@ -339,6 +339,10 @@ class _InfoCard extends StatelessWidget {
           _InfoRow(label: 'Tanaman aktif', value: tanaman.labelAktif),
           const SizedBox(height: V2Space.md),
           _InfoRow(label: 'Pindah', value: tanaman.labelPindah),
+          if (tanaman.keterangan?.trim().isNotEmpty ?? false) ...[
+            const SizedBox(height: V2Space.md),
+            _InfoRow(label: 'Catatan', value: tanaman.keterangan!.trim()),
+          ],
         ],
       ),
     );

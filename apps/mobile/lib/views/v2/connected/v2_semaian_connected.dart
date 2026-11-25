@@ -35,6 +35,14 @@ int _jumlahBahan(String? amount) {
   return value <= 0 ? 1 : value.round();
 }
 
+/// Nama bahan dari inventaris; `Bahan` bila barisnya tak lagi ada di daftar.
+String _namaBahan(List<InventoryRecord> inventaris, String inventoryId) {
+  final item = inventaris
+      .where((row) => row.id == inventoryId)
+      .firstOrNull;
+  return item == null ? 'Bahan' : v2NamaBenih(item.name);
+}
+
 /// Pemetaan satu batch penyemaian backend ke model page 05.
 V2SemaianItem v2SemaianItemFromRecord(
   SowingRecord record, {
@@ -45,6 +53,17 @@ V2SemaianItem v2SemaianItemFromRecord(
       ? null
       : inventaris.where((item) => item.id == material.inventoryId).firstOrNull;
   final pindah = record.seedCount - record.remainingSeedCount;
+  // Semua baris bahan ikut ditampilkan (BUG-44): kartu detail tidak boleh
+  // hanya menyebut bahan pertama.
+  final bahanList = <V2SemaianBahanPakai>[
+    for (final line in record.materials)
+      V2SemaianBahanPakai(
+        nama: _namaBahan(inventaris, line.inventoryId),
+        jumlah: _jumlahBahan(line.amount),
+        satuan: line.unit,
+        inventoryId: line.inventoryId,
+      ),
+  ];
   return V2SemaianItem(
     id: record.id,
     nama: benih == null ? 'Semaian' : v2NamaBenih(benih.name),
@@ -59,6 +78,7 @@ V2SemaianItem v2SemaianItemFromRecord(
     bahanInventoryId: material?.inventoryId,
     bahanAmount: material?.amount,
     bahanUnit: material?.unit,
+    bahanList: bahanList.isEmpty ? null : List.unmodifiable(bahanList),
   );
 }
 

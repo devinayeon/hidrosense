@@ -224,9 +224,8 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                         label: 'Tandai lunas',
                         state: antrean
                             ? V2ButtonState.disabled
-                            : _busy
-                            ? V2ButtonState.loading
                             : V2ButtonState.normal,
+                        loading: !antrean && _busy,
                         onPressed: antrean || _busy ? null : _markPaid,
                       ),
                     V2Button(
