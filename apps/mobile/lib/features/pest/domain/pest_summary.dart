@@ -1,15 +1,16 @@
 import 'yolo_decoder.dart';
 
-/// Tiga kelas hama pada model, sesuai urutan `ml/artifacts/labels.txt` dan tabel `hama` di backend.
+/// Kode hama di aplikasi. Model YOLOv11n terbaru mendeteksi dua kelas target (`modelClasses`:
+/// `0 = whitefly`, `1 = aphids`), sementara nilai `thrips` tetap dipertahankan pada enum agar
+/// riwayat pindaian dan rekomendasi lama dari API backend tetap terbaca tanpa galat.
 ///
-/// Ambang tingkat serangan per hama diambil dari kuantil jumlah hama per foto pada data latih
-/// (ml/data/merged_lettuce_pests/train, 1.245 foto): sedang mulai P75, berat mulai P90. Satu ambang
-/// untuk semua hama salah: median kutu kebul 19 per foto, median thrips 1. Ini acuan statistik dari
-/// foto dataset, bukan ambang ekonomi; pengguna selalu bisa mengubah tingkatnya.
+/// Ambang tingkat serangan diambil dari kuantil jumlah hama per foto positif pada data latih
+/// (`ml/reports/dataset_provenance.json`): sedang mulai P75, berat mulai P90. Pengguna tetap
+/// dapat mengubah tingkat serangan sebelum menyimpan.
 enum PestKind {
   thrips('thrips', 'Thrips', sedangMin: 3, beratMin: 8),
-  whitefly('whitefly', 'Kutu kebul', sedangMin: 33, beratMin: 66),
-  aphids('aphids', 'Kutu daun', sedangMin: 28, beratMin: 52);
+  whitefly('whitefly', 'Kutu kebul', sedangMin: 2, beratMin: 5),
+  aphids('aphids', 'Kutu daun', sedangMin: 2, beratMin: 3);
 
   const PestKind(
     this.apiCode,
@@ -17,6 +18,12 @@ enum PestKind {
     required this.sedangMin,
     required this.beratMin,
   });
+
+  /// Urutan kelas keluaran model TFLite (`ml/artifacts/labels.txt`).
+  static const List<PestKind> modelClasses = [
+    PestKind.whitefly,
+    PestKind.aphids,
+  ];
 
   /// Kode yang dipakai API backend.
   final String apiCode;
@@ -29,10 +36,10 @@ enum PestKind {
   final int beratMin;
 
   static PestKind fromClassId(int id) {
-    if (id < 0 || id >= PestKind.values.length) {
-      throw RangeError('Kelas hama tidak dikenal: $id');
+    if (id < 0 || id >= modelClasses.length) {
+      throw RangeError('Kelas hama tidak dikenal pada model 2 kelas: $id');
     }
-    return PestKind.values[id];
+    return modelClasses[id];
   }
 
   static PestKind? fromApiCode(String code) {

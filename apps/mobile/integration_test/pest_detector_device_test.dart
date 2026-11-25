@@ -26,7 +26,8 @@ void main() {
   tearDownAll(() => detector.dispose());
 
   test('model termuat dengan kontrak tensor dan versi yang benar', () {
-    expect(detector.modelVersion, 'yolo11n-fp16-cd388bda');
+    expect(detector.modelVersion, startsWith('yolo11n-'));
+    expect(detector.defaultConfThreshold, greaterThanOrEqualTo(0.35));
   });
 
   for (final c in goldenCases) {
@@ -46,28 +47,34 @@ void main() {
       }
 
       // Dekoder JPEG Dart dan OpenCV berbeda beberapa tingkat piksel (terukur maks 8 di tes unit),
-      // sehingga skor bergeser beberapa perseratus. Deteksi yang jelas (>= 0,40 di Python) wajib sama;
+      // sehingga skor bergeser beberapa perseratus. Deteksi yang jelas (>= defaultConfThreshold + 0,05) wajib sama;
       // deteksi di tepi ambang wajib muncul lagi bila ambang diturunkan, dengan skor yang dekat.
-      const margin = 0.40;
+      final margin = detector.defaultConfThreshold + 0.05;
       final clear = expected.where((e) => (e[1] as num) >= margin).toList();
       final edge = expected.where((e) => (e[1] as num) < margin).toList();
       final want = perClass(clear.map((e) => e[0] as int));
-      final got = perClass(result.detections.where((d) => d.confidence >= margin - 0.05).map((d) => d.classId));
+      final got = perClass(result.detections.where((d) => d.confidence >= detector.defaultConfThreshold).map((d) => d.classId));
       expect(got.keys.toSet().containsAll(want.keys), isTrue, reason: 'kelas jelas: perangkat $got, Python $want');
       for (final k in want.keys) {
         expect((got[k]! - want[k]!).abs(), lessThanOrEqualTo(1), reason: 'jumlah kelas $k: perangkat ${got[k]}, Python ${want[k]}');
       }
       if (edge.isNotEmpty) {
-        final loose = await detector.detect(bytes, confThreshold: 0.25);
+        final looseThr = (detector.defaultConfThreshold - 0.15).clamp(0.10, 0.90);
+        final loose = await detector.detect(bytes, confThreshold: looseThr);
         for (final e in edge) {
           final cls = e[0] as int;
           final score = (e[1] as num).toDouble();
           final near = loose.detections.where((d) => d.classId == cls && (d.confidence - score).abs() <= 0.05);
-          expect(near, isNotEmpty, reason: 'deteksi tepi ambang kelas $cls (Python $score) tidak muncul di 0,25');
+          expect(near, isNotEmpty, reason: 'deteksi tepi ambang kelas $cls (Python $score) tidak muncul di $looseThr');
         }
       }
       for (final d in result.detections) {
-        expect(d.confidence.isFinite && d.confidence >= 0.35 && d.confidence <= 1, isTrue);
+        expect(
+          d.confidence.isFinite &&
+              d.confidence >= detector.defaultConfThreshold &&
+              d.confidence <= 1,
+          isTrue,
+        );
       }
       // ignore: avoid_print
       print('LATENSI ${c['source']}: ${watch.elapsedMilliseconds} ms, deteksi ${result.detections.length}');

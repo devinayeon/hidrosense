@@ -45,9 +45,9 @@ final _png = Uint8List.fromList(const [
   0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
 ]);
 
-PestScanResult _result(int thrips) {
+PestScanResult _result(int whiteflies) {
   final dets = [
-    for (var i = 0; i < thrips; i++)
+    for (var i = 0; i < whiteflies; i++)
       const YoloDetection(classId: 0, confidence: 0.9, x1: 0.1, y1: 0.1, x2: 0.2, y2: 0.2),
   ];
   return PestScanResult(findings: summarizeDetections(dets), detections: dets, modelVersion: 'm');
@@ -58,7 +58,7 @@ const _petani = ['deteksi:write', 'rekomendasi:read', 'rekomendasi:decide', 'per
 Future<FakeRepo> pumpPage(
   WidgetTester tester, {
   List<String> permissions = _petani,
-  int thrips = 2,
+  int whiteflies = 2,
   FakeRepo? repo,
   Future<Uint8List?> Function(ImageSource)? pick,
   double textScale = 1,
@@ -76,7 +76,7 @@ Future<FakeRepo> pumpPage(
       sessionProvider.overrideWith((ref) => _Session(api, user(permissions))),
       connectedTableProvider.overrideWith((ref) => _Tables(TableRepository(api), const [_table])),
       pestScanProvider.overrideWith((ref) => PestScanNotifier(
-        (_) async => _result(thrips), fake, (t) async => 'batch-$t', RecommendationDecider(fake),
+        (_) async => _result(whiteflies), fake, (t) async => 'batch-$t', RecommendationDecider(fake),
       )),
     ],
     child: MaterialApp(
@@ -109,20 +109,20 @@ void main() {
     final repo = await pumpPage(tester);
     await tester.tap(find.text('Galeri'));
     await tester.pumpAndSettle();
-    expect(find.text('Thrips: 2 terdeteksi'), findsOneWidget);
+    expect(find.text('Kutu kebul: 2 terdeteksi'), findsOneWidget);
     expect(find.text('Pilih meja tanam dulu.'), findsOneWidget);
     await chooseTable(tester);
     expect(find.text('Pilih meja tanam dulu.'), findsNothing);
     await tester.tap(find.text('Simpan dan minta saran obat'));
     await tester.pumpAndSettle();
     expect(repo.uploads, 1);
-    expect(repo.created.single.$1, PestKind.thrips);
+    expect(repo.created.single.$1, PestKind.whitefly);
     expect(find.text('Spinosad'), findsOneWidget);
     expect(find.text('Terima'), findsOneWidget);
   });
 
   testWidgets('nol deteksi: kartu "bukan jaminan tanaman sehat", tombol simpan foto', (tester) async {
-    await pumpPage(tester, thrips: 0);
+    await pumpPage(tester, whiteflies: 0);
     await tester.tap(find.text('Kamera'));
     await tester.pumpAndSettle();
     expect(find.text('Tidak ada hama terdeteksi'), findsOneWidget);
@@ -131,7 +131,7 @@ void main() {
   });
 
   testWidgets('simpan gagal: meja dan tingkat terkunci, coba lagi tidak mengunggah ulang', (tester) async {
-    final repo = FakeRepo()..failCreateFor = PestKind.thrips;
+    final repo = FakeRepo()..failCreateFor = PestKind.whitefly;
     await pumpPage(tester, repo: repo);
     await tester.tap(find.text('Galeri'));
     await tester.pumpAndSettle();
@@ -176,7 +176,7 @@ void main() {
     await pumpPage(tester, textScale: 2, size: const Size(360, 3000));
     await tester.tap(find.text('Galeri'));
     await tester.pumpAndSettle();
-    expect(find.text('Thrips: 2 terdeteksi'), findsOneWidget);
+    expect(find.text('Kutu kebul: 2 terdeteksi'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

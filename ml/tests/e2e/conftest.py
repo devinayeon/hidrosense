@@ -17,13 +17,14 @@ _SECRET_KEY_NAMES = r"(?:ROBOFLOW_API_KEY|KAGGLE_KEY|KAGGLE_API_TOKEN|API_KEY|SE
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("kaggle_api_token", re.compile(r"KGAT_[A-Za-z0-9]{16,}")),
     ("roboflow_api_token", re.compile(r"\brf_[A-Za-z0-9_-]{15,}")),
+    ("roboflow_ds_key_param", re.compile(r"[?&]key=(?!\[REDACTED\])[A-Za-z0-9_-]{8,}")),
     (
         "hardcoded_secret_assignment",
         re.compile(
             rf"""(?im)(?:["']?{_SECRET_KEY_NAMES}["']?[ \t]*[:=][ \t]*(?:"[^\s"]{{8,}}"|'[^\s']{{8,}}')|^[ \t]*(?:[+-]+[ \t]*)?export[ \t]+{_SECRET_KEY_NAMES}[ \t]*=[ \t]*(?!None\b|True\b|False\b)[A-Za-z0-9_\-+/=.]{{8,}}(?=[ \t]*(?:$|#|\r|\n))|^[ \t]*(?:[+-]+[ \t]*)?{_SECRET_KEY_NAMES}[ \t]*[:=][ \t]*(?!None\b|True\b|False\b)(?=[A-Za-z0-9_\-+/=.]*[0-9+/=])[A-Za-z0-9_\-+/=.]{{12,}}(?=[ \t]*(?:$|#|\r|\n)))"""
         ),
     ),
-    ("bearer_token", re.compile(r"(?i)\bBearer[ \t]+[A-Za-z0-9._\-+/=]{12,}")),
+    ("bearer_token", re.compile(r"(?i)\bBearer[ \t]+(?!\[REDACTED\])[A-Za-z0-9._\-+/=]{12,}")),
     ("private_key_block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
 )
 
@@ -93,8 +94,8 @@ def scan_bytes_for_secrets(raw: bytes) -> list[str]:
 
 
 def validate_ml_only_paths(paths: list[str]) -> list[str]:
-    """Return any repository-relative paths that lie outside ml/."""
-    return [p for p in paths if p and not p.startswith("ml/")]
+    """Return any repository-relative paths outside approved Opsi B scope (ml/, apps/mobile/, and AST graphify-out/)."""
+    return [p for p in paths if p and not p.startswith(("ml/", "apps/mobile/", "graphify-out/"))]
 
 
 def letterbox_rgb_image(

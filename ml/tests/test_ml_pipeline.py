@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 from PIL import Image, ImageDraw
 import pytest
 
 from ml.prepare_dataset import (
     CANONICAL_CLASSES,
-    canonicalize_label_name,
-    parse_and_sanitize_yolo_line,
-    deduplicate_and_merge_sources,
-    stratified_split_records,
-    DatasetRecord,
     BoxAnnotation,
+    DatasetRecord,
+    canonicalize_label_name,
+    deduplicate_and_merge_sources,
+    parse_and_sanitize_yolo_line,
+    stratified_split_records,
 )
 from ml import evaluate as ml_evaluate
 from ml.evaluate import (
@@ -41,33 +42,28 @@ def _make_test_image(path: Path, color: tuple[int, int, int], rect: tuple[int, i
 
 class TestCanonicalLabelMapping:
     def test_maps_synonyms_case_insensitively_to_canonical_ids(self) -> None:
-        assert CANONICAL_CLASSES == {0: "thrips", 1: "whitefly", 2: "aphids"}
-        assert canonicalize_label_name("Thrips") == 0
-        assert canonicalize_label_name("thrip") == 0
-        assert canonicalize_label_name("frankliniella") == 0
-        assert canonicalize_label_name("whitefly") == 1
-        assert canonicalize_label_name("Whiteflies") == 1
-        assert canonicalize_label_name("white-fly") == 1
-        assert canonicalize_label_name("kutu_kebul") == 1
-        assert canonicalize_label_name("kutu kebul") == 1
-        assert canonicalize_label_name("aphid") == 2
-        assert canonicalize_label_name("Aphids") == 2
-        assert canonicalize_label_name("kutu_daun") == 2
-        assert canonicalize_label_name("kutu daun") == 2
+        assert CANONICAL_CLASSES == {0: "whitefly", 1: "aphids"}
+        assert canonicalize_label_name("whitefly") == 0
+        assert canonicalize_label_name("Whiteflies") == 0
+        assert canonicalize_label_name("white-fly") == 0
+        assert canonicalize_label_name("kutu_kebul") == 0
+        assert canonicalize_label_name("kutu kebul") == 0
+        assert canonicalize_label_name("aphid") == 1
+        assert canonicalize_label_name("Aphids") == 1
+        assert canonicalize_label_name("kutu_daun") == 1
+        assert canonicalize_label_name("kutu daun") == 1
 
-    def test_returns_none_for_out_of_scope_classes(self) -> None:
-        assert canonicalize_label_name("caterpillar") is None
-        assert canonicalize_label_name("slug") is None
-        assert canonicalize_label_name("healthy") is None
-        assert canonicalize_label_name("background") is None
+    def test_returns_none_for_excluded_molted_skin_thrips_and_out_of_scope_classes(self) -> None:
+        for excluded in ("molted skin", "molted_skin", "exuviae", "thrips", "thrip", "frankliniella", "caterpillar", "slug", "healthy", "background"):
+            assert canonicalize_label_name(excluded) is None
 
 
 class TestAnnotationSanitization:
     def test_parses_standard_yolo_bbox_and_clamps_bounds(self) -> None:
-        source_map = {0: "aphids", 1: "thrips"}
+        source_map = {0: "aphids", 1: "molted skin"}
         box = parse_and_sanitize_yolo_line("0 0.5 0.5 0.4 0.2", source_map)
         assert box is not None
-        assert box.class_id == 2  # aphids -> canonical 2
+        assert box.class_id == 1  # aphids -> canonical 1
         assert box.cx == pytest.approx(0.5)
         assert box.cy == pytest.approx(0.5)
         assert box.w == pytest.approx(0.4)
@@ -75,21 +71,21 @@ class TestAnnotationSanitization:
 
     def test_converts_polygon_segmentation_line_to_bounding_box(self) -> None:
         source_map = {0: "whitefly"}
-        # Polygon from (0.2, 0.3) to (0.6, 0.7)
         line = "0 0.2 0.3 0.6 0.3 0.6 0.7 0.2 0.7"
         box = parse_and_sanitize_yolo_line(line, source_map)
         assert box is not None
-        assert box.class_id == 1
+        assert box.class_id == 0
         assert box.cx == pytest.approx(0.4)
         assert box.cy == pytest.approx(0.5)
         assert box.w == pytest.approx(0.4)
         assert box.h == pytest.approx(0.4)
 
     def test_rejects_degenerate_or_unmapped_boxes(self) -> None:
-        source_map = {0: "thrips", 1: "caterpillar"}
+        source_map = {0: "whitefly", 1: "molted skin", 2: "thrips"}
         assert parse_and_sanitize_yolo_line("0 0.5 0.5 0.0 0.2", source_map) is None
         assert parse_and_sanitize_yolo_line("0 0.5 0.5 -0.1 0.2", source_map) is None
         assert parse_and_sanitize_yolo_line("1 0.5 0.5 0.3 0.3", source_map) is None
+        assert parse_and_sanitize_yolo_line("2 0.5 0.5 0.3 0.3", source_map) is None
 
 
 class TestDeduplicationAndStratifiedSplit:
@@ -98,8 +94,8 @@ class TestDeduplicationAndStratifiedSplit:
         src2 = tmp_path / "ds2"
 
         for ds_root, names_list in [
-            (src1, ["aphids", "thrips", "whitefly"]),
-            (src2, ["thrips", "whiteflies", "aphid"]),
+            (src1, ["aphids", "molted skin", "whitefly"]),
+            (src2, ["whiteflies", "aphid"]),
         ]:
             (ds_root / "train" / "images").mkdir(parents=True)
             (ds_root / "train" / "labels").mkdir(parents=True)
@@ -108,14 +104,12 @@ class TestDeduplicationAndStratifiedSplit:
                 encoding="utf-8",
             )
 
-        # Create identical image in both ds1 and ds2
         _make_test_image(src1 / "train" / "images" / "dup1.jpg", (20, 120, 40), (10, 10, 80, 80))
         (src1 / "train" / "labels" / "dup1.txt").write_text("0 0.5 0.5 0.3 0.3\n", encoding="utf-8")
 
         _make_test_image(src2 / "train" / "images" / "dup1_copy.jpg", (20, 120, 40), (10, 10, 80, 80))
-        (src2 / "train" / "labels" / "dup1_copy.txt").write_text("2 0.5 0.5 0.3 0.3\n", encoding="utf-8")
+        (src2 / "train" / "labels" / "dup1_copy.txt").write_text("1 0.5 0.5 0.3 0.3\n", encoding="utf-8")
 
-        # Create distinct second image in ds2
         _make_test_image(src2 / "train" / "images" / "unique2.jpg", (180, 30, 90), (50, 20, 110, 100))
         (src2 / "train" / "labels" / "unique2.txt").write_text("0 0.4 0.4 0.2 0.2\n", encoding="utf-8")
 
@@ -126,7 +120,7 @@ class TestDeduplicationAndStratifiedSplit:
     def test_stratified_split_prevents_class_starvation_and_leakage(self, tmp_path: Path) -> None:
         records: list[DatasetRecord] = []
         for idx in range(30):
-            cls_id = idx % 3
+            cls_id = idx % 2
             records.append(
                 DatasetRecord(
                     image_path=tmp_path / f"img_{idx}.jpg",
@@ -147,16 +141,19 @@ class TestDeduplicationAndStratifiedSplit:
 
         for split_name in ("train", "val", "test"):
             present_classes = {b.class_id for r in splits[split_name] for b in r.boxes}
-            assert present_classes == {0, 1, 2}
+            assert present_classes == {0, 1}
 
 
 class TestEvaluationAndExportContracts:
-    def test_promotion_gates_enforce_accuracy_size_and_parity(self) -> None:
+    def test_promotion_gates_enforce_accuracy_f1_ood_size_and_parity(self) -> None:
         assert "map50" in PROMOTION_GATES
+        assert "ood_false_positive_rate" in PROMOTION_GATES
         passing = {
-            "map50": 0.78,
-            "recall": 0.74,
-            "tflite_map50_drop": 0.008,
+            "map50": 0.85,
+            "recall": 0.80,
+            "f1": 0.82,
+            "tflite_map50_drop": 0.003,
+            "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
         }
         assert_promotion_ready(passing)
@@ -165,40 +162,41 @@ class TestEvaluationAndExportContracts:
         with pytest.raises(ValueError, match="failed promotion gates"):
             assert_promotion_ready(failing)
 
+        failing_ood = {**passing, "ood_false_positive_rate": 0.15}
+        with pytest.raises(ValueError, match="failed promotion gates"):
+            assert_promotion_ready(failing_ood)
+
     def test_compare_baseline_vs_finetuned_calculates_deltas(self) -> None:
-        baseline = {"map50": 0.21, "map50_95": 0.11, "precision": 0.30, "recall": 0.25}
-        finetuned = {"map50": 0.81, "map50_95": 0.52, "precision": 0.84, "recall": 0.79}
+        baseline = {"map50": 0.21, "map50_95": 0.11, "precision": 0.30, "recall": 0.25, "f1": 0.27}
+        finetuned = {"map50": 0.81, "map50_95": 0.52, "precision": 0.84, "recall": 0.79, "f1": 0.81}
         comparison = compare_baseline_vs_finetuned(baseline, finetuned)
         assert comparison["improvements"]["map50_delta"] == pytest.approx(0.60)
         assert comparison["beats_baseline"] is True
 
     def test_decode_yolov11_output_handles_both_channel_first_and_last(self) -> None:
-        # 2 anchors: anchor 0 has high score for whitefly (class 1), anchor 1 is low score
-        # Shape [7, 2] -> cx, cy, w, h, c0, c1, c2
         raw_channel_first = [
             [320.0, 100.0],  # cx
             [320.0, 100.0],  # cy
             [64.0, 20.0],    # w
             [64.0, 20.0],    # h
-            [0.05, 0.02],    # class 0: thrips
-            [0.88, 0.10],    # class 1: whitefly
-            [0.03, 0.01],    # class 2: aphids
+            [0.88, 0.10],    # class 0: whitefly
+            [0.03, 0.01],    # class 1: aphids
         ]
         dets = decode_yolov11_output(
             raw_channel_first,
             img_size=640,
-            conf_threshold=0.35,
+            conf_threshold=0.45,
             iou_threshold=0.45,
         )
         assert len(dets) == 1
-        assert dets[0]["class_id"] == 1
+        assert dets[0]["class_id"] == 0
         assert dets[0]["class_name"] == "whitefly"
         assert dets[0]["confidence"] == pytest.approx(0.88)
 
-        metadata = build_model_metadata(model_version="v1.0.0-yolo11n", img_size=640)
+        metadata = build_model_metadata(model_version="v2.0.0-yolo11n", img_size=640)
         assert metadata["input_shape"] == [1, 640, 640, 3]
-        assert metadata["output_shape"] == [1, 7, 8400]
-        assert metadata["classes"] == {"0": "thrips", "1": "whitefly", "2": "aphids"}
+        assert metadata["output_shape"] == [1, 6, 8400]
+        assert metadata["classes"] == {"0": "whitefly", "1": "aphids"}
         assert "metrics" not in metadata
 
     def test_extract_eval_metrics_computes_aggregate_and_per_class(self) -> None:
@@ -206,14 +204,15 @@ class TestEvaluationAndExportContracts:
             mp = 0.88
             mr = 0.84
             map50 = 0.89
+            map75 = 0.68
             map = 0.58
-            ap_class_index = [0, 2]
-            f1 = [0.72, 0.91]
+            ap_class_index = [0, 1]
+            f1 = [0.85, 0.91]
 
             def class_result(self, pos: int) -> tuple[float, float, float, float]:
                 rows = [
-                    (0.81, 0.65, 0.72, 0.33),
-                    (0.89, 0.93, 0.96, 0.67),
+                    (0.87, 0.83, 0.86, 0.52),
+                    (0.89, 0.93, 0.92, 0.64),
                 ]
                 return rows[pos]
 
@@ -223,8 +222,7 @@ class TestEvaluationAndExportContracts:
         extracted = extract_eval_metrics(_FakeValRes())
         assert extracted["aggregate"]["map50"] == pytest.approx(0.89)
         assert extracted["aggregate"]["f1"] == pytest.approx(2 * 0.88 * 0.84 / (0.88 + 0.84), abs=1e-4)
-        assert extracted["per_class"]["thrips"]["map50"] == pytest.approx(0.72)
-        assert extracted["per_class"]["whitefly"]["map50"] == 0.0
+        assert extracted["per_class"]["whitefly"]["map50"] == pytest.approx(0.86)
         assert extracted["per_class"]["aphids"]["recall"] == pytest.approx(0.93)
 
     def test_build_model_metadata_and_export_with_tflite_syncs_metrics_and_precision(
@@ -237,7 +235,7 @@ class TestEvaluationAndExportContracts:
             img_size=640,
             sha256_hex="deadbeef" * 8,
             input_shape=[1, 640, 640, 3],
-            output_shape=[1, 7, 8400],
+            output_shape=[1, 6, 8400],
             metrics=sample_metrics,
         )
         assert meta["metrics"] == sample_metrics
@@ -246,11 +244,11 @@ class TestEvaluationAndExportContracts:
         inspected = inspect_tflite_model(real_tflite)
         assert inspected["input_shape"] == [1, 640, 640, 3]
         assert inspected["input_dtype"] == "float32"
-        assert inspected["output_shape"] == [1, 7, 8400]
-        assert inspected["size_mb"] <= 6.0
+        assert inspected["output_shape"] == [1, 6, 8400]
+        assert inspected["size_mb"] <= 12.0
 
         eval_report_path = tmp_path / "evaluation_report.json"
-        eval_report_path.write_text(json.dumps({"finetuned": sample_metrics}), encoding="utf-8")
+        eval_report_path.write_text(json.dumps({"finetuned": sample_metrics, "calibrated_threshold": 0.45}), encoding="utf-8")
         out_assets = tmp_path / "assets"
         packaged = export_model_to_flutter_assets(
             weights_path=None,
@@ -274,15 +272,17 @@ class TestEvaluationAndExportContracts:
         import sys
         import yaml
 
-        # Build a minimal 3-image test split so evaluate_tflite_litert runs on real TFLite interpreter
         ds_dir = tmp_path / "ds"
         img_dir = ds_dir / "test" / "images"
         lbl_dir = ds_dir / "test" / "labels"
         img_dir.mkdir(parents=True)
         lbl_dir.mkdir(parents=True)
-        for idx in range(3):
+        for idx in range(2):
             _make_test_image(img_dir / f"sample_{idx}.jpg", (30 + idx * 30, 120, 40), (20, 20, 90, 90))
             (lbl_dir / f"sample_{idx}.txt").write_text(f"{idx} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        _make_test_image(img_dir / "neg__ood_people__p0.jpg", (100, 100, 120), (40, 10, 80, 110))
+        (lbl_dir / "neg__ood_people__p0.txt").write_text("", encoding="utf-8")
+
         data_yaml = ds_dir / "data.yaml"
         data_yaml.write_text(
             yaml.safe_dump(
@@ -291,8 +291,8 @@ class TestEvaluationAndExportContracts:
                     "train": "test/images",
                     "val": "test/images",
                     "test": "test/images",
-                    "nc": 3,
-                    "names": {0: "thrips", 1: "whitefly", 2: "aphids"},
+                    "nc": 2,
+                    "names": {0: "whitefly", 1: "aphids"},
                 },
                 sort_keys=False,
             ),
@@ -300,10 +300,10 @@ class TestEvaluationAndExportContracts:
         )
 
         real_tflite = Path(__file__).resolve().parents[1] / "artifacts" / "yolo11n_lettuce_pests.tflite"
-        litert_res = evaluate_tflite_litert(real_tflite, data_yaml, imgsz=640)
+        litert_res = evaluate_tflite_litert(real_tflite, data_yaml, imgsz=640, sample_conf_thres=0.99)
         assert litert_res["images_evaluated"] == 3
         assert litert_res["input_shape"] == [1, 640, 640, 3]
-        assert litert_res["output_shape"] == [1, 7, 8400]
+        assert litert_res["output_shape"] == [1, 6, 8400]
         assert litert_res["interpreter_verification"]["all_outputs_finite"] is True
 
         weights_pt = tmp_path / "best.pt"
@@ -314,15 +314,16 @@ class TestEvaluationAndExportContracts:
         kaggle_summary.write_text(
             json.dumps(
                 {
+                    "calibrated_threshold": 0.99,
                     "provenance": {
                         "enable_gpu": True,
-                        "gpu_count": 2,
+                        "gpu_count": 1,
                         "device": "Tesla T4",
                         "split_leakage": 0,
-                        "total_images": 1576,
+                        "total_images": 785,
                         "zero_synthetic_confirmed": True,
                         "synthetic_images_count": 0,
-                    }
+                    },
                 }
             ),
             encoding="utf-8",
@@ -336,15 +337,14 @@ class TestEvaluationAndExportContracts:
 
         def _fake_eval(path: Path, d_yaml: Path, imgsz: int = 640) -> dict[str, Any]:
             per_cls = {
-                "thrips": {"precision": 0.81, "recall": 0.66, "map50": 0.72, "map50_95": 0.33, "f1": 0.73},
-                "whitefly": {"precision": 0.98, "recall": 0.99, "map50": 0.99, "map50_95": 0.73, "f1": 0.98},
-                "aphids": {"precision": 0.89, "recall": 0.93, "map50": 0.96, "map50_95": 0.67, "f1": 0.91},
+                "whitefly": {"precision": 0.95, "recall": 0.92, "map50": 0.94, "map50_95": 0.68, "f1": 0.93},
+                "aphids": {"precision": 0.89, "recall": 0.90, "map50": 0.92, "map50_95": 0.64, "f1": 0.89},
             }
             if path.suffix == ".tflite":
-                return {"map50": 0.889, "map50_95": 0.54, "precision": 0.89, "recall": 0.85, "f1": 0.87, "per_class": per_cls}
+                return {"map50": 0.928, "map50_95": 0.65, "precision": 0.91, "recall": 0.90, "f1": 0.905, "per_class": per_cls}
             if "best" in path.name:
-                return {"map50": 0.891, "map50_95": 0.58, "precision": 0.90, "recall": 0.86, "f1": 0.88, "per_class": per_cls}
-            return {"map50": 0.85, "map50_95": 0.57, "precision": 0.91, "recall": 0.81, "f1": 0.86, "per_class": per_cls}
+                return {"map50": 0.930, "map50_95": 0.66, "precision": 0.92, "recall": 0.91, "f1": 0.915, "per_class": per_cls}
+            return {"map50": 0.80, "map50_95": 0.55, "precision": 0.84, "recall": 0.80, "f1": 0.82, "per_class": per_cls}
 
         monkeypatch.setattr(ml_evaluate, "evaluate_ultralytics_model", _fake_eval)
         monkeypatch.setattr(
@@ -372,7 +372,7 @@ class TestEvaluationAndExportContracts:
         report = json.loads(out_json.read_text(encoding="utf-8"))
         assert report["status"] == "PASSED"
         assert "per_class" not in report["finetuned"]
-        assert set(report["per_class"].keys()) == {"thrips", "whitefly", "aphids"}
+        assert set(report["per_class"].keys()) == {"whitefly", "aphids"}
         assert report["tflite_eval"]["tflite_map50_drop"] == pytest.approx(0.002, abs=1e-4)
         assert report["provenance"]["device"] == "Tesla T4"
         assert build_provenance_payload(kaggle_summary, ds_prov)["zero_synthetic_confirmed"] is True
@@ -381,14 +381,13 @@ class TestEvaluationAndExportContracts:
 class TestTrainingAndKaggleContract:
     def test_training_config_defaults_and_yaml_resolution(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from ultralytics.data.utils import check_det_dataset
-
         from ml.train import Yolo11TrainingConfig
 
         cfg = Yolo11TrainingConfig()
         assert cfg.model == "yolo11n.pt"
         assert cfg.data == "ml/configs/lettuce_pests.yaml"
-        assert cfg.epochs == 80
-        assert cfg.patience == 20
+        assert cfg.epochs == 100
+        assert cfg.patience == 25
         assert cfg.batch == 16
         assert cfg.imgsz == 640
         assert cfg.seed == 42
@@ -399,8 +398,8 @@ class TestTrainingAndKaggleContract:
         dataset_yaml = repo_root / "ml" / "configs" / "lettuce_pests.yaml"
         if (repo_root / "ml" / "data" / "merged_lettuce_pests" / "val" / "images").is_dir():
             resolved = check_det_dataset(str(dataset_yaml))
-            assert resolved["nc"] == 3
-            assert resolved["names"] == {0: "thrips", 1: "whitefly", 2: "aphids"}
+            assert resolved["nc"] == 2
+            assert resolved["names"] == {0: "whitefly", 1: "aphids"}
 
     def test_write_kaggle_kernel_bundle_contract_and_zero_secrets(
         self,
@@ -416,7 +415,7 @@ class TestTrainingAndKaggleContract:
         meta_path = write_kaggle_kernel_bundle(
             bundle_dir,
             kaggle_username="adityadwiferdiansyah",
-            dataset_sources=["adityadwiferdiansyah/hidrosense-lettuce-pests-real"],
+            dataset_sources=["adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"],
         )
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         assert meta["id"] == "adityadwiferdiansyah/hidrosense-yolov11n-lettuce-pests-training"
@@ -425,7 +424,7 @@ class TestTrainingAndKaggleContract:
         assert meta["enable_gpu"] is True
         assert meta["enable_tpu"] is False
         assert meta["enable_internet"] is True
-        assert meta["dataset_sources"] == ["adityadwiferdiansyah/hidrosense-lettuce-pests-real"]
+        assert meta["dataset_sources"] == ["adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"]
 
         staged_entry = bundle_dir / "kaggle_train_entry.py"
         assert staged_entry.is_file()
@@ -446,7 +445,6 @@ class TestTrainingAndKaggleContract:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         import torch
-
         from ml import kaggle_train_entry
 
         monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
@@ -458,28 +456,31 @@ class TestTrainingAndKaggleContract:
         with pytest.raises(FileNotFoundError, match="Synthetic fallback is disabled"):
             kaggle_train_entry.locate_dataset_dir(dataset_dir=missing_dir, allow_local=False)
 
-    def test_build_isolated_dataset_views_oversamples_only_train_thrips(self, tmp_path: Path) -> None:
+    def test_build_isolated_dataset_views_oversamples_only_train_whitefly_and_negatives(self, tmp_path: Path) -> None:
         from ml.kaggle_train_entry import build_isolated_dataset_views
 
         ds = tmp_path / "ds"
-        for split_name, cls_ids in [("train", [0, 1, 2]), ("val", [0, 1]), ("test", [0, 2])]:
+        for split_name, labels in [("train", ["0 0.5 0.5 0.2 0.2\n", "1 0.5 0.5 0.2 0.2\n", ""]), ("val", ["0 0.5 0.5 0.2 0.2\n", ""]), ("test", ["1 0.5 0.5 0.2 0.2\n", ""])]:
             (ds / split_name / "images").mkdir(parents=True)
             (ds / split_name / "labels").mkdir(parents=True)
-            for idx, cls_id in enumerate(cls_ids):
+            for idx, lbl_txt in enumerate(labels):
                 _make_test_image(
                     ds / split_name / "images" / f"{split_name}_{idx}.jpg",
                     (30 + idx * 20, 120, 40),
                     (10, 10, 80, 80),
                 )
-                (ds / split_name / "labels" / f"{split_name}_{idx}.txt").write_text(
-                    f"{cls_id} 0.5 0.5 0.2 0.2\n",
-                    encoding="utf-8",
-                )
+                (ds / split_name / "labels" / f"{split_name}_{idx}.txt").write_text(lbl_txt, encoding="utf-8")
 
-        views = build_isolated_dataset_views(ds, tmp_path / "work", thrips_oversample_factor=4)
-        assert views["thrips_train_images"] == 1
-        assert views["balanced_train_images"] == 6  # 1*4 + 2*1
+        views = build_isolated_dataset_views(
+            ds,
+            tmp_path / "work",
+            whitefly_oversample_factor=4,
+            negative_oversample_factor=2,
+        )
+        assert views["whitefly_train_images"] == 1
+        assert views["negative_train_images"] == 1
+        assert views["balanced_train_images"] == 7  # 1*4 + 1*1 + 1*2
         balanced_train_imgs = sorted((tmp_path / "work" / "balanced" / "train" / "images").iterdir())
-        assert len(balanced_train_imgs) == 6
+        assert len(balanced_train_imgs) == 7
         assert len(list((tmp_path / "work" / "balanced" / "val" / "images").iterdir())) == 2
         assert len(list((tmp_path / "work" / "balanced" / "test" / "images").iterdir())) == 2

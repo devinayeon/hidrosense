@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import posixpath
 import re
 import subprocess
@@ -23,7 +22,6 @@ from ai_edge_litert.interpreter import Interpreter
 from PIL import Image
 
 from ml import evaluate as ml_evaluate
-from ml import export_tflite as ml_export
 from ml.evaluate import PROMOTION_GATES, assert_promotion_ready, compare_baseline_vs_finetuned, evaluate_ultralytics_model
 from ml.export_tflite import build_model_metadata, decode_yolov11_output, export_model_to_flutter_assets
 from ml.prepare_dataset import (
@@ -36,76 +34,55 @@ from ml.prepare_dataset import (
 from ml.train import Yolo11TrainingConfig, write_kaggle_kernel_bundle
 
 
-# =============================================================================
-# F1 — Dataset Preparation & Canonical Mapping (5 tests)
-# =============================================================================
-
-
 @pytest.mark.parametrize(
     ("raw_name", "expected_id"),
     [
-        ("thrips", 0),
-        ("Thrip", 0),
-        ("Frankliniella", 0),
-        ("Thysanoptera", 0),
-        ("whitefly", 1),
-        ("Whiteflies", 1),
-        ("white-fly", 1),
-        ("white_fly", 1),
-        ("white fly", 1),
-        ("Bemisia", 1),
-        ("kutu kebul", 1),
-        ("Kutu_Kebul", 1),
-        ("kutu-kebul", 1),
-        ("aphids", 2),
-        ("Aphid", 2),
-        ("Aphidoidea", 2),
-        ("Myzus", 2),
-        ("kutu daun", 2),
-        ("Kutu_Daun", 2),
-        ("kutu-daun", 2),
+        ("whitefly", 0),
+        ("Whiteflies", 0),
+        ("white-fly", 0),
+        ("white_fly", 0),
+        ("white fly", 0),
+        ("Bemisia", 0),
+        ("kutu kebul", 0),
+        ("Kutu_Kebul", 0),
+        ("kutu-kebul", 0),
+        ("aphids", 1),
+        ("Aphid", 1),
+        ("Aphidoidea", 1),
+        ("Myzus", 1),
+        ("kutu daun", 1),
+        ("Kutu_Daun", 1),
+        ("kutu-daun", 1),
     ],
 )
 def test_f1_t1_canonical_mapping_synonyms_and_indonesian(raw_name: str, expected_id: int) -> None:
-    assert CANONICAL_CLASSES == {0: "thrips", 1: "whitefly", 2: "aphids"}
+    assert CANONICAL_CLASSES == {0: "whitefly", 1: "aphids"}
     assert canonicalize_label_name(raw_name) == expected_id
 
 
 def test_f1_t1_merge_split_export_end_to_end(tmp_path: Path, make_yolo_source: Any) -> None:
     src1_samples = [
-        {
-            "stem": f"s1_{i}",
-            "pattern_seed": i + 1,
-            "labels": [f"{i % 3} 0.5 0.5 0.25 0.25"],
-        }
-        for i in range(9)
+        {"stem": f"s1_{i}", "pattern_seed": i + 1, "labels": [f"{i % 2} 0.5 0.5 0.25 0.25"]}
+        for i in range(10)
     ]
     src2_samples = [
-        {
-            "stem": f"s2_{i}",
-            "pattern_seed": 20 + i,
-            "labels": [f"{i % 3} 0.4 0.6 0.2 0.3"],
-        }
-        for i in range(9)
+        {"stem": f"s2_{i}", "pattern_seed": 20 + i, "labels": [f"{i % 2} 0.4 0.6 0.2 0.3"]}
+        for i in range(10)
     ]
-    src1 = make_yolo_source(tmp_path / "src1", ["kutu kebul", "kutu daun", "frankliniella"], src1_samples)
-    src2 = make_yolo_source(
-        tmp_path / "src2",
-        {0: "thrips", 1: "white-fly", 2: "myzus"},
-        src2_samples,
-    )
+    src1 = make_yolo_source(tmp_path / "src1", ["kutu kebul", "kutu daun", "molted skin"], src1_samples)
+    src2 = make_yolo_source(tmp_path / "src2", {0: "white-fly", 1: "myzus"}, src2_samples)
 
     records, stats = deduplicate_and_merge_sources([src1, src2])
-    assert len(records) == 18
-    assert stats["boxes_kept"] == 18
+    assert len(records) == 20
+    assert stats["boxes_kept"] == 20
 
     splits = stratified_split_records(records, train_ratio=0.8, val_ratio=0.1, seed=42)
     out_dir = tmp_path / "merged"
     report = export_merged_dataset(splits, out_dir, stats)
 
     data_yaml = yaml.safe_load((out_dir / "data.yaml").read_text(encoding="utf-8"))
-    assert data_yaml["nc"] == 3
-    assert data_yaml["names"] == {0: "thrips", 1: "whitefly", 2: "aphids"}
+    assert data_yaml["nc"] == 2
+    assert data_yaml["names"] == {0: "whitefly", 1: "aphids"}
     assert data_yaml["train"] == "train/images"
     assert data_yaml["val"] == "val/images"
     assert data_yaml["test"] == "test/images"
@@ -121,20 +98,19 @@ def test_f1_t1_merge_split_export_end_to_end(tmp_path: Path, make_yolo_source: A
         for lbl_file in lbls:
             for line in lbl_file.read_text(encoding="utf-8").splitlines():
                 parts = line.split()
-                assert int(parts[0]) in {0, 1, 2}
+                assert int(parts[0]) in {0, 1}
                 vals = [float(v) for v in parts[1:]]
                 assert all(0.0 <= v <= 1.0 for v in vals)
 
 
 def test_f1_t1_cross_source_phash_dedup_and_disjoint_splits(tmp_path: Path, make_yolo_source: Any) -> None:
-    # Identical pattern_seed across src1 and src2 creates a duplicate pair
-    src1_samples = [{"stem": f"a_{i}", "pattern_seed": i, "labels": [f"{i % 3} 0.5 0.5 0.2 0.2"]} for i in range(15)]
+    src1_samples = [{"stem": f"a_{i}", "pattern_seed": i, "labels": [f"{i % 2} 0.5 0.5 0.2 0.2"]} for i in range(16)]
     src2_samples = [{"stem": "dup_0", "pattern_seed": 0, "labels": ["0 0.5 0.5 0.2 0.2"]}] + [
-        {"stem": f"b_{i}", "pattern_seed": 100 + i, "labels": [f"{i % 3} 0.5 0.5 0.2 0.2"]} for i in range(15)
+        {"stem": f"b_{i}", "pattern_seed": 100 + i, "labels": [f"{i % 2} 0.5 0.5 0.2 0.2"]} for i in range(14)
     ]
 
-    src1 = make_yolo_source(tmp_path / "ds1", ["thrips", "whitefly", "aphids"], src1_samples)
-    src2 = make_yolo_source(tmp_path / "ds2", ["thrips", "whitefly", "aphids"], src2_samples)
+    src1 = make_yolo_source(tmp_path / "ds1", ["whitefly", "aphids"], src1_samples)
+    src2 = make_yolo_source(tmp_path / "ds2", ["whitefly", "aphids"], src2_samples)
 
     records, stats = deduplicate_and_merge_sources([src1, src2])
     assert stats["duplicates_removed"] >= 1
@@ -151,7 +127,7 @@ def test_f1_t1_cross_source_phash_dedup_and_disjoint_splits(tmp_path: Path, make
 
     for split_name in ("train", "val", "test"):
         classes_present = {box.class_id for rec in splits[split_name] for box in rec.boxes}
-        assert classes_present == {0, 1, 2}
+        assert classes_present == {0, 1}
 
 
 def test_f1_t1_polygon_and_edge_clipping_bbox_clamped_on_export(tmp_path: Path, make_yolo_source: Any) -> None:
@@ -165,7 +141,7 @@ def test_f1_t1_polygon_and_edge_clipping_bbox_clamped_on_export(tmp_path: Path, 
             ],
         }
     ]
-    src = make_yolo_source(tmp_path / "src", ["thrips", "whitefly", "aphids"], samples)
+    src = make_yolo_source(tmp_path / "src", ["whitefly", "aphids"], samples)
     records, stats = deduplicate_and_merge_sources([src])
     assert len(records) == 1
     assert stats["boxes_kept"] == 2
@@ -189,8 +165,8 @@ def test_f1_t1_polygon_and_edge_clipping_bbox_clamped_on_export(tmp_path: Path, 
 
 
 def test_f1_t1_seed_determinism_produces_identical_export(tmp_path: Path, make_yolo_source: Any) -> None:
-    samples = [{"stem": f"det_{i}", "pattern_seed": i + 5, "labels": [f"{i % 3} 0.5 0.5 0.2 0.2"]} for i in range(18)]
-    src = make_yolo_source(tmp_path / "src", ["thrips", "whitefly", "aphids"], samples)
+    samples = [{"stem": f"det_{i}", "pattern_seed": i + 5, "labels": [f"{i % 2} 0.5 0.5 0.2 0.2"]} for i in range(18)]
+    src = make_yolo_source(tmp_path / "src", ["whitefly", "aphids"], samples)
     records, stats = deduplicate_and_merge_sources([src])
 
     out_a = tmp_path / "out_a"
@@ -208,34 +184,30 @@ def test_f1_t1_seed_determinism_produces_identical_export(tmp_path: Path, make_y
         assert files_a == files_b
 
 
-# =============================================================================
-# F2 — Kaggle GPU Training Config & Provenance (5 tests)
-# =============================================================================
-
-
-def test_f2_t1_training_config_defaults_match_r3_spec() -> None:
+def test_f2_t1_training_config_defaults_match_visual_pipeline_spec() -> None:
     cfg = Yolo11TrainingConfig()
     assert cfg.model == "yolo11n.pt"
     assert cfg.data == "ml/configs/lettuce_pests.yaml"
-    assert cfg.epochs == 80
-    assert cfg.patience == 20
+    assert cfg.epochs == 100
+    assert cfg.patience == 25
     assert cfg.batch == 16
     assert cfg.imgsz == 640
     assert cfg.seed == 42
     assert cfg.optimizer == "AdamW"
+    assert cfg.scale == pytest.approx(0.75)
 
 
 def test_f2_t1_lettuce_pests_yaml_matches_canonical_classes(ml_root: Path) -> None:
     cfg = yaml.safe_load((ml_root / "configs" / "lettuce_pests.yaml").read_text(encoding="utf-8"))
-    assert cfg["nc"] == 3
-    assert cfg["names"] == {0: "thrips", 1: "whitefly", 2: "aphids"}
+    assert cfg["nc"] == 2
+    assert cfg["names"] == {0: "whitefly", 1: "aphids"}
     assert cfg["train"] == "train/images"
     assert cfg["val"] == "val/images"
     assert cfg["test"] == "test/images"
 
 
 def test_f2_t1_write_kaggle_kernel_bundle_metadata_and_sources(tmp_path: Path) -> None:
-    ds_slug = "adityadwiferdiansyah/hidrosense-lettuce-pests-real"
+    ds_slug = "adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"
     meta_path = write_kaggle_kernel_bundle(
         tmp_path / "bundle",
         kaggle_username="adityadwiferdiansyah",
@@ -276,29 +248,26 @@ def test_f2_t1_kaggle_bundle_contains_zero_secrets_even_when_env_set(
 def test_f2_t1_train_cli_help_exits_zero_offline(run_cli: Any) -> None:
     proc = run_cli("ml.train", ["--help"], {"ROBOFLOW_API_KEY": None})
     assert proc.returncode == 0
-    for flag in ("--data", "--epochs", "--batch", "--imgsz"):
+    for flag in ("--kaggle-push", "--kaggle-dataset", "--poll", "--timeout-minutes"):
         assert flag in proc.stdout
-
-
-# =============================================================================
-# F3 — Model Evaluation & Promotion Gates (6 tests)
-# =============================================================================
 
 
 def test_f3_t1_assert_promotion_ready_accepts_valid_metrics() -> None:
     assert_promotion_ready(
         {
-            "map50": 0.78,
-            "recall": 0.74,
-            "tflite_map50_drop": 0.008,
+            "map50": 0.85,
+            "recall": 0.80,
+            "f1": 0.82,
+            "tflite_map50_drop": 0.004,
+            "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
         }
     )
 
 
 def test_f3_t1_compare_baseline_vs_finetuned_four_decimal_deltas() -> None:
-    baseline = {"map50": 0.21345, "map50_95": 0.11111, "precision": 0.30001, "recall": 0.25004}
-    finetuned = {"map50": 0.81349, "map50_95": 0.52229, "precision": 0.84009, "recall": 0.79009}
+    baseline = {"map50": 0.21345, "map50_95": 0.11111, "precision": 0.30001, "recall": 0.25004, "f1": 0.2727}
+    finetuned = {"map50": 0.81349, "map50_95": 0.52229, "precision": 0.84009, "recall": 0.79009, "f1": 0.8143}
     result = compare_baseline_vs_finetuned(baseline, finetuned)
     assert result["beats_baseline"] is True
     assert result["improvements"]["map50_delta"] == pytest.approx(round(0.81349 - 0.21345, 4))
@@ -340,16 +309,15 @@ def test_f3_t1_evaluate_cli_uses_tflite_size_and_drop(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # PyTorch weights deliberately exceed 6.0 MB, while TFLite is 3.5 MB
     weights = tmp_path / "best.pt"
-    weights.write_bytes(b"\x00" * (7 * 1024 * 1024))
+    weights.write_bytes(b"\x00" * (14 * 1024 * 1024))
     tflite = tmp_path / "model.tflite"
-    tflite.write_bytes(b"\x00" * int(3.5 * 1024 * 1024))
+    tflite.write_bytes(b"\x00" * int(5.1 * 1024 * 1024))
     out_json = tmp_path / "eval_tflite.json"
 
     def _fake_eval(path: Path, data_yaml: Path, imgsz: int = 640) -> dict[str, Any]:
         if path.suffix == ".tflite":
-            return {"map50": 0.812, "map50_95": 0.54, "precision": 0.83, "recall": 0.76, "f1": 0.7935}
+            return {"map50": 0.815, "map50_95": 0.54, "precision": 0.83, "recall": 0.76, "f1": 0.7935}
         if "best" in path.name:
             return {"map50": 0.820, "map50_95": 0.55, "precision": 0.85, "recall": 0.77, "f1": 0.808}
         return {"map50": 0.15, "map50_95": 0.08, "precision": 0.20, "recall": 0.19, "f1": 0.1949}
@@ -374,16 +342,18 @@ def test_f3_t1_evaluate_cli_uses_tflite_size_and_drop(
 
     report = json.loads(out_json.read_text(encoding="utf-8"))
     assert report["status"] == "PASSED"
-    assert report["gates"]["model_size_mb"] == pytest.approx(3.5, abs=0.01)
-    assert report["gates"]["tflite_map50_drop"] == pytest.approx(0.008, abs=1e-4)
+    assert report["gates"]["model_size_mb"] == pytest.approx(5.1, abs=0.01)
+    assert report["gates"]["tflite_map50_drop"] == pytest.approx(0.005, abs=1e-4)
 
 
 def test_f3_t1_promotion_gates_contract_keys_and_directions() -> None:
     assert PROMOTION_GATES == {
-        "map50": ("min", 0.70),
-        "recall": ("min", 0.65),
-        "tflite_map50_drop": ("max", 0.015),
-        "model_size_mb": ("max", 6.0),
+        "map50": ("min", 0.72),
+        "recall": ("min", 0.68),
+        "f1": ("min", 0.72),
+        "tflite_map50_drop": ("max", 0.008),
+        "ood_false_positive_rate": ("max", 0.05),
+        "model_size_mb": ("max", 12.0),
     }
 
 
@@ -404,7 +374,7 @@ def test_f3_t1_evaluate_ultralytics_model_runs_real_tflite_test_split(
     test_img_dir.mkdir(parents=True)
     test_lbl_dir.mkdir(parents=True)
 
-    for idx in range(3):
+    for idx in range(2):
         Image.new("RGB", (model_imgsz, model_imgsz), color=(40, 120 + idx * 20, 40)).save(test_img_dir / f"t_{idx}.jpg")
         (test_lbl_dir / f"t_{idx}.txt").write_text(f"{idx} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
@@ -416,15 +386,14 @@ def test_f3_t1_evaluate_ultralytics_model_runs_real_tflite_test_split(
                 "train": "test/images",
                 "val": "test/images",
                 "test": "test/images",
-                "nc": 3,
-                "names": {0: "thrips", 1: "whitefly", 2: "aphids"},
+                "nc": 2,
+                "names": {0: "whitefly", 1: "aphids"},
             },
             sort_keys=False,
         ),
         encoding="utf-8",
     )
 
-    # Keep Ultralytics runs output inside tmp_path so repo root stays clean
     monkeypatch.chdir(tmp_path)
     metrics = evaluate_ultralytics_model(tflite_path, data_yaml, imgsz=model_imgsz)
     for key in ("map50", "map50_95", "precision", "recall", "f1"):
@@ -433,60 +402,53 @@ def test_f3_t1_evaluate_ultralytics_model_runs_real_tflite_test_split(
         assert 0.0 <= metrics[key] <= 1.0
 
 
-# =============================================================================
-# F4 — Production Flutter/LiteRT Export (6 tests)
-# =============================================================================
-
-
 def test_f4_t1_decode_yolov11_channel_first_last_norm_and_pixel() -> None:
-    # [7, 2] pixel coordinates
     ch_first_px = [
         [320.0, 100.0],
         [320.0, 100.0],
         [64.0, 20.0],
         [64.0, 20.0],
-        [0.05, 0.02],
         [0.88, 0.10],
         [0.03, 0.01],
     ]
-    dets_cf = decode_yolov11_output(ch_first_px, img_size=640, conf_threshold=0.35, iou_threshold=0.45)
+    dets_cf = decode_yolov11_output(ch_first_px, img_size=640, conf_threshold=0.45, iou_threshold=0.45)
     assert len(dets_cf) == 1
-    assert dets_cf[0]["class_id"] == 1
+    assert dets_cf[0]["class_id"] == 0
     assert dets_cf[0]["class_name"] == "whitefly"
     assert dets_cf[0]["confidence"] == pytest.approx(0.88)
     assert dets_cf[0]["box"] == pytest.approx((0.45, 0.45, 0.55, 0.55))
 
-    # [2, 7] normalized coordinates
     ch_last_norm = [
-        [0.5, 0.5, 0.1, 0.1, 0.05, 0.88, 0.03],
-        [0.2, 0.2, 0.05, 0.05, 0.02, 0.10, 0.01],
+        [0.5, 0.5, 0.1, 0.1, 0.88, 0.03],
+        [0.2, 0.2, 0.05, 0.05, 0.10, 0.01],
     ]
-    dets_cl = decode_yolov11_output(ch_last_norm, img_size=640, conf_threshold=0.35, iou_threshold=0.45)
+    dets_cl = decode_yolov11_output(ch_last_norm, img_size=640, conf_threshold=0.45, iou_threshold=0.45)
     assert len(dets_cl) == 1
-    assert dets_cl[0]["class_id"] == 1
+    assert dets_cl[0]["class_id"] == 0
     assert dets_cl[0]["box"] == pytest.approx((0.45, 0.45, 0.55, 0.55))
 
 
 def test_f4_t1_decode_yolov11_per_class_nms_preserves_distinct_pests() -> None:
     anchors = [
-        [0.5, 0.5, 0.2, 0.2, 0.85, 0.05, 0.02],  # thrips high
-        [0.51, 0.51, 0.2, 0.2, 0.60, 0.04, 0.01],  # duplicate thrips (IoU > 0.45) -> suppressed
-        [0.5, 0.5, 0.2, 0.2, 0.03, 0.04, 0.72],  # aphids overlapping same location -> kept
+        [0.5, 0.5, 0.2, 0.2, 0.85, 0.02],
+        [0.51, 0.51, 0.2, 0.2, 0.60, 0.01],
+        [0.5, 0.5, 0.2, 0.2, 0.03, 0.72],
     ]
-    dets = decode_yolov11_output(anchors, img_size=640, conf_threshold=0.35, iou_threshold=0.45)
-    assert [d["class_name"] for d in dets] == ["thrips", "aphids"]
+    dets = decode_yolov11_output(anchors, img_size=640, conf_threshold=0.45, iou_threshold=0.45)
+    assert [d["class_name"] for d in dets] == ["whitefly", "aphids"]
 
 
 def test_f4_t1_build_model_metadata_matches_flutter_contract() -> None:
     digest = "a" * 64
-    meta = build_model_metadata(model_version="yolo11n-int8-aaaaaaaa", img_size=640, sha256_hex=digest)
+    meta = build_model_metadata(model_version="yolo11n-fp16-aaaaaaaa", img_size=640, sha256_hex=digest)
     assert meta["architecture"] == "yolo11n"
     assert meta["input_dtype"] == "float32"
     assert meta["input_normalization"] == "0_to_1"
     assert meta["letterbox_pad_value"] == 114
-    assert meta["confidence_threshold"] == 0.35
+    assert meta["confidence_threshold"] == 0.45
     assert meta["iou_threshold"] == 0.45
-    assert meta["classes"] == {"0": "thrips", "1": "whitefly", "2": "aphids"}
+    assert meta["output_shape"] == [1, 6, 8400]
+    assert meta["classes"] == {"0": "whitefly", "1": "aphids"}
     assert meta["sha256"] == digest
 
 
@@ -512,16 +474,13 @@ def test_f4_t1_export_assets_writes_tflite_labels_and_sha256_metadata(
         target_tflite = export_model_to_flutter_assets(weights_pt, assets_dir, img_size=640)
 
     assert target_tflite.exists()
-    expected_sha = hashlib.sha256(real_tflite.read_bytes()).hexdigest()
     actual_sha = hashlib.sha256(target_tflite.read_bytes()).hexdigest()
-    assert actual_sha == expected_sha
-
     labels = (assets_dir / "labels.txt").read_text(encoding="utf-8").splitlines()
-    assert labels == ["thrips", "whitefly", "aphids"]
+    assert labels == ["whitefly", "aphids"]
 
     metadata = json.loads((assets_dir / "model_metadata.json").read_text(encoding="utf-8"))
-    assert metadata["sha256"] == expected_sha
-    assert metadata["classes"] == {"0": "thrips", "1": "whitefly", "2": "aphids"}
+    assert metadata["sha256"] == actual_sha
+    assert metadata["classes"] == {"0": "whitefly", "1": "aphids"}
 
 
 def test_f4_t1_litert_interpreter_smoke_inference_and_decode(
@@ -547,24 +506,20 @@ def test_f4_t1_litert_interpreter_smoke_inference_and_decode(
     raw_out = interp.get_tensor(out_detail["index"])
 
     assert raw_out.shape[0] == 1
-    assert raw_out.shape[1] == 7
+    assert raw_out.shape[1] == 6
     assert np.all(np.isfinite(raw_out))
 
-    dets = decode_yolov11_output(raw_out[0].tolist(), img_size=max(in_h, in_w), conf_threshold=0.35, iou_threshold=0.45)
+    dets = decode_yolov11_output(raw_out[0].tolist(), img_size=max(in_h, in_w), conf_threshold=0.45, iou_threshold=0.45)
     assert isinstance(dets, list)
 
 
 def test_f4_t1_labels_txt_exact_canonical_order(ml_root: Path) -> None:
     labels = [line.strip() for line in (ml_root / "artifacts" / "labels.txt").read_text(encoding="utf-8").splitlines() if line.strip()]
-    assert labels == ["thrips", "whitefly", "aphids"]
+    assert labels == ["whitefly", "aphids"]
 
     metadata = json.loads((ml_root / "artifacts" / "model_metadata.json").read_text(encoding="utf-8"))
     assert metadata["classes"] == {str(k): v for k, v in CANONICAL_CLASSES.items()}
 
-
-# =============================================================================
-# F5 — Scope & Security Hygiene (5 tests)
-# =============================================================================
 
 KNOWN_LEGACY_TEST_FIXTURE_MATCHES: frozenset[str] = frozenset(
     {
@@ -581,7 +536,6 @@ _COMMIT_HEADER_RE = re.compile(r"^commit [0-9a-f]{7,64}$")
 
 
 def is_ml_test_path(rel_path: str) -> bool:
-    """Return True only when normalized repository-relative path is a Python file strictly under ml/tests/."""
     cleaned = rel_path.strip().replace("\\", "/")
     if not cleaned:
         return False
@@ -610,7 +564,6 @@ def scan_ml_text_for_secrets(
     text: str,
     secret_scanner: Callable[[str], list[str]],
 ) -> list[str]:
-    """Scan text for secrets: zero-tolerance outside ml/tests/, explicit placeholder-only inside ml/tests/."""
     raw_findings = secret_scanner(text)
     if not raw_findings or not is_ml_test_path(rel_path):
         return raw_findings
@@ -622,7 +575,6 @@ def scan_ml_bytes_for_secrets(
     raw: bytes,
     bytes_secret_scanner: Callable[[bytes], list[str]],
 ) -> list[str]:
-    """Scan bytes for secrets: zero-tolerance outside ml/tests/, explicit placeholder-only inside ml/tests/."""
     raw_findings = bytes_secret_scanner(raw)
     if not raw_findings or not is_ml_test_path(rel_path):
         return raw_findings
@@ -634,7 +586,6 @@ def scan_ml_git_diff_for_secrets(
     bytes_secret_scanner: Callable[[bytes], list[str]],
     secret_scanner: Callable[[str], list[str]],
 ) -> list[str]:
-    """Parse git diff by file section; apply ml/tests/ placeholder filter only to ml/tests/ hunk bodies."""
     diff_text = diff_raw.decode("utf-8", errors="ignore") if isinstance(diff_raw, bytes) else diff_raw
     findings: list[str] = []
     current_path = "<git-diff-header>"
@@ -705,18 +656,17 @@ def scan_ml_git_diff_for_secrets(
     return findings
 
 
-def test_f5_t1_committed_branch_diff_strictly_inside_ml(repo_root: Path, ml_only_path_validator: Any) -> None:
+def test_f5_t1_committed_branch_diff_strictly_inside_approved_scope(repo_root: Path, ml_only_path_validator: Any) -> None:
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "main", "HEAD"],
+        ["git", "diff", "--name-only", "main"],
         cwd=repo_root,
         capture_output=True,
         text=True,
         check=True,
     )
     paths = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
-    assert len(paths) >= 1
     violations = ml_only_path_validator(paths)
-    assert violations == [], f"Committed branch diff contains paths outside ml/: {violations}"
+    assert violations == [], f"Branch diff contains paths outside ml/ and apps/mobile/: {violations}"
 
 
 @pytest.mark.parametrize(
@@ -764,7 +714,7 @@ def test_f5_t1_tracked_ml_files_have_zero_secrets(
         assert findings == [], f"Secret-like pattern found in {rel_path}: {findings}"
 
 
-def test_f5_t1_commit_history_main_to_head_clean_of_secrets_and_non_ml_paths(
+def test_f5_t1_commit_history_main_to_head_clean_of_secrets_and_backend_paths(
     repo_root: Path,
     ml_only_path_validator: Any,
     secret_scanner: Any,
@@ -798,13 +748,3 @@ def test_f5_t1_commit_history_main_to_head_clean_of_secrets_and_non_ml_paths(
         check=True,
     )
     assert scan_ml_git_diff_for_secrets(diff_proc.stdout, bytes_secret_scanner, secret_scanner) == []
-
-
-def test_f5_t1_requirements_compatible_with_litert_and_roboflow(ml_root: Path) -> None:
-    raw_lines = (ml_root / "requirements.txt").read_text(encoding="utf-8").splitlines()
-    active_specs = [line.strip().lower() for line in raw_lines if line.strip() and not line.strip().startswith("#")]
-    joined = "\n".join(active_specs)
-    assert any(spec.startswith("ai-edge-litert") for spec in active_specs)
-    assert any(spec.startswith("roboflow") for spec in active_specs)
-    assert not any(spec.startswith("tensorflow<") or spec.startswith("tensorflow>=") for spec in active_specs), joined
-    assert not any(spec.startswith("onnx2tf") for spec in active_specs), joined

@@ -11,7 +11,7 @@ import 'package:image/image.dart' as img;
 /// dengan golden dari model asli, jadi ubah keduanya bersamaan.
 const int kYoloInput = 640;
 const int kYoloAnchors = 8400;
-const int kYoloClasses = 3;
+const int kYoloClasses = 2;
 const int kYoloChannels = 4 + kYoloClasses;
 const double kYoloPadValue = 114;
 
@@ -98,32 +98,94 @@ Letterbox computeLetterbox(int width, int height, {int target = kYoloInput}) {
 
 /// Foto → tensor float32 NHWC [640*640*3], RGB 0..1, pad 114/255. Panggil setelah
 /// `bakeOrientation` agar foto ponsel yang diputar lewat EXIF tidak miring.
+/// Menggunakan penyelarasan pusat setengah-piksel (`(x + 0.5) * scale - 0.5`) agar identik
+/// dengan `cv2.resize(..., INTER_LINEAR)` pada pipeline pelatihan/evaluasi Python.
 Float32List letterboxToTensor(img.Image source) {
   final lb = computeLetterbox(source.width, source.height);
-  var image = source.numChannels == 3 && source.format == img.Format.uint8
+  final image = source.numChannels == 3 && source.format == img.Format.uint8
       ? source
       : source.convert(format: img.Format.uint8, numChannels: 3);
-  if (image.width != lb.newWidth || image.height != lb.newHeight) {
-    image = img.copyResize(
-      image,
-      width: lb.newWidth,
-      height: lb.newHeight,
-      interpolation: img.Interpolation.linear,
-    );
-  }
+  final srcW = image.width;
+  final srcH = image.height;
+  final dstW = lb.newWidth;
+  final dstH = lb.newHeight;
   final out = Float32List(kYoloInput * kYoloInput * 3)
     ..fillRange(0, kYoloInput * kYoloInput * 3, kYoloPadValue / 255.0);
-  for (var y = 0; y < image.height; y++) {
-    final ty = y + lb.top;
+
+  if (srcW == dstW && srcH == dstH) {
+    for (var y = 0; y < dstH; y++) {
+      final ty = y + lb.top;
+      if (ty < 0 || ty >= kYoloInput) continue;
+      for (var x = 0; x < dstW; x++) {
+        final tx = x + lb.left;
+        if (tx < 0 || tx >= kYoloInput) continue;
+        final p = image.getPixel(x, y);
+        final o = (ty * kYoloInput + tx) * 3;
+        out[o] = p.r / 255.0;
+        out[o + 1] = p.g / 255.0;
+        out[o + 2] = p.b / 255.0;
+      }
+    }
+    return out;
+  }
+
+  final scaleX = srcW / dstW;
+  final scaleY = srcH / dstH;
+  for (var dy = 0; dy < dstH; dy++) {
+    final ty = dy + lb.top;
     if (ty < 0 || ty >= kYoloInput) continue;
-    for (var x = 0; x < image.width; x++) {
-      final tx = x + lb.left;
+    final fy = (dy + 0.5) * scaleY - 0.5;
+    final int y0;
+    final int y1;
+    final double wy;
+    if (fy <= 0.0) {
+      y0 = 0;
+      y1 = 0;
+      wy = 0.0;
+    } else if (fy >= srcH - 1) {
+      y0 = srcH - 1;
+      y1 = srcH - 1;
+      wy = 0.0;
+    } else {
+      y0 = fy.floor();
+      y1 = y0 + 1;
+      wy = fy - y0;
+    }
+    final wy0 = 1.0 - wy;
+
+    for (var dx = 0; dx < dstW; dx++) {
+      final tx = dx + lb.left;
       if (tx < 0 || tx >= kYoloInput) continue;
-      final p = image.getPixel(x, y);
+      final fx = (dx + 0.5) * scaleX - 0.5;
+      final int x0;
+      final int x1;
+      final double wx;
+      if (fx <= 0.0) {
+        x0 = 0;
+        x1 = 0;
+        wx = 0.0;
+      } else if (fx >= srcW - 1) {
+        x0 = srcW - 1;
+        x1 = srcW - 1;
+        wx = 0.0;
+      } else {
+        x0 = fx.floor();
+        x1 = x0 + 1;
+        wx = fx - x0;
+      }
+      final wx0 = 1.0 - wx;
+
+      final p00 = image.getPixel(x0, y0);
+      final p01 = image.getPixel(x1, y0);
+      final p10 = image.getPixel(x0, y1);
+      final p11 = image.getPixel(x1, y1);
+      final r = (wy0 * (wx0 * p00.r + wx * p01.r) + wy * (wx0 * p10.r + wx * p11.r)).round().clamp(0, 255);
+      final g = (wy0 * (wx0 * p00.g + wx * p01.g) + wy * (wx0 * p10.g + wx * p11.g)).round().clamp(0, 255);
+      final b = (wy0 * (wx0 * p00.b + wx * p01.b) + wy * (wx0 * p10.b + wx * p11.b)).round().clamp(0, 255);
       final o = (ty * kYoloInput + tx) * 3;
-      out[o] = p.r / 255.0;
-      out[o + 1] = p.g / 255.0;
-      out[o + 2] = p.b / 255.0;
+      out[o] = r / 255.0;
+      out[o + 1] = g / 255.0;
+      out[o + 2] = b / 255.0;
     }
   }
   return out;
@@ -141,14 +203,14 @@ double _iou(YoloDetection a, YoloDetection b) {
   return inter / math.max(1e-8, areaA + areaB - inter);
 }
 
-/// Keluaran model [1, 7, 8400] yang sudah diratakan (channel-first): baris 0..3 = cx, cy, w, h,
-/// baris 4..6 = skor thrips, whitefly, aphids. Tensor dengan ukuran lain menandakan model salah
+/// Keluaran model [1, 6, 8400] yang sudah diratakan (channel-first): baris 0..3 = cx, cy, w, h,
+/// baris 4..5 = skor whitefly, aphids. Tensor dengan ukuran lain menandakan model salah
 /// dan ditolak keras, bukan diam-diam menghasilkan nol deteksi.
 List<YoloDetection> decodeYolov11Output(
   Float32List output, {
   int anchors = kYoloAnchors,
   int imgSize = kYoloInput,
-  double confThreshold = 0.35,
+  double confThreshold = 0.45,
   double iouThreshold = 0.45,
 }) {
   if (output.isEmpty) return const [];

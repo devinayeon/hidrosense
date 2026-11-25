@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import io
 import json
-import sys
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+import zipfile
 
 from PIL import Image, ImageDraw
 import pytest
@@ -12,7 +14,7 @@ import yaml
 
 from ml.prepare_dataset import (
     CANONICAL_CLASSES,
-    ROBOFLOW_SOURCES,
+    ROBOFLOW_DIRECT_SOURCES,
     _DihedralHashIndex,
     _classify_dropped_yolo_line,
     _clamp01,
@@ -21,9 +23,10 @@ from ml.prepare_dataset import (
     canonicalize_label_name,
     compute_dihedral_phashes,
     deduplicate_and_merge_sources,
-    download_roboflow_sources,
+    download_roboflow_direct_sources,
     export_merged_dataset,
     load_env_file,
+    normalize_roboflow_ds_url,
     parse_and_sanitize_yolo_line,
     stratified_split_records,
     verify_exported_dataset,
@@ -48,6 +51,10 @@ def _make_distinct_image(
     else:
         draw.line((0, size[1], size[0], 0), fill=(0, 0, 0), width=4)
     img.save(path)
+
+
+def os_getenv(name: str) -> str | None:
+    return os.environ.get(name)
 
 
 class TestEnvLoaderAndRoboflowFailFast:
@@ -84,132 +91,101 @@ class TestEnvLoaderAndRoboflowFailFast:
         assert "SECOND_VAR" in loaded_override
         assert os_getenv("SECOND_VAR") == "double_quoted"
 
-    def test_roboflow_sources_match_confirmed_versions_and_optional_probe(self) -> None:
-        by_slug = {f"{s['workspace']}/{s['project']}": s for s in ROBOFLOW_SOURCES}
-        assert by_slug["puzzle-piece-detection/lettuce-pests"]["version"] == 6
-        assert by_slug["puzzle-piece-detection/lettuce-pests"]["required"] is True
-        assert by_slug["puzzle-piece-detection/lettuce-pest-detection"]["version"] == 1
-        assert by_slug["puzzle-piece-detection/lettuce-pest-detection"]["required"] is True
-        assert by_slug["agrivision-2025/lettuce-pests-wieje"]["required"] is False
+    def test_roboflow_direct_sources_match_whitefly_and_aphids_specs(self) -> None:
+        by_id = {s["dataset_id"]: s for s in ROBOFLOW_DIRECT_SOURCES}
+        assert set(by_id.keys()) == {"rOfgg1CNHN", "PaVtWyiDBO"}
+        assert by_id["rOfgg1CNHN"]["slug"] == "jini-nkjjt/whitefly-0tong"
+        assert by_id["PaVtWyiDBO"]["slug"] == "jiwons-workspace-syfav/aphids-new"
+        assert all(s["required"] is True for s in ROBOFLOW_DIRECT_SOURCES)
 
-    def test_download_raises_without_api_key_even_if_local_dirs_exist(
+        norm_url, extracted_k = normalize_roboflow_ds_url("https://universe.roboflow.com/ds/rOfgg1CNHN?k" + "ey=unitKeyAbc")
+        assert norm_url.startswith("https://app.roboflow.com/ds/rOfgg1CNHN?")
+        assert extracted_k == "unitKeyAbc"
+
+    def test_download_raises_without_url_env_even_if_local_dirs_exist(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        raw_root = tmp_path / "raw_roboflow"
-        existing = raw_root / "puzzle-piece-detection_lettuce-pests_v6"
+        raw_root = tmp_path / "raw_v2"
+        existing = raw_root / "whitefly_0tong_v1"
         existing.mkdir(parents=True)
-        (existing / "data.yaml").write_text("nc: 3\nnames: [thrips, whitefly, aphids]\n", encoding="utf-8")
+        (existing / "data.yaml").write_text("nc: 1\nnames: [whitefly]\n", encoding="utf-8")
 
-        monkeypatch.delenv("ROBOFLOW_API_KEY", raising=False)
+        monkeypatch.delenv("ROBOFLOW_WHITEFLY_URL", raising=False)
+        monkeypatch.delenv("ROBOFLOW_APHIDS_URL", raising=False)
         missing_env = tmp_path / "nonexistent.env"
 
-        with pytest.raises(RuntimeError, match="ROBOFLOW_API_KEY is required"):
-            download_roboflow_sources(raw_root, api_key=None, env_file=missing_env)
+        with pytest.raises(RuntimeError, match="ROBOFLOW_WHITEFLY_URL"):
+            download_roboflow_direct_sources(raw_root, env_file=missing_env)
 
-    def test_download_probes_optional_404_gracefully_and_redacts_secrets(
+    def test_download_handles_optional_failure_and_redacts_query_secret(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        secret_key = "rf_super_secret_test_key_999"
-        overwrite_calls: list[bool] = []
+        import ml.prepare_dataset as ml_prep
 
-        class _FakeVersion:
-            def __init__(self, dest_slug: str) -> None:
-                self._slug = dest_slug
+        secret_q = "unitTestKey999"
+        q_param = "k" + f"ey={secret_q}"
+        monkeypatch.setenv("TEST_WF_URL", f"https://universe.roboflow.com/ds/wf1?{q_param}")
+        monkeypatch.setenv("TEST_OPT_URL", f"https://universe.roboflow.com/ds/opt2?{q_param}")
 
-            def download(self, fmt: str, location: str, overwrite: bool = False) -> None:
-                overwrite_calls.append(overwrite)
-                dest = Path(location)
-                (dest / "train" / "images").mkdir(parents=True, exist_ok=True)
-                (dest / "train" / "labels").mkdir(parents=True, exist_ok=True)
-                _make_distinct_image(dest / "train" / "images" / "a.jpg", 1)
-                (dest / "train" / "labels" / "a.txt").write_text("0 0.5 0.5 0.2 0.2\n", encoding="utf-8")
-                (dest / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("data.yaml", "nc: 1\nnames: ['whitefly']\n")
+            img_buf = io.BytesIO()
+            Image.new("RGB", (64, 64), color=(30, 120, 40)).save(img_buf, format="JPEG")
+            zf.writestr("train/images/a.jpg", img_buf.getvalue())
+            zf.writestr("train/labels/a.txt", "0 0.5 0.5 0.2 0.2\n")
+        zip_bytes = buf.getvalue()
 
-        class _FakeProject:
-            def __init__(self, ws: str, proj: str) -> None:
-                self._ws = ws
-                self._proj = proj
+        def _fake_get(url: str, timeout: int = 90) -> Any:
+            if "opt2" in url:
+                raise RuntimeError(f"404 Client Error for url: {url}")
+            return SimpleNamespace(content=zip_bytes, raise_for_status=lambda: None)
 
-            def version(self, ver: int) -> _FakeVersion:
-                return _FakeVersion(f"{self._ws}/{self._proj}_v{ver}")
-
-        class _FakeWorkspace:
-            def __init__(self, ws: str) -> None:
-                self._ws = ws
-
-            def project(self, proj: str) -> _FakeProject:
-                if self._ws == "agrivision-2025":
-                    err = RuntimeError(f"404 Not Found for https://api.roboflow.com/x?api_key={secret_key}")
-                    setattr(err, "status_code", 404)
-                    raise err
-                return _FakeProject(self._ws, proj)
-
-        class _FakeRoboflow:
-            def __init__(self, api_key: str) -> None:
-                self.onboarding = False
-
-            def workspace(self, ws: str) -> _FakeWorkspace:
-                return _FakeWorkspace(ws)
-
-        monkeypatch.setitem(sys.modules, "roboflow", SimpleNamespace(Roboflow=_FakeRoboflow))
-
-        raw_root = tmp_path / "raw"
-        # Pre-create an empty/partial dir to verify overwrite=True runs instead of skipping!
-        partial_dir = raw_root / "puzzle-piece-detection_lettuce-pests_v6"
-        partial_dir.mkdir(parents=True)
-
-        probe_results: list[dict[str, Any]] = []
-        downloaded = download_roboflow_sources(
-            raw_root=raw_root,
-            api_key=secret_key,
-            probe_results_out=probe_results,
+        monkeypatch.setattr(ml_prep.requests, "get", _fake_get)
+        specs = (
+            {"name": "wf", "slug": "ws/wf", "version": 1, "env_url_key": "TEST_WF_URL", "required": True},
+            {"name": "opt", "slug": "ws/opt", "version": 1, "env_url_key": "TEST_OPT_URL", "required": False},
         )
-
-        assert len(downloaded) == 2
-        assert overwrite_calls == [True, True]
-        assert len(probe_results) == 3
-
-        wieje = [p for p in probe_results if p["slug"] == "agrivision-2025/lettuce-pests-wieje"][0]
-        assert wieje["accessible"] is False
-        assert wieje["status"] == "unavailable"
-        assert wieje["status_code"] == 404
-        assert secret_key not in json.dumps(probe_results)
-        assert "[REDACTED]" in str(wieje["error"])
+        probe_results: list[dict[str, Any]] = []
+        downloaded = download_roboflow_direct_sources(
+            tmp_path / "raw",
+            sources=specs,
+            probe_results_out=probe_results,
+            env_file=tmp_path / "none.env",
+            force_download=True,
+        )
+        assert len(downloaded) == 1
+        assert len(probe_results) == 2
+        assert secret_q not in json.dumps(probe_results)
+        assert "[REDACTED]" in str(probe_results[1]["error"])
 
     def test_download_fails_fast_when_required_source_errors_and_redacts_key(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        secret_key = "rf_required_secret_abc"
+        import ml.prepare_dataset as ml_prep
 
-        class _FakeRoboflow:
-            def __init__(self, api_key: str) -> None:
-                self.onboarding = False
+        secret_q = "reqSecretKey777"
+        monkeypatch.setenv("TEST_REQ_URL", f"https://universe.roboflow.com/ds/req1?k" + f"ey={secret_q}")
 
-            def workspace(self, ws: str) -> Any:
-                raise RuntimeError(f"500 Server Error api_key={secret_key}")
+        def _boom(url: str, timeout: int = 90) -> Any:
+            raise RuntimeError(f"500 Server Error for {url}")
 
-        monkeypatch.setitem(sys.modules, "roboflow", SimpleNamespace(Roboflow=_FakeRoboflow))
+        monkeypatch.setattr(ml_prep.requests, "get", _boom)
+        specs = ({"name": "req", "slug": "ws/req", "version": 1, "env_url_key": "TEST_REQ_URL", "required": True},)
         with pytest.raises(RuntimeError) as exc_info:
-            download_roboflow_sources(raw_root=tmp_path / "raw", api_key=secret_key)
-        assert secret_key not in str(exc_info.value)
+            download_roboflow_direct_sources(tmp_path / "raw", sources=specs, env_file=tmp_path / "none.env")
+        assert secret_q not in str(exc_info.value)
         assert "[REDACTED]" in str(exc_info.value)
-
-
-def os_getenv(name: str) -> str | None:
-    import os
-
-    return os.environ.get(name)
 
 
 class TestPathAndLabelHardening:
     def test_iter_source_image_label_pairs_uses_last_images_segment(self, tmp_path: Path) -> None:
-        # Ancestor dir named "images" AND nested "images" dir inside source_dir
         src = tmp_path / "images" / "raw" / "my_source"
         img_path = src / "images" / "train" / "images" / "sample.jpg"
         lbl_path = src / "images" / "train" / "labels" / "sample.txt"
@@ -220,27 +196,21 @@ class TestPathAndLabelHardening:
         pairs = _iter_source_image_label_pairs(src)
         assert pairs == [(img_path, lbl_path)]
 
-    def test_canonicalize_label_name_rejects_false_positives_negations_and_ambiguous(self) -> None:
-        # Compound positives still work
-        assert canonicalize_label_name("western_flower_thrips") == 0
-        assert canonicalize_label_name("green-peach-aphid") == 2
-        assert canonicalize_label_name("silverleaf whitefly") == 1
+    def test_canonicalize_label_name_rejects_molted_skin_thrips_negations_and_ambiguous(self) -> None:
+        assert canonicalize_label_name("silverleaf whitefly") == 0
+        assert canonicalize_label_name("green-peach-aphid") == 1
 
-        # Substring false positives must be rejected
+        assert canonicalize_label_name("molted skin") is None
+        assert canonicalize_label_name("molted_skin") is None
+        assert canonicalize_label_name("western_flower_thrips") is None
         assert canonicalize_label_name("rhaphidophora") is None
         assert canonicalize_label_name("scaphidium") is None
-        assert canonicalize_label_name("thripsidae_unknown") is None
 
-        # Negation / exclusion tokens must be rejected
         assert canonicalize_label_name("non-aphids") is None
         assert canonicalize_label_name("not whitefly") is None
-        assert canonicalize_label_name("no_thrips") is None
         assert canonicalize_label_name("aphid_mummy") is None
         assert canonicalize_label_name("aphid_predator") is None
-
-        # Multi-class ambiguity must be rejected
-        assert canonicalize_label_name("thrips_whitefly") is None
-        assert canonicalize_label_name("aphids and thrips") is None
+        assert canonicalize_label_name("aphids and whitefly") is None
 
 
 class TestDedupExportAndVerification:
@@ -248,10 +218,8 @@ class TestDedupExportAndVerification:
         root.mkdir(parents=True, exist_ok=True)
         (root / "data.yaml").write_text(f"names: {json.dumps(names)}\nnc: {len(names)}\n", encoding="utf-8")
         for rel_stem, img_seed, label_text in samples:
-            img_path = root / f"{rel_stem}".replace("/labels/", "/images/")
-            lbl_path = root / f"{rel_stem}".replace("/images/", "/labels/")
-            img_path = img_path.with_suffix(".jpg")
-            lbl_path = lbl_path.with_suffix(".txt")
+            img_path = (root / rel_stem.replace("/labels/", "/images/")).with_suffix(".jpg")
+            lbl_path = (root / rel_stem.replace("/images/", "/labels/")).with_suffix(".txt")
             _make_distinct_image(img_path, img_seed)
             lbl_path.parent.mkdir(parents=True, exist_ok=True)
             lbl_path.write_text(label_text, encoding="utf-8")
@@ -264,29 +232,26 @@ class TestDedupExportAndVerification:
     ) -> None:
         src1 = self._build_source(
             tmp_path / "src1",
-            ["thrips", "whitefly", "aphids", "caterpillar"],
+            ["whitefly", "aphids", "molted skin"],
             [
-                ("train/images/t1", 1, "0 0.5 0.5 0.3 0.3\n3 0.2 0.2 0.1 0.1\n"),
-                ("train/images/t2", 2, "0 0.5 0.5 0.3 0.3\n"),
-                ("train/images/t3", 3, "0 0.5 0.5 0.3 0.3\n"),
-                ("train/images/w1", 4, "1 0.5 0.5 0.3 0.3\n"),
-                ("train/images/w2", 5, "1 0.5 0.5 0.3 0.3\n"),
-                ("train/images/w3", 6, "1 0.5 0.5 0.3 0.3\n"),
-                ("train/images/a1", 7, "2 0.5 0.5 0.3 0.3\n"),
-                ("train/images/a2", 8, "2 0.5 0.5 0.3 0.3\n"),
-                ("train/images/a3", 9, "2 0.5 0.5 0.3 0.3\n"),
-                ("train/images/only_unmapped", 10, "3 0.5 0.5 0.2 0.2\n"),
+                ("train/images/w1", 1, "0 0.5 0.5 0.3 0.3\n2 0.2 0.2 0.1 0.1\n"),
+                ("train/images/w2", 2, "0 0.5 0.5 0.3 0.3\n"),
+                ("train/images/w3", 3, "0 0.5 0.5 0.3 0.3\n"),
+                ("train/images/w4", 4, "0 0.5 0.5 0.3 0.3\n"),
+                ("train/images/a1", 5, "1 0.5 0.5 0.3 0.3\n"),
+                ("train/images/a2", 6, "1 0.5 0.5 0.3 0.3\n"),
+                ("train/images/a3", 7, "1 0.5 0.5 0.3 0.3\n"),
+                ("train/images/a4", 8, "1 0.5 0.5 0.3 0.3\n"),
+                ("train/images/molted_only", 10, "2 0.5 0.5 0.2 0.2\n"),
             ],
         )
         src2 = self._build_source(
             tmp_path / "src2",
-            ["aphids", "whitefly", "thrips"],
+            ["aphids", "whitefly"],
             [
-                # Exact duplicate of t1 (seed 1)
-                ("valid/images/dup_exact", 1, "2 0.5 0.5 0.3 0.3\n"),
+                ("valid/images/dup_exact", 1, "1 0.5 0.5 0.3 0.3\n"),
             ],
         )
-        # Near-duplicate (pHash <= 2) of w1 (seed 4) with a 1-pixel corner change
         near_img_path = src2 / "test" / "images" / "dup_near.png"
         near_lbl_path = src2 / "test" / "labels" / "dup_near.txt"
         _make_distinct_image(near_img_path, 4)
@@ -303,12 +268,12 @@ class TestDedupExportAndVerification:
         assert stats["sha256_duplicates_removed"] == 1
         assert stats["phash_duplicates_removed"] == 1
         assert stats["duplicates_removed"] == 2
-        assert stats["empty_or_unmapped_skipped"] == 1
-        assert stats["boxes_kept"] == 9
-        assert stats["boxes_dropped_unmapped"] == 2
-        assert details["src1"]["unmapped_class_names_seen"] == ["caterpillar"]
+        assert stats["negative_images_kept"] == 1
+        assert stats["molted_skin_boxes_removed"] == 2
+        assert stats["boxes_kept"] == 8
+        assert details["src1"]["unmapped_class_names_seen"] == ["molted skin"]
 
-        splits = stratified_split_records(records, train_ratio=0.8, val_ratio=0.1, seed=42)
+        splits = stratified_split_records(records, train_ratio=0.75, val_ratio=0.125, seed=42)
         out_dir = tmp_path / "merged"
         export_report = export_merged_dataset(splits, out_dir, stats)
 
@@ -317,7 +282,7 @@ class TestDedupExportAndVerification:
         assert data_yaml["train"] == "train/images"
         assert data_yaml["val"] == "val/images"
         assert data_yaml["test"] == "test/images"
-        assert data_yaml["nc"] == 3
+        assert data_yaml["nc"] == 2
         assert {int(k): v for k, v in data_yaml["names"].items()} == CANONICAL_CLASSES
 
         other_cwd = tmp_path / "unrelated_cwd"
@@ -335,33 +300,34 @@ class TestDedupExportAndVerification:
         assert verif["status"] == "passed"
         assert verif["cross_split_sha256_overlaps"] == 0
         assert verif["cross_split_phash_overlaps"] == 0
-        assert verif["data_yaml_path_omitted"] is True
-        assert verif["all_canonical_classes_present_in_all_splits"] is True
+        assert verif["molted_skin_surviving_instances"] == 0
 
         json_path, md_path = write_provenance_reports(
             report_dir=tmp_path / "reports",
             output_dir=out_dir,
             probe_results=[
                 {
-                    "slug": "puzzle-piece-detection/lettuce-pests",
-                    "version": 6,
+                    "name": "whitefly_0tong_v1",
+                    "slug": "jini-nkjjt/whitefly-0tong",
+                    "version": 1,
                     "required": True,
                     "status": "downloaded",
                     "status_code": 200,
                     "error_type": None,
                     "error": None,
                     "raw_split_image_counts": {"train": 9},
-                    "raw_class_map": {"0": "thrips"},
+                    "raw_class_map": {"0": "whitefly"},
                 }
             ],
+            ood_manifest=None,
             scan_stats=stats,
             source_details=details,
             export_report=export_report,
             verification_result=verif,
             max_hamming_distance=2,
             seed=42,
-            train_ratio=0.8,
-            val_ratio=0.1,
+            train_ratio=0.75,
+            val_ratio=0.125,
         )
         assert json_path.is_file()
         assert md_path.is_file()
@@ -370,10 +336,10 @@ class TestDedupExportAndVerification:
     def test_verify_exported_dataset_catches_leaks_and_corrupt_labels(self, tmp_path: Path) -> None:
         src = self._build_source(
             tmp_path / "src",
-            ["thrips", "whitefly", "aphids"],
+            ["whitefly", "aphids"],
             [
-                (f"train/images/img_{i}", i + 1, f"{i % 3} 0.5 0.5 0.3 0.3\n")
-                for i in range(9)
+                (f"train/images/img_{i}", i + 1, f"{i % 2} 0.5 0.5 0.3 0.3\n")
+                for i in range(10)
             ],
         )
         records, stats = deduplicate_and_merge_sources([src])
@@ -381,9 +347,8 @@ class TestDedupExportAndVerification:
         out_dir = tmp_path / "merged"
         export_merged_dataset(splits, out_dir, stats)
 
-        # 1. Inject cross-split SHA-256 leak
         train_img = next((out_dir / "train" / "images").iterdir())
-        train_lbl = (out_dir / "train" / "labels" / f"{train_img.stem}.txt")
+        train_lbl = out_dir / "train" / "labels" / f"{train_img.stem}.txt"
         leak_img = out_dir / "val" / "images" / f"leaked_{train_img.name}"
         leak_lbl = out_dir / "val" / "labels" / f"leaked_{train_img.stem}.txt"
         leak_img.write_bytes(train_img.read_bytes())
@@ -392,7 +357,6 @@ class TestDedupExportAndVerification:
         with pytest.raises(ValueError, match="Cross-split SHA-256 overlap"):
             verify_exported_dataset(out_dir)
 
-        # Clean leak, then inject out-of-bounds label
         leak_img.unlink()
         leak_lbl.unlink()
         val_lbl = next((out_dir / "val" / "labels").iterdir())
@@ -401,7 +365,6 @@ class TestDedupExportAndVerification:
         with pytest.raises(ValueError, match="Out-of-bounds box"):
             verify_exported_dataset(out_dir)
 
-        # Restore valid label, then inject non-portable path: . in data.yaml
         val_lbl.write_text(orig_lbl, encoding="utf-8")
         yaml_path = out_dir / "data.yaml"
         yaml_payload = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
@@ -412,7 +375,7 @@ class TestDedupExportAndVerification:
 
 
 class TestCommittedProvenanceArtifact:
-    def test_dataset_provenance_json_if_present_has_zero_synthetic_and_zero_leaks(self) -> None:
+    def test_dataset_provenance_json_if_present_has_zero_synthetic_zero_molted_and_zero_leaks(self) -> None:
         prov_path = Path("ml/reports/dataset_provenance.json")
         if not prov_path.is_file():
             pytest.skip("ml/reports/dataset_provenance.json not generated yet")
@@ -421,12 +384,16 @@ class TestCommittedProvenanceArtifact:
         data = json.loads(raw_text)
         assert data["zero_synthetic_confirmed"] is True
         assert data["synthetic_images_count"] == 0
+        assert data["molted_skin_boxes_removed"] >= 1
         assert data["verification"]["status"] == "passed"
+        assert data["verification"]["molted_skin_surviving_instances"] == 0
+        assert data["verification"]["thrips_surviving_instances"] == 0
         assert data["verification"]["cross_split_sha256_overlaps"] == 0
         assert data["verification"]["cross_split_phash_overlaps"] == 0
         assert data["verification"]["data_yaml_path_omitted"] is True
         for split_name in ("train", "val", "test"):
             assert data["splits"][split_name]["images"] > 0
+            assert data["splits"][split_name]["negative_images"] > 0
             for cls_name in CANONICAL_CLASSES.values():
                 assert data["splits"][split_name]["per_class_instances"][cls_name] > 0
 
@@ -454,7 +421,7 @@ class TestDihedralGroupLeakageAndGuards:
         for src in (src1, src2):
             (src / "train" / "images").mkdir(parents=True)
             (src / "train" / "labels").mkdir(parents=True)
-            (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+            (src / "data.yaml").write_text("names: [whitefly, aphids]\nnc: 2\n", encoding="utf-8")
 
         base_img = self._make_asymmetric_image(1)
         base_img.save(src1 / "train" / "images" / "orig.png")
@@ -479,7 +446,6 @@ class TestDihedralGroupLeakageAndGuards:
         assert stats["phash_duplicates_removed"] == 7
         assert stats["duplicates_removed"] == 7
 
-        # Verify symmetric MIH lookup handles median-boundary shifts regardless of insertion order
         a_phs = (0x0000000000000000, 0x000000000000000F, 0, 0, 0, 0, 0, 0)
         b_phs = (0x0000000000000001, 0xFFFF000000000000, 0, 0, 0, 0, 0, 0)
         idx_ab = _DihedralHashIndex(threshold=1)
@@ -496,17 +462,15 @@ class TestDihedralGroupLeakageAndGuards:
         src = tmp_path / "src"
         (src / "train" / "images").mkdir(parents=True)
         (src / "train" / "labels").mkdir(parents=True)
-        (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+        (src / "data.yaml").write_text("names: [whitefly, aphids]\nnc: 2\n", encoding="utf-8")
 
-        # 9 distinct base scenes (3 per canonical class) well separated in 8-dihedral pHash
-        base_seeds = [1, 7, 13, 21, 29, 37, 45, 53, 61]
+        base_seeds = [1, 7, 13, 21, 29, 37, 45, 53]
         for idx, seed_val in enumerate(base_seeds):
             img = self._make_asymmetric_image(seed_val)
             stem = f"scene_{idx}_jpg.rf.base{idx:04d}"
             img.save(src / "train" / "images" / f"{stem}.png")
-            (src / "train" / "labels" / f"{stem}.txt").write_text(f"{idx % 3} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+            (src / "train" / "labels" / f"{stem}.txt").write_text(f"{idx % 2} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
-        # 1) Rescaled/cropped variant of scene_0 with 2 < 8-dihedral pHash <= 4
         scene0_img = self._make_asymmetric_image(base_seeds[0])
         scene0_phs = compute_dihedral_phashes(scene0_img)
         rescaled_variant = None
@@ -520,28 +484,24 @@ class TestDihedralGroupLeakageAndGuards:
         rescaled_variant.save(src / "train" / "images" / "scene0_rescaled_jpg.rf.var0001.png")
         (src / "train" / "labels" / "scene0_rescaled_jpg.rf.var0001.txt").write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
-        # 2) Same .rf. base stem as scene_1 but heavy zoom/crop (pHash > 4)
         scene1_img = self._make_asymmetric_image(base_seeds[1])
         scene1_crop = scene1_img.crop((28, 28, 108, 108)).resize((128, 128), Image.Resampling.BILINEAR)
         assert _min_dihedral_distance(compute_dihedral_phashes(scene1_img), compute_dihedral_phashes(scene1_crop)) > 4
         scene1_crop.save(src / "train" / "images" / "scene_1_jpg.rf.crop9999.png")
         (src / "train" / "labels" / "scene_1_jpg.rf.crop9999.txt").write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
-        # 3) Transitive bridge: orig.rf.111 --(ROTATE_90, d=0)--> orig_rot90.rf.222 --(base_stem)--> orig_rot90.rf.333 (cropped, d>4)
         bridge_orig = self._make_asymmetric_image(99)
         bridge_rot90 = bridge_orig.transpose(Image.Transpose.ROTATE_90)
         bridge_crop = bridge_rot90.crop((28, 28, 108, 108)).resize((128, 128), Image.Resampling.BILINEAR)
         assert _min_dihedral_distance(compute_dihedral_phashes(bridge_orig), compute_dihedral_phashes(bridge_crop)) > 4
         bridge_orig.save(src / "train" / "images" / "orig_jpg.rf.111.png")
-        (src / "train" / "labels" / "orig_jpg.rf.111.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        (src / "train" / "labels" / "orig_jpg.rf.111.txt").write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
         bridge_rot90.save(src / "train" / "images" / "orig_rot90_jpg.rf.222.png")
-        (src / "train" / "labels" / "orig_rot90_jpg.rf.222.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        (src / "train" / "labels" / "orig_rot90_jpg.rf.222.txt").write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
         bridge_crop.save(src / "train" / "images" / "orig_rot90_jpg.rf.333.png")
-        (src / "train" / "labels" / "orig_rot90_jpg.rf.333.txt").write_text("2 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+        (src / "train" / "labels" / "orig_rot90_jpg.rf.333.txt").write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
         records, stats = deduplicate_and_merge_sources([src])
-        # orig_rot90.rf.222 is dropped by 8-dihedral hard dedup (d=0), while bridge_crop survives (d>4)
-        # and MUST still share the same group_id as orig.rf.111 via pre-dedup Union-Find!
         by_stem = {r.image_path.stem: r for r in records}
         assert "orig_jpg.rf.111" in by_stem
         assert "orig_rot90_jpg.rf.333" in by_stem
@@ -550,7 +510,7 @@ class TestDihedralGroupLeakageAndGuards:
         assert by_stem["scene_0_jpg.rf.base0000"].group_id == by_stem["scene0_rescaled_jpg.rf.var0001"].group_id
         assert by_stem["scene_1_jpg.rf.base0001"].group_id == by_stem["scene_1_jpg.rf.crop9999"].group_id
 
-        splits = stratified_split_records(records, train_ratio=0.8, val_ratio=0.1, seed=42)
+        splits = stratified_split_records(records, train_ratio=0.75, val_ratio=0.125, seed=42)
         for family_stems in (
             {"orig_jpg.rf.111", "orig_rot90_jpg.rf.333"},
             {"scene_0_jpg.rf.base0000", "scene0_rescaled_jpg.rf.var0001"},
@@ -573,7 +533,7 @@ class TestDihedralGroupLeakageAndGuards:
         assert verif["cross_split_base_stem_overlaps"] == 0
 
     def test_parse_yolo_line_rejects_nan_inf_early_including_polygons_and_class_id(self) -> None:
-        source_map = {0: "thrips", 1: "whitefly", 2: "aphids"}
+        source_map = {0: "whitefly", 1: "aphids"}
         for bad_line in (
             "0 nan 0.5 0.2 0.2",
             "0 0.5 inf 0.2 0.2",
@@ -598,12 +558,12 @@ class TestDihedralGroupLeakageAndGuards:
         src = tmp_path / "src"
         (src / "train" / "images").mkdir(parents=True)
         (src / "train" / "labels").mkdir(parents=True)
-        (src / "data.yaml").write_text("names: [thrips, whitefly, aphids]\nnc: 3\n", encoding="utf-8")
+        (src / "data.yaml").write_text("names: [whitefly, aphids]\nnc: 2\n", encoding="utf-8")
 
-        for i in range(9):
+        for i in range(10):
             img = self._make_asymmetric_image(i * 7 + 1)
             img.save(src / "train" / "images" / f"clean_{i}.png")
-            (src / "train" / "labels" / f"clean_{i}.txt").write_text(f"{i % 3} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
+            (src / "train" / "labels" / f"clean_{i}.txt").write_text(f"{i % 2} 0.5 0.5 0.25 0.25\n", encoding="utf-8")
 
         records, stats = deduplicate_and_merge_sources([src])
         splits = stratified_split_records(records, seed=42)
@@ -614,7 +574,6 @@ class TestDihedralGroupLeakageAndGuards:
         train_img_path = next((out_dir / "train" / "images").iterdir())
         train_lbl_text = (out_dir / "train" / "labels" / f"{train_img_path.stem}.txt").read_text(encoding="utf-8")
 
-        # 1. ROTATE_90 copy of train image in val
         rot_img = out_dir / "val" / "images" / "leak_rot90.png"
         rot_lbl = out_dir / "val" / "labels" / "leak_rot90.txt"
         with Image.open(train_img_path) as im:
@@ -625,7 +584,6 @@ class TestDihedralGroupLeakageAndGuards:
         rot_img.unlink()
         rot_lbl.unlink()
 
-        # 2. FLIP_LEFT_RIGHT copy of train image in test
         flip_img = out_dir / "test" / "images" / "leak_hflip.png"
         flip_lbl = out_dir / "test" / "labels" / "leak_hflip.txt"
         with Image.open(train_img_path) as im:
@@ -636,7 +594,6 @@ class TestDihedralGroupLeakageAndGuards:
         flip_img.unlink()
         flip_lbl.unlink()
 
-        # 3. Rescaled/cropped pHash=3..4 copy of train image in val
         ph4_img = out_dir / "val" / "images" / "leak_ph4.png"
         ph4_lbl = out_dir / "val" / "labels" / "leak_ph4.txt"
         with Image.open(train_img_path) as im:
@@ -651,12 +608,11 @@ class TestDihedralGroupLeakageAndGuards:
             assert ph4_cand is not None
             ph4_cand.save(ph4_img)
         ph4_lbl.write_text(train_lbl_text, encoding="utf-8")
-        with pytest.raises(ValueError, match="Cross-split.*4"):
+        with pytest.raises(ValueError, match="Cross-split.*group pHash"):
             verify_exported_dataset(out_dir)
         ph4_img.unlink()
         ph4_lbl.unlink()
 
-        # 4. Distinct images sharing Roboflow .rf. base stem across train and val
         rf_train_img = out_dir / "train" / "images" / "sample_x.rf.aaaa1111.png"
         rf_train_lbl = out_dir / "train" / "labels" / "sample_x.rf.aaaa1111.txt"
         rf_val_img = out_dir / "val" / "images" / "sample_x.rf.bbbb2222.png"
@@ -665,7 +621,7 @@ class TestDihedralGroupLeakageAndGuards:
         rf_train_lbl.write_text("0 0.5 0.5 0.25 0.25\n", encoding="utf-8")
         self._make_asymmetric_image(157).save(rf_val_img)
         rf_val_lbl.write_text("1 0.5 0.5 0.25 0.25\n", encoding="utf-8")
-        with pytest.raises(ValueError, match="Cross-split Roboflow base-stem overlap"):
+        with pytest.raises(ValueError, match="Cross-split base-stem overlap"):
             verify_exported_dataset(out_dir)
         rf_train_img.unlink()
         rf_train_lbl.unlink()

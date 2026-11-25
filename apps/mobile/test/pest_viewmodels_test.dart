@@ -121,10 +121,10 @@ void main() {
 
     test('analisis berhasil: tingkat awal dari heuristik, tanpa menyentuh jaringan', () async {
       final repo = FakeRepo();
-      final n = make(repo, (_) async => resultWith([for (var i = 0; i < 4; i++) det(0), det(2)]));
+      final n = make(repo, (_) async => resultWith([for (var i = 0; i < 3; i++) det(0), det(1)]));
       await n.analyze(photo);
       expect(n.state.phase, ScanPhase.analyzed);
-      expect(n.state.severities[PestKind.thrips], PestSeverity.sedang, reason: '4 thrips >= P75 (3)');
+      expect(n.state.severities[PestKind.whitefly], PestSeverity.sedang, reason: '3 whitefly >= P75 (2)');
       expect(n.state.severities[PestKind.aphids], PestSeverity.ringan);
       expect(repo.uploads + repo.scans + repo.created.length, 0);
     });
@@ -139,13 +139,13 @@ void main() {
 
     test('simpan: unggah, pindaian, lalu satu rekomendasi per hama dengan tingkat pilihan pengguna', () async {
       final repo = FakeRepo();
-      final n = make(repo, (_) async => resultWith([det(0), det(2)]));
+      final n = make(repo, (_) async => resultWith([det(0), det(1)]));
       await n.analyze(photo);
       n.setSeverity(PestKind.aphids, PestSeverity.berat);
       await n.save(tableId: '1');
       expect(n.state.phase, ScanPhase.saved);
       expect((repo.uploads, repo.scans), (1, 1));
-      expect(repo.created.map((c) => (c.$1, c.$2)), [(PestKind.thrips, PestSeverity.ringan), (PestKind.aphids, PestSeverity.berat)]);
+      expect(repo.created.map((c) => (c.$1, c.$2)), [(PestKind.whitefly, PestSeverity.ringan), (PestKind.aphids, PestSeverity.berat)]);
       expect(n.state.recommendations, hasLength(2));
     });
 
@@ -165,24 +165,24 @@ void main() {
 
     test('gagal di tengah lalu diulang: tidak unggah ulang, tidak dobel, kunci sama', () async {
       final repo = FakeRepo()..failCreateFor = PestKind.aphids;
-      final n = make(repo, (_) async => resultWith([det(0), det(2)]));
+      final n = make(repo, (_) async => resultWith([det(0), det(1)]));
       await n.analyze(photo);
       await n.save(tableId: '1');
       expect(n.state.phase, ScanPhase.failed);
       expect(n.state.canRetrySave, isTrue);
       expect(n.state.error, 'Server sibuk.');
-      expect(n.state.recommendations.map((r) => r.pest), [PestKind.thrips], reason: 'yang sudah jadi tetap tampil');
+      expect(n.state.recommendations.map((r) => r.pest), [PestKind.whitefly], reason: 'yang sudah jadi tetap tampil');
       repo.failCreateFor = null;
       await n.save(tableId: '1');
       expect(n.state.phase, ScanPhase.saved);
       expect((repo.uploads, repo.scans), (1, 1), reason: 'foto dan pindaian tidak diulang');
-      expect(repo.created.map((c) => c.$1), [PestKind.thrips, PestKind.aphids]);
+      expect(repo.created.map((c) => c.$1), [PestKind.whitefly, PestKind.aphids]);
     });
 
     test('setelah simpan dimulai: tingkat dan meja terkunci, ulangan memakai isi yang sama', () async {
       // Respons yang hilang + isi berbeda dengan kunci sama = 409 OPERATION_CONFLICT selamanya.
       final repo = FakeRepo()..failCreateFor = PestKind.aphids;
-      final n = make(repo, (_) async => resultWith([det(2)]));
+      final n = make(repo, (_) async => resultWith([det(1)]));
       await n.analyze(photo);
       await n.save(tableId: '1');
       expect(n.state.canEditSeverity, isFalse);

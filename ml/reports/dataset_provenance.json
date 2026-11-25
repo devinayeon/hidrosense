@@ -1,12 +1,25 @@
 {
-  "generated_at_utc": "2026-11-22T05:53:06Z",
+  "generated_at_utc": "2026-11-25T12:50:41Z",
   "zero_synthetic_confirmed": true,
   "synthetic_images_count": 0,
   "canonical_classes": {
-    "0": "thrips",
-    "1": "whitefly",
-    "2": "aphids"
+    "0": "whitefly",
+    "1": "aphids"
   },
+  "excluded_classes_stripped": [
+    "cast skin",
+    "exuviae",
+    "frankliniella",
+    "molted",
+    "molted skin",
+    "molted-skin",
+    "molted_skin",
+    "moulted skin",
+    "thrip",
+    "thrips",
+    "thysanoptera"
+  ],
+  "molted_skin_boxes_removed": 176,
   "split_config": {
     "train_ratio": 0.8,
     "val_ratio": 0.1,
@@ -19,222 +32,344 @@
   },
   "sources_probed": [
     {
-      "workspace": "puzzle-piece-detection",
-      "project": "lettuce-pests",
-      "slug": "puzzle-piece-detection/lettuce-pests",
-      "version": 6,
-      "format": "yolov11",
+      "name": "whitefly_0tong_v1",
+      "slug": "jini-nkjjt/whitefly-0tong",
+      "version": 1,
       "required": true,
       "accessible": true,
-      "status": "cached",
+      "status": "downloaded",
       "status_code": 200,
       "error_type": null,
       "error": null,
-      "destination": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pests_v6",
       "raw_class_map": {
-        "0": "aphid",
-        "1": "whitefly"
+        "0": "whitefly"
       },
       "raw_split_image_counts": {
-        "train": 1584,
-        "valid": 155,
-        "test": 77
+        "train": 126,
+        "valid": 25,
+        "test": 5
       }
     },
     {
-      "workspace": "puzzle-piece-detection",
-      "project": "lettuce-pest-detection",
-      "slug": "puzzle-piece-detection/lettuce-pest-detection",
+      "name": "aphids_new_v1",
+      "slug": "jiwons-workspace-syfav/aphids-new",
       "version": 1,
-      "format": "yolov11",
       "required": true,
       "accessible": true,
-      "status": "cached",
+      "status": "downloaded",
       "status_code": 200,
       "error_type": null,
       "error": null,
-      "destination": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pest-detection_v1",
       "raw_class_map": {
-        "0": "thrips"
+        "0": "aphids",
+        "1": "molted skin"
       },
       "raw_split_image_counts": {
-        "train": 1396,
-        "valid": 397,
-        "test": 200
-      }
-    },
-    {
-      "workspace": "agrivision-2025",
-      "project": "lettuce-pests-wieje",
-      "slug": "agrivision-2025/lettuce-pests-wieje",
-      "version": 1,
-      "format": "yolov11",
-      "required": false,
-      "accessible": true,
-      "status": "cached",
-      "status_code": 200,
-      "error_type": null,
-      "error": null,
-      "destination": "ml\\data\\raw_roboflow\\agrivision-2025_lettuce-pests-wieje_v1",
-      "raw_class_map": {
-        "0": "aphid",
-        "1": "whitefly"
-      },
-      "raw_split_image_counts": {
-        "train": 1584,
-        "valid": 155,
-        "test": 77
+        "train": 442,
+        "valid": 126,
+        "test": 63
       }
     }
   ],
+  "ood_negatives": {
+    "source": "ultralytics/coco128 (COCO 2017 real photographs)",
+    "archive_sha256": "61e5e3028863d8ffc3b81d6a514603954889f0edd5e4b44c4ce60b2da99aeb8e",
+    "excluded_coco_classes": [
+      58
+    ],
+    "excluded_images": 9,
+    "category_counts": {
+      "ood_people": 49,
+      "ood_drink_bottles_cups": 14,
+      "ood_healthy_food": 12,
+      "ood_random_objects": 44
+    },
+    "total_ood_images": 119
+  },
   "deduplication": {
-    "total_scanned": 5625,
-    "duplicates_removed": 1333,
-    "sha256_duplicates_removed": 560,
-    "phash_duplicates_removed": 773,
-    "empty_or_unmapped_skipped": 2716,
-    "boxes_kept": 35801,
-    "boxes_dropped": 1,
-    "boxes_dropped_unmapped": 0,
+    "total_scanned": 906,
+    "duplicates_removed": 121,
+    "sha256_duplicates_removed": 2,
+    "phash_duplicates_removed": 119,
+    "empty_or_unmapped_skipped": 0,
+    "negative_images_kept": 194,
+    "molted_skin_boxes_removed": 176,
+    "boxes_kept": 906,
+    "boxes_dropped": 177,
+    "boxes_dropped_unmapped": 176,
     "boxes_dropped_invalid": 1,
-    "groups_formed": 450,
-    "roboflow_base_stems_grouped": 677,
+    "groups_formed": 782,
+    "roboflow_base_stems_grouped": 666,
     "per_source_details": {
-      "puzzle-piece-detection_lettuce-pests_v6": {
-        "source_dir": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pests_v6",
+      "whitefly_0tong_v1": {
+        "source_dir": "ml\\data\\raw_v2\\whitefly_0tong_v1",
         "raw_class_map": {
-          "0": "aphid",
-          "1": "whitefly"
+          "0": "whitefly"
         },
-        "images_scanned": 1816,
-        "images_kept": 692,
-        "sha256_duplicates_removed": 0,
-        "phash_duplicates_removed": 638,
-        "empty_or_unmapped_skipped": 486,
+        "images_scanned": 156,
+        "images_kept": 42,
+        "negative_images_kept": 2,
+        "sha256_duplicates_removed": 2,
+        "phash_duplicates_removed": 112,
+        "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
-        "boxes_total_lines": 35654,
-        "boxes_kept": 16937,
+        "boxes_total_lines": 337,
+        "boxes_kept": 107,
         "boxes_dropped": 0,
+        "molted_skin_boxes_removed": 0,
         "boxes_dropped_unmapped": 0,
         "boxes_dropped_invalid": 0,
         "mapped_class_names_seen": [
-          "aphid",
           "whitefly"
         ],
         "unmapped_class_names_seen": []
       },
-      "puzzle-piece-detection_lettuce-pest-detection_v1": {
-        "source_dir": "ml\\data\\raw_roboflow\\puzzle-piece-detection_lettuce-pest-detection_v1",
+      "aphids_new_v1": {
+        "source_dir": "ml\\data\\raw_v2\\aphids_new_v1",
         "raw_class_map": {
-          "0": "thrips"
+          "0": "aphids",
+          "1": "molted skin"
         },
-        "images_scanned": 1993,
-        "images_kept": 228,
+        "images_scanned": 631,
+        "images_kept": 624,
+        "negative_images_kept": 73,
         "sha256_duplicates_removed": 0,
-        "phash_duplicates_removed": 21,
-        "empty_or_unmapped_skipped": 1744,
+        "phash_duplicates_removed": 7,
+        "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
-        "boxes_total_lines": 1069,
-        "boxes_kept": 1006,
-        "boxes_dropped": 0,
-        "boxes_dropped_unmapped": 0,
-        "boxes_dropped_invalid": 0,
-        "mapped_class_names_seen": [
-          "thrips"
-        ],
-        "unmapped_class_names_seen": []
-      },
-      "agrivision-2025_lettuce-pests-wieje_v1": {
-        "source_dir": "ml\\data\\raw_roboflow\\agrivision-2025_lettuce-pests-wieje_v1",
-        "raw_class_map": {
-          "0": "aphid",
-          "1": "whitefly"
-        },
-        "images_scanned": 1816,
-        "images_kept": 656,
-        "sha256_duplicates_removed": 560,
-        "phash_duplicates_removed": 114,
-        "empty_or_unmapped_skipped": 486,
-        "unreadable_images_skipped": 0,
-        "boxes_total_lines": 35642,
-        "boxes_kept": 17858,
-        "boxes_dropped": 1,
-        "boxes_dropped_unmapped": 0,
+        "boxes_total_lines": 997,
+        "boxes_kept": 799,
+        "boxes_dropped": 177,
+        "molted_skin_boxes_removed": 176,
+        "boxes_dropped_unmapped": 176,
         "boxes_dropped_invalid": 1,
         "mapped_class_names_seen": [
-          "aphid",
-          "whitefly"
+          "aphids"
         ],
+        "unmapped_class_names_seen": [
+          "molted skin"
+        ]
+      },
+      "ood_people": {
+        "source_dir": "ml\\data\\raw_v2\\ood_coco128_negatives\\ood_people",
+        "raw_class_map": {},
+        "images_scanned": 49,
+        "images_kept": 49,
+        "negative_images_kept": 49,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 0,
+        "empty_or_unmapped_skipped": 0,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 0,
+        "boxes_kept": 0,
+        "boxes_dropped": 0,
+        "molted_skin_boxes_removed": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [],
+        "unmapped_class_names_seen": []
+      },
+      "ood_drink_bottles_cups": {
+        "source_dir": "ml\\data\\raw_v2\\ood_coco128_negatives\\ood_drink_bottles_cups",
+        "raw_class_map": {},
+        "images_scanned": 14,
+        "images_kept": 14,
+        "negative_images_kept": 14,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 0,
+        "empty_or_unmapped_skipped": 0,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 0,
+        "boxes_kept": 0,
+        "boxes_dropped": 0,
+        "molted_skin_boxes_removed": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [],
+        "unmapped_class_names_seen": []
+      },
+      "ood_healthy_food": {
+        "source_dir": "ml\\data\\raw_v2\\ood_coco128_negatives\\ood_healthy_food",
+        "raw_class_map": {},
+        "images_scanned": 12,
+        "images_kept": 12,
+        "negative_images_kept": 12,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 0,
+        "empty_or_unmapped_skipped": 0,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 0,
+        "boxes_kept": 0,
+        "boxes_dropped": 0,
+        "molted_skin_boxes_removed": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [],
+        "unmapped_class_names_seen": []
+      },
+      "ood_random_objects": {
+        "source_dir": "ml\\data\\raw_v2\\ood_coco128_negatives\\ood_random_objects",
+        "raw_class_map": {},
+        "images_scanned": 44,
+        "images_kept": 44,
+        "negative_images_kept": 44,
+        "sha256_duplicates_removed": 0,
+        "phash_duplicates_removed": 0,
+        "empty_or_unmapped_skipped": 0,
+        "unreadable_images_skipped": 0,
+        "boxes_total_lines": 0,
+        "boxes_kept": 0,
+        "boxes_dropped": 0,
+        "molted_skin_boxes_removed": 0,
+        "boxes_dropped_unmapped": 0,
+        "boxes_dropped_invalid": 0,
+        "mapped_class_names_seen": [],
         "unmapped_class_names_seen": []
       }
+    }
+  },
+  "visual_profile_sample": {
+    "mean_brightness": 0.513,
+    "mean_contrast": 0.103,
+    "mean_saturation": 0.5924,
+    "mean_edge_energy": 0.005022
+  },
+  "train_count_quantiles": {
+    "whitefly": {
+      "images": 32,
+      "p50": 1,
+      "p75": 2,
+      "p90": 5,
+      "max": 19
+    },
+    "aphids": {
+      "images": 441,
+      "p50": 1,
+      "p75": 2,
+      "p90": 3,
+      "max": 10
     }
   },
   "splits": {
     "train": {
-      "images": 1245,
-      "groups": 360,
-      "instances": 28562,
+      "images": 609,
+      "positive_images": 473,
+      "negative_images": 136,
+      "negative_breakdown": {
+        "leaf_empty": 58,
+        "molted_skin_only": 1,
+        "ood_drink_bottles_cups": 9,
+        "ood_healthy_food": 8,
+        "ood_people": 32,
+        "ood_random_objects": 28
+      },
+      "groups": 606,
+      "instances": 711,
       "per_class_instances": {
-        "thrips": 793,
-        "whitefly": 13709,
-        "aphids": 14060
+        "whitefly": 78,
+        "aphids": 633
       },
       "per_source_images": {
-        "agrivision-2025_lettuce-pests-wieje_v1": 513,
-        "puzzle-piece-detection_lettuce-pest-detection_v1": 181,
-        "puzzle-piece-detection_lettuce-pests_v6": 551
+        "aphids_new_v1": 499,
+        "ood_drink_bottles_cups": 9,
+        "ood_healthy_food": 8,
+        "ood_people": 32,
+        "ood_random_objects": 28,
+        "whitefly_0tong_v1": 33
       },
-      "small_object_ratio": 0.0786,
-      "manifest_sha256": "3207c99649256bab826e9e72c37b51da540fbcd1743207c71392ccde52c0edc5"
+      "scale_distribution": {
+        "small_lt_32px": 5,
+        "medium_32_96px": 188,
+        "large_ge_96px": 518,
+        "small_ratio": 0.007
+      },
+      "manifest_sha256": "81f72ec29eddd7ffb675d3ef7e1d01a6c0cde41490f176f1864548dda309d80c"
     },
     "val": {
-      "images": 178,
-      "groups": 45,
-      "instances": 4350,
+      "images": 85,
+      "positive_images": 59,
+      "negative_images": 26,
+      "negative_breakdown": {
+        "leaf_empty": 7,
+        "molted_skin_only": 1,
+        "ood_drink_bottles_cups": 2,
+        "ood_healthy_food": 2,
+        "ood_people": 7,
+        "ood_random_objects": 7
+      },
+      "groups": 85,
+      "instances": 79,
       "per_class_instances": {
-        "thrips": 53,
-        "whitefly": 2908,
-        "aphids": 1389
+        "whitefly": 4,
+        "aphids": 75
       },
       "per_source_images": {
-        "agrivision-2025_lettuce-pests-wieje_v1": 76,
-        "puzzle-piece-detection_lettuce-pest-detection_v1": 24,
-        "puzzle-piece-detection_lettuce-pests_v6": 78
+        "aphids_new_v1": 62,
+        "ood_drink_bottles_cups": 2,
+        "ood_healthy_food": 2,
+        "ood_people": 7,
+        "ood_random_objects": 7,
+        "whitefly_0tong_v1": 5
       },
-      "small_object_ratio": 0.0591,
-      "manifest_sha256": "745ee3abea2ae4472c2ebc4b5b258f2b37cb66418ee436ec4f7a827dd17825c4"
+      "scale_distribution": {
+        "small_lt_32px": 0,
+        "medium_32_96px": 20,
+        "large_ge_96px": 59,
+        "small_ratio": 0.0
+      },
+      "manifest_sha256": "3abbc059dc7fceb2537b5e08bc7f2995940755122a2c4bbee9121812f920c433"
     },
     "test": {
-      "images": 153,
-      "groups": 45,
-      "instances": 2889,
+      "images": 91,
+      "positive_images": 59,
+      "negative_images": 32,
+      "negative_breakdown": {
+        "leaf_empty": 7,
+        "molted_skin_only": 1,
+        "ood_drink_bottles_cups": 3,
+        "ood_healthy_food": 2,
+        "ood_people": 10,
+        "ood_random_objects": 9
+      },
+      "groups": 91,
+      "instances": 116,
       "per_class_instances": {
-        "thrips": 160,
-        "whitefly": 1481,
-        "aphids": 1248
+        "whitefly": 25,
+        "aphids": 91
       },
       "per_source_images": {
-        "agrivision-2025_lettuce-pests-wieje_v1": 67,
-        "puzzle-piece-detection_lettuce-pest-detection_v1": 23,
-        "puzzle-piece-detection_lettuce-pests_v6": 63
+        "aphids_new_v1": 63,
+        "ood_drink_bottles_cups": 3,
+        "ood_healthy_food": 2,
+        "ood_people": 10,
+        "ood_random_objects": 9,
+        "whitefly_0tong_v1": 4
       },
-      "small_object_ratio": 0.0453,
-      "manifest_sha256": "6b2db33b754a4c0ef6026c52dca6418e6b1db5202b43471bb061efc3d9265a44"
+      "scale_distribution": {
+        "small_lt_32px": 2,
+        "medium_32_96px": 38,
+        "large_ge_96px": 76,
+        "small_ratio": 0.0172
+      },
+      "manifest_sha256": "1bd3bb7dd56e3c99005871cdb4ad773c3167d2f7862d78ccabbb477a27a321d2"
     }
   },
   "totals": {
-    "images": 1576,
-    "instances": 35801,
+    "images": 785,
+    "positive_images": 591,
+    "negative_images": 194,
+    "instances": 906,
     "per_class_instances": {
-      "thrips": 1006,
-      "whitefly": 18098,
-      "aphids": 16697
+      "whitefly": 107,
+      "aphids": 799
     }
   },
   "verification": {
     "status": "passed",
     "data_yaml_path_omitted": true,
     "data_yaml_portable_relative_paths": true,
+    "molted_skin_surviving_instances": 0,
+    "thrips_surviving_instances": 0,
     "cross_split_sha256_overlaps": 0,
     "cross_split_phash_overlaps": 0,
     "cross_split_group_phash_overlaps": 0,
@@ -248,30 +383,33 @@
     "all_canonical_classes_present_in_all_splits": true,
     "splits": {
       "train": {
-        "images": 1245,
-        "instances": 28562,
+        "images": 609,
+        "positive_images": 473,
+        "negative_images": 136,
+        "instances": 711,
         "per_class_instances": {
-          "thrips": 793,
-          "whitefly": 13709,
-          "aphids": 14060
+          "whitefly": 78,
+          "aphids": 633
         }
       },
       "val": {
-        "images": 178,
-        "instances": 4350,
+        "images": 85,
+        "positive_images": 59,
+        "negative_images": 26,
+        "instances": 79,
         "per_class_instances": {
-          "thrips": 53,
-          "whitefly": 2908,
-          "aphids": 1389
+          "whitefly": 4,
+          "aphids": 75
         }
       },
       "test": {
-        "images": 153,
-        "instances": 2889,
+        "images": 91,
+        "positive_images": 59,
+        "negative_images": 32,
+        "instances": 116,
         "per_class_instances": {
-          "thrips": 160,
-          "whitefly": 1481,
-          "aphids": 1248
+          "whitefly": 25,
+          "aphids": 91
         }
       }
     }

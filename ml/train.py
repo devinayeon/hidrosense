@@ -1,29 +1,31 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict, dataclass
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import Any
 
 import yaml
 
+from ml.visual_pipeline import build_visual_training_hyperparams
+
 DEFAULT_KAGGLE_USERNAME = "adityadwiferdiansyah"
 DEFAULT_KAGGLE_SLUG = "hidrosense-yolov11n-lettuce-pests-training"
-DEFAULT_KAGGLE_DATASET = "adityadwiferdiansyah/hidrosense-lettuce-pests-real"
+DEFAULT_KAGGLE_DATASET = "adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"
 
 
 @dataclass(frozen=True)
 class Yolo11TrainingConfig:
     model: str = "yolo11n.pt"
     data: str = "ml/configs/lettuce_pests.yaml"
-    epochs: int = 80
-    patience: int = 20
+    epochs: int = 100
+    patience: int = 25
     batch: int = 16
     imgsz: int = 640
     seed: int = 42
@@ -31,21 +33,29 @@ class Yolo11TrainingConfig:
     lr0: float = 0.001
     lrf: float = 0.01
     cos_lr: bool = True
+    cls: float = 1.2
+    box: float = 7.5
+    dfl: float = 1.5
     mosaic: float = 1.0
     close_mosaic: int = 15
-    scale: float = 0.5
+    scale: float = 0.75
+    translate: float = 0.15
+    degrees: float = 20.0
+    shear: float = 5.0
+    perspective: float = 0.0003
     fliplr: float = 0.5
-    flipud: float = 0.2
-    hsv_h: float = 0.015
-    hsv_s: float = 0.5
-    hsv_v: float = 0.4
-    copy_paste: float = 0.1
+    flipud: float = 0.3
+    hsv_h: float = 0.02
+    hsv_s: float = 0.55
+    hsv_v: float = 0.45
+    copy_paste: float = 0.15
+    mixup: float = 0.08
+    erasing: float = 0.15
     project: str = "ml/runs"
-    name: str = "yolo11n_lettuce_pests"
+    name: str = "yolo11n_whitefly_aphids"
 
 
 def resolve_dataset_yaml(data_yaml_path: Path, output_dir: Path) -> Path:
-    """Resolve relative dataset `path:` against yaml parent, CWD, or repo root."""
     if not data_yaml_path.is_file():
         return data_yaml_path
 
@@ -82,51 +92,13 @@ def resolve_dataset_yaml(data_yaml_path: Path, output_dir: Path) -> Path:
     return out_yaml
 
 
-def run_local_or_kernel_training(config: Yolo11TrainingConfig) -> dict[str, Any]:
-    from ultralytics import YOLO
-
-    run_dir = Path(config.project) / config.name
-    data_path = resolve_dataset_yaml(Path(config.data), run_dir)
-    model = YOLO(config.model)
-    results = model.train(
-        data=str(data_path),
-        epochs=config.epochs,
-        patience=config.patience,
-        batch=config.batch,
-        imgsz=config.imgsz,
-        seed=config.seed,
-        deterministic=True,
-        optimizer=config.optimizer,
-        lr0=config.lr0,
-        lrf=config.lrf,
-        cos_lr=config.cos_lr,
-        mosaic=config.mosaic,
-        close_mosaic=config.close_mosaic,
-        scale=config.scale,
-        fliplr=config.fliplr,
-        flipud=config.flipud,
-        hsv_h=config.hsv_h,
-        hsv_s=config.hsv_s,
-        hsv_v=config.hsv_v,
-        copy_paste=config.copy_paste,
-        project=config.project,
-        name=config.name,
-    )
-    save_dir = Path(results.save_dir)
-    return {
-        "save_dir": str(save_dir),
-        "best_weights": str(save_dir / "weights" / "best.pt"),
-        "config": asdict(config),
-    }
-
-
 def write_kaggle_kernel_bundle(
     kernel_dir: Path,
     kaggle_username: str = DEFAULT_KAGGLE_USERNAME,
     kernel_slug: str = DEFAULT_KAGGLE_SLUG,
     dataset_sources: list[str] | None = None,
 ) -> Path:
-    """Create a clean Kaggle GPU kernel bundle without embedding any API secrets."""
+    """Create a secret-free Kaggle GPU kernel bundle targeting the remote notebook."""
     entry_src = Path(__file__).resolve().parent / "kaggle_train_entry.py"
     if not entry_src.is_file():
         raise FileNotFoundError(f"Kaggle entry script not found: {entry_src}")
@@ -162,12 +134,7 @@ def push_kaggle_kernel(
     cmd = [kaggle_exe, "kernels", "push", "-p", str(kernel_dir)]
     if accelerator:
         cmd.extend(["--accelerator", accelerator])
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
     return proc.stdout.strip()
 
 
@@ -175,7 +142,7 @@ def poll_kaggle_kernel(
     kernel_ref: str,
     kaggle_exe: str = "kaggle",
     poll_interval_s: int = 20,
-    timeout_minutes: int = 60,
+    timeout_minutes: int = 90,
     max_consecutive_errors: int = 5,
 ) -> str:
     deadline = time.monotonic() + timeout_minutes * 60
@@ -200,25 +167,20 @@ def poll_kaggle_kernel(
             continue
 
         status_text = (proc.stdout or "").strip()
-        status_token = ""
         worker_match = re.search(r"KernelWorkerStatus\.([A-Z_]+)", status_text, re.IGNORECASE)
         if worker_match:
             status_token = worker_match.group(1).upper()
         else:
             quoted_match = re.search(r'has status\s+"([^"]+)"', status_text, re.IGNORECASE)
-            if quoted_match:
-                status_token = quoted_match.group(1).upper()
-            else:
-                status_token = re.sub(re.escape(kernel_ref), "", status_text, flags=re.IGNORECASE).upper()
+            status_token = quoted_match.group(1).upper() if quoted_match else status_text.upper()
 
+        print(f"[kaggle-poll] {status_text}", flush=True)
         if "COMPLETE" in status_token:
             return status_text
         if "ERROR" in status_token or "CANCEL" in status_token:
             raise RuntimeError(f"Kaggle kernel {kernel_ref} failed: {status_text}")
         if time.monotonic() >= deadline:
-            raise TimeoutError(
-                f"Timed out waiting {timeout_minutes}m for Kaggle kernel {kernel_ref}: {status_text}"
-            )
+            raise TimeoutError(f"Timed out waiting {timeout_minutes}m for {kernel_ref}: {status_text}")
         time.sleep(poll_interval_s)
 
 
@@ -237,13 +199,9 @@ def download_kaggle_kernel_output(
     return output_dir
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Train YOLOv11n lettuce pest detection model.")
-    parser.add_argument("--data", type=str, default="ml/configs/lettuce_pests.yaml")
-    parser.add_argument("--epochs", type=int, default=80)
-    parser.add_argument("--batch", type=int, default=16)
-    parser.add_argument("--imgsz", type=int, default=640)
-    parser.add_argument("--kaggle-push", action="store_true")
+def main(argv: list[str] | None = None) -> dict[str, Any]:
+    parser = argparse.ArgumentParser(description="Orchestrate remote Kaggle GPU training for 2-class YOLOv11n.")
+    parser.add_argument("--kaggle-push", action="store_true", default=True)
     parser.add_argument("--kaggle-username", type=str, default=DEFAULT_KAGGLE_USERNAME)
     parser.add_argument("--kaggle-slug", type=str, default=DEFAULT_KAGGLE_SLUG)
     parser.add_argument("--kaggle-bundle-dir", type=Path, default=Path("ml/kaggle_work"))
@@ -251,60 +209,46 @@ def main() -> None:
     parser.add_argument("--kaggle-dataset", type=str, default=DEFAULT_KAGGLE_DATASET)
     parser.add_argument("--accelerator", type=str, default="NvidiaTeslaT4")
     parser.add_argument("--poll", action="store_true")
-    parser.add_argument("--timeout-minutes", type=int, default=60)
-    args = parser.parse_args()
+    parser.add_argument("--timeout-minutes", type=int, default=90)
+    args = parser.parse_args(argv)
 
-    if args.kaggle_push:
-        sibling_kaggle = Path(sys.executable).with_name(
-            "kaggle.exe" if sys.platform.startswith("win") else "kaggle"
-        )
-        resolved_kaggle = (
-            str(sibling_kaggle)
-            if sibling_kaggle.is_file()
-            else (shutil.which("kaggle") or "kaggle")
-        )
+    sibling_kaggle = Path(sys.executable).with_name("kaggle.exe" if sys.platform.startswith("win") else "kaggle")
+    resolved_kaggle = str(sibling_kaggle) if sibling_kaggle.is_file() else (shutil.which("kaggle") or "kaggle")
 
-        bundle_meta = write_kaggle_kernel_bundle(
-            kernel_dir=args.kaggle_bundle_dir,
-            kaggle_username=args.kaggle_username,
-            kernel_slug=args.kaggle_slug,
-            dataset_sources=[args.kaggle_dataset] if args.kaggle_dataset else [],
-        )
-        push_out = push_kaggle_kernel(
-            kernel_dir=args.kaggle_bundle_dir,
-            kaggle_exe=resolved_kaggle,
-            accelerator=args.accelerator or None,
-        )
-        kernel_ref = f"{args.kaggle_username}/{args.kaggle_slug}"
-        result: dict[str, Any] = {
-            "kernel_ref": kernel_ref,
-            "metadata_path": str(bundle_meta),
-            "push_output": push_out,
-        }
-        if args.poll:
-            status_text = poll_kaggle_kernel(
-                kernel_ref=kernel_ref,
-                kaggle_exe=resolved_kaggle,
-                timeout_minutes=args.timeout_minutes,
-            )
-            download_kaggle_kernel_output(
-                kernel_ref=kernel_ref,
-                output_dir=args.kaggle_output_dir,
-                kaggle_exe=resolved_kaggle,
-            )
-            result["status"] = status_text
-            result["output_dir"] = str(args.kaggle_output_dir)
-        print(json.dumps(result, indent=2))
-        return
-
-    cfg = Yolo11TrainingConfig(
-        data=args.data,
-        epochs=args.epochs,
-        batch=args.batch,
-        imgsz=args.imgsz,
+    bundle_meta = write_kaggle_kernel_bundle(
+        kernel_dir=args.kaggle_bundle_dir,
+        kaggle_username=args.kaggle_username,
+        kernel_slug=args.kaggle_slug,
+        dataset_sources=[args.kaggle_dataset] if args.kaggle_dataset else [],
     )
-    summary = run_local_or_kernel_training(cfg)
-    print(json.dumps(summary, indent=2))
+    push_out = push_kaggle_kernel(
+        kernel_dir=args.kaggle_bundle_dir,
+        kaggle_exe=resolved_kaggle,
+        accelerator=args.accelerator or None,
+    )
+    kernel_ref = f"{args.kaggle_username}/{args.kaggle_slug}"
+    result: dict[str, Any] = {
+        "kernel_ref": kernel_ref,
+        "metadata_path": str(bundle_meta),
+        "push_output": push_out,
+        "visual_hyperparameters": build_visual_training_hyperparams(),
+        "config": asdict(Yolo11TrainingConfig()),
+    }
+    if args.poll:
+        status_text = poll_kaggle_kernel(
+            kernel_ref=kernel_ref,
+            kaggle_exe=resolved_kaggle,
+            timeout_minutes=args.timeout_minutes,
+        )
+        download_kaggle_kernel_output(
+            kernel_ref=kernel_ref,
+            output_dir=args.kaggle_output_dir,
+            kaggle_exe=resolved_kaggle,
+        )
+        result["status"] = status_text
+        result["output_dir"] = str(args.kaggle_output_dir)
+    print(json.dumps(result, indent=2))
+    return result
 
 
 if __name__ == "__main__":

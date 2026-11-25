@@ -1,6 +1,6 @@
 {
   "architecture": "yolo11n",
-  "model_version": "yolo11n-fp16-cd388bda",
+  "model_version": "yolo11n-fp16-4b32cebd",
   "input_shape": [
     1,
     640,
@@ -12,22 +12,22 @@
   "letterbox_pad_value": 114,
   "output_shape": [
     1,
-    7,
+    6,
     8400
   ],
-  "confidence_threshold": 0.35,
+  "confidence_threshold": 0.45,
   "iou_threshold": 0.45,
   "classes": {
-    "0": "thrips",
-    "1": "whitefly",
-    "2": "aphids"
+    "0": "whitefly",
+    "1": "aphids"
   },
-  "sha256": "cd388bdab9c24490d6d01dd336ef4f2b191f1b66032e23adcf6cf831592b2ab3",
+  "sha256": "4b32cebdfb1ac60f712d0bbeef96a0b7da1f6b03ac5afffb0ba73b6ca36e730a",
   "metrics": {
-    "map50": 0.8913,
-    "map50_95": 0.5765,
-    "precision": 0.8952,
-    "recall": 0.8566,
-    "f1": 0.8755
+    "map50": 0.9423,
+    "map75": 0.4847,
+    "map50_95": 0.4973,
+    "precision": 0.883,
+    "recall": 0.9114,
+    "f1": 0.897
   }
 }
