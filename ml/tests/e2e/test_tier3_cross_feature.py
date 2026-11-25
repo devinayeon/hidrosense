@@ -40,8 +40,8 @@ def test_tier3_f1_to_f2_exported_data_yaml_matches_training_contract(
     ml_root: Path,
     make_yolo_source: Any,
 ) -> None:
-    samples = [{"stem": f"t3_{i}", "pattern_seed": 10 + i, "labels": [f"{i % 3} 0.5 0.5 0.25 0.25"]} for i in range(15)]
-    src = make_yolo_source(tmp_path / "src", ["thrips", "whitefly", "aphids"], samples)
+    samples = [{"stem": f"t3_{i}", "pattern_seed": 10 + i, "labels": [f"{i % 2} 0.5 0.5 0.25 0.25"]} for i in range(16)]
+    src = make_yolo_source(tmp_path / "src", ["whitefly", "aphids"], samples)
     records, stats = deduplicate_and_merge_sources([src])
     splits = stratified_split_records(records, seed=42)
     out_dir = tmp_path / "merged"
@@ -53,16 +53,11 @@ def test_tier3_f1_to_f2_exported_data_yaml_matches_training_contract(
 
     cfg = Yolo11TrainingConfig(data=str(exported_yaml_path))
     assert cfg.imgsz == 640
-    assert exported_yaml["nc"] == ref_yaml["nc"] == 3
+    assert exported_yaml["nc"] == ref_yaml["nc"] == 2
     assert exported_yaml["names"] == ref_yaml["names"]
 
     raw_path = exported_yaml.get("path")
-    if not raw_path:
-        base_dir = exported_yaml_path.parent
-    elif Path(raw_path).is_absolute():
-        base_dir = Path(raw_path)
-    else:
-        base_dir = (exported_yaml_path.parent / raw_path).resolve()
+    base_dir = exported_yaml_path.parent if not raw_path else (Path(raw_path) if Path(raw_path).is_absolute() else (exported_yaml_path.parent / raw_path).resolve())
 
     for split_key in ("train", "val", "test"):
         assert exported_yaml[split_key] == ref_yaml[split_key]
@@ -71,30 +66,27 @@ def test_tier3_f1_to_f2_exported_data_yaml_matches_training_contract(
 
 def test_tier3_f1_to_f4_canonical_classes_match_labels_metadata_and_decoder(ml_root: Path) -> None:
     mapped = {
-        canonicalize_label_name("frankliniella"): "thrips",
         canonicalize_label_name("kutu kebul"): "whitefly",
         canonicalize_label_name("kutu daun"): "aphids",
     }
-    assert mapped == {0: "thrips", 1: "whitefly", 2: "aphids"}
+    assert mapped == {0: "whitefly", 1: "aphids"}
     assert mapped == CANONICAL_CLASSES
 
     labels = [line.strip() for line in (ml_root / "artifacts" / "labels.txt").read_text(encoding="utf-8").splitlines() if line.strip()]
-    assert labels == [CANONICAL_CLASSES[0], CANONICAL_CLASSES[1], CANONICAL_CLASSES[2]]
+    assert labels == [CANONICAL_CLASSES[0], CANONICAL_CLASSES[1]]
 
     built_meta = build_model_metadata(model_version="yolo11n-test")
     disk_meta = json.loads((ml_root / "artifacts" / "model_metadata.json").read_text(encoding="utf-8"))
-    expected_classes = {"0": "thrips", "1": "whitefly", "2": "aphids"}
+    expected_classes = {"0": "whitefly", "1": "aphids"}
     assert built_meta["classes"] == expected_classes
     assert disk_meta["classes"] == expected_classes
 
-    # Verify decoder maps channels 4, 5, 6 -> thrips, whitefly, aphids respectively
     anchors = [
-        [0.2, 0.2, 0.1, 0.1, 0.90, 0.01, 0.01],
-        [0.5, 0.5, 0.1, 0.1, 0.01, 0.85, 0.01],
-        [0.8, 0.8, 0.1, 0.1, 0.01, 0.01, 0.80],
+        [0.2, 0.2, 0.1, 0.1, 0.90, 0.01],
+        [0.8, 0.8, 0.1, 0.1, 0.01, 0.85],
     ]
     dets = decode_yolov11_output(anchors)
-    assert [(d["class_id"], d["class_name"]) for d in dets] == [(0, "thrips"), (1, "whitefly"), (2, "aphids")]
+    assert [(d["class_id"], d["class_name"]) for d in dets] == [(0, "whitefly"), (1, "aphids")]
 
 
 def test_tier3_f1_f2_f5_env_secrets_never_leaked_into_outputs(
@@ -108,8 +100,8 @@ def test_tier3_f1_f2_f5_env_secrets_never_leaked_into_outputs(
     monkeypatch.setenv("ROBOFLOW_API_KEY", rf_sentinel)
     monkeypatch.setenv("KAGGLE_API_TOKEN", kg_sentinel)
 
-    samples = [{"stem": f"sec_{i}", "pattern_seed": 30 + i, "labels": [f"{i % 3} 0.5 0.5 0.2 0.2"]} for i in range(9)]
-    src = make_yolo_source(tmp_path / "src", ["thrips", "whitefly", "aphids"], samples)
+    samples = [{"stem": f"sec_{i}", "pattern_seed": 30 + i, "labels": [f"{i % 2} 0.5 0.5 0.2 0.2"]} for i in range(10)]
+    src = make_yolo_source(tmp_path / "src", ["whitefly", "aphids"], samples)
     records, stats = deduplicate_and_merge_sources([src])
     splits = stratified_split_records(records, seed=42)
     merged_dir = tmp_path / "merged"
@@ -146,7 +138,6 @@ def test_tier3_f4_portrait_1080x1920_letterbox_to_interpreter_to_decoder(
     assert hwc.shape == (in_h, in_w, 3)
     assert hwc.dtype == np.float32
     assert 0.0 <= float(hwc.min()) <= float(hwc.max()) <= 1.0
-    # Left/right padding margins on portrait image must equal 114/255
     assert meta["pad_x"] > 0
     assert hwc[in_h // 2, 0, 0] == pytest.approx(114.0 / 255.0, abs=1e-4)
 
@@ -156,7 +147,7 @@ def test_tier3_f4_portrait_1080x1920_letterbox_to_interpreter_to_decoder(
     raw_out = interp.get_tensor(out_detail["index"])
 
     assert np.all(np.isfinite(raw_out))
-    dets = decode_yolov11_output(raw_out[0].tolist(), img_size=max(in_h, in_w), conf_threshold=0.35, iou_threshold=0.45)
+    dets = decode_yolov11_output(raw_out[0].tolist(), img_size=max(in_h, in_w), conf_threshold=0.45, iou_threshold=0.45)
     for det in dets:
         x1, y1, x2, y2 = det["box"]
         assert 0.0 <= x1 < x2 <= 1.0
@@ -188,16 +179,15 @@ def test_tier3_f3_to_f4_exported_bundle_passes_sha256_and_promotion_gates(
     metadata = json.loads((assets_dir / "model_metadata.json").read_text(encoding="utf-8"))
     actual_sha = hashlib.sha256(target_tflite.read_bytes()).hexdigest()
     assert metadata["sha256"] == actual_sha
-    assert (assets_dir / "labels.txt").read_text(encoding="utf-8").splitlines() == ["thrips", "whitefly", "aphids"]
+    assert (assets_dir / "labels.txt").read_text(encoding="utf-8").splitlines() == ["whitefly", "aphids"]
 
-    # Feed a <= 6.0 MB candidate into evaluation gate flow + verify assert_promotion_ready
     promo_candidate = tmp_path / "candidate_quantized.tflite"
     promo_candidate.write_bytes(b"\x00" * (4 * 1024 * 1024))
     out_report = tmp_path / "eval_report.json"
 
     def _fake_eval(path: Path, data_yaml: Path, imgsz: int = 640) -> dict[str, Any]:
         if path.suffix == ".tflite":
-            return {"map50": 0.805, "map50_95": 0.55, "precision": 0.84, "recall": 0.77, "f1": 0.8035}
+            return {"map50": 0.808, "map50_95": 0.55, "precision": 0.84, "recall": 0.77, "f1": 0.8035}
         if "best" in path.name:
             return {"map50": 0.812, "map50_95": 0.56, "precision": 0.85, "recall": 0.78, "f1": 0.8135}
         return {"map50": 0.18, "map50_95": 0.09, "precision": 0.25, "recall": 0.22, "f1": 0.234}
@@ -231,8 +221,8 @@ def test_tier3_f1_to_f3_disjoint_test_split_evaluated_by_litert(
     monkeypatch: pytest.MonkeyPatch,
     spatial_hw_fn: Any,
 ) -> None:
-    samples = [{"stem": f"eval_{i}", "pattern_seed": 40 + i, "labels": [f"{i % 3} 0.5 0.5 0.25 0.25"]} for i in range(15)]
-    src = make_yolo_source(tmp_path / "src", ["thrips", "whitefly", "aphids"], samples)
+    samples = [{"stem": f"eval_{i}", "pattern_seed": 40 + i, "labels": [f"{i % 2} 0.5 0.5 0.25 0.25"]} for i in range(16)]
+    src = make_yolo_source(tmp_path / "src", ["whitefly", "aphids"], samples)
     records, stats = deduplicate_and_merge_sources([src])
     splits = stratified_split_records(records, seed=42)
     merged_dir = tmp_path / "merged"

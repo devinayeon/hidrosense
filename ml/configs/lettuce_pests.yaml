@@ -3,8 +3,7 @@ train: train/images
 val: val/images
 test: test/images
 
-nc: 3
+nc: 2
 names:
-  0: thrips
-  1: whitefly
-  2: aphids
+  0: whitefly
+  1: aphids

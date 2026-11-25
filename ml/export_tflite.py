@@ -33,10 +33,10 @@ def _iou(box_a: tuple[float, float, float, float], box_b: tuple[float, float, fl
 def decode_yolov11_output(
     tensor_2d: list[list[float]],
     img_size: int = 640,
-    conf_threshold: float = 0.35,
+    conf_threshold: float = 0.45,
     iou_threshold: float = 0.45,
 ) -> list[dict[str, Any]]:
-    """Decode anchor-free YOLOv11 output [4 + num_classes, N] or [N, 4 + num_classes]."""
+    """Decode anchor-free 2-class YOLOv11 output [6, N] or [N, 6]."""
     if isinstance(img_size, bool) or img_size <= 0:
         raise ValueError(f"img_size must be a positive integer, got {img_size!r}")
 
@@ -52,9 +52,9 @@ def decode_yolov11_output(
     else:
         anchors = tensor_2d
 
-    valid_rows: list[tuple[float, float, float, float, list[float]]] = []
+    valid_rows: list[tuple[int, float, float, float, float, list[float]]] = []
     max_coord = 0.0
-    for row in anchors:
+    for anchor_idx, row in enumerate(anchors):
         if len(row) < expected_channels:
             continue
         vals = [float(v) for v in row[:expected_channels]]
@@ -63,18 +63,17 @@ def decode_yolov11_output(
         cx, cy, w, h = vals[0], vals[1], vals[2], vals[3]
         scores = vals[4:expected_channels]
         max_coord = max(max_coord, cx, cy, w, h)
-        valid_rows.append((cx, cy, w, h, scores))
+        valid_rows.append((anchor_idx, cx, cy, w, h, scores))
 
     is_pixel_coords = max_coord > 1.5
     scale = float(img_size)
-    candidates: list[dict[str, Any]] = []
-    for cx, cy, w, h, scores in valid_rows:
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    for anchor_idx, cx, cy, w, h, scores in valid_rows:
         best_cls = max(range(num_classes), key=lambda idx: scores[idx])
         best_score = scores[best_cls]
         if best_score < conf_threshold:
             continue
 
-        # Normalize pixel coordinates consistently across the entire anchor tensor
         if is_pixel_coords:
             cx, cy, w, h = cx / scale, cy / scale, w / scale, h / scale
 
@@ -86,17 +85,20 @@ def decode_yolov11_output(
             continue
 
         candidates.append(
-            {
-                "class_id": best_cls,
-                "class_name": CANONICAL_CLASSES[best_cls],
-                "confidence": round(best_score, 4),
-                "box": (x1, y1, x2, y2),
-            }
+            (
+                anchor_idx,
+                {
+                    "class_id": best_cls,
+                    "class_name": CANONICAL_CLASSES[best_cls],
+                    "confidence": round(best_score, 4),
+                    "box": (x1, y1, x2, y2),
+                },
+            )
         )
 
-    candidates.sort(key=lambda item: item["confidence"], reverse=True)
+    candidates.sort(key=lambda item: (-item[1]["confidence"], item[0]))
     selected: list[dict[str, Any]] = []
-    for cand in candidates:
+    for _, cand in candidates:
         if any(
             cand["class_id"] == kept["class_id"] and _iou(cand["box"], kept["box"]) > iou_threshold
             for kept in selected
@@ -140,7 +142,6 @@ def _add_ultralytics_tflite_metadata(
     stride: int = 32,
     channels: int = 3,
 ) -> None:
-    """Embed Ultralytics metadata.json zip trailer so LiteRTBackend can load and evaluate the model."""
     try:
         with zipfile.ZipFile(tflite_path, "r") as existing_zf:
             if "metadata.json" in existing_zf.namelist():
@@ -158,7 +159,7 @@ def _add_ultralytics_tflite_metadata(
 
     resolved_names = {int(k): str(v) for k, v in (names or CANONICAL_CLASSES).items()}
     metadata_payload = {
-        "description": "Ultralytics YOLO11n lettuce pests detection model",
+        "description": "HidroSense YOLOv11n 2-class (whitefly & aphids) detection model",
         "author": "HidroSense",
         "date": datetime.now(timezone.utc).isoformat(),
         "version": ultralytics_version,
@@ -176,7 +177,6 @@ def _add_ultralytics_tflite_metadata(
 
 
 def _patch_onnx_and_onnx2tf_compat() -> None:
-    """Apply runtime compatibility shims for onnx>=1.17 + onnx_graphsurgeon + onnx2tf."""
     import onnx.helper
 
     if not hasattr(onnx.helper, "float32_to_bfloat16"):
@@ -187,13 +187,13 @@ def _patch_onnx_and_onnx2tf_compat() -> None:
         onnx.helper.float32_to_bfloat16 = float32_to_bfloat16  # type: ignore[attr-defined]
 
 
-def _export_nhwc_tflite_via_onnx2tf(
+def export_nhwc_tflite_via_onnx2tf(
     yolo_model: Any,
     output_tflite: Path,
     img_size: int = 640,
     precision: str = "fp16",
 ) -> Path:
-    """Export a real Ultralytics YOLO model to NHWC float32-I/O TFLite via tf_wrapper -> ONNX -> onnx2tf."""
+    """Export an Ultralytics YOLOv11n model to NHWC [1,640,640,3]->[1,6,8400] float32-I/O TFLite."""
     import numpy as np
     import onnx
     import onnx2tf
@@ -227,7 +227,8 @@ def _export_nhwc_tflite_via_onnx2tf(
     with torch.no_grad():
         dry_out = pt_model(dummy_input)
         dry_tensor = dry_out[0] if isinstance(dry_out, (tuple, list)) else dry_out
-        if tuple(dry_tensor.shape) != (1, 4 + len(CANONICAL_CLASSES), 8400 * (img_size // 640) ** 2) and img_size == 640:
+        expected_c = 4 + len(CANONICAL_CLASSES)
+        if img_size == 640 and tuple(dry_tensor.shape) != (1, expected_c, 8400):
             raise ValueError(f"Unexpected wrapped PyTorch export shape: {tuple(dry_tensor.shape)}")
 
     _patch_onnx_and_onnx2tf_compat()
@@ -249,7 +250,6 @@ def _export_nhwc_tflite_via_onnx2tf(
         slim_model = onnxslim.slim(onnx.load(str(onnx_path)))
         onnx.save(slim_model, str(onnx_path))
 
-        # Pre-seed dummy calibration sample file in temp dir so onnx2tf never writes into repo root
         calib_sample = work_dir / "calibration_image_sample_data_20x128x128x3_float32.npy"
         if not calib_sample.exists():
             np.save(str(calib_sample), np.zeros((20, 128, 128, 3), dtype=np.float32))
@@ -257,15 +257,19 @@ def _export_nhwc_tflite_via_onnx2tf(
         prev_cwd = Path.cwd()
         try:
             os.chdir(work_dir)
-            onnx2tf.convert(
-                input_onnx_file_path=str(onnx_path),
-                output_folder_path=str(saved_model_dir),
-                not_use_onnxsim=True,
-                verbosity="error",
-                output_integer_quantized_tflite=(precision == "int8"),
-                enable_batchmatmul_unfold=(precision != "int8"),
-                output_signaturedefs=True,
-            )
+            common_kwargs: dict[str, Any] = {
+                "input_onnx_file_path": str(onnx_path),
+                "output_folder_path": str(saved_model_dir),
+                "overwrite_input_shape": [f"images:1,3,{img_size},{img_size}"],
+                "not_use_onnxsim": True,
+                "verbosity": "error",
+                "output_integer_quantized_tflite": (precision == "int8"),
+                "output_signaturedefs": True,
+            }
+            try:
+                onnx2tf.convert(**common_kwargs, enable_batchmatmul_unfold=False)
+            except Exception:
+                onnx2tf.convert(**common_kwargs, enable_batchmatmul_unfold=(precision != "int8"))
         finally:
             os.chdir(prev_cwd)
 
@@ -300,7 +304,7 @@ def _default_yolo_anchors(img_size: int) -> int:
 def build_model_metadata(
     model_version: str,
     img_size: int = 640,
-    conf_threshold: float = 0.35,
+    conf_threshold: float = 0.45,
     iou_threshold: float = 0.45,
     sha256_hex: str | None = None,
     input_shape: list[int] | None = None,
@@ -316,8 +320,8 @@ def build_model_metadata(
         "input_normalization": "0_to_1",
         "letterbox_pad_value": 114,
         "output_shape": output_shape or [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(img_size)],
-        "confidence_threshold": conf_threshold,
-        "iou_threshold": iou_threshold,
+        "confidence_threshold": round(float(conf_threshold), 4),
+        "iou_threshold": round(float(iou_threshold), 4),
         "classes": {str(k): v for k, v in CANONICAL_CLASSES.items()},
         "sha256": sha256_hex or "",
     }
@@ -333,6 +337,8 @@ def export_model_to_flutter_assets(
     quantize_int8: bool = False,
     data_yaml: Path | None = None,
     precision: str = "fp16",
+    conf_threshold: float = 0.45,
+    iou_threshold: float = 0.45,
     metrics: dict[str, Any] | None = None,
     tflite_path: Path | None = None,
     evaluation_report_path: Path | None = None,
@@ -355,14 +361,13 @@ def export_model_to_flutter_assets(
 
         model = YOLO(str(weights_path))
         if hasattr(model, "model") and isinstance(getattr(model, "model"), torch.nn.Module):
-            _export_nhwc_tflite_via_onnx2tf(
+            export_nhwc_tflite_via_onnx2tf(
                 model,
                 output_tflite=target_tflite,
                 img_size=img_size,
                 precision=resolved_precision,
             )
         else:
-            # Preserves _FakeYOLO mock compatibility in unit/E2E tests
             exported = Path(
                 model.export(
                     format="tflite",
@@ -375,7 +380,7 @@ def export_model_to_flutter_assets(
                 pattern = "*_int8.tflite" if quantize_int8 else "*_float16.tflite"
                 matches = sorted(exported.glob(pattern)) or sorted(exported.glob("*.tflite"))
                 if not matches:
-                    raise FileNotFoundError(f"No .tflite file found in exported directory {exported}")
+                    raise FileNotFoundError(f"No .tflite file found in {exported}")
                 exported = matches[0]
             shutil.copy2(exported, target_tflite)
 
@@ -383,6 +388,8 @@ def export_model_to_flutter_assets(
     if resolved_metrics is None and evaluation_report_path is not None and evaluation_report_path.exists():
         eval_payload = json.loads(evaluation_report_path.read_text(encoding="utf-8"))
         resolved_metrics = eval_payload.get("finetuned")
+        if "calibrated_threshold" in eval_payload:
+            conf_threshold = float(eval_payload["calibrated_threshold"])
 
     raw_bytes = target_tflite.read_bytes()
     digest = hashlib.sha256(raw_bytes).hexdigest()
@@ -391,6 +398,7 @@ def export_model_to_flutter_assets(
     input_dtype = "float32"
     output_shape = [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(img_size)]
     if len(raw_bytes) >= 8 and raw_bytes[4:8] == b"TFL3":
+        _add_ultralytics_tflite_metadata(target_tflite, img_size=img_size, names=CANONICAL_CLASSES)
         inspected = inspect_tflite_model(target_tflite)
         input_shape = inspected["input_shape"]
         input_dtype = inspected["input_dtype"]
@@ -403,6 +411,8 @@ def export_model_to_flutter_assets(
     metadata = build_model_metadata(
         model_version=f"yolo11n-{resolved_precision}-{digest[:8]}",
         img_size=img_size,
+        conf_threshold=conf_threshold,
+        iou_threshold=iou_threshold,
         sha256_hex=digest,
         input_shape=input_shape,
         input_dtype=input_dtype,
@@ -417,16 +427,14 @@ def export_model_to_flutter_assets(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Export YOLOv11n weights to Flutter TFLite assets.")
+    parser = argparse.ArgumentParser(description="Export 2-class YOLOv11n weights to Flutter TFLite assets.")
     parser.add_argument("--weights", type=Path, default=None)
     parser.add_argument("--tflite", type=Path, default=None)
-    parser.add_argument(
-        "--assets-dir",
-        type=Path,
-        default=Path("ml/artifacts"),
-    )
+    parser.add_argument("--assets-dir", type=Path, default=Path("ml/artifacts"))
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--precision", choices=("fp16", "fp32", "int8"), default="fp16")
+    parser.add_argument("--conf-threshold", type=float, default=0.45)
+    parser.add_argument("--iou-threshold", type=float, default=0.45)
     parser.add_argument("--int8", action="store_true")
     parser.add_argument("--data", type=Path, default=Path("ml/configs/lettuce_pests.yaml"))
     parser.add_argument("--evaluation-report", type=Path, default=None)
@@ -442,6 +450,8 @@ def main() -> None:
         quantize_int8=args.int8,
         data_yaml=args.data,
         precision=args.precision,
+        conf_threshold=args.conf_threshold,
+        iou_threshold=args.iou_threshold,
         tflite_path=args.tflite,
         evaluation_report_path=args.evaluation_report,
     )

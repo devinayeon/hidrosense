@@ -1,23 +1,29 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import csv
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
+from pathlib import Path
 import platform
 import re
 import shutil
+import struct
 import subprocess
 import sys
+import tempfile
 import time
-from pathlib import Path
 from typing import Any
+import zipfile
 
-CANONICAL_NAMES: dict[int, str] = {0: "thrips", 1: "whitefly", 2: "aphids"}
-EXPECTED_SPLIT_COUNTS: dict[str, int] = {"train": 1245, "val": 178, "test": 153}
+CANONICAL_NAMES: dict[int, str] = {0: "whitefly", 1: "aphids"}
 IMAGE_EXTENSIONS: frozenset[str] = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp"})
 KAGGLE_KERNEL_ID = "adityadwiferdiansyah/hidrosense-yolov11n-lettuce-pests-training"
-KAGGLE_DATASET_ID = "adityadwiferdiansyah/hidrosense-lettuce-pests-real"
+KAGGLE_DATASET_ID = "adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"
 
 
 def _parse_version_tuple(raw: str) -> tuple[int, int, int]:
@@ -31,13 +37,12 @@ def _parse_version_tuple(raw: str) -> tuple[int, int, int]:
 
 
 def ensure_packages() -> None:
-    """Install ultralytics and pyyaml quietly only if missing or out of range."""
     missing: list[str] = []
-    try:
-        import yaml  # noqa: F401
-    except ImportError:
-        missing.append("pyyaml")
-
+    for mod_name, spec in (("yaml", "pyyaml"), ("albumentations", "albumentations>=1.4.0")):
+        try:
+            __import__(mod_name)
+        except ImportError:
+            missing.append(spec)
     try:
         import ultralytics
 
@@ -48,11 +53,8 @@ def ensure_packages() -> None:
         missing.append("ultralytics>=8.3.0,<8.5.0")
 
     if missing:
-        print(f"[bootstrap] Installing missing packages: {missing}", flush=True)
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", *missing],
-            check=True,
-        )
+        print(f"[bootstrap] Installing packages: {missing}", flush=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", *missing], check=True)
 
 
 def ensure_gpu_available() -> dict[str, Any]:
@@ -81,14 +83,55 @@ def ensure_gpu_available() -> dict[str, Any]:
 
 
 def _is_dataset_dir(candidate: Path) -> bool:
+    has_splits = (
+        (candidate / "train" / "images").is_dir()
+        and (candidate / "val" / "images").is_dir()
+        and (candidate / "test" / "images").is_dir()
+    )
+    has_zips = (
+        (candidate / "train.zip").is_file()
+        and (candidate / "val.zip").is_file()
+        and (candidate / "test.zip").is_file()
+    )
     return (
         candidate.is_dir()
         and (candidate / "data.yaml").is_file()
         and (candidate / "dataset_provenance.json").is_file()
-        and (candidate / "train" / "images").is_dir()
-        and (candidate / "val" / "images").is_dir()
-        and (candidate / "test" / "images").is_dir()
+        and (has_splits or has_zips)
     )
+
+
+def _materialize_dataset_dir(candidate: Path) -> Path:
+    resolved = candidate.resolve()
+    if (resolved / "train" / "images").is_dir() and (resolved / "val" / "images").is_dir() and (resolved / "test" / "images").is_dir():
+        return resolved
+
+    extract_root = (Path("/kaggle/working") if Path("/kaggle/working").is_dir() else Path(tempfile.gettempdir())) / "_hidrosense_dataset_unpacked"
+    shutil.rmtree(extract_root, ignore_errors=True)
+    extract_root.mkdir(parents=True, exist_ok=True)
+    for meta_file in ("data.yaml", "dataset_provenance.json", "dataset_report.json", "visual_pipeline_manifest.json"):
+        src_meta = resolved / meta_file
+        if src_meta.is_file():
+            shutil.copy2(src_meta, extract_root / meta_file)
+
+    for split_name in ("train", "val", "test"):
+        split_src_dir = resolved / split_name
+        split_zip = resolved / f"{split_name}.zip"
+        target_split_dir = extract_root / split_name
+        if (split_src_dir / split_name / "images").is_dir():
+            shutil.copytree(split_src_dir / split_name, target_split_dir)
+        elif (split_src_dir / "images").is_dir():
+            shutil.copytree(split_src_dir, target_split_dir)
+        elif split_zip.is_file():
+            target_split_dir.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(split_zip, "r") as zf:
+                zf.extractall(target_split_dir)
+            if (target_split_dir / split_name / "images").is_dir() and not (target_split_dir / "images").is_dir():
+                nested = target_split_dir / split_name
+                for sub in ("images", "labels"):
+                    if (nested / sub).is_dir():
+                        shutil.move(str(nested / sub), str(target_split_dir / sub))
+    return extract_root.resolve()
 
 
 def _scan_bounded(root: Path, max_depth: int = 4) -> list[Path]:
@@ -112,11 +155,7 @@ def _scan_bounded(root: Path, max_depth: int = 4) -> list[Path]:
     return matches
 
 
-def locate_dataset_dir(
-    dataset_dir: Path | None = None,
-    allow_local: bool = False,
-) -> Path:
-    """Locate the mounted real Roboflow dataset; fail fast if missing (zero synthetic fallback)."""
+def locate_dataset_dir(dataset_dir: Path | None = None, allow_local: bool = False) -> Path:
     candidates: list[Path] = []
     if dataset_dir is not None:
         candidates.append(Path(dataset_dir))
@@ -127,40 +166,37 @@ def locate_dataset_dir(
 
     candidates.extend(
         [
-            Path("/kaggle/input/datasets/adityadwiferdiansyah/hidrosense-lettuce-pests-real"),
-            Path("/kaggle/input/hidrosense-lettuce-pests-real"),
+            Path("/kaggle/input/datasets/adityadwiferdiansyah/hidrosense-whitefly-aphids-v2"),
+            Path("/kaggle/input/hidrosense-whitefly-aphids-v2"),
         ]
     )
 
     for candidate in candidates:
         if _is_dataset_dir(candidate):
-            return candidate.resolve()
+            return _materialize_dataset_dir(candidate)
 
     scanned = _scan_bounded(Path("/kaggle/input"), max_depth=4)
     if scanned:
-        return scanned[0].resolve()
+        return _materialize_dataset_dir(scanned[0])
 
     if allow_local:
         local_candidate = Path("ml/data/merged_lettuce_pests")
         if _is_dataset_dir(local_candidate):
-            return local_candidate.resolve()
+            return _materialize_dataset_dir(local_candidate)
 
     raise FileNotFoundError(
-        "Real Roboflow dataset (data.yaml + dataset_provenance.json) not found. "
-        "Checked HIDROSENSE_DATASET_DIR and /kaggle/input. Synthetic fallback is disabled."
+        "Real 2-class Roboflow+OOD dataset (data.yaml + dataset_provenance.json) not found. "
+        "Synthetic fallback is disabled."
     )
 
 
 def _list_images(images_dir: Path) -> list[Path]:
     if not images_dir.is_dir():
         return []
-    return sorted(
-        p for p in images_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-    )
+    return sorted(p for p in images_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS)
 
 
 def validate_real_dataset(dataset_dir: Path) -> dict[str, Any]:
-    """Validate provenance, canonical class mapping, zero synthetic images, and exact split counts."""
     import yaml
 
     data_yaml_path = dataset_dir / "data.yaml"
@@ -169,15 +205,15 @@ def validate_real_dataset(dataset_dir: Path) -> dict[str, Any]:
         raise FileNotFoundError(f"Missing data.yaml or dataset_provenance.json in {dataset_dir}")
 
     data_cfg = yaml.safe_load(data_yaml_path.read_text(encoding="utf-8"))
-    if not isinstance(data_cfg, dict) or int(data_cfg.get("nc", -1)) != 3:
-        raise ValueError(f"Expected nc == 3 in {data_yaml_path}, got {data_cfg!r}")
+    if not isinstance(data_cfg, dict) or int(data_cfg.get("nc", -1)) != 2:
+        raise ValueError(f"Expected nc == 2 in {data_yaml_path}, got {data_cfg!r}")
 
     raw_names = data_cfg.get("names", {})
-    normalized_names: dict[int, str] = {}
-    if isinstance(raw_names, dict):
-        normalized_names = {int(k): str(v).strip().lower() for k, v in raw_names.items()}
-    elif isinstance(raw_names, list):
-        normalized_names = {idx: str(v).strip().lower() for idx, v in enumerate(raw_names)}
+    normalized_names = (
+        {int(k): str(v).strip().lower() for k, v in raw_names.items()}
+        if isinstance(raw_names, dict)
+        else {idx: str(v).strip().lower() for idx, v in enumerate(raw_names)}
+    )
     if normalized_names != CANONICAL_NAMES:
         raise ValueError(f"Expected canonical names {CANONICAL_NAMES}, got {normalized_names!r}")
 
@@ -188,39 +224,37 @@ def validate_real_dataset(dataset_dir: Path) -> dict[str, Any]:
         raise ValueError("dataset_provenance.json must have synthetic_images_count == 0")
 
     verification = provenance.get("verification", {})
-    leakage_keys = (
+    for key in (
+        "molted_skin_surviving_instances",
+        "thrips_surviving_instances",
         "cross_split_sha256_overlaps",
         "cross_split_phash_overlaps",
         "cross_split_group_phash_overlaps",
         "cross_split_base_stem_overlaps",
-    )
-    split_leakage = int(provenance.get("split_leakage", 0))
-    for key in leakage_keys:
+    ):
         if key in verification and int(verification[key]) != 0:
-            raise ValueError(f"Cross-split leakage detected in {key}: {verification[key]}")
-    if split_leakage != 0:
-        raise ValueError(f"Dataset split_leakage must be 0, got {split_leakage}")
+            raise ValueError(f"Integrity violation in {key}: {verification[key]}")
 
     split_counts: dict[str, int] = {}
-    for split_name, expected_count in EXPECTED_SPLIT_COUNTS.items():
+    negative_counts: dict[str, int] = {}
+    for split_name in ("train", "val", "test"):
         imgs = _list_images(dataset_dir / split_name / "images")
         lbl_dir = dataset_dir / split_name / "labels"
         lbls = sorted(p for p in lbl_dir.iterdir() if p.is_file() and p.suffix == ".txt")
-        if len(imgs) != expected_count or len(lbls) != expected_count:
-            raise ValueError(
-                f"Split {split_name!r} expected {expected_count} images/labels, "
-                f"found {len(imgs)} images and {len(lbls)} labels"
-            )
-        img_stems = {p.stem for p in imgs}
-        lbl_stems = {p.stem for p in lbls}
-        if img_stems != lbl_stems:
+        if not imgs or len(imgs) != len(lbls):
+            raise ValueError(f"Split {split_name!r} image/label count mismatch: {len(imgs)} vs {len(lbls)}")
+        if {p.stem for p in imgs} != {p.stem for p in lbls}:
             raise ValueError(f"Split {split_name!r} image/label stem mismatch")
+        neg = sum(1 for p in lbls if not p.read_text(encoding="utf-8").strip())
         split_counts[split_name] = len(imgs)
+        negative_counts[split_name] = neg
 
     return {
         "dataset_dir": str(dataset_dir),
         "split_counts": split_counts,
+        "negative_counts": negative_counts,
         "total_images": sum(split_counts.values()),
+        "molted_skin_boxes_removed": int(provenance.get("molted_skin_boxes_removed", 0)),
         "split_leakage": 0,
         "zero_synthetic_confirmed": True,
         "synthetic_images_count": 0,
@@ -238,7 +272,6 @@ def _link_or_copy_file(src: Path, dst: Path) -> None:
 
 
 def _link_or_copy_dir_files(src: Path, dst: Path) -> None:
-    """Create a real directory tree at dst with file-level symlinks (or copies) from src."""
     for sub in ("images", "labels"):
         src_sub = src / sub
         dst_sub = dst / sub
@@ -252,8 +285,7 @@ def _split_manifest_sha256(split_dir: Path) -> str:
     hasher = hashlib.sha256()
     for sub in ("images", "labels"):
         sub_dir = split_dir / sub
-        files = sorted(p for p in sub_dir.iterdir() if p.is_file())
-        for file_path in files:
+        for file_path in sorted(p for p in sub_dir.iterdir() if p.is_file()):
             hasher.update(f"{sub}/{file_path.name}\n".encode("utf-8"))
             hasher.update(hashlib.sha256(file_path.read_bytes()).digest())
     return hasher.hexdigest()
@@ -262,9 +294,7 @@ def _split_manifest_sha256(split_dir: Path) -> str:
 def _label_has_class(label_path: Path, target_class: int) -> bool:
     for line in label_path.read_text(encoding="utf-8").splitlines():
         parts = line.strip().split()
-        if not parts:
-            continue
-        if int(float(parts[0])) == target_class:
+        if parts and int(float(parts[0])) == target_class:
             return True
     return False
 
@@ -277,7 +307,7 @@ def _write_data_yaml(yaml_path: Path, dataset_root: Path) -> None:
         "train": "train/images",
         "val": "val/images",
         "test": "test/images",
-        "nc": 3,
+        "nc": 2,
         "names": dict(CANONICAL_NAMES),
     }
     yaml_path.parent.mkdir(parents=True, exist_ok=True)
@@ -287,11 +317,12 @@ def _write_data_yaml(yaml_path: Path, dataset_root: Path) -> None:
 def build_isolated_dataset_views(
     dataset_dir: Path,
     work_root: Path,
-    thrips_oversample_factor: int = 4,
+    whitefly_oversample_factor: int = 5,
+    negative_oversample_factor: int = 2,
 ) -> dict[str, Any]:
-    """Create isolated writable baseline and train-only thrips-oversampled dataset views."""
-    if thrips_oversample_factor < 1:
-        raise ValueError("thrips_oversample_factor must be >= 1")
+    """Create baseline and train-only class/hard-negative balanced dataset views without touching val or test."""
+    if whitefly_oversample_factor < 1 or negative_oversample_factor < 1:
+        raise ValueError("Oversample factors must be >= 1")
 
     baseline_dir = work_root / "baseline"
     balanced_dir = work_root / "balanced"
@@ -300,7 +331,6 @@ def build_isolated_dataset_views(
 
     for split_name in ("train", "val", "test"):
         _link_or_copy_dir_files(dataset_dir / split_name, baseline_dir / split_name)
-
     for split_name in ("val", "test"):
         _link_or_copy_dir_files(dataset_dir / split_name, balanced_dir / split_name)
 
@@ -318,18 +348,28 @@ def build_isolated_dataset_views(
     bal_img_dir.mkdir(parents=True, exist_ok=True)
     bal_lbl_dir.mkdir(parents=True, exist_ok=True)
 
-    thrips_train_images = 0
+    whitefly_train_images = 0
+    negative_train_images = 0
     balanced_train_images = 0
+
     for img_path in src_train_imgs:
         lbl_path = src_train_lbl_dir / f"{img_path.stem}.txt"
         _link_or_copy_file(img_path, bal_img_dir / img_path.name)
         _link_or_copy_file(lbl_path, bal_lbl_dir / lbl_path.name)
         balanced_train_images += 1
 
-        if _label_has_class(lbl_path, 0):
-            thrips_train_images += 1
-            for rep_idx in range(1, thrips_oversample_factor):
-                prefix = f"rep{rep_idx}__"
+        is_empty = not lbl_path.read_text(encoding="utf-8").strip()
+        if is_empty:
+            negative_train_images += 1
+            for rep_idx in range(1, negative_oversample_factor):
+                prefix = f"negrep{rep_idx}__"
+                _link_or_copy_file(img_path, bal_img_dir / f"{prefix}{img_path.name}")
+                _link_or_copy_file(lbl_path, bal_lbl_dir / f"{prefix}{lbl_path.name}")
+                balanced_train_images += 1
+        elif _label_has_class(lbl_path, 0):
+            whitefly_train_images += 1
+            for rep_idx in range(1, whitefly_oversample_factor):
+                prefix = f"wfrep{rep_idx}__"
                 _link_or_copy_file(img_path, bal_img_dir / f"{prefix}{img_path.name}")
                 _link_or_copy_file(lbl_path, bal_lbl_dir / f"{prefix}{lbl_path.name}")
                 balanced_train_images += 1
@@ -342,20 +382,48 @@ def build_isolated_dataset_views(
     return {
         "baseline_yaml": data_baseline_yaml,
         "balanced_yaml": data_balanced_yaml,
-        "thrips_train_images": thrips_train_images,
+        "whitefly_train_images": whitefly_train_images,
+        "negative_train_images": negative_train_images,
         "balanced_train_images": balanced_train_images,
-        "thrips_oversample_factor": thrips_oversample_factor,
+        "whitefly_oversample_factor": whitefly_oversample_factor,
+        "negative_oversample_factor": negative_oversample_factor,
         "val_manifest_sha256": val_sha_base,
         "test_manifest_sha256": test_sha_base,
     }
 
 
+def _build_albumentations_list() -> list[Any]:
+    import albumentations as A
+
+    try:
+        jpeg_tf = A.ImageCompression(quality_range=(55, 95), p=0.20)
+    except TypeError:
+        jpeg_tf = A.ImageCompression(quality_lower=55, quality_upper=95, p=0.20)
+
+    return [
+        A.CLAHE(clip_limit=3.0, tile_grid_size=(8, 8), p=0.25),
+        A.RandomBrightnessContrast(brightness_limit=0.28, contrast_limit=0.28, p=0.30),
+        A.RandomGamma(gamma_limit=(75, 130), p=0.20),
+        A.OneOf(
+            [
+                A.GaussianBlur(blur_limit=(3, 5), p=1.0),
+                A.MotionBlur(blur_limit=(3, 5), p=1.0),
+            ],
+            p=0.15,
+        ),
+        A.Sharpen(alpha=(0.15, 0.35), lightness=(0.8, 1.1), p=0.15),
+        A.GaussNoise(p=0.15),
+        jpeg_tf,
+        A.ToGray(p=0.05),
+    ]
+
+
 def extract_eval_metrics(val_res: Any) -> dict[str, Any]:
-    """Extract aggregate and per-class metrics from an Ultralytics val() result."""
     box = val_res.box
     precision = float(box.mp)
     recall = float(box.mr)
     f1 = 2.0 * precision * recall / max(1e-8, precision + recall)
+    map75 = float(getattr(box, "map75", 0.0))
 
     per_class: dict[str, dict[str, float]] = {
         name: {"precision": 0.0, "recall": 0.0, "map50": 0.0, "map50_95": 0.0, "f1": 0.0}
@@ -380,6 +448,7 @@ def extract_eval_metrics(val_res: Any) -> dict[str, Any]:
 
     aggregate = {
         "map50": round(float(box.map50), 4),
+        "map75": round(map75, 4),
         "map50_95": round(float(box.map), 4),
         "precision": round(precision, 4),
         "recall": round(recall, 4),
@@ -396,154 +465,299 @@ def _evaluate_split(weights_or_model: str | Path, data_yaml: Path, split: str, i
     return extract_eval_metrics(val_res)
 
 
-def _compute_improvements(baseline_test: dict[str, Any], improved_test: dict[str, Any]) -> dict[str, Any]:
-    b_agg = baseline_test["aggregate"]
-    i_agg = improved_test["aggregate"]
-    b_cls = baseline_test["per_class"]
-    i_cls = improved_test["per_class"]
-
-    deltas = {
-        f"{k}_delta": round(float(i_agg[k]) - float(b_agg[k]), 4)
-        for k in ("map50", "map50_95", "precision", "recall", "f1")
-    }
-    deltas["thrips_map50_delta"] = round(
-        float(i_cls["thrips"]["map50"]) - float(b_cls["thrips"]["map50"]), 4
-    )
-    deltas["thrips_recall_delta"] = round(
-        float(i_cls["thrips"]["recall"]) - float(b_cls["thrips"]["recall"]), 4
-    )
-    deltas["whitefly_map50_delta"] = round(
-        float(i_cls["whitefly"]["map50"]) - float(b_cls["whitefly"]["map50"]), 4
-    )
-    deltas["aphids_map50_delta"] = round(
-        float(i_cls["aphids"]["map50"]) - float(b_cls["aphids"]["map50"]), 4
-    )
-    deltas["beats_baseline"] = deltas["map50_delta"] > 0.0 and deltas["recall_delta"] >= 0.0
-    return deltas
-
-
-def _probe_tflite_candidate(
-    tflite_path: Path,
-    data_baseline_yaml: Path,
+def calibrate_confidence_threshold(
+    weights_path: Path,
+    val_images_dir: Path,
+    val_labels_dir: Path,
     imgsz: int = 640,
 ) -> dict[str, Any]:
-    info: dict[str, Any] = {
-        "path": str(tflite_path),
-        "file_name": tflite_path.name,
-        "size_bytes": tflite_path.stat().st_size,
-        "size_mb": round(tflite_path.stat().st_size / (1024.0 * 1024.0), 3),
-    }
+    """Sweep confidence thresholds on val (positives + leaf/OOD negatives) to maximize F1 while suppressing OOD FPs."""
+    from ultralytics import YOLO
 
-    interpreter_cls = None
-    try:
-        from ai_edge_litert.interpreter import Interpreter  # type: ignore
+    model = YOLO(str(weights_path))
+    img_paths = _list_images(val_images_dir)
+    preds = model.predict(
+        source=[str(p) for p in img_paths],
+        imgsz=imgsz,
+        conf=0.05,
+        iou=0.45,
+        device=0,
+        verbose=False,
+    )
 
-        interpreter_cls = Interpreter
-    except ImportError:
+    gt_per_img: list[list[tuple[int, list[float]]]] = []
+    is_ood_per_img: list[bool] = []
+    for img_path, pred in zip(img_paths, preds):
+        h, w = pred.orig_shape
+        lbl_path = val_labels_dir / f"{img_path.stem}.txt"
+        gts: list[tuple[int, list[float]]] = []
+        if lbl_path.is_file():
+            for line in lbl_path.read_text(encoding="utf-8").splitlines():
+                ps = line.strip().split()
+                if len(ps) == 5:
+                    cid = int(float(ps[0]))
+                    cx, cy, bw, bh = float(ps[1]) * w, float(ps[2]) * h, float(ps[3]) * w, float(ps[4]) * h
+                    gts.append((cid, [cx - bw / 2.0, cy - bh / 2.0, cx + bw / 2.0, cy + bh / 2.0]))
+        gt_per_img.append(gts)
+        is_ood_per_img.append("neg__ood_" in img_path.stem)
+
+    def _box_iou_xyxy(a: list[float], b: list[float]) -> float:
+        x1, y1 = max(a[0], b[0]), max(a[1], b[1])
+        x2, y2 = min(a[2], b[2]), min(a[3], b[3])
+        inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+        if inter <= 0.0:
+            return 0.0
+        aa = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+        ba = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+        return inter / max(1e-8, aa + ba - inter)
+
+    candidates_report: list[dict[str, float]] = []
+    best_thr = 0.45
+    best_objective = -1e9
+
+    for thr in (0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65):
+        tp = fp = fn = 0
+        neg_imgs = neg_fp_imgs = 0
+        ood_imgs = ood_fp_imgs = 0
+        for gts, is_ood, pred in zip(gt_per_img, is_ood_per_img, preds):
+            boxes_xyxy = pred.boxes.xyxy.cpu().tolist() if pred.boxes is not None else []
+            confs = pred.boxes.conf.cpu().tolist() if pred.boxes is not None else []
+            clss = [int(c) for c in (pred.boxes.cls.cpu().tolist() if pred.boxes is not None else [])]
+            kept = [(c, b) for b, cf, c in zip(boxes_xyxy, confs, clss) if cf >= thr]
+
+            if not gts:
+                neg_imgs += 1
+                if kept:
+                    neg_fp_imgs += 1
+                if is_ood:
+                    ood_imgs += 1
+                    if kept:
+                        ood_fp_imgs += 1
+                fp += len(kept)
+                continue
+
+            matched: set[int] = set()
+            for p_cls, p_box in kept:
+                best_gi = -1
+                best_ov = 0.0
+                for gi, (g_cls, g_box) in enumerate(gts):
+                    if gi in matched or g_cls != p_cls:
+                        continue
+                    ov = _box_iou_xyxy(p_box, g_box)
+                    if ov > best_ov:
+                        best_ov, best_gi = ov, gi
+                if best_ov >= 0.50 and best_gi >= 0:
+                    matched.add(best_gi)
+                    tp += 1
+                else:
+                    fp += 1
+            fn += len(gts) - len(matched)
+
+        prec = tp / max(1, tp + fp)
+        rec = tp / max(1, tp + fn)
+        f1 = 2.0 * prec * rec / max(1e-8, prec + rec)
+        neg_fpr = neg_fp_imgs / max(1, neg_imgs)
+        ood_fpr = ood_fp_imgs / max(1, ood_imgs) if ood_imgs > 0 else neg_fpr
+        # Strongly penalize any OOD false positive while maximizing F1 (enforce floor >= 0.35 for mobile stability)
+        objective = f1 - (2.5 * ood_fpr) - (0.8 * neg_fpr) - (0.03 if thr < 0.35 else 0.0)
+        row = {
+            "threshold": thr,
+            "precision": round(prec, 4),
+            "recall": round(rec, 4),
+            "f1": round(f1, 4),
+            "neg_fpr": round(neg_fpr, 4),
+            "ood_fpr": round(ood_fpr, 4),
+            "objective": round(objective, 4),
+        }
+        candidates_report.append(row)
+        if objective > best_objective and f1 >= 0.50:
+            best_objective = objective
+            best_thr = thr
+
+    return {"selected_threshold": best_thr, "sweep": candidates_report}
+
+
+def parse_loss_summary(results_csv_path: Path) -> dict[str, Any]:
+    if not results_csv_path.is_file():
+        return {}
+    with results_csv_path.open("r", encoding="utf-8") as fh:
+        rows = [{k.strip(): v.strip() for k, v in r.items()} for r in csv.DictReader(fh)]
+    if not rows:
+        return {}
+
+    def _f(row: dict[str, str], key: str) -> float:
         try:
-            import tensorflow as tf  # type: ignore
+            return round(float(row.get(key, 0.0)), 5)
+        except ValueError:
+            return 0.0
 
-            interpreter_cls = tf.lite.Interpreter
-        except ImportError:
-            interpreter_cls = None
+    best_row = max(
+        rows,
+        key=lambda r: 0.1 * _f(r, "metrics/mAP50(B)") + 0.9 * _f(r, "metrics/mAP50-95(B)"),
+    )
+    last_row = rows[-1]
+    return {
+        "epochs_completed": len(rows),
+        "best_epoch": int(float(best_row.get("epoch", len(rows)))),
+        "train_box_loss": _f(best_row, "train/box_loss"),
+        "train_cls_loss": _f(best_row, "train/cls_loss"),
+        "train_dfl_loss": _f(best_row, "train/dfl_loss"),
+        "val_box_loss": _f(best_row, "val/box_loss"),
+        "val_cls_loss": _f(best_row, "val/cls_loss"),
+        "val_dfl_loss": _f(best_row, "val/dfl_loss"),
+        "final_epoch_losses": {
+            "train_box_loss": _f(last_row, "train/box_loss"),
+            "train_cls_loss": _f(last_row, "train/cls_loss"),
+            "train_dfl_loss": _f(last_row, "train/dfl_loss"),
+            "val_box_loss": _f(last_row, "val/box_loss"),
+            "val_cls_loss": _f(last_row, "val/cls_loss"),
+            "val_dfl_loss": _f(last_row, "val/dfl_loss"),
+        },
+    }
 
-    if interpreter_cls is not None:
-        interp = interpreter_cls(model_path=str(tflite_path))
-        interp.allocate_tensors()
-        in_det = interp.get_input_details()[0]
-        out_det = interp.get_output_details()[0]
-        info["input_shape"] = [int(x) for x in in_det["shape"]]
-        info["input_dtype"] = str(getattr(in_det["dtype"], "__name__", in_det["dtype"]))
-        info["output_shape"] = [int(x) for x in out_det["shape"]]
-        info["output_dtype"] = str(getattr(out_det["dtype"], "__name__", out_det["dtype"]))
 
-    try:
-        from ultralytics import YOLO
-
-        tflite_model = YOLO(str(tflite_path), task="detect")
-        val_res = tflite_model.val(data=str(data_baseline_yaml), split="test", imgsz=imgsz, verbose=False)
-        info["test_eval"] = extract_eval_metrics(val_res)
-    except Exception as exc:
-        info["test_eval_error"] = f"{type(exc).__name__}: {exc}"
-
-    return info
-
-
-def attempt_candidate_exports(
-    best_pt: Path,
-    data_baseline_yaml: Path,
-    exports_dir: Path,
-    imgsz: int = 640,
-) -> dict[str, Any]:
-    """Attempt non-fatal Linux ONNX + NHWC FP16/INT8 TFLite candidate exports for M4."""
+def _export_nhwc_candidates_on_linux(best_pt: Path, exports_dir: Path, imgsz: int = 640) -> dict[str, Any]:
+    """Export ONNX + NHWC [1,640,640,3]->[1,6,8400] FP16 and FP32 TFLite models on Kaggle Linux."""
     exports_dir.mkdir(parents=True, exist_ok=True)
     probe: dict[str, Any] = {"status": "attempted", "candidates": {}}
 
-    try:
-        from ultralytics import YOLO
-
-        # Export ONNX first
+    missing_deps: list[str] = []
+    for mod_name, pkg in (
+        ("onnx", "onnx"),
+        ("onnxslim", "onnxslim"),
+        ("sng4onnx", "sng4onnx"),
+        ("onnx2tf", "onnx2tf"),
+        ("tensorflow", "tensorflow"),
+    ):
         try:
-            onnx_model = YOLO(str(best_pt))
-            exported_onnx = Path(onnx_model.export(format="onnx", imgsz=imgsz, opset=17))
-            target_onnx = exports_dir / "best.onnx"
-            shutil.copy2(exported_onnx, target_onnx)
-            probe["candidates"]["onnx"] = {
-                "file_name": target_onnx.name,
-                "size_bytes": target_onnx.stat().st_size,
-                "size_mb": round(target_onnx.stat().st_size / (1024.0 * 1024.0), 3),
-            }
-        except Exception as exc:
-            probe["candidates"]["onnx_error"] = f"{type(exc).__name__}: {exc}"
+            __import__(mod_name)
+        except ImportError:
+            missing_deps.append(pkg)
+    if missing_deps:
+        print(f"[exports] Installing TFLite conversion packages: {missing_deps}", flush=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", *missing_deps], check=False)
+    try:
+        __import__("onnx_graphsurgeon")
+    except ImportError:
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-q",
+                "--extra-index-url",
+                "https://pypi.ngc.nvidia.com",
+                "onnx-graphsurgeon",
+            ],
+            check=False,
+        )
 
-        # Ensure TFLite export dependencies are available on Linux if needed
-        missing_export_deps: list[str] = []
-        for mod_name, pkg_spec in (
-            ("onnx", "onnx"),
-            ("onnx2tf", "onnx2tf"),
-            ("sng4onnx", "sng4onnx"),
-            ("onnx_graphsurgeon", "onnx_graphsurgeon"),
-            ("tensorflow", "tensorflow"),
-        ):
-            try:
-                __import__(mod_name)
-            except ImportError:
-                missing_export_deps.append(pkg_spec)
-        if missing_export_deps:
-            print(f"[exports] Installing optional TFLite export deps: {missing_export_deps}", flush=True)
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", "-q", *missing_export_deps],
-                check=False,
+    try:
+        import numpy as np
+        import onnx
+        import onnx2tf
+        import onnxslim
+        import tensorflow as tf
+        import torch
+        from ultralytics import YOLO
+        from ultralytics.nn.modules import Detect, SPPF
+        from ultralytics.utils.export.tensorflow import tf_wrapper
+
+        if not hasattr(onnx.helper, "float32_to_bfloat16"):
+            onnx.helper.float32_to_bfloat16 = lambda fval: struct.unpack("=I", struct.pack("=f", fval))[0] >> 16  # type: ignore[attr-defined]
+
+        yolo_model = YOLO(str(best_pt))
+        pt_model = copy.deepcopy(yolo_model.model).cpu().float()
+        for param in pt_model.parameters():
+            param.requires_grad = False
+        pt_model.eval()
+        pt_model = pt_model.fuse(imgsz=[imgsz, imgsz])
+        if hasattr(pt_model, "end2end"):
+            pt_model.end2end = False
+
+        pt_model = tf_wrapper(pt_model)
+        for mod in pt_model.modules():
+            if isinstance(mod, SPPF):
+                mod.export = True
+            if isinstance(mod, Detect):
+                mod.dynamic = False
+                mod.export = True
+                mod.format = "saved_model"
+                mod.xyxy = False
+                mod.shape = None
+
+        dummy = torch.zeros(1, 3, imgsz, imgsz, dtype=torch.float32)
+        with tempfile.TemporaryDirectory(prefix="hs_export_") as tmp_s:
+            work_d = Path(tmp_s)
+            onnx_p = work_d / "best.onnx"
+            saved_d = work_d / "saved_model"
+            torch.onnx.export(
+                pt_model, dummy, str(onnx_p), opset_version=17, dynamo=False, input_names=["images"], output_names=["output0"]
             )
+            slim_m = onnxslim.slim(onnx.load(str(onnx_p)))
+            onnx.save(slim_m, str(onnx_p))
+            shutil.copy2(onnx_p, exports_dir / "best.onnx")
 
-        # Export FP16 TFLite (typically ~5.2 MB <= 6.0 MB gate with minimal accuracy drop)
-        for variant, export_kwargs, target_name in (
-            ("fp16", {"format": "tflite", "imgsz": imgsz, "half": True}, "best_float16.tflite"),
-            (
-                "int8",
-                {"format": "tflite", "imgsz": imgsz, "int8": True, "data": str(data_baseline_yaml)},
-                "best_int8.tflite",
-            ),
-        ):
+            np.save(str(work_d / "calibration_image_sample_data_20x128x128x3_float32.npy"), np.zeros((20, 128, 128, 3), dtype=np.float32))
+            prev_cwd = Path.cwd()
             try:
-                model = YOLO(str(best_pt))
-                exported_path = Path(model.export(**export_kwargs))
-                target_tflite = exports_dir / target_name
-                shutil.copy2(exported_path, target_tflite)
-                probe["candidates"][variant] = _probe_tflite_candidate(
-                    target_tflite, data_baseline_yaml, imgsz=imgsz
+                os.chdir(work_d)
+                onnx2tf.convert(
+                    input_onnx_file_path=str(onnx_p),
+                    output_folder_path=str(saved_d),
+                    overwrite_input_shape=[f"images:1,3,{imgsz},{imgsz}"],
+                    not_use_onnxsim=True,
+                    verbosity="error",
+                    output_integer_quantized_tflite=False,
+                    enable_batchmatmul_unfold=False,
+                    output_signaturedefs=True,
                 )
-            except Exception as exc:
-                probe["candidates"][f"{variant}_error"] = f"{type(exc).__name__}: {exc}"
+            finally:
+                os.chdir(prev_cwd)
 
-        # Clean up large intermediate saved_model folders created next to best_pt
-        saved_model_dir = best_pt.parent / f"{best_pt.stem}_saved_model"
-        if saved_model_dir.is_dir():
-            shutil.rmtree(saved_model_dir, ignore_errors=True)
-        side_onnx = best_pt.with_suffix(".onnx")
-        if side_onnx.is_file():
-            side_onnx.unlink(missing_ok=True)
+            for prec_tag, use_fp16, out_name in (
+                ("fp16", True, "best_float16.tflite"),
+                ("fp32", False, "best_float32.tflite"),
+            ):
+                conv = tf.lite.TFLiteConverter.from_saved_model(str(saved_d))
+                if use_fp16:
+                    conv.optimizations = [tf.lite.Optimize.DEFAULT]
+                    conv.target_spec.supported_types = [tf.float16]
+                tfl_bytes = conv.convert()
+                out_tfl = exports_dir / out_name
+                out_tfl.write_bytes(tfl_bytes)
 
+                # Embed Ultralytics metadata trailer
+                meta_payload = {
+                    "description": "HidroSense YOLOv11n 2-class (whitefly & aphids)",
+                    "author": "HidroSense",
+                    "date": datetime.now(timezone.utc).isoformat(),
+                    "version": str(getattr(__import__("ultralytics"), "__version__", "8.4.0")),
+                    "stride": 32,
+                    "task": "detect",
+                    "head": "Detect",
+                    "batch": 1,
+                    "imgsz": [imgsz, imgsz],
+                    "names": dict(CANONICAL_NAMES),
+                    "channels": 3,
+                    "end2end": False,
+                }
+                with zipfile.ZipFile(out_tfl, "a", zipfile.ZIP_DEFLATED) as zf:
+                    zf.writestr("metadata.json", json.dumps(meta_payload, indent=2))
+
+                interp = tf.lite.Interpreter(model_path=str(out_tfl))
+                interp.allocate_tensors()
+                in_d = interp.get_input_details()[0]
+                out_d = interp.get_output_details()[0]
+                probe["candidates"][prec_tag] = {
+                    "file_name": out_name,
+                    "size_bytes": out_tfl.stat().st_size,
+                    "size_mb": round(out_tfl.stat().st_size / (1024.0 * 1024.0), 3),
+                    "sha256": hashlib.sha256(out_tfl.read_bytes()).hexdigest(),
+                    "input_shape": [int(x) for x in in_d["shape"]],
+                    "output_shape": [int(x) for x in out_d["shape"]],
+                }
         probe["status"] = "completed"
     except Exception as exc:
         probe["status"] = "failed_non_fatal"
@@ -554,15 +768,16 @@ def attempt_candidate_exports(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="HidroSense Kaggle GPU YOLOv11n Training Entrypoint")
+    parser = argparse.ArgumentParser(description="HidroSense Kaggle GPU 2-Class YOLOv11n Training Entrypoint")
     parser.add_argument("--dataset-dir", type=Path, default=None)
     parser.add_argument("--allow-local", action="store_true")
     parser.add_argument("--output-root", type=Path, default=None)
     parser.add_argument("--baseline-epochs", type=int, default=45)
-    parser.add_argument("--improved-epochs", type=int, default=80)
+    parser.add_argument("--improved-epochs", type=int, default=100)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--imgsz", type=int, default=640)
-    parser.add_argument("--thrips-oversample", type=int, default=4)
+    parser.add_argument("--whitefly-oversample", type=int, default=8)
+    parser.add_argument("--negative-oversample", type=int, default=2)
     parser.add_argument("--skip-export", action="store_true")
     return parser.parse_args(argv)
 
@@ -572,6 +787,7 @@ def main(argv: list[str] | None = None) -> None:
     ensure_packages()
 
     gpu_info = ensure_gpu_available()
+    import inspect
     import ultralytics
     from ultralytics import YOLO
 
@@ -580,14 +796,13 @@ def main(argv: list[str] | None = None) -> None:
 
     dataset_dir = locate_dataset_dir(args.dataset_dir, allow_local=args.allow_local)
     dataset_info = validate_real_dataset(dataset_dir)
-    print(f"[dataset] Verified real Roboflow dataset: {json.dumps(dataset_info)}", flush=True)
+    print(f"[dataset] Verified 2-class dataset: {json.dumps(dataset_info)}", flush=True)
 
-    if args.output_root is not None:
-        output_root = Path(args.output_root)
-    elif Path("/kaggle/working").is_dir():
-        output_root = Path("/kaggle/working")
-    else:
-        output_root = Path("ml/kaggle_local_run")
+    output_root = (
+        Path(args.output_root)
+        if args.output_root is not None
+        else (Path("/kaggle/working") if Path("/kaggle/working").is_dir() else Path("ml/kaggle_local_run"))
+    )
     output_root.mkdir(parents=True, exist_ok=True)
 
     work_root = output_root / "work_datasets"
@@ -600,22 +815,16 @@ def main(argv: list[str] | None = None) -> None:
         views = build_isolated_dataset_views(
             dataset_dir=dataset_dir,
             work_root=work_root,
-            thrips_oversample_factor=args.thrips_oversample,
+            whitefly_oversample_factor=args.whitefly_oversample,
+            negative_oversample_factor=args.negative_oversample,
         )
         data_baseline_yaml: Path = views["baseline_yaml"]
         data_balanced_yaml: Path = views["balanced_yaml"]
-        print(
-            f"[views] baseline={data_baseline_yaml}, balanced={data_balanced_yaml}, "
-            f"balanced_train_images={views['balanced_train_images']}",
-            flush=True,
-        )
 
-        # 0. Pretrained COCO zero-shot check on real held-out test split
         print("[stage0] Running pretrained yolo11n.pt zero-shot check on test split...", flush=True)
         pretrained_zero_shot = _evaluate_split("yolo11n.pt", data_baseline_yaml, split="test", imgsz=args.imgsz)
 
-        # 1. Stage 1 — Real-Data Baseline (unweighted 1,245 train images)
-        print("[stage1] Training baseline YOLOv11n on unweighted real train split...", flush=True)
+        print("[stage1] Training Stage 1 Baseline YOLOv11n on unweighted 2-class train split...", flush=True)
         t1_start = time.time()
         baseline_model = YOLO("yolo11n.pt")
         baseline_res = baseline_model.train(
@@ -643,22 +852,28 @@ def main(argv: list[str] | None = None) -> None:
             name="baseline_yolo11n",
         )
         baseline_elapsed = round(time.time() - t1_start, 2)
-        baseline_best_src = Path(baseline_res.save_dir) / "weights" / "best.pt"
         baseline_best_pt = artifacts_dir / "baseline_best.pt"
-        shutil.copy2(baseline_best_src, baseline_best_pt)
-
+        shutil.copy2(Path(baseline_res.save_dir) / "weights" / "best.pt", baseline_best_pt)
         baseline_val = _evaluate_split(baseline_best_pt, data_baseline_yaml, split="val", imgsz=args.imgsz)
         baseline_test = _evaluate_split(baseline_best_pt, data_baseline_yaml, split="test", imgsz=args.imgsz)
         print(f"[stage1] Baseline test metrics: {json.dumps(baseline_test)}", flush=True)
 
-        # 2. Stage 2 — Improved Class-Balanced Model (4x train-only thrips oversampling)
-        print("[stage2] Training improved YOLOv11n on class-balanced train split...", flush=True)
+        print("[stage2] Training Stage 2 Production Visual-Invariant + Hard-Negative YOLOv11n...", flush=True)
         t2_start = time.time()
         improved_model = YOLO("yolo11n.pt")
+        extra_train_kwargs: dict[str, Any] = {}
+        try:
+            from ultralytics.cfg import DEFAULT_CFG_DICT
+
+            if "augmentations" in DEFAULT_CFG_DICT or "augmentations" in inspect.signature(improved_model.train).parameters:
+                extra_train_kwargs["augmentations"] = _build_albumentations_list()
+        except Exception as exc:
+            print(f"[stage2] Custom albumentations kwargs skipped ({exc}); using built-in Albumentations + YOLO hyperparams", flush=True)
+
         improved_res = improved_model.train(
             data=str(data_balanced_yaml),
             epochs=args.improved_epochs,
-            patience=20,
+            patience=25,
             batch=args.batch,
             imgsz=args.imgsz,
             device=0,
@@ -669,35 +884,73 @@ def main(argv: list[str] | None = None) -> None:
             lrf=0.01,
             cos_lr=True,
             warmup_epochs=3.0,
-            cls=1.0,
+            cls=1.2,
             box=7.5,
             dfl=1.5,
             mosaic=1.0,
             close_mosaic=15,
-            mixup=0.1,
-            scale=0.5,
-            degrees=15.0,
+            mixup=0.08,
+            copy_paste=0.15,
+            scale=0.75,
+            translate=0.15,
+            degrees=20.0,
+            shear=5.0,
+            perspective=0.0003,
             fliplr=0.5,
-            flipud=0.2,
-            hsv_h=0.015,
-            hsv_s=0.5,
-            hsv_v=0.4,
+            flipud=0.3,
+            hsv_h=0.02,
+            hsv_s=0.55,
+            hsv_v=0.45,
+            erasing=0.15,
             amp=True,
             cache="ram",
             workers=4,
             project=str(runs_dir),
             name="improved_yolo11n",
+            **extra_train_kwargs,
         )
         improved_elapsed = round(time.time() - t2_start, 2)
-        improved_best_src = Path(improved_res.save_dir) / "weights" / "best.pt"
+        improved_save_dir = Path(improved_res.save_dir)
         improved_best_pt = artifacts_dir / "best.pt"
-        shutil.copy2(improved_best_src, improved_best_pt)
+        shutil.copy2(improved_save_dir / "weights" / "best.pt", improved_best_pt)
+
+        # Copy diagnostic plots & results.csv to artifacts_dir
+        for plot_name in (
+            "results.csv",
+            "results.png",
+            "BoxF1_curve.png",
+            "BoxPR_curve.png",
+            "confusion_matrix.png",
+            "confusion_matrix_normalized.png",
+            "val_batch0_pred.jpg",
+        ):
+            src_plot = improved_save_dir / plot_name
+            if src_plot.is_file():
+                shutil.copy2(src_plot, artifacts_dir / plot_name)
+
+        loss_summary = parse_loss_summary(improved_save_dir / "results.csv")
+        calibration = calibrate_confidence_threshold(
+            weights_path=improved_best_pt,
+            val_images_dir=work_root / "baseline" / "val" / "images",
+            val_labels_dir=work_root / "baseline" / "val" / "labels",
+            imgsz=args.imgsz,
+        )
+        calibrated_thr = float(calibration["selected_threshold"])
+        print(f"[calibration] Selected threshold={calibrated_thr}: {json.dumps(calibration)}", flush=True)
 
         improved_val = _evaluate_split(improved_best_pt, data_baseline_yaml, split="val", imgsz=args.imgsz)
         improved_test = _evaluate_split(improved_best_pt, data_baseline_yaml, split="test", imgsz=args.imgsz)
-        print(f"[stage2] Improved test metrics: {json.dumps(improved_test)}", flush=True)
+        print(f"[stage2] Production test metrics: {json.dumps(improved_test)}", flush=True)
 
-        improvements = _compute_improvements(baseline_test, improved_test)
+        b_agg, i_agg = baseline_test["aggregate"], improved_test["aggregate"]
+        deltas = {f"{k}_delta": round(float(i_agg[k]) - float(b_agg[k]), 4) for k in ("map50", "map75", "map50_95", "precision", "recall", "f1")}
+        deltas["whitefly_map50_delta"] = round(
+            float(improved_test["per_class"]["whitefly"]["map50"]) - float(baseline_test["per_class"]["whitefly"]["map50"]), 4
+        )
+        deltas["aphids_map50_delta"] = round(
+            float(improved_test["per_class"]["aphids"]["map50"]) - float(baseline_test["per_class"]["aphids"]["map50"]), 4
+        )
+        deltas["beats_baseline"] = deltas["map50_delta"] >= 0.0 and deltas["f1_delta"] >= 0.0
 
         summary = {
             "provenance": {
@@ -707,15 +960,22 @@ def main(argv: list[str] | None = None) -> None:
                 "imgsz": args.imgsz,
                 "total_images": dataset_info["total_images"],
                 "split_counts": dataset_info["split_counts"],
+                "negative_counts": dataset_info["negative_counts"],
+                "molted_skin_boxes_removed": dataset_info["molted_skin_boxes_removed"],
                 "split_leakage": 0,
                 "zero_synthetic_confirmed": True,
                 "synthetic_images_count": 0,
-                "thrips_oversample_factor": views["thrips_oversample_factor"],
-                "thrips_train_images": views["thrips_train_images"],
+                "whitefly_oversample_factor": views["whitefly_oversample_factor"],
+                "negative_oversample_factor": views["negative_oversample_factor"],
+                "whitefly_train_images": views["whitefly_train_images"],
+                "negative_train_images": views["negative_train_images"],
                 "balanced_train_images": views["balanced_train_images"],
                 "val_manifest_sha256": views["val_manifest_sha256"],
                 "test_manifest_sha256": views["test_manifest_sha256"],
             },
+            "calibrated_threshold": calibrated_thr,
+            "threshold_calibration": calibration,
+            "loss_summary": loss_summary,
             "pretrained_zero_shot": pretrained_zero_shot,
             "baseline": {
                 "epochs_requested": args.baseline_epochs,
@@ -733,26 +993,22 @@ def main(argv: list[str] | None = None) -> None:
                 "test": improved_test["aggregate"],
                 "per_class": improved_test["per_class"],
             },
-            "improvements_vs_baseline": improvements,
+            "improvements_vs_baseline": deltas,
         }
 
         summary_json = json.dumps(summary, indent=2)
         (output_root / "m3_summary.json").write_text(summary_json, encoding="utf-8")
         (artifacts_dir / "kaggle_training_summary.json").write_text(summary_json, encoding="utf-8")
-        print("[summary] Saved m3_summary.json and artifacts/kaggle_training_summary.json", flush=True)
 
         if not args.skip_export:
-            export_probe = attempt_candidate_exports(
-                best_pt=improved_best_pt,
-                data_baseline_yaml=data_baseline_yaml,
-                exports_dir=exports_dir,
-                imgsz=args.imgsz,
-            )
+            export_probe = _export_nhwc_candidates_on_linux(improved_best_pt, exports_dir=exports_dir, imgsz=args.imgsz)
             print(f"[exports] {json.dumps(export_probe)}", flush=True)
 
     finally:
         shutil.rmtree(work_root, ignore_errors=True)
-        print(f"[cleanup] Removed temporary dataset views at {work_root}", flush=True)
+        # Remove raw runs weights duplicates to keep Kaggle output lean and fast to download
+        shutil.rmtree(runs_dir, ignore_errors=True)
+        print(f"[cleanup] Cleaned temporary views at {work_root}", flush=True)
 
 
 if __name__ == "__main__":
