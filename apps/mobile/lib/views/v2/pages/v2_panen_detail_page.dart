@@ -32,6 +32,7 @@ class V2PanenDetailPage extends StatefulWidget {
     this.role = V2BerandaRole.petani,
     this.toast,
     this.onUbah,
+    this.onCatatPenjualan,
   });
 
   /// Frame `7.17 Detail panen`: panen 6 Nov, sebagian terjual.
@@ -62,6 +63,10 @@ class V2PanenDetailPage extends StatefulWidget {
   /// Simpan koreksi ke backend; null berarti perubahan hanya di layar.
   final Future<V2PanenItem> Function(V2PanenItem item)? onUbah;
 
+  /// Handler "Catat penjualan" dari aplikasi tersambung; null berarti alur
+  /// pratinjau galeri (form hanya di memori). (BUG-42)
+  final Future<void> Function()? onCatatPenjualan;
+
   static Route<V2PanenItem> route(V2PanenItem item) {
     return MaterialPageRoute<V2PanenItem>(
       builder: (_) => V2PanenDetailPage(item: item),
@@ -82,6 +87,16 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
     super.initState();
     _toast = widget.toast;
     if (_toast != null) _scheduleToastDismiss();
+  }
+
+  /// Salinan lokal disamakan saat induk mengirim data terbaru (mis. angka
+  /// terjual/sisa setelah penjualan, BUG-43).
+  @override
+  void didUpdateWidget(covariant V2PanenDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.item, oldWidget.item)) {
+      _item = widget.item;
+    }
   }
 
   @override
@@ -125,6 +140,11 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
   }
 
   Future<void> _catatPenjualan() async {
+    final handler = widget.onCatatPenjualan;
+    if (handler != null) {
+      await handler();
+      return;
+    }
     await Navigator.of(context).push<V2Penjualan>(
       V2PenjualanFormPage.route(
         panen: <V2PenjualanPanen>[

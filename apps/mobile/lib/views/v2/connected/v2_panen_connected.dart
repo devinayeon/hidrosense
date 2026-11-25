@@ -9,13 +9,18 @@ import '../../../data/models/inventory_record.dart';
 import '../../../data/models/nursery_record.dart';
 import '../../../data/models/table_record.dart';
 import '../../../data/models/transfer_record.dart';
+import '../../../models/penjualan_model.dart';
 import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_table_viewmodel.dart';
 import '../../../viewmodels/panen_viewmodel.dart';
+import '../../../viewmodels/penjualan_viewmodel.dart';
+import '../../../viewmodels/v2_penjualan_store.dart';
 import '../components/v2_panen_data.dart';
+import '../components/v2_penjualan_data.dart';
 import '../pages/v2_panen_detail_page.dart';
 import '../pages/v2_panen_form_page.dart';
 import '../pages/v2_panen_list_page.dart';
+import '../pages/v2_penjualan_form_page.dart';
 import 'v2_meja_connected.dart';
 
 double _kg(HarvestWeight? weight) =>
@@ -274,6 +279,20 @@ void _pesan(BuildContext context, String pesan) {
     ..showSnackBar(SnackBar(content: Text(pesan)));
 }
 
+/// Berat terjual satu panen dari stok batch penjualan yang sudah dimuat.
+///
+/// Endpoint panen tidak mengembalikan angka terjual, jadi dihitung dari
+/// `stokTersedia` batch (`BatchPanen` = berat layak − terjual). BUG-43.
+double v2TerjualDariBatch(
+  HarvestRecord record,
+  List<BatchPanen> batches,
+) {
+  final batch = batches.where((row) => row.id == record.id).firstOrNull;
+  if (batch == null) return 0;
+  final terjual = _kg(record.saleable) - batch.stokTersedia;
+  return terjual > 0 ? terjual : 0;
+}
+
 /// Detail panen yang menyimpan koreksi berat ke backend.
 class V2PanenConnectedDetailPage extends ConsumerStatefulWidget {
   const V2PanenConnectedDetailPage({super.key, required this.item});
@@ -358,8 +377,58 @@ class _V2PanenConnectedDetailPageState
     return hasil;
   }
 
+  /// Hitung ulang berat terjual dari stok batch penjualan yang sudah dimuat.
+  ///
+  /// Endpoint panen tidak mengembalikan angka terjual, jadi sisa dihitung dari
+  /// `stokTersedia` batch (berat layak − terjual). Dengan begitu Detail panen
+  /// ikut berubah setelah penjualan tersimpan (BUG-43).
+  V2PanenItem _denganTerjual(V2PanenItem item) {
+    final record = _record();
+    if (record == null) return item;
+    final batches = ref.watch(
+      penjualanViewModelProvider.select((state) => state.batches),
+    );
+    return item.copyWith(terjual: v2TerjualDariBatch(record, batches));
+  }
+
+  /// Catat penjualan dari Detail panen lewat backend nyata (BUG-42): tanggal
+  /// bawaan hari ini WIB (bukan 15 Nov contoh) dan simpan benar-benar menulis.
+  Future<void> _catatPenjualan() async {
+    final store = ref.read(v2PenjualanStoreProvider);
+    if (store == null) {
+      _pesan(context, 'Tidak punya akses mencatat penjualan.');
+      return;
+    }
+    final item = _denganTerjual(_item);
+    final hasil = await Navigator.of(context).push<V2Penjualan>(
+      V2PenjualanFormPage.route(
+        panen: <V2PenjualanPanen>[
+          V2PenjualanPanen(
+            id: item.id,
+            tanggalPanen: item.tanggal,
+            sisaKg: item.sisa,
+          ),
+        ],
+        store: store,
+        initialDate: jakartaToday(),
+      ),
+    );
+    if (!mounted || hasil == null) return;
+    // Penjualan mengurangi stok batch; provider penjualan sudah dimuat ulang
+    // oleh store, jadi cukup bangun ulang supaya sisa/terjual ikut berubah.
+    setState(() {});
+    _pesan(context, 'Penjualan dicatat.');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return V2PanenDetailPage(item: _item, onUbah: _simpan);
+    // Jaga viewmodel panen tetap hidup selama halaman terbuka (autoDispose) dan
+    // bangun ulang saat daftar panen berubah.
+    ref.watch(panenViewModelProvider.select((state) => state.records));
+    return V2PanenDetailPage(
+      item: _denganTerjual(_item),
+      onUbah: _simpan,
+      onCatatPenjualan: _catatPenjualan,
+    );
   }
 }

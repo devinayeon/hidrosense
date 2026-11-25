@@ -192,6 +192,25 @@ V2MejaItem v2MejaItemFromRecord(
   );
 }
 
+/// Pintu masuk bersama Detail meja (BUG-39).
+///
+/// Detail meja **selalu** dibuka lewat [tableId] supaya halamannya membaca
+/// ulang dari provider (kapasitas, tanaman, kerusakan) dan tidak menyalin objek
+/// yang bisa basi — baik dibuka dari daftar meja maupun dari halaman sukses
+/// "Pindah ke meja". [item] hanya dipakai sebagai gambar awal supaya halaman
+/// tidak kosong sesaat.
+Future<void> bukaDetailMeja(
+  NavigatorState navigator,
+  String tableId, {
+  V2MejaItem? item,
+}) {
+  return navigator.push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => V2MejaConnectedDetailPage(tableId: tableId, item: item),
+    ),
+  );
+}
+
 /// Isi segmen "Meja" di tab Tanam dengan data backend.
 class V2MejaConnectedTab extends ConsumerWidget {
   const V2MejaConnectedTab({
@@ -263,11 +282,16 @@ class V2MejaConnectedTab extends ConsumerWidget {
     WidgetRef ref,
     V2MejaItem item,
   ) {
-    return Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => V2MejaConnectedDetailPage(item: item),
-      ),
-    );
+    final id = item.id;
+    if (id == null) {
+      // Data contoh galeri/offline belum punya id; tetap tampilkan salinannya.
+      return Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => V2MejaConnectedDetailPage(item: item),
+        ),
+      );
+    }
+    return bukaDetailMeja(Navigator.of(context), id, item: item);
   }
 }
 
@@ -278,10 +302,21 @@ void _pesan(BuildContext context, String pesan) {
 }
 
 /// Detail meja yang mengubah status/ukuran dan menambah tanaman ke backend.
+///
+/// Dibuka lewat [tableId] (pintu masuk bersama, BUG-39) supaya isinya selalu
+/// dihitung ulang dari provider. [item] hanya gambar awal/pratinjau.
 class V2MejaConnectedDetailPage extends ConsumerStatefulWidget {
-  const V2MejaConnectedDetailPage({super.key, required this.item});
+  const V2MejaConnectedDetailPage({super.key, this.tableId, this.item})
+    : assert(
+        tableId != null || item != null,
+        'Butuh tableId (pintu masuk bersama) atau item (pratinjau).',
+      );
 
-  final V2MejaItem item;
+  /// Identitas meja backend; bila diisi, Detail meja membaca ulang dari provider.
+  final String? tableId;
+
+  /// Data awal/pratinjau; null bila dibuka hanya dengan [tableId].
+  final V2MejaItem? item;
 
   @override
   ConsumerState<V2MejaConnectedDetailPage> createState() =>
@@ -290,16 +325,29 @@ class V2MejaConnectedDetailPage extends ConsumerStatefulWidget {
 
 class _V2MejaConnectedDetailPageState
     extends ConsumerState<V2MejaConnectedDetailPage> {
-  late V2MejaItem _item = widget.item;
+  late V2MejaItem _item = widget.item ?? _lokalDariId(widget.tableId!);
+
+  /// Meja tanpa data provider sesaat (mis. belum termuat): kerangka kosong.
+  static V2MejaItem _lokalDariId(String id) => V2MejaItem(
+    id: id,
+    kode: '',
+    jumlahLubang: 0,
+    terisi: 0,
+    status: V2MejaStatus.tersedia,
+  );
+
+  String? get _id => widget.tableId ?? _item.id;
 
   List<InventoryRecord> get _inventaris =>
       ref.read(connectedInventoryProvider).activeRecords;
 
   V2MejaItem? _dariBackend() {
+    final id = _id;
+    if (id == null) return null;
     final record = ref
         .read(connectedTableProvider)
         .records
-        .where((row) => row.id == _item.id)
+        .where((row) => row.id == id)
         .firstOrNull;
     if (record == null) return null;
     return v2MejaItemFromRecord(
@@ -313,7 +361,7 @@ class _V2MejaConnectedDetailPageState
 
   /// Semua laporan kerusakan meja ini dari `damageProvider`.
   List<DamageRecord> _damages() {
-    final id = _item.id;
+    final id = _id;
     if (id == null) return const <DamageRecord>[];
     return ref
         .read(damageProvider(id))
@@ -352,7 +400,7 @@ class _V2MejaConnectedDetailPageState
   }
 
   Future<void> _ubahStatus(V2MejaStatus status) async {
-    final id = _item.id;
+    final id = _id;
     if (id == null) throw StateError('Meja belum tersimpan di server.');
     await ref
         .read(connectedTableProvider.notifier)
@@ -368,7 +416,7 @@ class _V2MejaConnectedDetailPageState
   }
 
   Future<void> _ubahMeja(V2MejaItem meja) async {
-    final id = _item.id;
+    final id = _id;
     if (id == null) throw StateError('Meja belum tersimpan di server.');
     await ref
         .read(connectedTableProvider.notifier)
@@ -382,18 +430,27 @@ class _V2MejaConnectedDetailPageState
   }
 
   Future<V2MejaItem?> _tambahTanaman() async {
-    final id = _item.id;
+    final id = _id;
     if (id == null) throw StateError('Meja belum tersimpan di server.');
-    // Langkah 1: pilih semaian siap pindah.
+    // Langkah 1: pilih semaian siap pindah. Kesiapan dihitung sama seperti
+    // daftar semaian (HSS ≥ 15 dari tanggal semai), bukan menebak dari kolom
+    // server yang bisa kosong (BUG-40).
     final siap = (ref.read(v2AllSowingsProvider).valueOrNull ?? const [])
-        .where((row) => row.canTransfer)
-        .map(
-          (row) => v2SemaianItemFromRecord(row, inventaris: _inventaris),
-        )
+        .map((row) => v2SemaianItemFromRecord(row, inventaris: _inventaris))
+        .where((item) => item.siapPindah)
         .toList();
-    final pilihan = await Navigator.of(context).push<V2SemaianItem>(
+    final navigator = Navigator.of(context);
+    final pilihan = await navigator.push<V2SemaianItem>(
       MaterialPageRoute<V2SemaianItem>(
-        builder: (_) => V2PilihSemaianPage(items: siap),
+        builder: (_) => V2PilihSemaianPage(
+          items: siap,
+          // "Lihat semaian" membuka daftar semaian tersambung, bukan menutup
+          // kembali ke Detail meja (BUG-41).
+          onLihatSemaian: () {
+            navigator.pop();
+            navigator.push(V2SemaianConnectedListPage.route());
+          },
+        ),
       ),
     );
     if (!mounted || pilihan == null) return null;
@@ -594,8 +651,19 @@ class _V2MejaConnectedDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final id = _item.id;
+    final id = _id;
     if (id != null) ref.watch(damageProvider(id));
+    // Satu pintu masuk bersama (BUG-39): saat dibuka lewat id, Detail meja
+    // selalu dihitung ulang dari provider (kapasitas, tanaman, kerusakan)
+    // supaya tidak menampilkan data basi/kosong dari jalur halaman sukses.
+    if (widget.tableId != null) {
+      ref.watch(connectedTableProvider.select((state) => state.records));
+      ref.watch(v2AllTransfersProvider);
+      ref.watch(v2AllSowingsProvider);
+      ref.watch(connectedInventoryProvider);
+      final terbaru = _dariBackend();
+      if (terbaru != null) _item = terbaru;
+    }
     return V2MejaDetailPage(
       item: _denganRusak(_item),
       onUbahStatus: _ubahStatus,
