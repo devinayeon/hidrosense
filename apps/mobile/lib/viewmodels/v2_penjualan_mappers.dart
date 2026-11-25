@@ -41,7 +41,10 @@ V2Penjualan? v2PenjualanFromQueue(
   final jumlah = double.tryParse('${json['jumlah_kg']}');
   final harga = double.tryParse('${json['harga_per_kg']}');
   final tanggal = DateTime.tryParse('${json['tanggal_penjualan']}');
-  if (pembeli is! String || pembeli.isEmpty || jumlah == null || harga == null) {
+  if (pembeli is! String ||
+      pembeli.isEmpty ||
+      jumlah == null ||
+      harga == null) {
     return null;
   }
   final panenId = json['id_panen']?.toString();
@@ -74,10 +77,7 @@ V2Penjualan? v2PenjualanFromQueue(
 ///
 /// Label panen memakai sisa stok batch setelah penjualan ini, sama seperti
 /// yang tampil di sheet "Pilih panen" (frame 8.9).
-V2Penjualan v2PenjualanFromItem(
-  PenjualanItem item,
-  List<BatchPanen> batches,
-) {
+V2Penjualan v2PenjualanFromItem(PenjualanItem item, List<BatchPanen> batches) {
   final line = item.details.length == 1 ? item.details.single : null;
   final kg = item.details.isEmpty
       ? parseKg(item.kuantitas)

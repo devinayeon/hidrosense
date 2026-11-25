@@ -32,9 +32,10 @@ class V2BentoTile extends StatelessWidget {
       V2BentoTone.success => (V2Colors.green100, V2Colors.green700),
     };
 
+    // `size` hanyalah tinggi minimum: pada huruf besar petak tumbuh ke bawah.
     final content = Container(
       width: size,
-      height: size,
+      constraints: BoxConstraints(minHeight: size),
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
         color: V2Colors.white,

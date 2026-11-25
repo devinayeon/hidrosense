@@ -59,12 +59,10 @@ Future<DateTime?> showV2SemaianDateSheet(
         child: _V2SemaianCalendar(
           bulan: bulan,
           terpilih: draft,
-          onPrevious: () => setSheet(
-            () => bulan = DateTime(bulan.year, bulan.month - 1),
-          ),
-          onNext: () => setSheet(
-            () => bulan = DateTime(bulan.year, bulan.month + 1),
-          ),
+          onPrevious: () =>
+              setSheet(() => bulan = DateTime(bulan.year, bulan.month - 1)),
+          onNext: () =>
+              setSheet(() => bulan = DateTime(bulan.year, bulan.month + 1)),
           onPick: (tanggal) => setSheet(() => draft = tanggal),
         ),
       ),

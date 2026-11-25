@@ -16,10 +16,7 @@ import 'v2_cuaca_connected.dart';
 /// Backend hanya menyimpan jenis kerusakan dan jumlah tanaman; tidak ada
 /// perawatan, obat, atau foto. Karena itu `meta`/`extra` diisi apa adanya dan
 /// kartu detail memakai [V2RawatDetailPage] tanpa kartu foto AI.
-V2RawatItem v2RawatItemFromDamage(
-  DamageRecord damage,
-  TableRecord table,
-) {
+V2RawatItem v2RawatItemFromDamage(DamageRecord damage, TableRecord table) {
   final catatan = damage.note?.trim();
   return V2RawatItem(
     id: damage.id,
@@ -68,9 +65,9 @@ class V2RawatConnectedTab extends ConsumerWidget {
       onOpenCuaca: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
       onFotoTanaman: () => Navigator.of(context).push(PestScanPage.route()),
-      onTapItem: (item) => Navigator.of(context).push<void>(
-        V2RawatDetailPage.route(item, showFoto: false),
-      ),
+      onTapItem: (item) => Navigator.of(
+        context,
+      ).push<void>(V2RawatDetailPage.route(item, showFoto: false)),
     );
   }
 

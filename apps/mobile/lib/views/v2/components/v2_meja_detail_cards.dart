@@ -124,10 +124,7 @@ class _Legenda extends StatelessWidget {
           ),
         ),
         const SizedBox(width: V2Space.sm),
-        Text(
-          label,
-          style: V2Type.label.copyWith(color: V2Colors.white),
-        ),
+        Text(label, style: V2Type.label.copyWith(color: V2Colors.white)),
       ],
     );
   }
@@ -178,11 +175,7 @@ class V2MejaTanamanCard extends StatelessWidget {
           else
             for (var index = 0; index < item.tanaman.length; index++) ...[
               if (index > 0)
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: V2Colors.border,
-                ),
+                const Divider(height: 1, thickness: 1, color: V2Colors.border),
               V2ListItem(
                 title: item.tanaman[index].varietas,
                 subtitle: item.tanaman[index].labelPanen,

@@ -14,8 +14,9 @@ class V2RawatCekHamaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 136 adalah tinggi minimum; huruf besar membuat kartu tumbuh.
     final content = Container(
-      height: 136,
+      constraints: const BoxConstraints(minHeight: 136),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue500,
@@ -95,11 +96,7 @@ class V2RawatFotoCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              V2RawatAssets.harvestLettuce,
-              width: 96,
-              height: 96,
-            ),
+            Image.asset(V2RawatAssets.harvestLettuce, width: 96, height: 96),
             const SizedBox(height: V2Space.sm),
             Text(
               caption,

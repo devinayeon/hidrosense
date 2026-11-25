@@ -336,14 +336,13 @@ const List<V2InventarisItem> designInventarisArsip = <V2InventarisItem>[
 ///
 /// Barang arsip tetap ada di daftar, hanya tersaring keluar dari chip "Semua"
 /// oleh `V2InventarisTabView`.
-const List<V2InventarisItem> designInventarisSetelahArsip =
-    <V2InventarisItem>[
-      designDetailMenipis,
-      designInventarisNutrisi,
-      designDetailHabis,
-      designDetailArsip,
-      designInventarisPupukDaun,
-    ];
+const List<V2InventarisItem> designInventarisSetelahArsip = <V2InventarisItem>[
+  designDetailMenipis,
+  designInventarisNutrisi,
+  designDetailHabis,
+  designDetailArsip,
+  designInventarisPupukDaun,
+];
 
 /// Tiga baris frame 4.15 "Barang ditambahkan": barang baru `Benih Lollo Rossa`
 /// duduk paling atas.

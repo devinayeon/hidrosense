@@ -135,9 +135,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     final initial = widget.initial;
     final validation = widget.previewValidation;
 
-    _name = TextEditingController(
-      text: validation ? '' : initial?.name ?? '',
-    );
+    _name = TextEditingController(text: validation ? '' : initial?.name ?? '');
     _username = TextEditingController(
       text: validation ? 'sari.dewi' : initial?.username ?? '',
     );
@@ -160,9 +158,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showConflict());
     }
     if (widget.previewDiscard) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _confirmDiscard(),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => _confirmDiscard());
     }
   }
 
@@ -200,7 +196,8 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     final confirmed = await showV2Dialog(
       context,
       title: 'Data sudah berubah',
-      body: 'Pegawai lain baru mengubah data ini. Muat ulang, lalu ulangi '
+      body:
+          'Pegawai lain baru mengubah data ini. Muat ulang, lalu ulangi '
           'perubahan.',
       primaryLabel: 'Muat ulang',
       secondaryLabel: 'Batal',
@@ -315,9 +312,9 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     } on V2EmployeeStoreException catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

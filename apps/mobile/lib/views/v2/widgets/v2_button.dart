@@ -122,8 +122,7 @@ class V2Button extends StatelessWidget {
             : Border.all(color: _border, width: _stroke),
         // Lip 2px hanya milik `Type=Primary` (component set Button di
         // Foundations); Secondary/Destructive tidak punya bayangan.
-        boxShadow: state == V2ButtonState.normal &&
-                type == V2ButtonType.primary
+        boxShadow: state == V2ButtonState.normal && type == V2ButtonType.primary
             ? V2Shadow.buttonLip
             : null,
       ),

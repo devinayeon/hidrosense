@@ -25,20 +25,29 @@ class PestRepository {
     if (_ownsUploadClient) _uploadClient.close();
   }
 
-  Map<String, String> _key(String? key) => {'Idempotency-Key': key ?? generateUuidV4()};
+  Map<String, String> _key(String? key) => {
+    'Idempotency-Key': key ?? generateUuidV4(),
+  };
 
   Map<String, dynamic> _data(Map<String, dynamic> response) {
     final data = response['data'];
-    if (data is! Map<String, dynamic>) throw const FormatException('Respons server tidak valid.');
+    if (data is! Map<String, dynamic>)
+      throw const FormatException('Respons server tidak valid.');
     return data;
   }
 
   Future<CloudinarySignature> signUpload() async =>
-      CloudinarySignature.fromJson(_data(await _api.post('unggahan/tanda-tangan')));
+      CloudinarySignature.fromJson(
+        _data(await _api.post('unggahan/tanda-tangan')),
+      );
 
   /// Unggah langsung ke Cloudinary dengan tanda tangan dari backend. Hanya alamat Cloudinary
   /// https yang diterima sebagai hasil, supaya jawaban janggal tidak sampai ke database.
-  Future<UploadedPhoto> uploadPhoto(Uint8List bytes, CloudinarySignature sig, {String filename = 'pindai.jpg'}) async {
+  Future<UploadedPhoto> uploadPhoto(
+    Uint8List bytes,
+    CloudinarySignature sig, {
+    String filename = 'pindai.jpg',
+  }) async {
     final uri = Uri.parse(sig.uploadUrl);
     if (uri.scheme != 'https' || uri.host != 'api.cloudinary.com') {
       throw const FormatException('Alamat unggah bukan Cloudinary.');
@@ -48,17 +57,27 @@ class PestRepository {
       ..fields['timestamp'] = '${sig.timestamp}'
       ..fields['folder'] = sig.folder
       ..fields['signature'] = sig.signature
-      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
-    final streamed = await _uploadClient.send(request).timeout(const Duration(seconds: 60));
+      ..files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: filename),
+      );
+    final streamed = await _uploadClient
+        .send(request)
+        .timeout(const Duration(seconds: 60));
     final response = await http.Response.fromStream(streamed);
     if (response.statusCode != 200) {
-      throw ApiException(response.statusCode, 'UPLOAD_FAILED', 'Unggah foto gagal (${response.statusCode}).');
+      throw ApiException(
+        response.statusCode,
+        'UPLOAD_FAILED',
+        'Unggah foto gagal (${response.statusCode}).',
+      );
     }
     final body = jsonDecode(utf8.decode(response.bodyBytes));
-    if (body is! Map<String, dynamic>) throw const FormatException('Respons Cloudinary tidak valid.');
+    if (body is! Map<String, dynamic>)
+      throw const FormatException('Respons Cloudinary tidak valid.');
     final url = body['secure_url'];
     final publicId = body['public_id'];
-    if (url is! String || publicId is! String) throw const FormatException('Respons Cloudinary tidak lengkap.');
+    if (url is! String || publicId is! String)
+      throw const FormatException('Respons Cloudinary tidak lengkap.');
     final photo = Uri.parse(url);
     if (photo.scheme != 'https' || photo.host != 'res.cloudinary.com') {
       throw const FormatException('Alamat foto bukan dari Cloudinary.');
@@ -86,7 +105,8 @@ class PestRepository {
       },
     );
     final id = _data(response)['id_hasil_deteksi'];
-    if (id is! String) throw const FormatException('Respons pindaian tidak valid.');
+    if (id is! String)
+      throw const FormatException('Respons pindaian tidak valid.');
     return id;
   }
 
@@ -109,7 +129,9 @@ class PestRepository {
     );
     final rec = PestRecommendation.fromJson(_data(response));
     if (rec.tableId != tableId || rec.pest != pest) {
-      throw const FormatException('Respons rekomendasi tidak sesuai permintaan.');
+      throw const FormatException(
+        'Respons rekomendasi tidak sesuai permintaan.',
+      );
     }
     return rec;
   }
@@ -138,7 +160,9 @@ class PestRepository {
     }
     final items = rows.map(PestRecommendation.fromJson).toList(growable: false);
     if (status != null && items.any((r) => r.status != status)) {
-      throw const FormatException('Server mengembalikan status yang tidak diminta.');
+      throw const FormatException(
+        'Server mengembalikan status yang tidak diminta.',
+      );
     }
     return RecommendationPage(
       items: items,
@@ -161,7 +185,8 @@ class PestRepository {
       body: {
         'tanggal_aplikasi': ?appliedOn,
         if (note != null && note.trim().isNotEmpty) 'catatan': note.trim(),
-        if (materials.isNotEmpty) 'bahan': materials.map((m) => m.toJson()).toList(),
+        if (materials.isNotEmpty)
+          'bahan': materials.map((m) => m.toJson()).toList(),
       },
     );
     return _decided(response, id, RecommendationStatus.diterima);
@@ -188,7 +213,11 @@ class PestRepository {
     return _decided(response, id, RecommendationStatus.ditolak);
   }
 
-  PestRecommendation _decided(Map<String, dynamic> response, String id, RecommendationStatus expected) {
+  PestRecommendation _decided(
+    Map<String, dynamic> response,
+    String id,
+    RecommendationStatus expected,
+  ) {
     final rec = PestRecommendation.fromJson(_data(response));
     if (rec.id != id || rec.status != expected) {
       throw const FormatException('Respons keputusan tidak sesuai.');

@@ -36,11 +36,7 @@ class V2DetailTanamanPage extends StatefulWidget {
 
   /// Frame `6.21 Detail tanaman`: Romaine Meja A2, HST 8.
   V2DetailTanamanPage.biasa({Key? key})
-    : this(
-        key: key,
-        tanaman: designTanamanRomaineA2,
-        meja: designMejaA2,
-      );
+    : this(key: key, tanaman: designTanamanRomaineA2, meja: designMejaA2);
 
   /// Frame `6.23 Catatan tersimpan`: detail dengan toast.
   V2DetailTanamanPage.tersimpan({Key? key})
@@ -105,9 +101,9 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
   }
 
   Future<void> _ubahCatatan() async {
-    final catatan = await Navigator.of(context).push<String>(
-      V2UbahCatatanTanamanPage.route(_tanaman.keterangan),
-    );
+    final catatan = await Navigator.of(
+      context,
+    ).push<String>(V2UbahCatatanTanamanPage.route(_tanaman.keterangan));
     if (!mounted || catatan == null) return;
     final simpan = widget.onSimpanCatatan;
     if (simpan != null) {
@@ -192,10 +188,7 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _RingkasanCard(
-                        tanaman: _tanaman,
-                        meja: widget.meja.nama,
-                      ),
+                      _RingkasanCard(tanaman: _tanaman, meja: widget.meja.nama),
                       const SizedBox(height: V2Space.lg),
                       _InfoCard(tanaman: _tanaman),
                       const SizedBox(height: V2Space.lg),
@@ -214,7 +207,10 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
               V2ActionBar(
                 toast: _toast,
                 actions: [
-                  V2Button(label: 'Catat rusak', onPressed: () => _catatRusak()),
+                  V2Button(
+                    label: 'Catat rusak',
+                    onPressed: () => _catatRusak(),
+                  ),
                   V2Button(
                     label: 'Ubah',
                     type: V2ButtonType.tertiary,
@@ -365,8 +361,7 @@ class V2UbahCatatanTanamanPage extends StatefulWidget {
   const V2UbahCatatanTanamanPage({super.key, this.keterangan});
 
   /// Frame `6.22 Ubah catatan tanaman`.
-  const V2UbahCatatanTanamanPage.biasa({super.key})
-    : keterangan = 'Rak bawah';
+  const V2UbahCatatanTanamanPage.biasa({super.key}) : keterangan = 'Rak bawah';
 
   final String? keterangan;
 
@@ -392,8 +387,7 @@ class _V2UbahCatatanTanamanPageState extends State<V2UbahCatatanTanamanPage> {
     super.dispose();
   }
 
-  void _simpan() =>
-      Navigator.of(context).pop(_keterangan.text.trim());
+  void _simpan() => Navigator.of(context).pop(_keterangan.text.trim());
 
   @override
   Widget build(BuildContext context) {

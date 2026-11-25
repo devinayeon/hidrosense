@@ -57,11 +57,7 @@ class V2ErrorState extends StatelessWidget {
         ),
         if (actionLabel != null) ...[
           const SizedBox(height: V2Space.lg),
-          V2Button(
-            label: actionLabel!,
-            type: actionType,
-            onPressed: onAction,
-          ),
+          V2Button(label: actionLabel!, type: actionType, onPressed: onAction),
         ],
       ],
     );

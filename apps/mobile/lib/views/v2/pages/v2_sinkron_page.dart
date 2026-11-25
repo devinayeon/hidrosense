@@ -34,6 +34,25 @@ typedef V2SyncNow =
 typedef V2SyncConflictAction =
     Future<void> Function(String key, {required bool useServer});
 
+/// Sambungan Beranda ke jam sinkron nyata: jam yang sudah diketahui, cara
+/// menyegarkannya dari server, cara mencatat sinkron yang baru selesai, dan
+/// putaran sinkron yang ikut mencatat jam. Null di galeri.
+class V2SyncLink {
+  const V2SyncLink({
+    required this.refresh,
+    required this.record,
+    this.lastSyncedAt,
+    this.syncNow,
+  });
+
+  final DateTime? lastSyncedAt;
+  final Future<DateTime?> Function() refresh;
+  final Future<DateTime> Function() record;
+
+  /// Putaran sinkron yang mencatat jam; null berarti memakai pengirim biasa.
+  final V2SyncNow? syncNow;
+}
+
 /// Keadaan halaman sinkron yang punya frame sendiri di page 11.
 enum V2SinkronState {
   /// Frame 11.1: semua data sudah di server.
@@ -83,6 +102,9 @@ class V2SinkronPage extends StatefulWidget {
     this.onSyncNow,
     this.onResolveConflict,
     this.saleRepairer,
+    this.lastSyncedAt,
+    this.refreshLastSync,
+    this.recordSync,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
@@ -93,7 +115,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
@@ -103,7 +128,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
@@ -113,7 +141,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
@@ -123,7 +154,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
@@ -133,7 +167,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
@@ -143,7 +180,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
@@ -153,7 +193,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
@@ -163,7 +206,10 @@ class V2SinkronPage extends StatefulWidget {
       queue = null,
       onSyncNow = null,
       onResolveConflict = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      lastSyncedAt = null,
+      refreshLastSync = null,
+      recordSync = null;
 
   final V2SinkronState state;
 
@@ -189,6 +235,18 @@ class V2SinkronPage extends StatefulWidget {
   /// Null berarti ketukan baris Penjualan hanya membuka pratinjau galeri.
   final V2PenjualanRepairer? saleRepairer;
 
+  /// Jam sinkron terakhir yang diketahui saat halaman dibuka (disimpan di HP
+  /// dan server). Null di galeri atau bila HP ini belum pernah sinkron.
+  final DateTime? lastSyncedAt;
+
+  /// Menyegarkan jam sinkron dari server begitu halaman terbuka, supaya jam
+  /// yang tampil tidak bergantung pada kapan halaman ini terakhir dibuat.
+  final Future<DateTime?> Function()? refreshLastSync;
+
+  /// Mencatat sinkron yang selesai di luar putaran biasa (perbaikan baris
+  /// atau penyelesaian konflik) dan mengembalikan jamnya.
+  final Future<DateTime> Function()? recordSync;
+
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
@@ -197,6 +255,9 @@ class V2SinkronPage extends StatefulWidget {
     V2SyncNow? onSyncNow,
     V2SyncConflictAction? onResolveConflict,
     V2PenjualanRepairer? saleRepairer,
+    DateTime? lastSyncedAt,
+    Future<DateTime?> Function()? refreshLastSync,
+    Future<DateTime> Function()? recordSync,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2SinkronPage(
@@ -207,6 +268,9 @@ class V2SinkronPage extends StatefulWidget {
         onSyncNow: onSyncNow,
         onResolveConflict: onResolveConflict,
         saleRepairer: saleRepairer,
+        lastSyncedAt: lastSyncedAt,
+        refreshLastSync: refreshLastSync,
+        recordSync: recordSync,
       ),
     );
   }
@@ -225,6 +289,10 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   V2SyncRun? _lastRun;
   DateTime? _doneAt;
 
+  /// Jam sinkron terakhir yang tampil di ringkasan 11.1; diisi dari HP saat
+  /// halaman dibuka, disegarkan dari server, dan dimajukan tiap sinkron selesai.
+  late DateTime? _lastSynced = widget.lastSyncedAt;
+
   /// Potret antrean saat tombol ditekan, supaya baris yang sudah terkirim
   /// tetap tampil "Terkirim" sampai keadaan berikutnya (frame 11.5).
   List<SyncQueueItem> _runItems = const [];
@@ -241,6 +309,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     super.initState();
     _toast = widget.toast;
     if (_toast != null) _scheduleToastDismiss();
+    unawaited(_refreshLastSync());
     if (_state == V2SinkronState.conflict) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showConflict());
     }
@@ -251,6 +320,30 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     _syncTimer?.cancel();
     _toastTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _refreshLastSync() async {
+    final refresh = widget.refreshLastSync;
+    if (refresh == null) return;
+    final fresh = await refresh();
+    if (!mounted || fresh == null) return;
+    final current = _lastSynced;
+    if (current == null || fresh.isAfter(current)) {
+      setState(() => _lastSynced = fresh);
+    }
+  }
+
+  /// Mencatat sinkron yang selesai di luar putaran biasa. Tanpa pencatat
+  /// (galeri) jamnya jam perangkat; bila pencatatan gagal, jam perangkat juga
+  /// yang dipakai karena datanya memang baru saja sampai ke server.
+  Future<DateTime> _stampNow() async {
+    final record = widget.recordSync;
+    if (record != null) {
+      try {
+        return await record();
+      } catch (_) {}
+    }
+    return DateTime.now();
   }
 
   void _scheduleToastDismiss() {
@@ -285,6 +378,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
           _state = V2SinkronState.done;
           _toast = 'Sinkron selesai';
           _doneAt = DateTime.now();
+          _lastSynced = _doneAt;
         });
         _scheduleToastDismiss();
       });
@@ -297,7 +391,8 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
       if (run.remaining == 0) {
         _state = V2SinkronState.done;
         _toast = 'Sinkron selesai';
-        _doneAt = DateTime.now();
+        _doneAt = run.syncedAt ?? DateTime.now();
+        _lastSynced = _doneAt;
       } else if (run.sent == 0 && run.pending > 0) {
         _state = V2SinkronState.offline;
       } else {
@@ -343,11 +438,23 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
   /// Ringkasan 11.6; galeri tetap memakai jam contoh frame.
   V2SinkronRingkasan get _doneRingkasan {
     final doneAt = _doneAt;
-    if (doneAt == null || widget.onSyncNow == null) {
-      return designSinkronSelesai;
-    }
+    if (doneAt == null || !_connected) return designSinkronSelesai;
     return v2SinkronRingkasanSelesai(doneAt);
   }
+
+  /// Halaman tersambung ke antrean atau jam sinkron nyata; galeri tidak.
+  /// Hanya halaman tersambung yang boleh menampilkan jam sungguhan, supaya
+  /// jam contoh desain tidak pernah muncul di aplikasi.
+  bool get _connected =>
+      widget.onSyncNow != null ||
+      widget.queue != null ||
+      widget.lastSyncedAt != null ||
+      widget.refreshLastSync != null;
+
+  /// Ringkasan 11.1: jam nyata bila tersambung, jam contoh hanya di galeri.
+  V2SinkronRingkasan get _readyRingkasan => _connected
+      ? v2SinkronRingkasanTerkini(_lastSynced)
+      : designSinkronTerkini;
 
   /// Form 11.9 untuk baris Penjualan: isian nyata bila antrean tersambung,
   /// pratinjau galeri bila tidak.
@@ -388,7 +495,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
       ),
     );
     if (updated == null || !mounted) return;
-    _afterRepair();
+    unawaited(_afterRepair());
   }
 
   /// Baris antrean yang sedang tampil, dicari lewat kunci idempotennya.
@@ -402,14 +509,17 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
 
   /// Setelah satu baris diperbaiki: 11.6 bila antrean kosong, selain itu
   /// ringkasan 11.7 dihitung ulang dari hasil putaran sebelumnya.
-  void _afterRepair() {
+  Future<void> _afterRepair() async {
     final queue = widget.queue;
     if (queue == null) return;
     if (queue.items.isEmpty) {
+      final stamped = await _stampNow();
+      if (!mounted) return;
       setState(() {
         _state = V2SinkronState.done;
         _toast = 'Sinkron selesai';
-        _doneAt = DateTime.now();
+        _doneAt = stamped;
+        _lastSynced = stamped;
         _lastRun = const V2SyncRun();
       });
       _scheduleToastDismiss();
@@ -463,10 +573,13 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
       await resolve(key, useServer: useServer);
       if (!mounted) return;
       if (widget.queue?.items.isEmpty ?? false) {
+        final stamped = await _stampNow();
+        if (!mounted) return;
         setState(() {
           _state = V2SinkronState.done;
           _toast = 'Sinkron selesai';
-          _doneAt = DateTime.now();
+          _doneAt = stamped;
+          _lastSynced = stamped;
           _lastRun = const V2SyncRun();
         });
         _scheduleToastDismiss();
@@ -525,7 +638,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
         children: switch (_state) {
           V2SinkronState.loading => const [V2SinkronSkeleton()],
           V2SinkronState.notifOff => [
-            _summary(designSinkronTerkini),
+            _summary(_readyRingkasan),
             const SizedBox(height: V2Space.lg),
             const V2SinkronNotifCard(
               title: 'Notifikasi mati',
@@ -554,7 +667,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
             _queueList(widget.items ?? designSinkronGagal, actionable: true),
           ],
           V2SinkronState.done => [_summary(_doneRingkasan)],
-          V2SinkronState.ready => [_summary(designSinkronTerkini)],
+          V2SinkronState.ready => [_summary(_readyRingkasan)],
           V2SinkronState.sessionExpired => const [],
         },
       ),
@@ -604,10 +717,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     return V2GroupList(
       children: [
         for (final item in items)
-          V2SinkronRow(
-            item: item,
-            onTap: actionable ? _actionFor(item) : null,
-          ),
+          V2SinkronRow(item: item, onTap: actionable ? _actionFor(item) : null),
       ],
     );
   }
@@ -642,12 +752,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
         ],
       ),
       V2SinkronState.syncing => const V2ActionBar(
-        actions: [
-          V2Button(
-            label: 'Mengirim...',
-            state: V2ButtonState.loading,
-          ),
-        ],
+        actions: [V2Button(label: 'Mengirim...', state: V2ButtonState.loading)],
       ),
       V2SinkronState.partial || V2SinkronState.conflict => V2ActionBar(
         toast: _toast,

@@ -37,8 +37,7 @@ class V2RawatFotoPage extends StatefulWidget {
   });
 
   /// Frame `9.5 Tips foto`.
-  const V2RawatFotoPage.tips({Key? key})
-    : this(key: key);
+  const V2RawatFotoPage.tips({Key? key}) : this(key: key);
 
   /// Frame `9.6 Izin kamera`.
   const V2RawatFotoPage.izin({Key? key})
@@ -75,9 +74,7 @@ class V2RawatFotoPage extends StatefulWidget {
 
   final ValueChanged<V2RawatItem>? onSaved;
 
-  static Route<V2RawatItem> route({
-    ValueChanged<V2RawatItem>? onSaved,
-  }) {
+  static Route<V2RawatItem> route({ValueChanged<V2RawatItem>? onSaved}) {
     return MaterialPageRoute<V2RawatItem>(
       builder: (_) => V2RawatFotoPage(auto: true, onSaved: onSaved),
     );
@@ -87,19 +84,15 @@ class V2RawatFotoPage extends StatefulWidget {
   State<V2RawatFotoPage> createState() => _V2RawatFotoPageState();
   static Route<void> kameraRouteWith(ValueChanged<V2RawatItem>? onSaved) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2RawatFotoPage(
-        mode: V2RawatFotoMode.kamera,
-        onSaved: onSaved,
-      ),
+      builder: (_) =>
+          V2RawatFotoPage(mode: V2RawatFotoMode.kamera, onSaved: onSaved),
     );
   }
 
   static Route<void> pratinjauRoute(ValueChanged<V2RawatItem>? onSaved) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2RawatFotoPage(
-        mode: V2RawatFotoMode.pratinjau,
-        onSaved: onSaved,
-      ),
+      builder: (_) =>
+          V2RawatFotoPage(mode: V2RawatFotoMode.pratinjau, onSaved: onSaved),
     );
   }
 
@@ -134,7 +127,8 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
   void initState() {
     super.initState();
     if (widget.auto &&
-        (_mode == V2RawatFotoMode.unggah || _mode == V2RawatFotoMode.analisis)) {
+        (_mode == V2RawatFotoMode.unggah ||
+            _mode == V2RawatFotoMode.analisis)) {
       _jadwalkan();
     }
   }
@@ -156,9 +150,9 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
           _jadwalkan();
           return;
         }
-        Navigator.of(context).pushReplacement(
-          V2RawatHasilPage.route(onSaved: widget.onSaved),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(V2RawatHasilPage.route(onSaved: widget.onSaved));
       },
     );
   }
@@ -205,11 +199,7 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Image.asset(
-              V2RawatAssets.itemPlantCare,
-              width: 120,
-              height: 120,
-            ),
+            Image.asset(V2RawatAssets.itemPlantCare, width: 120, height: 120),
             const SizedBox(height: V2Space.sm),
             Text(
               'Foto yang bagus',
@@ -315,7 +305,9 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
                   child: SizedBox(
                     height: 48,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: V2Space.lg),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: V2Space.lg,
+                      ),
                       child: Center(
                         child: Text(
                           'Tutup',
@@ -376,10 +368,7 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
                         height: 88,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: V2Colors.white,
-                            width: 3,
-                          ),
+                          border: Border.all(color: V2Colors.white, width: 3),
                         ),
                       ),
                       Material(
@@ -387,9 +376,9 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
-                          onTap: () => Navigator.of(
-                            context,
-                          ).push(V2RawatFotoPage.pratinjauRoute(widget.onSaved)),
+                          onTap: () => Navigator.of(context).push(
+                            V2RawatFotoPage.pratinjauRoute(widget.onSaved),
+                          ),
                           child: const SizedBox(width: 72, height: 72),
                         ),
                       ),
@@ -474,18 +463,14 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
           child: Column(
             children: [
               const SizedBox(height: 154),
-                Image.asset(
-                  V2RawatAssets.itemPlantCare,
-                  width: 160,
-                  height: 160,
-                ),
-                const SizedBox(height: V2Space.lg),
-                Text(
-                  'Menganalisis foto',
-                  textAlign: TextAlign.center,
-                  style: V2Type.h1,
-                ),
-                const SizedBox(height: V2Space.lg),
+              Image.asset(V2RawatAssets.itemPlantCare, width: 160, height: 160),
+              const SizedBox(height: V2Space.lg),
+              Text(
+                'Menganalisis foto',
+                textAlign: TextAlign.center,
+                style: V2Type.h1,
+              ),
+              const SizedBox(height: V2Space.lg),
               Text(
                 'Biasanya 10 detik.',
                 textAlign: TextAlign.center,
@@ -504,10 +489,7 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
       ),
       footer: V2ActionBar(
         actions: [
-          const V2Button(
-            label: 'Mengunggah...',
-            state: V2ButtonState.loading,
-          ),
+          const V2Button(label: 'Mengunggah...', state: V2ButtonState.loading),
         ],
       ),
       child: Padding(
@@ -520,10 +502,7 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const V2Banner(
-              message: 'Mengunggah foto',
-              tone: V2BannerTone.sync,
-            ),
+            const V2Banner(message: 'Mengunggah foto', tone: V2BannerTone.sync),
             const SizedBox(height: V2Space.lg),
             const V2RawatFotoCard(height: 240),
           ],
@@ -613,7 +592,6 @@ class _V2RawatFotoPageState extends State<V2RawatFotoPage> {
       ),
     );
   }
-
 }
 
 /// Satu baris tips di 9.5: ikon centang, judul, sub, chevron.
@@ -662,9 +640,7 @@ class _TipsItem extends StatelessWidget {
                       const SizedBox(height: V2Space.xs),
                       Text(
                         subtitle,
-                        style: V2Type.label.copyWith(
-                          color: V2Colors.muted,
-                        ),
+                        style: V2Type.label.copyWith(color: V2Colors.muted),
                       ),
                     ],
                   ),
@@ -711,9 +687,11 @@ class _PilihTanamanFieldState extends State<_PilihTanamanField> {
             ),
             child: Column(
               children: [
-                for (var index = 0;
-                    index < _pilihanTanamanRawat.length;
-                    index++) ...[
+                for (
+                  var index = 0;
+                  index < _pilihanTanamanRawat.length;
+                  index++
+                ) ...[
                   if (index > 0) const SizedBox(height: V2Space.lg),
                   V2RawatOptionRow(
                     label: _pilihanTanamanRawat[index],
@@ -735,10 +713,6 @@ class _PilihTanamanFieldState extends State<_PilihTanamanField> {
 
   @override
   Widget build(BuildContext context) {
-    return V2SelectField(
-      label: 'Tanaman',
-      value: _nilai,
-      onTap: _pilih,
-    );
+    return V2SelectField(label: 'Tanaman', value: _nilai, onTap: _pilih);
   }
 }

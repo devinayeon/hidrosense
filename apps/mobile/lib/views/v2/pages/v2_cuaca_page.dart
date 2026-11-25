@@ -48,6 +48,7 @@ class V2CuacaPage extends StatefulWidget {
     this.lokasiList,
     this.lokasiLabel,
     this.onRetry,
+    this.onPilihLokasi,
   });
 
   /// Frame 10.1 Cuaca, kondisi.
@@ -107,6 +108,10 @@ class V2CuacaPage extends StatefulWidget {
 
   /// Muat ulang BMKG nyata; null berarti jeda contoh 700 ms.
   final Future<void> Function()? onRetry;
+
+  /// Membuka pemilih lokasi nyata (GPS atau cari wilayah). Null berarti
+  /// sheet tiga lokasi contoh milik galeri.
+  final Future<void> Function(BuildContext context)? onPilihLokasi;
 
   static Route<void> route() => MaterialPageRoute<void>(
     settings: const RouteSettings(name: 'v2-cuaca'),
@@ -204,6 +209,11 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
 
   Future<void> _bukaSheet() async {
     if (!mounted) return;
+    final pilihLokasi = widget.onPilihLokasi;
+    if (pilihLokasi != null) {
+      await pilihLokasi(context);
+      return;
+    }
     // Sheet lokasi memakai scrim 60% seperti frame 10.5, bukan 35% bawaan
     // `showV2BottomSheet`.
     final pilihan = await showModalBottomSheet<int>(

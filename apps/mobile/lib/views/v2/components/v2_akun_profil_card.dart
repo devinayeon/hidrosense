@@ -27,8 +27,10 @@ class V2AkunProfilCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 88 adalah tinggi minimum; nama, lencana, dan peran yang membesar
+    // membuat kartu tumbuh.
     return Container(
-      height: 88,
+      constraints: const BoxConstraints(minHeight: 88),
       padding: const EdgeInsets.all(V2Space.lg),
       decoration: BoxDecoration(
         color: V2Colors.blue500,

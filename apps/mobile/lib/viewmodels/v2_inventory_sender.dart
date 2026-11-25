@@ -122,9 +122,7 @@ class V2InventorySender implements V2SyncSender {
       );
       return;
     }
-    throw const V2SyncRejectedException(
-      'Jenis antrean stok tidak dikenal.',
-    );
+    throw const V2SyncRejectedException('Jenis antrean stok tidak dikenal.');
   }
 }
 

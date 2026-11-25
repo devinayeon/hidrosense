@@ -19,11 +19,11 @@ class BmkgWeatherException implements Exception {
   String toString() => message;
 }
 
-/// Klien prakiraan cuaca BMKG.
+/// Klien prakiraan cuaca BMKG untuk satu desa/kelurahan.
 ///
-/// Kode wilayah default menunjuk ke Desa Sabrang, Kecamatan Ambulu,
-/// Kabupaten Jember, lokasi mitra Hidro Selada. Kode ini bisa diganti saat
-/// build dengan `--dart-define=BMKG_ADM4=...` bila lokasi mitra berubah.
+/// Kode wilayah ([adm4]) ditentukan pemanggil dari lokasi pilihan pengguna.
+/// Bawaannya Desa Sabrang, Ambulu, Jember (lokasi mitra Hidro Selada), yang
+/// bisa diganti saat build dengan `--dart-define=BMKG_ADM4=...`.
 class BmkgWeatherService {
   BmkgWeatherService({
     http.Client? client,
@@ -32,6 +32,7 @@ class BmkgWeatherService {
       defaultValue: _partnerAdm4,
     ),
     Uri? endpoint,
+    this.serverFallback,
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        _endpoint = endpoint ?? Uri.parse(_bmkgEndpoint);
@@ -41,12 +42,36 @@ class BmkgWeatherService {
   final Uri _endpoint;
   final String adm4;
 
+  /// Cadangan bila BMKG tidak terjangkau langsung dari HP: prakiraan yang
+  /// sama lewat backend. Null berarti tanpa cadangan.
+  final Future<Map<String, dynamic>> Function(String adm4)? serverFallback;
+
   Future<WeatherData> fetchWeather({DateTime? fetchedAt}) async {
     final response = await _load(fetchedAt ?? DateTime.now());
     return response;
   }
 
   Future<WeatherData> _load(DateTime fetchedAt) async {
+    Map<String, dynamic> body;
+    try {
+      body = await _fetchDirect();
+    } on BmkgWeatherException catch (direct) {
+      // BMKG tidak terjangkau dari HP (jaringan, waktu habis, gangguan): minta
+      // lewat backend, yang menyimpan prakiraan terakhir. Kalau cadangan juga
+      // gagal, yang dilaporkan galat langsung dari BMKG.
+      final fallback = serverFallback;
+      if (fallback == null) rethrow;
+      try {
+        body = await fallback(adm4);
+        _requireSameLocation(body);
+      } catch (_) {
+        throw direct;
+      }
+    }
+    return parseBmkgWeather(body, fetchedAt: fetchedAt);
+  }
+
+  Future<Map<String, dynamic>> _fetchDirect() async {
     http.Response response;
     try {
       response = await _client
@@ -79,17 +104,21 @@ class BmkgWeatherService {
         'Respons BMKG bukan data prakiraan yang valid.',
       );
     }
+    _requireSameLocation(body);
+    return body;
+  }
 
+  /// Jawaban untuk desa lain dari yang diminta berarti kode salah atau data
+  /// tertukar; jangan ditampilkan sebagai cuaca lokasi pengguna.
+  void _requireSameLocation(Map<String, dynamic> body) {
     final returnedAdm4 = body['lokasi'] is Map
         ? (body['lokasi'] as Map)['adm4']
         : null;
     if (returnedAdm4 is String && returnedAdm4 != adm4) {
       throw const BmkgWeatherException(
-        'Lokasi prakiraan BMKG tidak sesuai dengan lokasi mitra.',
+        'Lokasi prakiraan BMKG tidak sesuai dengan lokasi yang dipilih.',
       );
     }
-
-    return parseBmkgWeather(body, fetchedAt: fetchedAt);
   }
 
   void close() {
@@ -223,10 +252,8 @@ WeatherData parseBmkgWeather(
       .toList(growable: false);
 
   return WeatherData(
-    lokasi: 'KEBUN HIDRO SELADA',
-    kota: locationParts.isEmpty
-        ? 'Lokasi mitra HidroSense'
-        : locationParts.join(', '),
+    lokasi: _villageName(lokasi, sourceLokasi),
+    kota: locationParts.isEmpty ? 'Lokasi Anda' : locationParts.join(', '),
     sumber: 'Sumber: BMKG • data prakiraan resmi',
     suhu: current.temperature,
     statusSuhu: _temperatureStatus(current.temperature),
@@ -239,6 +266,14 @@ WeatherData parseBmkgWeather(
     prakiraanHarian: forecasts,
     lastUpdated: _formatFetchedAt(localNow, timezone),
   );
+}
+
+String _villageName(Map<String, dynamic> lokasi, Map<String, dynamic> source) {
+  for (final map in [lokasi, source]) {
+    final desa = map['desa'];
+    if (desa is String && desa.trim().isNotEmpty) return desa.trim();
+  }
+  return 'Lokasi Anda';
 }
 
 class _BmkgSlot {

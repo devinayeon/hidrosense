@@ -101,10 +101,7 @@ List<V2SinkronItem> v2SinkronItemsWithStatus(
 }
 
 /// Satu baris dari antrean; [override] adalah status hasil putaran berjalan.
-V2SinkronItem _sinkronItemOf(
-  SyncQueueItem item,
-  V2SinkronStatus? override,
-) {
+V2SinkronItem _sinkronItemOf(SyncQueueItem item, V2SinkronStatus? override) {
   final jenis = _sinkronJenisOf(item.jenis);
   final konflik = item.status == SyncQueueStatus.konflik;
   final gagal = item.status == SyncQueueStatus.gagal;
@@ -120,9 +117,7 @@ V2SinkronItem _sinkronItemOf(
     kode: kodeSinkronJenis(jenis),
     status:
         override ??
-        (konflik || gagal
-            ? V2SinkronStatus.gagal
-            : V2SinkronStatus.antrean),
+        (konflik || gagal ? V2SinkronStatus.gagal : V2SinkronStatus.antrean),
     konflik: konflik,
   );
 }
@@ -190,17 +185,38 @@ const V2SinkronRingkasan designSinkronSebagian = V2SinkronRingkasan(
   tone: V2SinkronRingkasanTone.gagal,
 );
 
-/// Ringkasan 11.6 dari putaran nyata: jam selesai diambil dari perangkat.
+/// Jam `HH.mm` menurut zona waktu perangkat, mis. `17.38`.
+String v2SinkronJam(DateTime waktu) {
+  final lokal = waktu.toLocal();
+  final jam = lokal.hour.toString().padLeft(2, '0');
+  final menit = lokal.minute.toString().padLeft(2, '0');
+  return '$jam.$menit';
+}
+
+/// Ringkasan 11.6 dari putaran nyata: jam sinkron yang dicatat server.
 V2SinkronRingkasan v2SinkronRingkasanSelesai(DateTime waktu) {
-  final jam = waktu.hour.toString().padLeft(2, '0');
-  final menit = waktu.minute.toString().padLeft(2, '0');
   return V2SinkronRingkasan(
     kicker: 'Terakhir sinkron',
-    value: '$jam.$menit',
+    value: v2SinkronJam(waktu),
     meta: 'Semua data sudah di server',
     extra: 'Antrean kosong',
     badgeLabel: 'Terkini',
   );
+}
+
+/// Ringkasan 11.1 dari jam sinkron nyata. [waktu] null berarti HP ini belum
+/// pernah sinkron; jamnya tidak dikarang.
+V2SinkronRingkasan v2SinkronRingkasanTerkini(DateTime? waktu) {
+  if (waktu == null) {
+    return const V2SinkronRingkasan(
+      kicker: 'Terakhir sinkron',
+      value: '--.--',
+      meta: 'Belum pernah sinkron di HP ini',
+      extra: 'Antrean kosong',
+      badgeLabel: 'Terkini',
+    );
+  }
+  return v2SinkronRingkasanSelesai(waktu);
 }
 
 /// Ringkasan 11.7 dari putaran nyata.
@@ -221,9 +237,7 @@ V2SinkronRingkasan v2SinkronRingkasanSebagian({
         ? 'Ketuk data untuk memperbaiki'
         : 'Akan dicoba lagi saat online',
     badgeLabel: gagal ? 'Gagal $failed' : 'Antrean $remaining',
-    tone: gagal
-        ? V2SinkronRingkasanTone.gagal
-        : V2SinkronRingkasanTone.antrean,
+    tone: gagal ? V2SinkronRingkasanTone.gagal : V2SinkronRingkasanTone.antrean,
   );
 }
 

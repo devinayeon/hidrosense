@@ -3,7 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../models/weather_model.dart';
+import '../repositories/weather_location_repository.dart';
 import 'bmkg_weather_service.dart';
+import 'local_kv_store.dart';
 import 'weather_notification_service.dart';
 
 /// Nama tugas latar saran cuaca harian (Android WorkManager).
@@ -33,9 +35,17 @@ void weatherCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     if (task != kWeatherTaskName) return true;
     WidgetsFlutterBinding.ensureInitialized();
-    final service = BmkgWeatherService();
+    // Saran harian mengikuti lokasi yang dipilih pengguna, bukan lokasi mitra.
+    final location = await WeatherLocationRepository.savedOrDefault(
+      LocalKvStore.open,
+    );
+    final service = BmkgWeatherService(adm4: location.adm4);
     try {
-      return await runDailyWeatherTask(load: service.fetchWeather, sink: LocalWeatherNotifier(), now: DateTime.now());
+      return await runDailyWeatherTask(
+        load: service.fetchWeather,
+        sink: LocalWeatherNotifier(),
+        now: DateTime.now(),
+      );
     } finally {
       service.close();
     }

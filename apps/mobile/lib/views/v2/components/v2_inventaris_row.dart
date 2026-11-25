@@ -25,7 +25,11 @@ class V2InventarisRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(height: 80, child: item.arsip ? _archived() : _active());
+    // 80 adalah tinggi minimum; huruf besar atau lencana membuat baris tumbuh.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 80),
+      child: item.arsip ? _archived() : _active(),
+    );
   }
 
   Widget _active() {

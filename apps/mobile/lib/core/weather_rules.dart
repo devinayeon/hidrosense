@@ -24,7 +24,9 @@ WeatherRuleEvaluation evaluateWeatherRules({
   final descriptions = weatherDescriptions
       .map((description) => description.toLowerCase())
       .toList(growable: false);
-  final hasRainText = descriptions.any((description) => description.contains('hujan'));
+  final hasRainText = descriptions.any(
+    (description) => description.contains('hujan'),
+  );
   final fuzzy = fuzzifyWeather(
     maxTemperature: maxTemperature,
     maxHumidity: maxHumidity,
@@ -68,11 +70,13 @@ WeatherRuleEvaluation evaluateWeatherRules({
       alasan: 'Prakiraan suhu hingga $maxTemperature°C.',
       highlight: 'suhu panas hingga $maxTemperature°C',
     );
-  } else if ((fuzzy.hot > fuzzy.warm ? fuzzy.hot : fuzzy.warm) >= kRelevantDegree) {
+  } else if ((fuzzy.hot > fuzzy.warm ? fuzzy.hot : fuzzy.warm) >=
+      kRelevantDegree) {
     add(
       degree: fuzzy.hot > fuzzy.warm ? fuzzy.hot : fuzzy.warm,
       judul: 'Pantau Suhu Larutan',
-      deskripsi: 'Catat suhu tandon dan pastikan pompa bekerja stabil saat suhu siang meningkat.',
+      deskripsi:
+          'Catat suhu tandon dan pastikan pompa bekerja stabil saat suhu siang meningkat.',
       alasan: 'Suhu siang diprakirakan cukup hangat.',
       highlight: 'suhu siang hingga $maxTemperature°C',
       canBeImportant: false,
@@ -89,7 +93,8 @@ WeatherRuleEvaluation evaluateWeatherRules({
       judul: 'Lindungi Instalasi & Sesuaikan Nutrisi',
       deskripsi:
           'Tutup tandon, pastikan drainase lancar, dan jaga EC larutan pada 1.2–1.4 mS/cm agar tidak terdilusi air hujan.',
-      alasan: 'BMKG memprakirakan $rainDescription dengan akumulasi ${formatAngka(totalRainfallMm)} mm.',
+      alasan:
+          'BMKG memprakirakan $rainDescription dengan akumulasi ${formatAngka(totalRainfallMm)} mm.',
       highlight: 'peluang hujan ${formatAngka(totalRainfallMm)} mm',
     );
   }
@@ -111,7 +116,8 @@ WeatherRuleEvaluation evaluateWeatherRules({
     add(
       degree: fuzzy.windy,
       judul: 'Periksa Rangka & Naungan',
-      deskripsi: 'Pastikan rangka meja, naungan, dan penutup greenhouse terpasang kokoh.',
+      deskripsi:
+          'Pastikan rangka meja, naungan, dan penutup greenhouse terpasang kokoh.',
       alasan: 'Kecepatan angin diprakirakan hingga $maxWindSpeed km/jam.',
       highlight: 'angin hingga $maxWindSpeed km/jam',
       canBeImportant: false,
@@ -124,7 +130,8 @@ WeatherRuleEvaluation evaluateWeatherRules({
       judul: 'Tingkatkan Pemantauan Hama',
       deskripsi:
           'Periksa sisi bawah daun dan pucuk. Foto tanaman yang mencurigakan lewat menu Foto tanaman untuk saran rotasi obat.',
-      alasan: 'Cuaca hangat dan kering mendukung perkembangan thrips, kutu kebul, dan kutu daun.',
+      alasan:
+          'Cuaca hangat dan kering mendukung perkembangan thrips, kutu kebul, dan kutu daun.',
       highlight: 'cuaca hangat dan kering yang disukai hama',
       canBeImportant: false,
     );
@@ -132,12 +139,15 @@ WeatherRuleEvaluation evaluateWeatherRules({
 
   if (actions.isEmpty) {
     return WeatherRuleEvaluation(
-      summary: 'Cuaca relatif stabil. Waktu yang baik untuk inspeksi dan perawatan rutin.',
+      summary:
+          'Cuaca relatif stabil. Waktu yang baik untuk inspeksi dan perawatan rutin.',
       actions: List<TindakanRekomendasi>.unmodifiable(const [
         TindakanRekomendasi(
           judul: 'Lanjutkan Perawatan Rutin',
-          deskripsi: 'Cek EC dan pH larutan pada pagi hari serta bersihkan area tanam dari sisa daun.',
-          alasan: 'Kondisi cuaca relatif stabil tanpa peringatan suhu, hujan, atau angin ekstrem.',
+          deskripsi:
+              'Cek EC dan pH larutan pada pagi hari serta bersihkan area tanam dari sisa daun.',
+          alasan:
+              'Kondisi cuaca relatif stabil tanpa peringatan suhu, hujan, atau angin ekstrem.',
           labelTag: 'Rutin',
         ),
       ]),
@@ -145,7 +155,8 @@ WeatherRuleEvaluation evaluateWeatherRules({
   }
 
   // Urut menurut derajat: yang paling yakin dan paling mendesak di atas.
-  final ordered = [...actions]..sort((a, b) => (b.derajat ?? 0).compareTo(a.derajat ?? 0));
+  final ordered = [...actions]
+    ..sort((a, b) => (b.derajat ?? 0).compareTo(a.derajat ?? 0));
   final hasImportant = ordered.any((action) => action.isPenting);
   return WeatherRuleEvaluation(
     summary:

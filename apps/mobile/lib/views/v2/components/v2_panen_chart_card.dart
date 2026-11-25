@@ -59,10 +59,7 @@ class V2PanenChartCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: V2Space.sm),
-          Text(
-            caption,
-            style: V2Type.label.copyWith(color: V2Colors.muted),
-          ),
+          Text(caption, style: V2Type.label.copyWith(color: V2Colors.muted)),
         ],
       ),
     );
@@ -82,9 +79,10 @@ class _Batang extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(bar.display, style: V2Type.label.copyWith(
-            fontWeight: FontWeight.w600,
-          )),
+          Text(
+            bar.display,
+            style: V2Type.label.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: V2Space.xs),
           Container(
             width: 48,
@@ -95,10 +93,7 @@ class _Batang extends StatelessWidget {
             ),
           ),
           const SizedBox(height: V2Space.xs),
-          Text(
-            bar.label,
-            style: V2Type.label.copyWith(color: V2Colors.muted),
-          ),
+          Text(bar.label, style: V2Type.label.copyWith(color: V2Colors.muted)),
         ],
       ),
     );

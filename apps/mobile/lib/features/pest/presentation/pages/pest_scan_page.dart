@@ -25,7 +25,8 @@ class PestScanPage extends ConsumerStatefulWidget {
   /// Diganti di tes; bawaannya kamera atau galeri lewat image_picker.
   final Future<Uint8List?> Function(ImageSource source)? pickPhoto;
 
-  static Route<void> route() => MaterialPageRoute<void>(builder: (_) => const PestScanPage());
+  static Route<void> route() =>
+      MaterialPageRoute<void>(builder: (_) => const PestScanPage());
 
   @override
   ConsumerState<PestScanPage> createState() => _PestScanPageState();
@@ -38,7 +39,11 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
   Future<Uint8List?> _pick(ImageSource source) async {
     final custom = widget.pickPhoto;
     if (custom != null) return custom(source);
-    final file = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 90);
+    final file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1600,
+      imageQuality: 90,
+    );
     return file?.readAsBytes();
   }
 
@@ -49,7 +54,11 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
       if (bytes == null || !mounted) return;
       await ref.read(pestScanProvider.notifier).analyze(bytes);
     } on PlatformException {
-      if (mounted) setState(() => _pickError = 'Akses kamera atau galeri ditolak. Izinkan lewat pengaturan perangkat.');
+      if (mounted)
+        setState(
+          () => _pickError =
+              'Akses kamera atau galeri ditolak. Izinkan lewat pengaturan perangkat.',
+        );
     }
   }
 
@@ -59,8 +68,13 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
     final allowed = user?.permissions.contains('deteksi:write') ?? false;
     final state = ref.watch(pestScanProvider);
     final notifier = ref.read(pestScanProvider.notifier);
-    final tables = ref.watch(connectedTableProvider).records.where((t) => !t.isInactive && t.activePlants > 0).toList();
-    final busy = state.phase == ScanPhase.analyzing || state.phase == ScanPhase.saving;
+    final tables = ref
+        .watch(connectedTableProvider)
+        .records
+        .where((t) => !t.isInactive && t.activePlants > 0)
+        .toList();
+    final busy =
+        state.phase == ScanPhase.analyzing || state.phase == ScanPhase.saving;
     final tableId = state.tableId ?? _tableId;
     void save() => notifier.save(tableId: tableId!);
 
@@ -72,7 +86,8 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
           IconButton(
             tooltip: 'Riwayat rotasi obat',
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.of(context).push(RotationHistoryPage.route()),
+            onPressed: () =>
+                Navigator.of(context).push(RotationHistoryPage.route()),
           ),
         ],
       ),
@@ -80,23 +95,35 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
           ? const Center(
               child: Padding(
                 padding: EdgeInsets.all(V2Space.xl),
-                child: Text('Fitur ini hanya untuk akun petani.', style: V2Type.body, textAlign: TextAlign.center),
+                child: Text(
+                  'Fitur ini hanya untuk akun petani.',
+                  style: V2Type.body,
+                  textAlign: TextAlign.center,
+                ),
               ),
             )
           : ListView(
               padding: const EdgeInsets.all(V2Space.lg),
               children: [
                 const V2Banner(
-                  message: 'Deteksi berjalan di HP dan hanya saran. Anda yang memutuskan.',
+                  message:
+                      'Deteksi berjalan di HP dan hanya saran. Anda yang memutuskan.',
                   tone: V2BannerTone.ai,
                 ),
                 const SizedBox(height: V2Space.lg),
                 DropdownButtonFormField<String>(
-                  initialValue: tables.any((t) => t.id == tableId) ? tableId : null,
+                  initialValue: tables.any((t) => t.id == tableId)
+                      ? tableId
+                      : null,
                   decoration: const InputDecoration(labelText: 'Meja tanam'),
-                  items: [for (final t in tables) DropdownMenuItem(value: t.id, child: Text(t.code))],
+                  items: [
+                    for (final t in tables)
+                      DropdownMenuItem(value: t.id, child: Text(t.code)),
+                  ],
                   // Terkunci sejak simpan dimulai: foto sudah terikat ke batch meja itu.
-                  onChanged: busy || state.saveStarted ? null : (value) => setState(() => _tableId = value),
+                  onChanged: busy || state.saveStarted
+                      ? null
+                      : (value) => setState(() => _tableId = value),
                 ),
                 const SizedBox(height: V2Space.lg),
                 Row(
@@ -104,7 +131,9 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                     Expanded(
                       child: V2Button(
                         label: 'Kamera',
-                        state: busy ? V2ButtonState.disabled : V2ButtonState.normal,
+                        state: busy
+                            ? V2ButtonState.disabled
+                            : V2ButtonState.normal,
                         onPressed: () => _capture(ImageSource.camera),
                       ),
                     ),
@@ -113,7 +142,9 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                       child: V2Button(
                         label: 'Galeri',
                         type: V2ButtonType.secondary,
-                        state: busy ? V2ButtonState.disabled : V2ButtonState.normal,
+                        state: busy
+                            ? V2ButtonState.disabled
+                            : V2ButtonState.normal,
                         onPressed: () => _capture(ImageSource.gallery),
                       ),
                     ),
@@ -135,29 +166,43 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                 ],
                 if (state.phase == ScanPhase.analyzing) ...[
                   const SizedBox(height: V2Space.lg),
-                  const Center(child: CircularProgressIndicator(semanticsLabel: 'Menganalisis foto')),
+                  const Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'Menganalisis foto',
+                    ),
+                  ),
                   const SizedBox(height: V2Space.sm),
-                  const Center(child: Text('Menganalisis foto…', style: V2Type.caption)),
+                  const Center(
+                    child: Text('Menganalisis foto…', style: V2Type.caption),
+                  ),
                 ],
                 if (state.error != null) _ErrorText(state.error!),
                 if (state.canRetrySave) ...[
                   const SizedBox(height: V2Space.md),
                   V2Button(label: 'Coba simpan lagi', onPressed: save),
                 ],
-                if (state.result != null && state.phase != ScanPhase.analyzing) ..._result(state, notifier, busy, tableId, save),
+                if (state.result != null && state.phase != ScanPhase.analyzing)
+                  ..._result(state, notifier, busy, tableId, save),
               ],
             ),
     );
   }
 
-  List<Widget> _result(PestScanState state, PestScanNotifier notifier, bool busy, String? tableId, VoidCallback save) {
+  List<Widget> _result(
+    PestScanState state,
+    PestScanNotifier notifier,
+    bool busy,
+    String? tableId,
+    VoidCallback save,
+  ) {
     final result = state.result!;
     return [
       const SizedBox(height: V2Space.lg),
       if (result.isEmpty)
         const V2Card(
           title: 'Tidak ada hama terdeteksi',
-          body: 'Ini bukan jaminan tanaman sehat. Periksa sisi bawah daun dan pucuk, lalu foto ulang bila ragu.',
+          body:
+              'Ini bukan jaminan tanaman sehat. Periksa sisi bawah daun dan pucuk, lalu foto ulang bila ragu.',
         )
       else
         for (final f in result.findings) ...[
@@ -166,13 +211,22 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${f.kind.label}: ${f.count} terdeteksi', style: V2Type.h2),
-                Text('Keyakinan tertinggi ${(f.maxConfidence * 100).round()}%', style: V2Type.caption),
+                Text(
+                  '${f.kind.label}: ${f.count} terdeteksi',
+                  style: V2Type.h2,
+                ),
+                Text(
+                  'Keyakinan tertinggi ${(f.maxConfidence * 100).round()}%',
+                  style: V2Type.caption,
+                ),
                 const SizedBox(height: V2Space.md),
                 const Text('Tingkat serangan', style: V2Type.label),
                 const SizedBox(height: V2Space.xs),
                 SegmentedButton<PestSeverity>(
-                  segments: [for (final s in PestSeverity.values) ButtonSegment(value: s, label: Text(s.label))],
+                  segments: [
+                    for (final s in PestSeverity.values)
+                      ButtonSegment(value: s, label: Text(s.label)),
+                  ],
                   selected: {state.severities[f.kind] ?? f.suggestedSeverity},
                   onSelectionChanged: state.canEditSeverity && !busy
                       ? (value) => notifier.setSeverity(f.kind, value.first)
@@ -183,7 +237,8 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
           ),
           const SizedBox(height: V2Space.md),
         ],
-      if (state.phase == ScanPhase.analyzed || state.phase == ScanPhase.saving) ...[
+      if (state.phase == ScanPhase.analyzed ||
+          state.phase == ScanPhase.saving) ...[
         V2Button(
           label: result.isEmpty ? 'Simpan foto' : 'Simpan dan minta saran obat',
           expand: true,

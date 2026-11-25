@@ -42,9 +42,7 @@ class V2SelectField extends StatelessWidget {
         color: enabled ? V2Colors.white : V2Colors.gray200,
         borderRadius: BorderRadius.circular(V2Radius.pill),
         border: Border.all(
-          color: _hasError
-              ? V2Colors.red700
-              : V2Colors.slate400,
+          color: _hasError ? V2Colors.red700 : V2Colors.slate400,
           width: _hasError ? 3 : 2,
         ),
       ),
@@ -61,10 +59,7 @@ class V2SelectField extends StatelessWidget {
             ),
           ),
           const SizedBox(width: V2Space.sm),
-          V2Icon(
-            icon,
-            color: enabled ? V2Colors.ink : V2Colors.slate400,
-          ),
+          V2Icon(icon, color: enabled ? V2Colors.ink : V2Colors.slate400),
         ],
       ),
     );
@@ -110,10 +105,7 @@ class V2SelectField extends StatelessWidget {
           ),
         ] else if (helper != null) ...[
           const SizedBox(height: V2Space.sm),
-          Text(
-            helper!,
-            style: V2Type.label.copyWith(color: V2Colors.muted),
-          ),
+          Text(helper!, style: V2Type.label.copyWith(color: V2Colors.muted)),
         ],
       ],
     );

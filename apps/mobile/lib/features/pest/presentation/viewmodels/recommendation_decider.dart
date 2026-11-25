@@ -14,23 +14,46 @@ class RecommendationDecider {
   final Map<String, String> _keys = {};
   final Set<String> _inFlight = {};
 
-  String _key(String id, String action, String body) => _keys.putIfAbsent('$id|$action|$body', generateUuidV4);
+  String _key(String id, String action, String body) =>
+      _keys.putIfAbsent('$id|$action|$body', generateUuidV4);
 
   /// Null bila keputusan untuk rekomendasi ini masih berjalan.
-  Future<PestRecommendation?> accept(String id, {String? note, List<StockLineDraft> materials = const []}) {
-    final body = '${note ?? ''}|${materials.map((m) => '${m.inventoryId}:${m.amount}:${m.unit}').join(',')}';
+  Future<PestRecommendation?> accept(
+    String id, {
+    String? note,
+    List<StockLineDraft> materials = const [],
+  }) {
+    final body =
+        '${note ?? ''}|${materials.map((m) => '${m.inventoryId}:${m.amount}:${m.unit}').join(',')}';
     return _run(
       id,
-      () => _repo.accept(id, note: note, materials: materials, idempotencyKey: _key(id, 'terima', body)),
+      () => _repo.accept(
+        id,
+        note: note,
+        materials: materials,
+        idempotencyKey: _key(id, 'terima', body),
+      ),
     );
   }
 
-  Future<PestRecommendation?> reject(String id, RejectReason reason, {String? note}) => _run(
+  Future<PestRecommendation?> reject(
+    String id,
+    RejectReason reason, {
+    String? note,
+  }) => _run(
     id,
-    () => _repo.reject(id, reason, note: note, idempotencyKey: _key(id, 'tolak', '${reason.apiCode}|${note ?? ''}')),
+    () => _repo.reject(
+      id,
+      reason,
+      note: note,
+      idempotencyKey: _key(id, 'tolak', '${reason.apiCode}|${note ?? ''}'),
+    ),
   );
 
-  Future<PestRecommendation?> _run(String id, Future<PestRecommendation> Function() call) async {
+  Future<PestRecommendation?> _run(
+    String id,
+    Future<PestRecommendation> Function() call,
+  ) async {
     if (!_inFlight.add(id)) return null;
     try {
       return await call();

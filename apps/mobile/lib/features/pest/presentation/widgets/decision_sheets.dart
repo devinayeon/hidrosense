@@ -21,8 +21,12 @@ class StockOption {
 /// memotong stok (backend mensyaratkan `inventaris:write`) atau belum ada sesi: provider
 /// inventaris melempar galat tanpa sesi, dan itu tidak boleh meruntuhkan halaman rekomendasi.
 List<StockOption> stockOptions(WidgetRef ref) {
-  final permissions = ref.watch(sessionProvider.select((s) => s.user?.permissions)) ?? const <String>[];
-  if (!permissions.contains('inventaris:read') || !permissions.contains('inventaris:write')) return const [];
+  final permissions =
+      ref.watch(sessionProvider.select((s) => s.user?.permissions)) ??
+      const <String>[];
+  if (!permissions.contains('inventaris:read') ||
+      !permissions.contains('inventaris:write'))
+    return const [];
   return [
     for (final r in ref.watch(connectedInventoryProvider).records)
       if (r.active) StockOption(id: r.id, name: r.name, unit: r.unit),
@@ -74,7 +78,10 @@ class _AcceptSheetState extends State<_AcceptSheet> {
   @override
   Widget build(BuildContext context) {
     final item = _item;
-    final amountError = item != null && _amount.text.trim().isNotEmpty && normalizeQuantity(_amount.text) == null
+    final amountError =
+        item != null &&
+            _amount.text.trim().isNotEmpty &&
+            normalizeQuantity(_amount.text) == null
         ? 'Isi angka lebih dari 0, paling banyak 2 desimal.'
         : null;
     return Padding(
@@ -88,28 +95,50 @@ class _AcceptSheetState extends State<_AcceptSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pakai ${widget.recommendation.medicine.activeIngredient}?', style: V2Type.h2),
+            Text(
+              'Pakai ${widget.recommendation.medicine.activeIngredient}?',
+              style: V2Type.h2,
+            ),
             const SizedBox(height: V2Space.sm),
-            const Text('Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.', style: V2Type.body),
+            const Text(
+              'Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.',
+              style: V2Type.body,
+            ),
             if (widget.stock.isNotEmpty) ...[
               const SizedBox(height: V2Space.md),
               DropdownButtonFormField<String?>(
                 initialValue: item?.id,
-                decoration: const InputDecoration(labelText: 'Potong dari stok (opsional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Potong dari stok (opsional)',
+                ),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('Tidak memakai stok')),
-                  for (final o in widget.stock) DropdownMenuItem<String?>(value: o.id, child: Text('${o.name} (${o.unit})')),
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Tidak memakai stok'),
+                  ),
+                  for (final o in widget.stock)
+                    DropdownMenuItem<String?>(
+                      value: o.id,
+                      child: Text('${o.name} (${o.unit})'),
+                    ),
                 ],
                 onChanged: (id) => setState(() {
-                  _item = id == null ? null : widget.stock.firstWhere((o) => o.id == id);
+                  _item = id == null
+                      ? null
+                      : widget.stock.firstWhere((o) => o.id == id);
                 }),
               ),
               if (item != null)
                 TextField(
                   controller: _amount,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(labelText: 'Jumlah (${item.unit})', errorText: amountError),
+                  decoration: InputDecoration(
+                    labelText: 'Jumlah (${item.unit})',
+                    errorText: amountError,
+                  ),
                 ),
             ],
             TextField(
@@ -117,7 +146,9 @@ class _AcceptSheetState extends State<_AcceptSheet> {
               maxLength: 500,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+              decoration: const InputDecoration(
+                labelText: 'Catatan (opsional)',
+              ),
             ),
             const SizedBox(height: V2Space.md),
             V2Button(
@@ -132,7 +163,11 @@ class _AcceptSheetState extends State<_AcceptSheet> {
                         note: note.isEmpty ? null : note,
                         material: chosen == null
                             ? null
-                            : StockLineDraft(inventoryId: chosen.id, amount: normalizeQuantity(_amount.text)!, unit: chosen.unit),
+                            : StockLineDraft(
+                                inventoryId: chosen.id,
+                                amount: normalizeQuantity(_amount.text)!,
+                                unit: chosen.unit,
+                              ),
                       ));
                     }
                   : null,
@@ -155,9 +190,15 @@ class DecidableRecommendationCard extends StatelessWidget {
   });
 
   final PestRecommendation recommendation;
-  final Future<String?> Function(String id, {String? note, List<StockLineDraft> materials}) onAccept;
+  final Future<String?> Function(
+    String id, {
+    String? note,
+    List<StockLineDraft> materials,
+  })
+  onAccept;
   final List<StockOption> stock;
-  final Future<String?> Function(String id, RejectReason reason, {String? note}) onReject;
+  final Future<String?> Function(String id, RejectReason reason, {String? note})
+  onReject;
 
   @override
   Widget build(BuildContext context) {
@@ -165,10 +206,18 @@ class DecidableRecommendationCard extends StatelessWidget {
     return RecommendationCard(
       recommendation: recommendation,
       onAccept: () async {
-        final decision = await showAcceptSheet(context, recommendation, stock: stock);
+        final decision = await showAcceptSheet(
+          context,
+          recommendation,
+          stock: stock,
+        );
         if (decision == null) return null;
         final material = decision.material;
-        return onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+        return onAccept(
+          id,
+          note: decision.note,
+          materials: material == null ? const [] : [material],
+        );
       },
       onReject: () async {
         final picked = await showRejectSheet(context);
@@ -180,7 +229,9 @@ class DecidableRecommendationCard extends StatelessWidget {
 }
 
 /// Lembar alasan penolakan. Kembali null bila dibatalkan.
-Future<({RejectReason reason, String? note})?> showRejectSheet(BuildContext context) {
+Future<({RejectReason reason, String? note})?> showRejectSheet(
+  BuildContext context,
+) {
   return showModalBottomSheet<({RejectReason reason, String? note})>(
     context: context,
     isScrollControlled: true,
@@ -248,7 +299,9 @@ class _RejectSheetState extends State<_RejectSheet> {
               maxLines: 3,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: _reason?.requiresNote == true ? 'Catatan (wajib)' : 'Catatan (opsional)',
+                labelText: _reason?.requiresNote == true
+                    ? 'Catatan (wajib)'
+                    : 'Catatan (opsional)',
               ),
             ),
             const SizedBox(height: V2Space.md),
@@ -259,7 +312,10 @@ class _RejectSheetState extends State<_RejectSheet> {
               onPressed: _valid
                   ? () {
                       final note = _note.text.trim();
-                      Navigator.of(context).pop((reason: _reason!, note: note.isEmpty ? null : note));
+                      Navigator.of(context).pop((
+                        reason: _reason!,
+                        note: note.isEmpty ? null : note,
+                      ));
                     }
                   : null,
             ),

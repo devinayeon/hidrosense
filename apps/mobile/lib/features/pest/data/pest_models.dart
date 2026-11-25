@@ -100,8 +100,10 @@ class Medicine {
   factory Medicine.fromJson(Object? json) {
     final m = _map(json, 'Obat');
     final phi = m['phi_hari'];
-    if (phi != null && phi is! int) throw const FormatException('Field phi_hari tidak valid.');
-    if (m['terverifikasi'] is! bool) throw const FormatException('Field terverifikasi tidak valid.');
+    if (phi != null && phi is! int)
+      throw const FormatException('Field phi_hari tidak valid.');
+    if (m['terverifikasi'] is! bool)
+      throw const FormatException('Field terverifikasi tidak valid.');
     return Medicine(
       id: _str(m, 'id_katalog'),
       activeIngredient: _str(m, 'bahan_aktif'),
@@ -146,7 +148,11 @@ String? normalizeQuantity(String raw) {
 
 /// Satu baris bahan dari inventaris yang dipakai saat menerima rekomendasi.
 class StockLineDraft {
-  const StockLineDraft({required this.inventoryId, required this.amount, required this.unit});
+  const StockLineDraft({
+    required this.inventoryId,
+    required this.amount,
+    required this.unit,
+  });
 
   final String inventoryId;
 
@@ -154,12 +160,21 @@ class StockLineDraft {
   final String amount;
   final String unit;
 
-  Map<String, dynamic> toJson() => {'id_inventaris': inventoryId, 'jumlah': amount, 'satuan': unit};
+  Map<String, dynamic> toJson() => {
+    'id_inventaris': inventoryId,
+    'jumlah': amount,
+    'satuan': unit,
+  };
 }
 
 /// Bahan stok yang benar-benar terpotong untuk satu perawatan.
 class MaterialUsed {
-  const MaterialUsed({required this.inventoryId, required this.name, required this.amount, required this.unit});
+  const MaterialUsed({
+    required this.inventoryId,
+    required this.name,
+    required this.amount,
+    required this.unit,
+  });
 
   factory MaterialUsed.fromJson(Object? json) {
     final m = _map(json, 'Bahan');
@@ -202,13 +217,18 @@ class PestRecommendation {
     final m = _map(json, 'Rekomendasi');
     final pest = PestKind.fromApiCode(_str(m, 'hama'));
     if (pest == null) throw FormatException('Hama tidak dikenal: ${m['hama']}');
-    final severity = PestSeverity.values.where((s) => s.apiCode == m['tingkat']);
-    if (severity.isEmpty) throw FormatException('Tingkat tidak dikenal: ${m['tingkat']}');
+    final severity = PestSeverity.values.where(
+      (s) => s.apiCode == m['tingkat'],
+    );
+    if (severity.isEmpty)
+      throw FormatException('Tingkat tidak dikenal: ${m['tingkat']}');
     final created = DateTime.tryParse(_str(m, 'tanggal_rekomendasi'));
-    if (created == null) throw const FormatException('Tanggal rekomendasi tidak valid.');
+    if (created == null)
+      throw const FormatException('Tanggal rekomendasi tidak valid.');
     final decidedRaw = _strOrNull(m, 'tanggal_keputusan');
     final materials = m['bahan_terpakai'];
-    if (materials is! List) throw const FormatException('Field bahan_terpakai tidak valid.');
+    if (materials is! List)
+      throw const FormatException('Field bahan_terpakai tidak valid.');
     return PestRecommendation(
       id: _str(m, 'id_rekomendasi'),
       tableId: _str(m, 'id_meja'),
@@ -256,7 +276,11 @@ class PestRecommendation {
 }
 
 class RecommendationPage {
-  const RecommendationPage({required this.items, required this.page, required this.totalPages});
+  const RecommendationPage({
+    required this.items,
+    required this.page,
+    required this.totalPages,
+  });
 
   final List<PestRecommendation> items;
   final int page;

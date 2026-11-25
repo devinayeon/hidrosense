@@ -146,10 +146,7 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
 
   Future<void> _openCreate() async {
     final created = await Navigator.of(context).push<V2Employee>(
-      V2EmployeeFormPage.route(
-        takenUsernames: _usernames,
-        store: widget.store,
-      ),
+      V2EmployeeFormPage.route(takenUsernames: _usernames, store: widget.store),
     );
     if (created == null || !mounted) return;
     // Pegawai baru tampil paling atas, sama seperti frame 3.10.

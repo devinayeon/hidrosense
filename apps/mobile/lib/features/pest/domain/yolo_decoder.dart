@@ -68,8 +68,10 @@ class Letterbox {
   Rect toOriginal(YoloDetection d) {
     final scaleX = newWidth / originalWidth;
     final scaleY = newHeight / originalHeight;
-    double fromX(double v) => ((v * target - left) / scaleX).clamp(0.0, originalWidth.toDouble());
-    double fromY(double v) => ((v * target - top) / scaleY).clamp(0.0, originalHeight.toDouble());
+    double fromX(double v) =>
+        ((v * target - left) / scaleX).clamp(0.0, originalWidth.toDouble());
+    double fromY(double v) =>
+        ((v * target - top) / scaleY).clamp(0.0, originalHeight.toDouble());
     return Rect.fromLTRB(fromX(d.x1), fromY(d.y1), fromX(d.x2), fromY(d.y2));
   }
 }

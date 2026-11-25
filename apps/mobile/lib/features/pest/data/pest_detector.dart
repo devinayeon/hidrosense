@@ -25,7 +25,6 @@ class PestScanResult {
   bool get isEmpty => detections.isEmpty;
 }
 
-
 /// Dekode, putar sesuai EXIF, lalu letterbox. Dijalankan di isolate: foto ponsel 12 MP
 /// membutuhkan ratusan milidetik dan akan membekukan UI bila di thread utama.
 Float32List _prepare(Uint8List bytes) {
@@ -51,7 +50,9 @@ class PestDetector {
     String modelAsset = kPestModelAsset,
     String metadataAsset = kPestMetadataAsset,
   }) async {
-    final metadata = jsonDecode(await rootBundle.loadString(metadataAsset)) as Map<String, dynamic>;
+    final metadata =
+        jsonDecode(await rootBundle.loadString(metadataAsset))
+            as Map<String, dynamic>;
     final interpreter = await Interpreter.fromAsset(
       modelAsset,
       options: InterpreterOptions()..threads = 2,
@@ -61,7 +62,9 @@ class PestDetector {
     if (!listEquals(input, const [1, kYoloInput, kYoloInput, 3]) ||
         !listEquals(output, const [1, kYoloChannels, kYoloAnchors])) {
       interpreter.close();
-      throw StateError('Bentuk model tidak sesuai kontrak: masukan $input, keluaran $output.');
+      throw StateError(
+        'Bentuk model tidak sesuai kontrak: masukan $input, keluaran $output.',
+      );
     }
     return PestDetector._(interpreter, metadata['model_version'] as String);
   }
@@ -75,7 +78,11 @@ class PestDetector {
     _interpreter.getInputTensor(0).data = tensor.buffer.asUint8List();
     _interpreter.invoke();
     final raw = _interpreter.getOutputTensor(0).data;
-    final output = Float32List.view(raw.buffer, raw.offsetInBytes, raw.lengthInBytes ~/ 4);
+    final output = Float32List.view(
+      raw.buffer,
+      raw.offsetInBytes,
+      raw.lengthInBytes ~/ 4,
+    );
     final detections = decodeYolov11Output(
       output,
       confThreshold: confThreshold,

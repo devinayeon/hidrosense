@@ -31,10 +31,7 @@ class V2PenjualanTintCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: V2Type.label.copyWith(color: V2Colors.slate600),
-          ),
+          Text(title, style: V2Type.label.copyWith(color: V2Colors.slate600)),
           const SizedBox(height: V2Space.sm),
           Text(value, style: V2Type.value),
         ],

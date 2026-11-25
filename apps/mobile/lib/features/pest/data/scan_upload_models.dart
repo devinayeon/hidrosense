@@ -42,7 +42,11 @@ class UploadedPhoto {
 
 /// Satu hama pada satu foto, dikirim ke `POST /pindaian`.
 class ScanFindingDraft {
-  const ScanFindingDraft({required this.pest, required this.count, required this.maxConfidence});
+  const ScanFindingDraft({
+    required this.pest,
+    required this.count,
+    required this.maxConfidence,
+  });
 
   final PestKind pest;
   final int count;

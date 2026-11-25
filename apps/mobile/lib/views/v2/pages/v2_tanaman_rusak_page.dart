@@ -34,8 +34,7 @@ class V2TanamanRusakPage extends StatefulWidget {
   });
 
   /// Frame `6.24 Daftar rusak`: satu catatan busuk akar.
-  V2TanamanRusakPage.biasa({Key? key})
-    : this(key: key, item: designMejaA2);
+  V2TanamanRusakPage.biasa({Key? key}) : this(key: key, item: designMejaA2);
 
   /// Frame `6.27 Kerusakan dicatat`: layu 15 Nov di atas busuk akar 10 Nov.
   V2TanamanRusakPage.setelahCatat({Key? key})
@@ -91,8 +90,7 @@ class V2TanamanRusakPage extends StatefulWidget {
 }
 
 class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
-  late List<V2KerusakanItem> _rusak =
-      widget.rusak ?? widget.item.rusak;
+  late List<V2KerusakanItem> _rusak = widget.rusak ?? widget.item.rusak;
   String? _toast;
   Timer? _toastTimer;
 
@@ -124,10 +122,7 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
 
   Future<void> _catat() async {
     final hasil = await Navigator.of(context).push<V2KerusakanItem>(
-      V2CatatRusakPage.route(
-        meja: widget.item,
-        transferId: widget.transferId,
-      ),
+      V2CatatRusakPage.route(meja: widget.item, transferId: widget.transferId),
     );
     if (!mounted || hasil == null) return;
     final simpan = widget.onCatat;
@@ -173,10 +168,7 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
     _showToast('Perubahan tersimpan');
   }
 
-  List<V2KerusakanItem> _ganti(
-    V2KerusakanItem lama,
-    V2KerusakanItem baru,
-  ) => [
+  List<V2KerusakanItem> _ganti(V2KerusakanItem lama, V2KerusakanItem baru) => [
     for (final baris in _rusak)
       if (identical(baris, lama)) baru else baris,
   ];
@@ -223,17 +215,13 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
                   child: _rusak.length == 1
                       ? _row(_rusak.first)
                       : V2GroupList(
-                          children: [
-                            for (final rusak in _rusak) _row(rusak),
-                          ],
+                          children: [for (final rusak in _rusak) _row(rusak)],
                         ),
                 ),
               ),
               V2ActionBar(
                 toast: _toast,
-                actions: [
-                  V2Button(label: 'Catat rusak', onPressed: _catat),
-                ],
+                actions: [V2Button(label: 'Catat rusak', onPressed: _catat)],
               ),
             ],
           ),
@@ -259,8 +247,7 @@ class V2CatatRusakPage extends StatefulWidget {
   });
 
   /// Frame `6.25 Catat rusak`.
-  V2CatatRusakPage.catat({Key? key})
-    : this(key: key, meja: designMejaA2);
+  V2CatatRusakPage.catat({Key? key}) : this(key: key, meja: designMejaA2);
 
   /// Frame `6.26 Catat rusak, validasi`: 45 tanaman dan jenis belum dipilih.
   V2CatatRusakPage.validation({Key? key})
@@ -268,11 +255,7 @@ class V2CatatRusakPage extends StatefulWidget {
 
   /// Frame `6.28 Ubah kerusakan`: busuk akar 10 Nov dengan catatan.
   V2CatatRusakPage.ubah({Key? key})
-    : this(
-        key: key,
-        meja: designMejaA2,
-        kerusakan: designKerusakanBusukAkar,
-      );
+    : this(key: key, meja: designMejaA2, kerusakan: designKerusakanBusukAkar);
 
   final V2MejaItem? meja;
   final V2KerusakanItem? kerusakan;
@@ -368,8 +351,7 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
           jumlah: _jumlah,
           jenis: 'Busuk akar',
           tanggal: _tanggal,
-          varietas:
-              widget.meja?.tanaman.firstOrNull?.varietas ?? 'Romaine',
+          varietas: widget.meja?.tanaman.firstOrNull?.varietas ?? 'Romaine',
           meja: widget.meja?.kode ?? 'A2',
           transferId: widget.transferId,
         );
@@ -498,11 +480,7 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
   Widget _helper(String pesan) {
     return Row(
       children: [
-        const V2Icon(
-          V2IconName.error,
-          size: 16,
-          color: V2Colors.red700,
-        ),
+        const V2Icon(V2IconName.error, size: 16, color: V2Colors.red700),
         const SizedBox(width: V2Space.sm),
         Expanded(
           child: Text(

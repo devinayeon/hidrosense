@@ -242,11 +242,8 @@ class V2PenjualanFormPage extends StatefulWidget {
     V2PenjualanStore? store,
   }) {
     return MaterialPageRoute<V2Penjualan>(
-      builder: (_) => V2PenjualanFormPage(
-        initial: initial,
-        panen: panen,
-        store: store,
-      ),
+      builder: (_) =>
+          V2PenjualanFormPage(initial: initial, panen: panen, store: store),
     );
   }
 
@@ -367,8 +364,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     return label.contains('15 Nov') ? 252 : 0;
   }
 
-  num get _total =>
-      parseKg(_jumlah.text) * parseAngkaRibu(_harga.text);
+  num get _total => parseKg(_jumlah.text) * parseAngkaRibu(_harga.text);
 
   @override
   void initState() {
@@ -390,9 +386,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           : formatAngkaKg(initial?.jumlahKg ?? 60),
     );
     _harga = TextEditingController(
-      text: empty
-          ? ''
-          : formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000),
+      text: empty ? '' : formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000),
     );
     if (!empty) {
       if (widget.panenLabel != null) {
@@ -469,8 +463,9 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       _tanggal = initial?.tanggal ?? DateTime(2026, 11, 15);
       _panenPreview = null;
       _panen = _ownOption ?? (_options.isEmpty ? null : _options.first);
-      _pembayaran =
-          (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
+      _pembayaran = (initial?.pembayaran == V2PenjualanBayar.belumLunas)
+          ? 1
+          : 0;
       _tanggalError = null;
       _pembeliError = null;
       _panenError = null;
@@ -483,7 +478,8 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     final reload = await showV2Dialog(
       context,
       title: 'Data sudah berubah',
-      body: 'Data ini baru diubah di perangkat lain. Muat ulang untuk melihat '
+      body:
+          'Data ini baru diubah di perangkat lain. Muat ulang untuk melihat '
           'versi terbaru, lalu ubah lagi.',
       primaryLabel: 'Muat ulang',
       secondaryLabel: 'Batal',
@@ -504,9 +500,9 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       _resetToInitial();
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -623,8 +619,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     final tanggalPanen = panen?.tanggalPanen;
 
     setState(() {
-      _tanggalError =
-          tanggalPanen != null && _tanggal.isBefore(tanggalPanen)
+      _tanggalError = tanggalPanen != null && _tanggal.isBefore(tanggalPanen)
           ? 'Sebelum panen (${formatTanggalPendek(tanggalPanen)})'
           : null;
       _pembeliError = pembeli.isEmpty ? 'Isi nama pembeli' : null;
@@ -671,9 +666,9 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -707,8 +702,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   @override
   Widget build(BuildContext context) {
     final keyboardOpen =
-        widget.forceJumlahFocus ||
-        MediaQuery.viewInsetsOf(context).bottom > 0;
+        widget.forceJumlahFocus || MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Theme(
       data: V2Theme.light,
@@ -780,11 +774,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         onTap: _pickDate,
       ),
       SizedBox(height: gap),
-      V2TextField(
-        label: 'Pembeli',
-        controller: _pembeli,
-        error: _pembeliError,
-      ),
+      V2TextField(label: 'Pembeli', controller: _pembeli, error: _pembeliError),
       SizedBox(height: gap),
       V2SelectField(
         label: 'Panen',
@@ -837,10 +827,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       // menampilkan galat, jadi kartu itu hanya muncul di form bersih.
       if (!widget.isEdit && !widget.fixing && !_hasError) ...[
         SizedBox(height: gap),
-        V2PenjualanTintCard(
-          title: 'Total',
-          value: formatRupiahPenuh(_total),
-        ),
+        V2PenjualanTintCard(title: 'Total', value: formatRupiahPenuh(_total)),
       ],
       if (widget.isEdit && !widget.fixing) ...[
         SizedBox(height: gap),

@@ -68,7 +68,12 @@ class PestScanState {
 /// Simpan bisa diulang setelah gagal di tengah jalan: hasil tiap langkah dan kunci idempotensi
 /// disimpan, jadi foto tidak diunggah dua kali dan rekomendasi tidak dobel.
 class PestScanNotifier extends StateNotifier<PestScanState> {
-  PestScanNotifier(this._detect, this._repo, this._resolveTransfer, this._decider) : super(const PestScanState());
+  PestScanNotifier(
+    this._detect,
+    this._repo,
+    this._resolveTransfer,
+    this._decider,
+  ) : super(const PestScanState());
 
   final Future<PestScanResult> Function(Uint8List) _detect;
   final PestRepository _repo;
@@ -101,14 +106,18 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
         phase: ScanPhase.analyzed,
         photo: bytes,
         result: result,
-        severities: {for (final f in result.findings) f.kind: f.suggestedSeverity},
+        severities: {
+          for (final f in result.findings) f.kind: f.suggestedSeverity,
+        },
       );
     } catch (error) {
       if (generation != _generation) return;
       state = PestScanState(
         phase: ScanPhase.failed,
         photo: bytes,
-        error: error is FormatException ? error.message : 'Foto tidak bisa dianalisis. Coba foto lain.',
+        error: error is FormatException
+            ? error.message
+            : 'Foto tidak bisa dianalisis. Coba foto lain.',
       );
     }
   }
@@ -121,7 +130,8 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
   Future<void> save({required String tableId}) async {
     final result = state.result;
     final photo = state.photo;
-    if (result == null || photo == null || state.phase == ScanPhase.saving) return;
+    if (result == null || photo == null || state.phase == ScanPhase.saving)
+      return;
     // Setelah simpan dimulai meja terkunci: pindaian sudah terikat ke batch meja itu.
     final table = state.tableId ?? tableId;
     final generation = _generation;
@@ -134,7 +144,8 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
           // Belum ada yang terkirim: pengguna boleh memilih meja lain.
           state = state.copyWith(
             phase: ScanPhase.analyzed,
-            error: 'Meja ini belum punya tanaman aktif. Pilih meja yang sedang ditanami.',
+            error:
+                'Meja ini belum punya tanaman aktif. Pilih meja yang sedang ditanami.',
           );
           return;
         }
@@ -149,32 +160,45 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
         modelVersion: result.modelVersion,
         findings: [
           for (final f in result.findings)
-            ScanFindingDraft(pest: f.kind, count: f.count, maxConfidence: f.maxConfidence),
+            ScanFindingDraft(
+              pest: f.kind,
+              count: f.count,
+              maxConfidence: f.maxConfidence,
+            ),
         ],
         idempotencyKey: _scanKey,
       );
       final done = [...state.recommendations];
       for (final f in result.findings) {
         if (done.any((r) => r.pest == f.kind)) continue;
-        done.add(await _repo.createRecommendation(
-          tableId: table,
-          pest: f.kind,
-          severity: state.severities[f.kind] ?? f.suggestedSeverity,
-          scanId: _scanId,
-          idempotencyKey: _recKeys.putIfAbsent(f.kind, generateUuidV4),
-        ));
-        if (generation == _generation) state = state.copyWith(recommendations: List.of(done));
+        done.add(
+          await _repo.createRecommendation(
+            tableId: table,
+            pest: f.kind,
+            severity: state.severities[f.kind] ?? f.suggestedSeverity,
+            scanId: _scanId,
+            idempotencyKey: _recKeys.putIfAbsent(f.kind, generateUuidV4),
+          ),
+        );
+        if (generation == _generation)
+          state = state.copyWith(recommendations: List.of(done));
       }
       if (generation != _generation) return;
       state = state.copyWith(phase: ScanPhase.saved, recommendations: done);
     } catch (error) {
       if (generation != _generation) return;
-      state = state.copyWith(phase: ScanPhase.failed, error: pestErrorMessage(error));
+      state = state.copyWith(
+        phase: ScanPhase.failed,
+        error: pestErrorMessage(error),
+      );
     }
   }
 
-  Future<String?> accept(String id, {String? note, List<StockLineDraft> materials = const []}) =>
-      _apply(() => _decider.accept(id, note: note, materials: materials));
+  Future<String?> accept(
+    String id, {
+    String? note,
+    List<StockLineDraft> materials = const [],
+  }) => _apply(() => _decider.accept(id, note: note, materials: materials));
 
   Future<String?> reject(String id, RejectReason reason, {String? note}) =>
       _apply(() => _decider.reject(id, reason, note: note));
@@ -185,7 +209,10 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
       final updated = await call();
       if (updated != null) {
         state = state.copyWith(
-          recommendations: [for (final r in state.recommendations) r.id == updated.id ? updated : r],
+          recommendations: [
+            for (final r in state.recommendations)
+              r.id == updated.id ? updated : r,
+          ],
         );
       }
       return null;
@@ -201,12 +228,13 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
   }
 }
 
-final pestScanProvider = StateNotifierProvider.autoDispose<PestScanNotifier, PestScanState>((ref) {
-  final repo = ref.watch(pestRepositoryProvider);
-  return PestScanNotifier(
-    ref.watch(pestDetectFnProvider),
-    repo,
-    ref.watch(activeTransferResolverProvider),
-    RecommendationDecider(repo),
-  );
-});
+final pestScanProvider =
+    StateNotifierProvider.autoDispose<PestScanNotifier, PestScanState>((ref) {
+      final repo = ref.watch(pestRepositoryProvider);
+      return PestScanNotifier(
+        ref.watch(pestDetectFnProvider),
+        repo,
+        ref.watch(activeTransferResolverProvider),
+        RecommendationDecider(repo),
+      );
+    });

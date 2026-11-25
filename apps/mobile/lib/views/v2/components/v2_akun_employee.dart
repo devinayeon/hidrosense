@@ -85,10 +85,5 @@ const List<V2Employee> designEmployees = <V2Employee>[
   ),
   V2Employee(id: 'rina', name: 'Rina Putri', username: 'rina.putri'),
   V2Employee(id: 'dedi', name: 'Dedi Kurnia', username: 'dedi.k'),
-  V2Employee(
-    id: 'agus',
-    name: 'Agus Salim',
-    username: 'agus.s',
-    active: false,
-  ),
+  V2Employee(id: 'agus', name: 'Agus Salim', username: 'agus.s', active: false),
 ];

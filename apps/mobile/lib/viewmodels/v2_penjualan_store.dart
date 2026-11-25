@@ -97,9 +97,16 @@ class V2PenjualanApiStore
         V2SyncSender,
         V2SyncConflictResolver,
         V2PenjualanRepairer {
-  V2PenjualanApiStore(this._viewModel, {this.queue});
+  V2PenjualanApiStore(
+    this._viewModel, {
+    this.queue,
+    this.loadRetryDelay = const Duration(milliseconds: 400),
+  });
 
   final PenjualanViewModel _viewModel;
+
+  /// Jeda sebelum pemuatan awal yang gagal diulang sekali secara otomatis.
+  final Duration loadRetryDelay;
 
   /// Antrean HP untuk tulis yang belum pasti; null berarti tidak mencatat.
   final V2SyncQueue? queue;
@@ -107,7 +114,16 @@ class V2PenjualanApiStore
   @override
   Future<V2PenjualanSnapshot> load() async {
     await _viewModel.refresh(force: true);
-    final state = _viewModel.current;
+    var state = _viewModel.current;
+    if (state.items.isEmpty && state.error != null) {
+      // Pembukaan pertama sering gagal sesaat walau internet ada (sambungan
+      // basi, permintaan awal bertabrakan dengan pemuatan di latar). Pengguna
+      // sebelumnya harus menekan "Coba lagi"; satu ulangan otomatis cukup,
+      // dan galat yang menetap tetap tampil sebagai "Gagal memuat".
+      await Future<void>.delayed(loadRetryDelay);
+      await _viewModel.refresh(force: true);
+      state = _viewModel.current;
+    }
     if (state.items.isEmpty && state.error != null) {
       throw V2PenjualanStoreException(state.error!);
     }
@@ -127,9 +143,7 @@ class V2PenjualanApiStore
       throw const V2PenjualanStoreException('Pilih panen dulu.');
     }
     return _write(() async {
-      final item = await _viewModel.createSale(
-        _saleDraft(draft, panenId),
-      );
+      final item = await _viewModel.createSale(_saleDraft(draft, panenId));
       return v2PenjualanFromItem(item, _viewModel.current.batches);
     });
   }
@@ -248,10 +262,18 @@ class V2PenjualanApiStore
           oldItem: old,
           write: switch (item.mode) {
             SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
-            SyncQueueMode.rincian => (sales, key) =>
-              sales.updateSale(old!.id, draft!, version!, key),
-            SyncQueueMode.header => (sales, key) =>
-              sales.updateSaleHeader(old!.id, header!, version!, key),
+            SyncQueueMode.rincian => (sales, key) => sales.updateSale(
+              old!.id,
+              draft!,
+              version!,
+              key,
+            ),
+            SyncQueueMode.header => (sales, key) => sales.updateSaleHeader(
+              old!.id,
+              header!,
+              version!,
+              key,
+            ),
           },
         ),
       );
@@ -275,8 +297,7 @@ class V2PenjualanApiStore
     final batches = _viewModel.current.batches;
     final panen = v2PanenOptions(batches);
     if (item.mode == SyncQueueMode.header) return null;
-    if (item.mode == SyncQueueMode.rincian &&
-        _existing(item.target) == null) {
+    if (item.mode == SyncQueueMode.rincian && _existing(item.target) == null) {
       return null;
     }
     final payload = _draftFromPayload(item.payload);
@@ -343,8 +364,7 @@ class V2PenjualanApiStore
           oldItem: old,
           write: item.mode == SyncQueueMode.baru
               ? (repo, key) => repo.createSale(sales, key)
-              : (repo, key) =>
-                    repo.updateSale(old!.id, sales, version!, key),
+              : (repo, key) => repo.updateSale(old!.id, sales, version!, key),
         ),
       );
     } on ApiException catch (error) {
@@ -373,12 +393,9 @@ class V2PenjualanApiStore
       return;
     }
     await _viewModel.refresh(force: true);
-    final old = item.mode == SyncQueueMode.baru
-        ? null
-        : _existing(item.target);
+    final old = item.mode == SyncQueueMode.baru ? null : _existing(item.target);
     final version = old?.version;
-    if (item.mode != SyncQueueMode.baru &&
-        (old == null || version == null)) {
+    if (item.mode != SyncQueueMode.baru && (old == null || version == null)) {
       throw const V2SyncRejectedException(
         'Penjualan sudah tidak ada di server; pakai data server.',
       );
@@ -402,10 +419,18 @@ class V2PenjualanApiStore
           write: switch (item.mode) {
             // Penjualan baru tidak punya versi, jadi tidak bisa bentrok.
             SyncQueueMode.baru => (sales, key) => sales.createSale(draft!, key),
-            SyncQueueMode.rincian => (sales, key) =>
-              sales.updateSale(old!.id, draft!, version!, key),
-            SyncQueueMode.header => (sales, key) =>
-              sales.updateSaleHeader(old!.id, header!, version!, key),
+            SyncQueueMode.rincian => (sales, key) => sales.updateSale(
+              old!.id,
+              draft!,
+              version!,
+              key,
+            ),
+            SyncQueueMode.header => (sales, key) => sales.updateSaleHeader(
+              old!.id,
+              header!,
+              version!,
+              key,
+            ),
           },
         ),
       );

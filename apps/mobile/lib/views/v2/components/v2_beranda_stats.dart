@@ -27,25 +27,30 @@ class V2BerandaStats extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = (constraints.maxWidth - V2Space.lg) / 2;
-        return Row(
-          children: [
-            V2BentoTile(
-              value: lowStock,
-              label: 'Stok menipis',
-              icon: V2IconName.box,
-              tone: V2BentoTone.warning,
-              size: size,
-              onTap: onLowStock,
-            ),
-            const SizedBox(width: V2Space.lg),
-            V2BentoTile(
-              value: filledHoles,
-              label: 'Lubang terisi',
-              icon: V2IconName.sprout,
-              size: size,
-              onTap: onFilledHoles,
-            ),
-          ],
+        // Kedua petak selalu setinggi yang tertinggi, juga saat huruf besar
+        // membuat satu petak tumbuh.
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              V2BentoTile(
+                value: lowStock,
+                label: 'Stok menipis',
+                icon: V2IconName.box,
+                tone: V2BentoTone.warning,
+                size: size,
+                onTap: onLowStock,
+              ),
+              const SizedBox(width: V2Space.lg),
+              V2BentoTile(
+                value: filledHoles,
+                label: 'Lubang terisi',
+                icon: V2IconName.sprout,
+                size: size,
+                onTap: onFilledHoles,
+              ),
+            ],
+          ),
         );
       },
     );

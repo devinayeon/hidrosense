@@ -81,10 +81,7 @@ class V2CycleRing extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(unit, style: V2Type.label.copyWith(color: unitColor)),
-              Text(
-                '$value',
-                style: numberStyle.copyWith(color: contentColor),
-              ),
+              Text('$value', style: numberStyle.copyWith(color: contentColor)),
             ],
           ),
         ),

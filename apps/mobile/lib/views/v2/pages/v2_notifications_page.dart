@@ -63,10 +63,7 @@ class V2NotificationsPage extends StatelessWidget {
           subtitle: 'Tunda semprot, 15.00',
           icon: V2IconName.cloud,
         ),
-        V2Notification(
-          title: 'Semaian HSS 15',
-          subtitle: '12 Nov, 08.00',
-        ),
+        V2Notification(title: 'Semaian HSS 15', subtitle: '12 Nov, 08.00'),
       ],
     ),
   ];

@@ -3,7 +3,11 @@
 /// Only the fields the mobile UI needs are kept: identity, display name, and
 /// active flag. A medicine is linked to an inventory item through `id_obat`.
 final class ObatRecord {
-  const ObatRecord({required this.id, required this.name, required this.active});
+  const ObatRecord({
+    required this.id,
+    required this.name,
+    required this.active,
+  });
 
   final String id;
   final String name;

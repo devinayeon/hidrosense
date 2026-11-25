@@ -518,9 +518,7 @@ final panenViewModelProvider =
         canReadBatches: user.permissions.contains('budidaya:read'),
         userId: user.id,
         commands: ref.watch(harvestCommandsProvider),
-        queueSink: V2HarvestQueueSink(
-          ref.watch(v2SyncQueueProvider.notifier),
-        ),
+        queueSink: V2HarvestQueueSink(ref.watch(v2SyncQueueProvider.notifier)),
         clock: clock,
       );
       Timer? timer;

@@ -26,7 +26,11 @@ class V2SemaianRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (item.selesai) return _selesai();
-    return SizedBox(height: 80, child: _berjalan());
+    // 80 adalah tinggi minimum; huruf besar atau lencana membuat baris tumbuh.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 80),
+      child: _berjalan(),
+    );
   }
 
   Widget _berjalan() {
@@ -40,10 +44,7 @@ class V2SemaianRow extends StatelessWidget {
       badge: item.antrean
           ? const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending)
           : item.siapPindah
-          ? const V2Badge(
-              label: 'Siap pindah',
-              status: V2BadgeStatus.success,
-            )
+          ? const V2Badge(label: 'Siap pindah', status: V2BadgeStatus.success)
           : null,
       onTap: onTap,
     );
@@ -115,7 +116,7 @@ class V2SemaianRow extends StatelessWidget {
 
   Widget _kartu(Widget child) {
     return Container(
-      height: 80,
+      constraints: const BoxConstraints(minHeight: 80),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: V2Colors.gray200,

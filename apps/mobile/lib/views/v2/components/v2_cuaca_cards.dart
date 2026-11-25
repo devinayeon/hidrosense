@@ -24,10 +24,19 @@ class V2CuacaLokasiHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Nama lokasi dari pengguna bisa panjang (kelurahan, kecamatan, kota):
+    // teks boleh dua baris lalu dipotong, ikon panah tetap terlihat.
     final label = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(lokasi, style: V2Type.bodyStrong),
+        Flexible(
+          child: Text(
+            lokasi,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: V2Type.bodyStrong,
+          ),
+        ),
         const SizedBox(width: V2Space.xs),
         const V2Icon(V2IconName.chevronDown),
       ],
@@ -37,8 +46,8 @@ class V2CuacaLokasiHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 48,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
           child: onTap == null
               ? label
               : Material(
@@ -50,10 +59,7 @@ class V2CuacaLokasiHeader extends StatelessWidget {
                   ),
                 ),
         ),
-        Text(
-          caption,
-          style: V2Type.label.copyWith(color: V2Colors.muted),
-        ),
+        Text(caption, style: V2Type.label.copyWith(color: V2Colors.muted)),
       ],
     );
   }
@@ -61,10 +67,7 @@ class V2CuacaLokasiHeader extends StatelessWidget {
 
 /// Kartu “Sekarang” 342×144: ilustrasi 96 lalu suhu dan kondisi (10.1/10.5/10.8).
 class V2CuacaSekarangCard extends StatelessWidget {
-  const V2CuacaSekarangCard({
-    super.key,
-    this.data = designCuacaSekarang,
-  });
+  const V2CuacaSekarangCard({super.key, this.data = designCuacaSekarang});
 
   final V2CuacaSekarang data;
 
@@ -148,19 +151,32 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: V2Type.label.copyWith(color: V2Colors.muted),
+    // Nilai (mis. "8 km/jam Dari arah Barat Daya") dibatasi 60% lebar baris
+    // dan boleh dua baris; label di kiri mengambil sisanya.
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: V2Type.label.copyWith(color: V2Colors.muted),
+            ),
           ),
-        ),
-        const SizedBox(width: V2Space.sm),
-        Text(value, style: V2Type.bodyStrong),
-      ],
+          const SizedBox(width: V2Space.sm),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: V2Type.bodyStrong,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -231,10 +247,7 @@ class V2CuacaCatatanCard extends StatelessWidget {
         children: [
           Text(title, style: V2Type.bodyStrong),
           const SizedBox(height: V2Space.sm),
-          Text(
-            body,
-            style: V2Type.body.copyWith(color: V2Colors.muted),
-          ),
+          Text(body, style: V2Type.body.copyWith(color: V2Colors.muted)),
           if (actionLabel != null) ...[
             const SizedBox(height: V2Space.sm),
             V2Button(

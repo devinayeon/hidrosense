@@ -61,7 +61,9 @@ final class SyncQueueStore {
       await db.execute(
         "ALTER TABLE sync_queue ADD COLUMN mode TEXT NOT NULL DEFAULT 'baru'",
       );
-      await db.execute('ALTER TABLE sync_queue ADD COLUMN expected_version TEXT');
+      await db.execute(
+        'ALTER TABLE sync_queue ADD COLUMN expected_version TEXT',
+      );
       await db.execute(
         "ALTER TABLE sync_queue ADD COLUMN status TEXT NOT NULL DEFAULT 'antrean'",
       );

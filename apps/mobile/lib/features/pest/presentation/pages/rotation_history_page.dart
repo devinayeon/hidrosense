@@ -15,10 +15,12 @@ import '../widgets/decision_sheets.dart';
 class RotationHistoryPage extends ConsumerStatefulWidget {
   const RotationHistoryPage({super.key});
 
-  static Route<void> route() => MaterialPageRoute<void>(builder: (_) => const RotationHistoryPage());
+  static Route<void> route() =>
+      MaterialPageRoute<void>(builder: (_) => const RotationHistoryPage());
 
   @override
-  ConsumerState<RotationHistoryPage> createState() => _RotationHistoryPageState();
+  ConsumerState<RotationHistoryPage> createState() =>
+      _RotationHistoryPageState();
 }
 
 class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
@@ -38,25 +40,54 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
       appBar: AppBar(title: const Text('Riwayat rotasi obat')),
       body: Column(
         children: [
-          _ChipRow(children: [
-            V2Chip(label: 'Semua', selected: state.status == null, onTap: () => notifier.setStatus(null)),
-            for (final s in RecommendationStatus.values)
-              V2Chip(label: s.label, selected: state.status == s, onTap: () => notifier.setStatus(s)),
-          ]),
-          _ChipRow(children: [
-            V2Chip(label: 'Semua hama', selected: state.pest == null, onTap: () => notifier.setPest(null)),
-            for (final k in PestKind.values)
-              V2Chip(label: k.label, selected: state.pest == k, onTap: () => notifier.setPest(k)),
-          ]),
+          _ChipRow(
+            children: [
+              V2Chip(
+                label: 'Semua',
+                selected: state.status == null,
+                onTap: () => notifier.setStatus(null),
+              ),
+              for (final s in RecommendationStatus.values)
+                V2Chip(
+                  label: s.label,
+                  selected: state.status == s,
+                  onTap: () => notifier.setStatus(s),
+                ),
+            ],
+          ),
+          _ChipRow(
+            children: [
+              V2Chip(
+                label: 'Semua hama',
+                selected: state.pest == null,
+                onTap: () => notifier.setPest(null),
+              ),
+              for (final k in PestKind.values)
+                V2Chip(
+                  label: k.label,
+                  selected: state.pest == k,
+                  onTap: () => notifier.setPest(k),
+                ),
+            ],
+          ),
           if (tables.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(V2Space.lg, 0, V2Space.lg, V2Space.sm),
+              padding: const EdgeInsets.fromLTRB(
+                V2Space.lg,
+                0,
+                V2Space.lg,
+                V2Space.sm,
+              ),
               child: DropdownButtonFormField<String?>(
                 initialValue: state.tableId,
                 decoration: const InputDecoration(labelText: 'Meja tanam'),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('Semua meja')),
-                  for (final t in tables) DropdownMenuItem<String?>(value: t.id, child: Text(t.code)),
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Semua meja'),
+                  ),
+                  for (final t in tables)
+                    DropdownMenuItem<String?>(value: t.id, child: Text(t.code)),
                 ],
                 onChanged: notifier.setTable,
               ),
@@ -78,9 +109,17 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(state.error!, style: V2Type.body, textAlign: TextAlign.center),
+              Text(
+                state.error!,
+                style: V2Type.body,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: V2Space.lg),
-              V2Button(label: 'Coba lagi', type: V2ButtonType.secondary, onPressed: notifier.refresh),
+              V2Button(
+                label: 'Coba lagi',
+                type: V2ButtonType.secondary,
+                onPressed: notifier.refresh,
+              ),
             ],
           ),
         ),
@@ -107,13 +146,19 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
         itemBuilder: (context, index) {
           if (index == state.items.length) {
             if (state.error != null) {
-              return Text(state.error!, style: V2Type.caption, textAlign: TextAlign.center);
+              return Text(
+                state.error!,
+                style: V2Type.caption,
+                textAlign: TextAlign.center,
+              );
             }
             if (!state.hasMore) return const SizedBox.shrink();
             return V2Button(
               label: 'Muat lagi',
               type: V2ButtonType.secondary,
-              state: state.loading ? V2ButtonState.loading : V2ButtonState.normal,
+              state: state.loading
+                  ? V2ButtonState.loading
+                  : V2ButtonState.normal,
               onPressed: notifier.loadMore,
             );
           }
@@ -140,7 +185,12 @@ class _ChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(V2Space.lg, V2Space.sm, V2Space.lg, V2Space.xs),
+      padding: const EdgeInsets.fromLTRB(
+        V2Space.lg,
+        V2Space.sm,
+        V2Space.lg,
+        V2Space.xs,
+      ),
       child: Row(
         children: [
           for (var i = 0; i < children.length; i++) ...[

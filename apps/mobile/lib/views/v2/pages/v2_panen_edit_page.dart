@@ -28,8 +28,7 @@ class V2PanenEditPage extends StatefulWidget {
   });
 
   /// Frame `7.19 Ubah panen`: 255 kg total, 15 kg reject, "Panen pagi".
-  V2PanenEditPage.biasa({Key? key})
-    : this(key: key, item: designPanenTerjual);
+  V2PanenEditPage.biasa({Key? key}) : this(key: key, item: designPanenTerjual);
 
   /// Frame `7.20 Berat di bawah yang terjual`: 100 total, 20 reject, padahal
   /// 90 kg sudah terjual.
@@ -198,8 +197,7 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
                             index++
                           ) ...[
                             if (multi) ...[
-                              if (index > 0)
-                                const SizedBox(height: V2Space.xl),
+                              if (index > 0) const SizedBox(height: V2Space.xl),
                               Text(
                                 _rincian[index].rincian.label,
                                 style: V2Type.bodyStrong,
@@ -263,7 +261,8 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
             padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
             child: V2Dialog(
               title: 'Data sudah berubah',
-              body: 'Data ini baru diubah di perangkat lain. Muat ulang untuk '
+              body:
+                  'Data ini baru diubah di perangkat lain. Muat ulang untuk '
                   'melihat versi terbaru, lalu ubah lagi.',
               primaryLabel: 'Muat ulang',
               onPrimary: () => setState(() => _showKonflik = false),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/views/pages/app_gate.dart';
-import 'package:hidrosense_mobile/views/pages/login_page.dart';
+import 'package:hidrosense_mobile/views/v2/pages/v2_onboarding_page.dart';
 import 'support/damage_fixture.dart';
 
 void main() {
@@ -22,7 +22,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final navigator = Navigator.of(tester.element(find.byType(LoginPage)));
+      final navigator = Navigator.of(
+        tester.element(find.byType(V2OnboardingPage)),
+      );
       final saving = ValueNotifier(true);
       addTearDown(saving.dispose);
       navigator.push<void>(
@@ -45,7 +47,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.text('Form meja dalam sesi'), findsNothing);
-      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(V2OnboardingPage), findsOneWidget);
     },
   );
 }

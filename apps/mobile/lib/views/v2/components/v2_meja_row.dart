@@ -18,8 +18,8 @@ class V2MejaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 80,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 80),
       child: V2StockItem(
         withCard: false,
         title: item.nama,

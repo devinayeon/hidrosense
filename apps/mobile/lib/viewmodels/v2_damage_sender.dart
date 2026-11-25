@@ -121,9 +121,7 @@ class V2DamageSender implements V2SyncSender {
       );
       return;
     }
-    throw const V2SyncRejectedException(
-      'Jenis antrean rusak tidak dikenal.',
-    );
+    throw const V2SyncRejectedException('Jenis antrean rusak tidak dikenal.');
   }
 }
 

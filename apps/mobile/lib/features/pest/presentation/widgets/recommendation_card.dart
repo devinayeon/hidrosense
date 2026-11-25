@@ -5,7 +5,20 @@ import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_card.dart';
 import '../../data/pest_models.dart';
 
-const List<String> _bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const List<String> _bulan = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agu',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des',
+];
 
 /// `2026-09-30` → `30 Sep 2026`. Nilai yang bukan tanggal ditampilkan apa adanya.
 String formatAppliedDate(String iso) {
@@ -67,7 +80,12 @@ class _RecommendationCardState extends State<RecommendationCard> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('${r.pest.label} · meja ${r.tableCode}', style: V2Type.label)),
+              Expanded(
+                child: Text(
+                  '${r.pest.label} · meja ${r.tableCode}',
+                  style: V2Type.label,
+                ),
+              ),
               _StatusTag(status: r.status),
             ],
           ),
@@ -90,7 +108,10 @@ class _RecommendationCardState extends State<RecommendationCard> {
               style: V2Type.bodyStrong,
             ),
             if (m.preHarvestSource != null)
-              Text('${m.preHarvestSource}. Ikuti label produk Anda bila berbeda.', style: V2Type.caption),
+              Text(
+                '${m.preHarvestSource}. Ikuti label produk Anda bila berbeda.',
+                style: V2Type.caption,
+              ),
           ],
           if (!m.verified) ...[
             const SizedBox(height: V2Space.sm),
@@ -108,18 +129,31 @@ class _RecommendationCardState extends State<RecommendationCard> {
           ],
           const SizedBox(height: V2Space.sm),
           Text('Sumber: ${m.source}', style: V2Type.caption),
-          if (r.status == RecommendationStatus.diterima && r.appliedOn != null) ...[
+          if (r.status == RecommendationStatus.diterima &&
+              r.appliedOn != null) ...[
             const SizedBox(height: V2Space.sm),
-            Text('Dipakai ${formatAppliedDate(r.appliedOn!)}', style: V2Type.bodyStrong),
-            for (final m in r.materials) Text('Stok terpakai: ${m.name} ${m.amount} ${m.unit}', style: V2Type.caption),
+            Text(
+              'Dipakai ${formatAppliedDate(r.appliedOn!)}',
+              style: V2Type.bodyStrong,
+            ),
+            for (final m in r.materials)
+              Text(
+                'Stok terpakai: ${m.name} ${m.amount} ${m.unit}',
+                style: V2Type.caption,
+              ),
             if (r.careNote != null) Text(r.careNote!, style: V2Type.caption),
           ],
           if (r.status == RecommendationStatus.ditolak) ...[
             const SizedBox(height: V2Space.sm),
-            Text('Alasan: ${r.rejectionReason?.label ?? 'tidak dicatat'}', style: V2Type.bodyStrong),
-            if (r.rejectionNote != null) Text(r.rejectionNote!, style: V2Type.caption),
+            Text(
+              'Alasan: ${r.rejectionReason?.label ?? 'tidak dicatat'}',
+              style: V2Type.bodyStrong,
+            ),
+            if (r.rejectionNote != null)
+              Text(r.rejectionNote!, style: V2Type.caption),
           ],
-          if (pending && (widget.onAccept != null || widget.onReject != null)) ...[
+          if (pending &&
+              (widget.onAccept != null || widget.onReject != null)) ...[
             const SizedBox(height: V2Space.lg),
             Row(
               children: [
@@ -127,8 +161,12 @@ class _RecommendationCardState extends State<RecommendationCard> {
                   child: V2Button(
                     label: 'Tolak',
                     type: V2ButtonType.secondary,
-                    state: _busy ? V2ButtonState.disabled : V2ButtonState.normal,
-                    onPressed: widget.onReject == null ? null : () => _run(widget.onReject!),
+                    state: _busy
+                        ? V2ButtonState.disabled
+                        : V2ButtonState.normal,
+                    onPressed: widget.onReject == null
+                        ? null
+                        : () => _run(widget.onReject!),
                   ),
                 ),
                 const SizedBox(width: V2Space.md),
@@ -136,7 +174,9 @@ class _RecommendationCardState extends State<RecommendationCard> {
                   child: V2Button(
                     label: 'Terima',
                     state: _busy ? V2ButtonState.loading : V2ButtonState.normal,
-                    onPressed: widget.onAccept == null ? null : () => _run(widget.onAccept!),
+                    onPressed: widget.onAccept == null
+                        ? null
+                        : () => _run(widget.onAccept!),
                   ),
                 ),
               ],
@@ -161,9 +201,18 @@ class _StatusTag extends StatelessWidget {
       RecommendationStatus.ditolak => (V2Colors.red100, V2Colors.red700),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: V2Space.md, vertical: V2Space.xs),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(V2Radius.pill)),
-      child: Text(status.label, style: V2Type.caption.copyWith(color: fg, fontWeight: FontWeight.w600)),
+      padding: const EdgeInsets.symmetric(
+        horizontal: V2Space.md,
+        vertical: V2Space.xs,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(V2Radius.pill),
+      ),
+      child: Text(
+        status.label,
+        style: V2Type.caption.copyWith(color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

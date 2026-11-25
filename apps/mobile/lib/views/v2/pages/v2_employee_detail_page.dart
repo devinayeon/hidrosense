@@ -108,7 +108,8 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
       context,
       type: V2DialogType.destructive,
       title: 'Nonaktifkan ${_employee.firstName}?',
-      body: '${_employee.firstName} tidak bisa masuk lagi. Data tetap tersimpan.',
+      body:
+          '${_employee.firstName} tidak bisa masuk lagi. Data tetap tersimpan.',
       primaryLabel: 'Nonaktifkan',
       secondaryLabel: 'Batal',
     );
@@ -116,9 +117,9 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
 
     final store = widget.store;
     if (store == null) {
-      Navigator.of(context).pop(
-        V2EmployeeDeactivated(_employee.copyWith(active: false)),
-      );
+      Navigator.of(
+        context,
+      ).pop(V2EmployeeDeactivated(_employee.copyWith(active: false)));
       return;
     }
 
@@ -130,9 +131,9 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
     } on V2EmployeeStoreException catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -154,10 +155,7 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
           bottom: false,
           child: Column(
             children: [
-              V2AppBar(
-                title: 'Detail pegawai',
-                onBack: _back,
-              ),
+              V2AppBar(title: 'Detail pegawai', onBack: _back),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(

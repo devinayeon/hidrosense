@@ -11,7 +11,12 @@ enum PestKind {
   whitefly('whitefly', 'Kutu kebul', sedangMin: 33, beratMin: 66),
   aphids('aphids', 'Kutu daun', sedangMin: 28, beratMin: 52);
 
-  const PestKind(this.apiCode, this.label, {required this.sedangMin, required this.beratMin});
+  const PestKind(
+    this.apiCode,
+    this.label, {
+    required this.sedangMin,
+    required this.beratMin,
+  });
 
   /// Kode yang dipakai API backend.
   final String apiCode;
@@ -58,7 +63,11 @@ PestSeverity suggestSeverity(PestKind kind, int count) {
 
 /// Hitungan satu hama pada satu foto.
 class PestFinding {
-  const PestFinding({required this.kind, required this.count, required this.maxConfidence});
+  const PestFinding({
+    required this.kind,
+    required this.count,
+    required this.maxConfidence,
+  });
 
   final PestKind kind;
   final int count;
@@ -79,6 +88,10 @@ List<PestFinding> summarizeDetections(Iterable<YoloDetection> detections) {
   final ids = counts.keys.toList()..sort();
   return [
     for (final id in ids)
-      PestFinding(kind: PestKind.fromClassId(id), count: counts[id]!, maxConfidence: best[id]!),
+      PestFinding(
+        kind: PestKind.fromClassId(id),
+        count: counts[id]!,
+        maxConfidence: best[id]!,
+      ),
   ];
 }

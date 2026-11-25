@@ -94,6 +94,7 @@ class V2BerandaPage extends StatefulWidget {
     this.saleRepairer,
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
+    this.syncLink,
     this.tanamTab,
     this.stokTabBuilder,
     this.rawatTab,
@@ -124,6 +125,7 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       syncLink = null,
        tanamTab = null,
        stokTabBuilder = null,
        rawatTab = null,
@@ -155,6 +157,7 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       syncLink = null,
        tanamTab = null,
        stokTabBuilder = null,
        rawatTab = null,
@@ -186,6 +189,7 @@ class V2BerandaPage extends StatefulWidget {
        saleRepairer = null,
        syncLabel = 'Terakhir 09.40',
        syncBadge = null,
+       syncLink = null,
        tanamTab = null,
        stokTabBuilder = null,
        rawatTab = null,
@@ -234,6 +238,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Subjudul baris Sinkron di tab akun.
   final String syncLabel;
+
+  /// Sambungan ke jam sinkron nyata; null di galeri (jam contoh desain).
+  final V2SyncLink? syncLink;
 
   /// Lencana jumlah antrean di baris Sinkron; null berarti tanpa lencana.
   final String? syncBadge;
@@ -451,6 +458,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
   void _openSync() {
     final queue = widget.syncQueue;
     final replayer = widget.syncReplayer;
+    final link = widget.syncLink;
     final items = queue == null
         ? const <V2SinkronItem>[]
         : v2SinkronItemsFromQueue(queue.items);
@@ -462,9 +470,14 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         state: fallback.isEmpty ? V2SinkronState.ready : V2SinkronState.offline,
         items: fallback.isEmpty ? null : fallback,
         queue: queue,
-        onSyncNow: replayer == null
-            ? null
-            : (onProgress) => replayer.run(onProgress: onProgress),
+        onSyncNow:
+            link?.syncNow ??
+            (replayer == null
+                ? null
+                : (onProgress) => replayer.run(onProgress: onProgress)),
+        lastSyncedAt: link?.lastSyncedAt,
+        refreshLastSync: link?.refresh,
+        recordSync: link?.record,
         onResolveConflict: replayer == null
             ? null
             : (key, {required useServer}) =>
@@ -667,7 +680,11 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
             V2WeatherCard(
               title: widget.weatherTitle,
               subtitle: widget.weatherSubtitle,
-              onTap: () => Navigator.of(context).push(V2CuacaPage.route()),
+              // Di aplikasi nyata kartu ini membuka halaman Cuaca tersambung
+              // (lokasi pilihan pengguna); halaman contoh hanya untuk galeri.
+              onTap:
+                  widget.onOpenWeather ??
+                  () => Navigator.of(context).push(V2CuacaPage.route()),
             ),
         ],
       ],

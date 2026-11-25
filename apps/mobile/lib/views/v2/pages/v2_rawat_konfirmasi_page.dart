@@ -37,8 +37,7 @@ class V2RawatKonfirmasiPage extends StatefulWidget {
   });
 
   /// Frame `9.21 Konfirmasi perawatan`: 1 botol Obat Nabati.
-  const V2RawatKonfirmasiPage.biasa({Key? key})
-    : this(key: key);
+  const V2RawatKonfirmasiPage.biasa({Key? key}) : this(key: key);
 
   /// Frame `9.22 Stok obat kurang`: 2 botol, stok hanya 1.
   const V2RawatKonfirmasiPage.stokKurang({Key? key})
@@ -60,11 +59,8 @@ class V2RawatKonfirmasiPage extends StatefulWidget {
     ValueChanged<V2RawatItem>? onSaved,
   }) {
     return MaterialPageRoute<void>(
-      builder: (_) => V2RawatKonfirmasiPage(
-        hama: hama,
-        obat: obat,
-        onSaved: onSaved,
-      ),
+      builder: (_) =>
+          V2RawatKonfirmasiPage(hama: hama, obat: obat, onSaved: onSaved),
     );
   }
 
@@ -83,10 +79,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
   bool get _stokKurang => _jumlah > _obat.stok;
 
   Future<void> _pilihTanggal() async {
-    final hasil = await showV2SemaianDateSheet(
-      context,
-      selected: _tanggal,
-    );
+    final hasil = await showV2SemaianDateSheet(context, selected: _tanggal);
     if (!mounted || hasil == null) return;
     setState(() {
       _tanggal = hasil;
@@ -149,8 +142,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                   V2RawatOptionRow(
                     label: pilihan[index],
                     selected: pilihan[index] == draft,
-                    onTap: () =>
-                        setSheetState(() => draft = pilihan[index]),
+                    onTap: () => setSheetState(() => draft = pilihan[index]),
                   ),
                 ],
               ],
@@ -201,10 +193,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                 bottom: false,
                 child: Column(
                   children: [
-                    V2AppBar(
-                      title: 'Konfirmasi perawatan',
-                      onBack: _kembali,
-                    ),
+                    V2AppBar(title: 'Konfirmasi perawatan', onBack: _kembali),
                     Expanded(
                       child: SingleChildScrollView(
                         physics: const ClampingScrollPhysics(),
@@ -247,10 +236,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
                     ),
                     V2ActionBar(
                       actions: [
-                        V2Button(
-                          label: 'Konfirmasi',
-                          onPressed: _konfirmasi,
-                        ),
+                        V2Button(label: 'Konfirmasi', onPressed: _konfirmasi),
                       ],
                     ),
                   ],
@@ -268,10 +254,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Jumlah obat',
-          style: V2Type.label.copyWith(color: V2Colors.ink),
-        ),
+        Text('Jumlah obat', style: V2Type.label.copyWith(color: V2Colors.ink)),
         const SizedBox(height: V2Space.sm),
         V2QtyField(
           value: _jumlah,
@@ -290,11 +273,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
           const SizedBox(height: V2Space.sm),
           Row(
             children: [
-              const V2Icon(
-                V2IconName.error,
-                size: 16,
-                color: V2Colors.red700,
-              ),
+              const V2Icon(V2IconName.error, size: 16, color: V2Colors.red700),
               const SizedBox(width: V2Space.sm),
               Text(
                 'Stok hanya ${_obat.stok} botol',
@@ -311,12 +290,7 @@ class _V2RawatKonfirmasiPageState extends State<V2RawatKonfirmasiPage> {
   Widget _kartuStok() {
     return Container(
       height: 120,
-      padding: const EdgeInsets.fromLTRB(
-        V2Space.xl,
-        V2Space.xl,
-        V2Space.xl,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(V2Space.xl, V2Space.xl, V2Space.xl, 0),
       decoration: BoxDecoration(
         color: V2Colors.white,
         borderRadius: BorderRadius.circular(V2Radius.card),

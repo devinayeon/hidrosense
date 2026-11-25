@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -41,6 +42,31 @@ class SessionUser {
     );
   }
 
+  /// Dua objek dengan isi sama dianggap sama. Tanpa ini setiap pemulihan sesi
+  /// (`auth/me` di latar) menghasilkan objek baru yang dibaca provider sebagai
+  /// "pengguna berganti", sehingga semua provider per-pengguna dibangun ulang
+  /// di tengah pemuatan layar yang sedang terbuka.
+  @override
+  bool operator ==(Object other) =>
+      other is SessionUser &&
+      other.id == id &&
+      other.name == name &&
+      other.username == username &&
+      other.role == role &&
+      _samePermissions(other.permissions);
+
+  bool _samePermissions(List<String> other) {
+    if (other.length != permissions.length) return false;
+    for (var i = 0; i < other.length; i++) {
+      if (other[i] != permissions[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, username, role, Object.hashAll(permissions));
+
   /// Bentuk yang sama dengan `fromJson`, untuk disimpan bersama sesi lokal.
   Map<String, dynamic> toJson() => {
     'id_user': id,
@@ -59,10 +85,14 @@ class ApiClient {
     this._client, {
     required this.baseUri,
     this.allowInsecureLocalhost = false,
+    this.connectionRetryDelay = const Duration(milliseconds: 150),
   });
   final http.Client _client;
   final Uri baseUri;
   final bool allowInsecureLocalhost;
+
+  /// Jeda sebelum GET yang putus di tengah jalan diulang sekali.
+  final Duration connectionRetryDelay;
   String? _access, _refresh;
   DateTime? _accessExpiresAt, _refreshExpiresAt;
   Future<void>? _refreshing;
@@ -228,7 +258,50 @@ class ApiClient {
     }
   }
 
+  /// Sambungan yang putus sebelum jawaban sampai: soket basi, reset, atau
+  /// koneksi tertutup di tengah header. Jawaban server dan timeout bukan
+  /// termasuk — keduanya hasil yang nyata, bukan sambungan yang rusak.
+  static bool _isDroppedConnection(Object error) =>
+      error is http.ClientException ||
+      error is SocketException ||
+      error is HttpException ||
+      error is HandshakeException;
+
+  /// Permintaan terotentikasi. Hanya GET yang diulang otomatis: sambungan
+  /// keep-alive ke server serverless bisa basi selama aplikasi menganggur, dan
+  /// permintaan pertama sesudahnya putus walau internet ada. Ulangan satu kali
+  /// memakai sambungan baru, jadi pengguna tidak perlu menekan "Coba lagi".
+  /// Tulis (POST/PATCH/DELETE) tidak diulang di sini karena hasilnya bisa
+  /// sudah tersimpan; pemanggilnya mengulang dengan kunci idempoten.
   Future<Map<String, dynamic>> _authRequest(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? query,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      return await _authRequestOnce(
+        method,
+        path,
+        body: body,
+        query: query,
+        headers: headers,
+      );
+    } catch (error) {
+      if (method != 'GET' || !_isDroppedConnection(error)) rethrow;
+      await Future<void>.delayed(connectionRetryDelay);
+      return _authRequestOnce(
+        method,
+        path,
+        body: body,
+        query: query,
+        headers: headers,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _authRequestOnce(
     String method,
     String path, {
     Map<String, dynamic>? body,

@@ -455,11 +455,12 @@ final inventoryCategoriesProvider =
       return fetchInventoryCategories(ref.watch(apiClientProvider));
     });
 
-final inventoryMedicinesProvider =
-    FutureProvider.autoDispose<List<ObatRecord>>((ref) async {
-      final user = ref.watch(sessionProvider.select((state) => state.user));
-      if (user == null) {
-        throw StateError('Daftar obat memerlukan sesi.');
-      }
-      return fetchMedicines(ref.watch(apiClientProvider));
-    });
+final inventoryMedicinesProvider = FutureProvider.autoDispose<List<ObatRecord>>(
+  (ref) async {
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    if (user == null) {
+      throw StateError('Daftar obat memerlukan sesi.');
+    }
+    return fetchMedicines(ref.watch(apiClientProvider));
+  },
+);

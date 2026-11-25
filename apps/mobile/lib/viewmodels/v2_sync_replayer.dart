@@ -33,10 +33,7 @@ abstract interface class V2SyncConflictResolver {
 
   /// [useServer] true membuang isi HP dan memakai data server; false menulis
   /// ulang isi HP dengan versi server terbaru.
-  Future<void> resolveConflict(
-    SyncQueueItem item, {
-    required bool useServer,
-  });
+  Future<void> resolveConflict(SyncQueueItem item, {required bool useServer});
 }
 
 /// Pengirim satu jenis data dari antrean ke server.
@@ -56,7 +53,22 @@ class V2SyncRun {
     this.pending = 0,
     this.waiting = 0,
     this.total = 0,
+    this.syncedAt,
   });
+
+  /// Salinan dengan jam sinkron yang dicatat server untuk putaran ini.
+  V2SyncRun withSyncedAt(DateTime at) => V2SyncRun(
+    sent: sent,
+    failed: failed,
+    pending: pending,
+    waiting: waiting,
+    total: total,
+    syncedAt: at,
+  );
+
+  /// Jam sinkron yang tercatat setelah putaran selesai penuh; null bila
+  /// putaran belum selesai atau jamnya tidak dicatat.
+  final DateTime? syncedAt;
 
   /// Berhasil terkirim dan lepas dari antrean.
   final int sent;
@@ -131,10 +143,7 @@ class V2SyncReplayer {
   final Map<SyncQueueJenis, V2SyncConflictResolver> _resolvers;
 
   /// Menyelesaikan satu baris `konflik` menurut pilihan pengguna di 11.8.
-  Future<void> resolveConflict(
-    String key, {
-    required bool useServer,
-  }) async {
+  Future<void> resolveConflict(String key, {required bool useServer}) async {
     SyncQueueItem? item;
     for (final row in queue.items) {
       if (row.key == key) item = row;

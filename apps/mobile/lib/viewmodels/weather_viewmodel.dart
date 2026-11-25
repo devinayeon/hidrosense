@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/services/bmkg_weather_service.dart';
 import '../data/services/weather_notification_service.dart';
 import '../models/weather_model.dart';
+import 'weather_location_viewmodel.dart';
 
 class WeatherState {
   final WeatherData? data;
@@ -32,7 +33,15 @@ typedef WeatherLoader = Future<WeatherData> Function();
 final bmkgWeatherServiceProvider = Provider.autoDispose<BmkgWeatherService>((
   ref,
 ) {
-  final service = BmkgWeatherService();
+  // Satu layanan per lokasi: berganti lokasi membangun ulang layanan dan
+  // memuat ulang prakiraan untuk desa baru. Bila BMKG tidak terjangkau dari
+  // HP, prakiraan diminta lewat backend yang menyimpannya sementara.
+  final location = ref.watch(weatherLocationProvider);
+  final repository = ref.watch(weatherLocationRepositoryProvider);
+  final service = BmkgWeatherService(
+    adm4: location.adm4,
+    serverFallback: repository.forecastViaServer,
+  );
   ref.onDispose(service.close);
   return service;
 });
@@ -80,7 +89,9 @@ class WeatherViewModel extends StateNotifier<WeatherState> {
 }
 
 /// Notifikasi saran cuaca (S6: tindakan cuaca hanya berupa notifikasi, tidak disimpan).
-final weatherNoticeSinkProvider = Provider<WeatherNoticeSink>((ref) => LocalWeatherNotifier());
+final weatherNoticeSinkProvider = Provider<WeatherNoticeSink>(
+  (ref) => LocalWeatherNotifier(),
+);
 
 final weatherViewModelProvider =
     StateNotifierProvider.autoDispose<WeatherViewModel, WeatherState>((ref) {
@@ -88,6 +99,7 @@ final weatherViewModelProvider =
       final sink = ref.watch(weatherNoticeSinkProvider);
       return WeatherViewModel(
         loader: service.fetchWeather,
-        onLoaded: (data) => unawaited(notifyTodayAdvice(data, sink, DateTime.now())),
+        onLoaded: (data) =>
+            unawaited(notifyTodayAdvice(data, sink, DateTime.now())),
       );
     });

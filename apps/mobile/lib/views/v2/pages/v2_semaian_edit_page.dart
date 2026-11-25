@@ -39,11 +39,7 @@ class V2SemaianEditPage extends StatefulWidget {
   /// Frame `5.28 Tandai selesai, konfirmasi`: status "Selesai" dan dialog
   /// destruktif terbuka.
   V2SemaianEditPage.tandaiSelesai({Key? key})
-    : this(
-        key: key,
-        item: designSemaianSisa,
-        previewTandaiSelesai: true,
-      );
+    : this(key: key, item: designSemaianSisa, previewTandaiSelesai: true);
 
   /// Frame `5.31 Data sudah berubah`: dialog konfirmasi bentrok data.
   V2SemaianEditPage.konflik({Key? key})

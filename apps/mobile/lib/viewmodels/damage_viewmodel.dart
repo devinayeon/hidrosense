@@ -434,9 +434,7 @@ final damageProvider = StateNotifierProvider.autoDispose
         userId: user.id,
         commands: ref.watch(damageCommandsProvider),
         clock: clock,
-        queueSink: V2DamageQueueSink(
-          ref.watch(v2SyncQueueProvider.notifier),
-        ),
+        queueSink: V2DamageQueueSink(ref.watch(v2SyncQueueProvider.notifier)),
       );
       Timer? timer;
       void schedule() {

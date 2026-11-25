@@ -398,7 +398,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Stok tercatat (4.23)',
                         subtitle: 'Riwayat baru dan toast sukses',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2InventarisDetailPage.tercatat(),
+                          builder: (_) =>
+                              const V2InventarisDetailPage.tercatat(),
                         ),
                       ),
                       _FlowRow(
@@ -414,7 +415,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Perubahan tersimpan (4.25)',
                         subtitle: 'Detail dengan toast sukses',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2InventarisDetailPage.perubahan(),
+                          builder: (_) =>
+                              const V2InventarisDetailPage.perubahan(),
                         ),
                       ),
                       _FlowRow(
@@ -469,7 +471,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Data sudah berubah (4.31)',
                         subtitle: 'Dialog muat ulang data terbaru',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2InventarisFormPage.dataBerubah(),
+                          builder: (_) =>
+                              const V2InventarisFormPage.dataBerubah(),
                         ),
                         iconTone: V2ListItemIconTone.warning,
                       ),
@@ -596,7 +599,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Pindah berhasil (5.18)',
                         subtitle: '200 tanaman pindah ke Meja A2',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2PindahMejaResultPage.berhasil(),
+                          builder: (_) =>
+                              const V2PindahMejaResultPage.berhasil(),
                         ),
                         iconTone: V2ListItemIconTone.success,
                       ),
@@ -624,7 +628,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Pindah sebagian (5.22)',
                         subtitle: '120 pindah, 80 masih di semaian',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2PindahMejaResultPage.sebagian(),
+                          builder: (_) =>
+                              const V2PindahMejaResultPage.sebagian(),
                         ),
                         iconTone: V2ListItemIconTone.success,
                       ),
@@ -924,7 +929,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Ubah catatan tanaman (6.22)',
                         subtitle: 'Keterangan rak bawah',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2UbahCatatanTanamanPage.biasa(),
+                          builder: (_) =>
+                              const V2UbahCatatanTanamanPage.biasa(),
                         ),
                       ),
                       _FlowRow(
@@ -1546,7 +1552,8 @@ class V2GalleryPage extends StatelessWidget {
                         title: 'Saran tanpa internet (10.10)',
                         subtitle: 'Saran butuh internet',
                         route: () => MaterialPageRoute<void>(
-                          builder: (_) => const V2CuacaPage.saranTanpaInternet(),
+                          builder: (_) =>
+                              const V2CuacaPage.saranTanpaInternet(),
                         ),
                         iconTone: V2ListItemIconTone.neutral,
                       ),

@@ -109,18 +109,14 @@ JenisInventarisRecord? _kategoriUntuk(
   }
 
   final pilihan = switch (jenis) {
-    V2JenisBarang.benih => aktif
-        .where((item) => cocok(item, ['benih', 'bibit']))
-        .firstOrNull,
-    V2JenisBarang.nutrisi => aktif
-        .where((item) => cocok(item, ['nutrisi', 'pupuk']))
-        .firstOrNull,
-    V2JenisBarang.media => aktif
-        .where((item) => cocok(item, ['media', 'perlengkapan']))
-        .firstOrNull,
-    V2JenisBarang.obat => aktif
-        .where((item) => cocok(item, ['obat', 'pestisida']))
-        .firstOrNull,
+    V2JenisBarang.benih =>
+      aktif.where((item) => cocok(item, ['benih', 'bibit'])).firstOrNull,
+    V2JenisBarang.nutrisi =>
+      aktif.where((item) => cocok(item, ['nutrisi', 'pupuk'])).firstOrNull,
+    V2JenisBarang.media =>
+      aktif.where((item) => cocok(item, ['media', 'perlengkapan'])).firstOrNull,
+    V2JenisBarang.obat =>
+      aktif.where((item) => cocok(item, ['obat', 'pestisida'])).firstOrNull,
   };
   return pilihan ?? aktif.first;
 }
@@ -147,8 +143,10 @@ class V2InventarisConnectedTab extends ConsumerWidget {
         .map((record) => v2InventarisItemFromRecord(record))
         .toList();
     final state = switch (data) {
-      ConnectedInventoryState(isInitialLoading: true) => V2InventarisState.loading,
-      ConnectedInventoryState(error: _?) when items.isEmpty => V2InventarisState.error,
+      ConnectedInventoryState(isInitialLoading: true) =>
+        V2InventarisState.loading,
+      ConnectedInventoryState(error: _?) when items.isEmpty =>
+        V2InventarisState.error,
       _ => V2InventarisState.ready,
     };
     return V2InventarisTabView(
@@ -166,9 +164,9 @@ class V2InventarisConnectedTab extends ConsumerWidget {
   Future<void> _tambah(BuildContext context, WidgetRef ref) async {
     final obat = await _obatPilihan(ref);
     if (!context.mounted) return;
-    final result = await Navigator.of(context).push<V2InventarisItem>(
-      V2InventarisFormPage.route(obatPilihan: obat),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push<V2InventarisItem>(V2InventarisFormPage.route(obatPilihan: obat));
     if (result == null || !context.mounted) return;
     try {
       final kategori = await ref.read(inventoryCategoriesProvider.future);
@@ -253,11 +251,7 @@ class _V2InventarisConnectedDetailPageState
       .firstOrNull;
 
   Future<void> _catatStok() async {
-    final hasil = await showV2CatatStokSheet(
-      context,
-      item: _item,
-      jumlah: 2,
-    );
+    final hasil = await showV2CatatStokSheet(context, item: _item, jumlah: 2);
     if (!mounted || hasil == null) return;
     final record = _record();
     if (record == null) {
@@ -284,17 +278,15 @@ class _V2InventarisConnectedDetailPageState
   Future<void> _ubah() async {
     final obat = await _obatPilihan(ref);
     if (!mounted) return;
-    final updated = await Navigator.of(
-      context,
-    ).push<V2InventarisItem>(
+    final updated = await Navigator.of(context).push<V2InventarisItem>(
       V2InventarisFormPage.routeUbah(_item, obatPilihan: obat),
     );
     if (!mounted || updated == null) return;
     final record = _record();
     try {
       final kategori = await ref.read(inventoryCategoriesProvider.future);
-      final pilihan = record?.categoryId ??
-          _kategoriUntuk(kategori, updated.jenis)?.id;
+      final pilihan =
+          record?.categoryId ?? _kategoriUntuk(kategori, updated.jenis)?.id;
       if (pilihan == null) {
         if (!mounted) return;
         _pesan(context, 'Kategori barang belum tersedia.');

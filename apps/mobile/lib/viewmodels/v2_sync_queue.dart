@@ -62,11 +62,7 @@ class V2SyncQueue extends StateNotifier<List<SyncQueueItem>> {
   Future<void> markConflict(String key, String error) =>
       _mark(key, SyncQueueStatus.konflik, error);
 
-  Future<void> _mark(
-    String key,
-    SyncQueueStatus status,
-    String error,
-  ) async {
+  Future<void> _mark(String key, SyncQueueStatus status, String error) async {
     final store = await _open();
     if (status == SyncQueueStatus.konflik) {
       await store?.markConflict(

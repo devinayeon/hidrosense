@@ -44,8 +44,67 @@ class _V2OnboardingPageState extends State<V2OnboardingPage> {
   static const Duration _splashDelay = Duration(milliseconds: 1600);
   static const Duration _switcherDuration = Duration(milliseconds: 260);
 
-  /// Tinggi area teks terbesar (judul 36 + jarak 16 + badan 48).
+  /// Tinggi area teks pada skala huruf 1 di layar 390 dp (judul 36 + jarak 16
+  /// + badan 48). Layar lain atau huruf lebih besar mengukur ulang lewat
+  /// [_measureTextArea], jadi angka ini hanya batas bawah.
   static const double _textAreaHeight = 100;
+
+  /// Isi tiga layar perkenalan beserta splash; sumber tunggal untuk [_slides]
+  /// dan pengukuran tinggi teks.
+  static const List<({String illustration, String title, String body})> _copy =
+      [
+        (
+          illustration: V2AuthAssets.splash,
+          title: 'HidroSense',
+          body: 'Kebun selada NFT, rapi.',
+        ),
+        (
+          illustration: V2AuthAssets.welcomeStock,
+          title: 'Stok tertata',
+          body: 'Catat benih, nutrisi, obat. Stok berkurang otomatis.',
+        ),
+        (
+          illustration: V2AuthAssets.welcomeCycle,
+          title: 'Semai sampai panen',
+          body: '60 hari dalam satu layar. Pantau HSS tiap meja.',
+        ),
+        (
+          illustration: V2AuthAssets.welcomeWeather,
+          title: 'Hama dan cuaca',
+          body: 'Petani dapat saran hama dan cuaca BMKG.',
+        ),
+      ];
+
+  /// Tinggi area judul + badan yang cukup untuk teks terpanjang pada lebar
+  /// dan skala huruf perangkat ini. Tinggi tetap 100 membuat badan dua baris
+  /// meluap di layar sempit atau saat huruf sistem dibesarkan.
+  double _measureTextArea(BuildContext context, double width) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final textWidth = math.max(0.0, width - V2Space.xl * 2);
+    double measure(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        textScaler: scaler,
+      )..layout(maxWidth: textWidth);
+      final height = painter.height;
+      painter.dispose();
+      return height;
+    }
+
+    var tallest = 0.0;
+    for (var i = 0; i < _copy.length; i++) {
+      final slide = _copy[i];
+      final titleStyle = i == 0 ? V2Type.display : V2Type.h1;
+      final total =
+          measure(slide.title, titleStyle) +
+          V2Space.lg +
+          measure(slide.body, V2Type.body);
+      if (total > tallest) tallest = total;
+    }
+    return math.max(_textAreaHeight, tallest + 4);
+  }
 
   late final PageController _controller;
   late int _index;
@@ -98,34 +157,14 @@ class _V2OnboardingPageState extends State<V2OnboardingPage> {
 
   List<Widget> _slides(double heroHeight) {
     return [
-      V2OnboardingSlide(
-        illustration: V2AuthAssets.splash,
-        title: 'HidroSense',
-        body: 'Kebun selada NFT, rapi.',
-        titleStyle: V2Type.display,
-        heroHeight: heroHeight,
-      ),
-      V2OnboardingSlide(
-        illustration: V2AuthAssets.welcomeStock,
-        title: 'Stok tertata',
-        body: 'Catat benih, nutrisi, obat. Stok berkurang otomatis.',
-        titleStyle: V2Type.h1,
-        heroHeight: heroHeight,
-      ),
-      V2OnboardingSlide(
-        illustration: V2AuthAssets.welcomeCycle,
-        title: 'Semai sampai panen',
-        body: '60 hari dalam satu layar. Pantau HSS tiap meja.',
-        titleStyle: V2Type.h1,
-        heroHeight: heroHeight,
-      ),
-      V2OnboardingSlide(
-        illustration: V2AuthAssets.welcomeWeather,
-        title: 'Hama dan cuaca',
-        body: 'Petani dapat saran hama dan cuaca BMKG.',
-        titleStyle: V2Type.h1,
-        heroHeight: heroHeight,
-      ),
+      for (var i = 0; i < _copy.length; i++)
+        V2OnboardingSlide(
+          illustration: _copy[i].illustration,
+          title: _copy[i].title,
+          body: _copy[i].body,
+          titleStyle: i == 0 ? V2Type.display : V2Type.h1,
+          heroHeight: heroHeight,
+        ),
     ];
   }
 
@@ -257,7 +296,9 @@ class _V2OnboardingPageState extends State<V2OnboardingPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SizedBox(
-                            height: heroHeight + _textAreaHeight,
+                            height:
+                                heroHeight +
+                                _measureTextArea(context, constraints.maxWidth),
                             child: PageView(
                               controller: _controller,
                               onPageChanged: (page) {

@@ -158,9 +158,9 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -207,7 +207,9 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                       kicker: _penjualan.pembeli,
                       value: formatRupiahPenuh(_penjualan.total),
                       meta: formatMetaPenjualan(_penjualan),
-                      extra: antrean ? 'Belum di server.' : _penjualan.panenAsal,
+                      extra: antrean
+                          ? 'Belum di server.'
+                          : _penjualan.panenAsal,
                       badge: _badge(),
                     ),
                   ),

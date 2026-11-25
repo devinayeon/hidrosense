@@ -45,7 +45,8 @@ class LocalWeatherNotifier implements WeatherNoticeSink {
           android: AndroidNotificationDetails(
             _channelId,
             'Saran cuaca BMKG',
-            channelDescription: 'Saran perawatan dari prakiraan cuaca. Boleh diabaikan.',
+            channelDescription:
+                'Saran perawatan dari prakiraan cuaca. Boleh diabaikan.',
             onlyAlertOnce: true,
           ),
         ),
@@ -58,7 +59,11 @@ class LocalWeatherNotifier implements WeatherNoticeSink {
 
 /// Kirim saran hari ini sebagai notifikasi. Hanya tindakan yang dipicu cuaca yang dikirim.
 /// Dipakai saat aplikasi memuat cuaca dan oleh tugas latar (`weather_background.dart`).
-Future<void> notifyTodayAdvice(WeatherData data, WeatherNoticeSink sink, DateTime now) async {
+Future<void> notifyTodayAdvice(
+  WeatherData data,
+  WeatherNoticeSink sink,
+  DateTime now,
+) async {
   if (data.prakiraanHarian.isEmpty) return;
   final notice = buildWeatherNotice(data.prakiraanHarian.first, now);
   if (notice != null) await sink.deliver(notice);

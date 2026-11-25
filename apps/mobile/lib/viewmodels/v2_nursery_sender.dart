@@ -30,9 +30,7 @@ SyncQueueItem nurseryQueueItem({
   final tanggal = DateTime.tryParse(
     '${body['tanggal_semai'] ?? body['tanggal_pemindahan'] ?? ''}',
   );
-  final fallback = target == nurseryTransferTarget
-      ? 'Pindah tanam'
-      : 'Semai';
+  final fallback = target == nurseryTransferTarget ? 'Pindah tanam' : 'Semai';
   final label = tanggal == null
       ? fallback
       : '$fallback ${formatTanggalPendek(tanggal)}';
@@ -133,9 +131,7 @@ class V2NurserySender implements V2SyncSender {
       );
       return;
     }
-    throw const V2SyncRejectedException(
-      'Jenis antrean semaian tidak dikenal.',
-    );
+    throw const V2SyncRejectedException('Jenis antrean semaian tidak dikenal.');
   }
 }
 

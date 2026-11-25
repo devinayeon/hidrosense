@@ -57,54 +57,72 @@ class V2StockItem extends StatelessWidget {
             horizontal: V2Space.lg,
             vertical: V2Space.md,
           ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: leadBackground,
-              shape: BoxShape.circle,
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: leadBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: V2Icon(icon, size: iconSize, color: leadColor),
+              ),
             ),
-            child: Center(
-              child: V2Icon(icon, size: iconSize, color: leadColor),
+            const SizedBox(width: V2Space.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: V2Type.bodyStrong,
+                  ),
+                  const SizedBox(height: V2Space.xs),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: V2Type.label.copyWith(color: V2Colors.muted),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: V2Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.bodyStrong,
-                ),
-                const SizedBox(height: V2Space.xs),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: V2Type.label.copyWith(color: V2Colors.muted),
-                ),
-              ],
+            const SizedBox(width: V2Space.md),
+            // Kolom kanan (jumlah + lencana) dibatasi separuh lebar baris supaya
+            // judul di kiri tetap punya ruang; selebihnya teks membungkus atau
+            // dipotong, tidak meluap.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.hasBoundedWidth
+                    ? constraints.maxWidth * 0.55
+                    : double.infinity,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    quantity,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: V2Type.bodyStrong,
+                  ),
+                  if (badge != null) ...[
+                    const SizedBox(height: V2Space.xs),
+                    badge!,
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: V2Space.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(quantity, style: V2Type.bodyStrong),
-              if (badge != null) ...[
-                const SizedBox(height: V2Space.xs),
-                badge!,
-              ],
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
 

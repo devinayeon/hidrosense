@@ -33,8 +33,7 @@ class V2RawatHasilPage extends StatelessWidget {
   });
 
   /// Frame `9.14 Hasil: hama ditemukan`: Thrips 87%.
-  const V2RawatHasilPage.hama({Key? key})
-    : this(key: key);
+  const V2RawatHasilPage.hama({Key? key}) : this(key: key);
 
   /// Frame `9.15 Hasil: beberapa hama`: Thrips 87% dan Kutu daun 64%.
   const V2RawatHasilPage.beberapa({Key? key})
@@ -151,16 +150,15 @@ class V2RawatHasilPage extends StatelessWidget {
         V2SummaryCard(
           kicker: rendah ? 'Hasil kurang yakin' : 'Meja A2, 15 Nov',
           badge: rendah
-              ? const V2Badge(
-                  label: 'Rendah',
-                  status: V2BadgeStatus.warning,
-                )
+              ? const V2Badge(label: 'Rendah', status: V2BadgeStatus.warning)
               : const V2Badge(
                   label: 'Perlu tindakan',
                   status: V2BadgeStatus.warning,
                 ),
           value: rendah ? utama.labelPersen : utama.nama,
-          meta: rendah ? 'Mungkin ${utama.nama}' : 'Keyakinan ${utama.labelPersen}',
+          meta: rendah
+              ? 'Mungkin ${utama.nama}'
+              : 'Keyakinan ${utama.labelPersen}',
           extra: rendah
               ? 'Foto kurang jelas. Coba foto lebih dekat.'
               : 'Hasil AI. Periksa tanaman langsung.',
@@ -175,11 +173,7 @@ class V2RawatHasilPage extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 124),
-        Image.asset(
-          V2RawatAssets.harvestLettuce,
-          width: 160,
-          height: 160,
-        ),
+        Image.asset(V2RawatAssets.harvestLettuce, width: 160, height: 160),
         const SizedBox(height: V2Space.lg),
         Text(
           'Tanaman tampak sehat',
@@ -203,9 +197,8 @@ class V2RawatHasilPage extends StatelessWidget {
         title: 'Analisis gagal',
         body: 'Foto tetap tersimpan. Coba lagi.',
         actionLabel: 'Coba lagi',
-        onAction: () => Navigator.of(
-          context,
-        ).push(V2RawatFotoPage.unggahRoute(onSaved)),
+        onAction: () =>
+            Navigator.of(context).push(V2RawatFotoPage.unggahRoute(onSaved)),
         illustration: Image.asset(
           V2RawatAssets.offlineNoInternet,
           width: 160,
@@ -271,9 +264,8 @@ class V2RawatHasilPage extends StatelessWidget {
       actions: [
         V2Button(
           label: 'Lihat obat',
-          onPressed: () => Navigator.of(
-            context,
-          ).push(V2RawatObatPage.thripsRoute(onSaved)),
+          onPressed: () =>
+              Navigator.of(context).push(V2RawatObatPage.thripsRoute(onSaved)),
         ),
         V2Button(
           label: 'Foto ulang',

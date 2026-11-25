@@ -5,7 +5,10 @@ import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
 import '../../../viewmodels/v2_sync_queue.dart';
+import '../../../viewmodels/v2_sync_status.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
+import '../components/v2_sinkron_data.dart';
+import 'v2_sinkron_page.dart';
 import '../connected/v2_cuaca_connected.dart';
 import '../connected/v2_inventaris_connected.dart';
 import '../connected/v2_rawat_connected.dart';
@@ -38,6 +41,9 @@ class V2BerandaConnectedPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(v2BerandaDataProvider);
     final syncItems = ref.watch(v2SyncQueueProvider);
+    final lastSync = ref.watch(v2SyncStatusProvider);
+    final syncStatus = ref.read(v2SyncStatusProvider.notifier);
+    final replayer = ref.watch(v2SyncReplayerProvider);
     final gagal = syncItems
         .where((item) => item.status == SyncQueueStatus.gagal)
         .length;
@@ -58,12 +64,13 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       siapPindahSubtitle: data.readySeedlingSubtitle,
       lowStock: data.lowStockCount,
       filledHoles: data.filledHoles,
-      weatherTitle: data.weatherTitle ?? 'Berawan, 29°C',
-      weatherSubtitle: data.weatherSubtitle ?? 'Hujan 14.00',
+      // Selama cuaca dimuat tidak ada angka karangan; teks contoh hanya milik galeri.
+      weatherTitle: data.weatherTitle ?? 'Memuat cuaca...',
+      weatherSubtitle: data.weatherSubtitle ?? 'Prakiraan BMKG',
       employeeStore: ref.watch(v2EmployeeStoreProvider),
       penjualanStore: ref.watch(v2PenjualanStoreProvider),
       syncQueue: ref.watch(v2SyncQueueProvider.notifier),
-      syncReplayer: ref.watch(v2SyncReplayerProvider),
+      syncReplayer: replayer,
       saleRepairer: switch (ref.watch(v2PenjualanStoreProvider)) {
         final V2PenjualanRepairer repairer => repairer,
         _ => null,
@@ -77,8 +84,21 @@ class V2BerandaConnectedPage extends ConsumerWidget {
       rawatTab: const V2RawatConnectedTab(),
       onOpenWeather: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
+      syncLink: V2SyncLink(
+        lastSyncedAt: lastSync,
+        refresh: syncStatus.refresh,
+        record: () => syncStatus.markSynced(trustLocal: true),
+        syncNow: replayer == null
+            ? null
+            : (onProgress) => v2SyncRound(
+                run: () => replayer.run(onProgress: onProgress),
+                markSynced: syncStatus.markSynced,
+              ),
+      ),
       syncLabel: syncItems.isEmpty
-          ? 'Terakhir 09.40'
+          ? (lastSync == null
+                ? 'Belum pernah sinkron'
+                : 'Terakhir ${v2SinkronJam(lastSync)}')
           : '${syncItems.length} data menunggu',
       syncBadge: syncItems.isEmpty
           ? null

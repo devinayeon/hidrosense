@@ -75,8 +75,7 @@ class V2PilihSemaianPage extends StatelessWidget {
                     V2Button(
                       label: 'Lihat semaian',
                       onPressed:
-                          onLihatSemaian ??
-                          () => Navigator.of(context).pop(),
+                          onLihatSemaian ?? () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
@@ -114,13 +113,13 @@ class V2PilihSemaianPage extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 177),
-        Image.asset(
-          V2SemaianAssets.nurserySeedlings,
-          width: 160,
-          height: 160,
-        ),
+        Image.asset(V2SemaianAssets.nurserySeedlings, width: 160, height: 160),
         const SizedBox(height: V2Space.lg),
-        Text('Belum ada yang siap', textAlign: TextAlign.center, style: V2Type.h1),
+        Text(
+          'Belum ada yang siap',
+          textAlign: TextAlign.center,
+          style: V2Type.h1,
+        ),
         const SizedBox(height: V2Space.lg),
         Text(
           'Semaian siap pindah di HSS 15.',

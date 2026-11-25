@@ -279,8 +279,7 @@ const List<String> _bulanPanjang = <String>[
 ];
 
 /// `2400000` menjadi `Rp 2.400.000` (kartu detail dan ringkasan).
-String formatRupiahPenuh(num value) =>
-    'Rp ${formatAngkaRibu(value.round())}';
+String formatRupiahPenuh(num value) => 'Rp ${formatAngkaRibu(value.round())}';
 
 /// `40000` menjadi `40.000` — nilai yang dirapikan di kolom angka form.
 String formatAngkaRibu(int value) {
@@ -313,8 +312,7 @@ String formatAngkaDesimal(double value) => value == value.roundToDouble()
 String formatAngkaKg(double value) => formatAngkaDesimal(value);
 
 /// Angka juta tanpa satuan untuk label batang: `7500000` -> `7,5` (frame 8.5).
-String formatJutaAkurat(num rupiah) =>
-    formatAngkaDesimal(rupiah / 1000000);
+String formatJutaAkurat(num rupiah) => formatAngkaDesimal(rupiah / 1000000);
 
 /// Membaca isian kg; `60,5` dan `60.5` sama-sama dibaca `60.5`.
 double parseKg(String text) {

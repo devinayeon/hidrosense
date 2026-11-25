@@ -95,7 +95,9 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
 String _readySubtitle(List<SowingRecord> ready) {
   if (ready.isEmpty) return 'Belum ada semaian siap pindah';
   final hss = ready.first.hssText;
-  return ready.length == 1 ? '1 semaian, $hss' : '${ready.length} semaian, $hss';
+  return ready.length == 1
+      ? '1 semaian, $hss'
+      : '${ready.length} semaian, $hss';
 }
 
 String? _weatherTitle(WeatherData? data) {

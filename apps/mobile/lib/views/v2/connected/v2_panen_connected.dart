@@ -53,7 +53,7 @@ V2PanenEstimasi v2PanenEstimasiFromTransfer(
           : DateTime.tryParse(
                   transfer.estimatedHarvestDate!,
                 )?.difference(jakartaToday()).inDays ??
-              0);
+                0);
   return V2PanenEstimasi(
     meja: _kodeMeja(table, transfer.tableId),
     varietas:
@@ -79,7 +79,8 @@ V2PanenItem v2PanenItemFromRecord(
   return V2PanenItem(
     id: record.id,
     tanggal: DateTime.tryParse(record.date) ?? jakartaToday(),
-    meja: table?.displayName ??
+    meja:
+        table?.displayName ??
         (detail == null ? 'Meja' : 'Meja ${detail.tableCode}'),
     varietas:
         _varietasPanen(record, transfers, sowings, inventaris) ??
@@ -132,21 +133,24 @@ class V2PanenConnectedTab extends ConsumerWidget {
       connectedInventoryProvider.select((value) => value.activeRecords),
     );
     final tables = ref.watch(connectedTableProvider).records;
-    final estimasi = state.transfers
-        .where((row) => row.activePlants > 0)
-        .map(
-          (row) => v2PanenEstimasiFromTransfer(
-            row,
-            table: tables.where((table) => table.id == row.tableId).firstOrNull,
-            sowings: sowings,
-            inventaris: inventaris,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
-        return a.hariLagi.compareTo(b.hariLagi);
-      });
+    final estimasi =
+        state.transfers
+            .where((row) => row.activePlants > 0)
+            .map(
+              (row) => v2PanenEstimasiFromTransfer(
+                row,
+                table: tables
+                    .where((table) => table.id == row.tableId)
+                    .firstOrNull,
+                sowings: sowings,
+                inventaris: inventaris,
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            if (a.siapPanen != b.siapPanen) return a.siapPanen ? -1 : 1;
+            return a.hariLagi.compareTo(b.hariLagi);
+          });
     final riwayat = state.records
         .map(
           (record) => v2PanenItemFromRecord(
@@ -185,10 +189,7 @@ class V2PanenConnectedTab extends ConsumerWidget {
     List<V2PanenEstimasi> pilihan,
   ) async {
     final hasil = await Navigator.of(context).push<V2PanenItem>(
-      V2PanenFormPage.route(
-        pilihan: pilihan,
-        initialDate: jakartaToday(),
-      ),
+      V2PanenFormPage.route(pilihan: pilihan, initialDate: jakartaToday()),
     );
     if (hasil == null) return;
     final transferId = hasil.transferId;
@@ -318,9 +319,7 @@ class _V2PanenConnectedDetailPageState
     final tables = ref.read(connectedTableProvider).records;
     final transfers = ref.read(v2AllTransfersProvider).valueOrNull ?? const [];
     final sowings = ref.read(v2AllSowingsProvider).valueOrNull ?? const [];
-    final inventaris = ref
-        .read(connectedInventoryProvider)
-        .activeRecords;
+    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
     final hasil = v2PanenItemFromRecord(
       terbaru,
       transfers: transfers,

@@ -29,8 +29,9 @@ class V2BerandaHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 160 adalah tinggi minimum; huruf besar membuat kartu tumbuh.
     final content = Container(
-      height: 160,
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
         color: V2Colors.blue500,

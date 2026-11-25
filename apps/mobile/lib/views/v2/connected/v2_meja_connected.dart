@@ -38,17 +38,17 @@ final v2AllTransfersProvider = FutureProvider.autoDispose<List<TransferRecord>>(
 );
 
 /// Seluruh penyemaian untuk menerjemahkan batch menjadi nama benih.
-final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>(
-  (ref) async {
-    final user = ref.watch(sessionProvider.select((state) => state.user));
-    if (user == null) return const <SowingRecord>[];
-    try {
-      return await ref.watch(nurseryRepositoryProvider).listSowings();
-    } catch (_) {
-      return const <SowingRecord>[];
-    }
-  },
-);
+final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>((
+  ref,
+) async {
+  final user = ref.watch(sessionProvider.select((state) => state.user));
+  if (user == null) return const <SowingRecord>[];
+  try {
+    return await ref.watch(nurseryRepositoryProvider).listSowings();
+  } catch (_) {
+    return const <SowingRecord>[];
+  }
+});
 
 /// `tersedia`/`penuh`/`pemeliharaan` backend → tiga keadaan desain page 06.
 V2MejaStatus v2StatusMeja(TableRecord record) {
@@ -88,8 +88,7 @@ V2TanamanItem _tanamanFromTransfer(
     tanggalTanam: pindah,
     tanggalPanen: panen,
     tanggalPindah: pindah,
-    umurPanenHst:
-        transfer.remainingHarvestDays == null || transfer.hst == null
+    umurPanenHst: transfer.remainingHarvestDays == null || transfer.hst == null
         ? v2MejaUmurPanenHst
         : transfer.remainingHarvestDays! + transfer.hst!,
     hssPindah: transfer.hss ?? v2SemaianHssSiapPindah,
@@ -142,11 +141,7 @@ V2MejaItem v2MejaItemFromRecord(
         ? 'Tanaman meja'
         : v2NamaVarietasTransfer(transfer, sowings, inventaris) ??
               'Tanaman meja';
-    return v2KerusakanDariDamage(
-      damage,
-      varietas: varietas,
-      meja: record.code,
-    );
+    return v2KerusakanDariDamage(damage, varietas: varietas, meja: record.code);
   }).toList();
   return V2MejaItem(
     id: record.id,
@@ -354,9 +349,7 @@ class _V2MejaConnectedDetailPageState
     if (id == null) throw StateError('Meja belum tersimpan di server.');
     final siap = (ref.read(v2AllSowingsProvider).valueOrNull ?? const [])
         .where((row) => row.canTransfer)
-        .map(
-          (row) => v2SemaianItemFromRecord(row, inventaris: _inventaris),
-        )
+        .map((row) => v2SemaianItemFromRecord(row, inventaris: _inventaris))
         .toList();
     final pilihan = await Navigator.of(context).push<V2SemaianItem>(
       MaterialPageRoute<V2SemaianItem>(
@@ -483,9 +476,12 @@ class _V2MejaConnectedDetailPageState
   /// Cari laporan yang baru disimpan berdasarkan sekumpulan id.
   V2KerusakanItem? _cariRusak(String tableId, Set<String> ids) {
     if (ids.isEmpty) return null;
-    for (final row in ref.read(damageProvider(tableId)).reports.values.expand(
-      (rows) => rows,
-    )) {
+    for (final row
+        in ref
+            .read(damageProvider(tableId))
+            .reports
+            .values
+            .expand((rows) => rows)) {
       if (!ids.contains(row.id)) continue;
       return v2KerusakanDariDamage(
         row,

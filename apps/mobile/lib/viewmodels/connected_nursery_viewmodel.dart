@@ -219,10 +219,7 @@ class ConnectedNurseryViewModel extends StateNotifier<ConnectedNurseryState> {
             },
           ],
         }
-      : {
-          'jumlah_benih': input.seedCount,
-          'keterangan': input.note,
-        };
+      : {'jumlah_benih': input.seedCount, 'keterangan': input.note};
 
   Future<void> _recordSowing(SowingCommand command, SowingDraft input) async {
     final sink = queueSink;
@@ -433,9 +430,7 @@ final connectedNurseryProvider =
             user.permissions.contains('penyemaian:write') &&
             user.permissions.contains('budidaya:write'),
         commands: ref.watch(sowingCommandsProvider),
-        queueSink: V2NurseryQueueSink(
-          ref.watch(v2SyncQueueProvider.notifier),
-        ),
+        queueSink: V2NurseryQueueSink(ref.watch(v2SyncQueueProvider.notifier)),
         refreshInventory: () async {
           final inventory = ref.read(connectedInventoryProvider.notifier);
           await inventory.refreshAfterWrite();

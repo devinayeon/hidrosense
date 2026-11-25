@@ -186,8 +186,7 @@ class V2InventarisFormPage extends StatefulWidget {
 }
 
 class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
-  late V2JenisBarang _jenis =
-      widget.initialItem?.jenis ?? widget.initialJenis;
+  late V2JenisBarang _jenis = widget.initialItem?.jenis ?? widget.initialJenis;
   V2ObatPilihan? _obat;
 
   late final TextEditingController _nama;
