@@ -352,8 +352,18 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 25 November 2026.
 - **Keputusan PM:** **belum diputuskan**; PM minta konteks tambahan lebih dulu (contoh layar &
   dampaknya). Konteks disertakan di laporan sesi ini; **tidak** diimplementasikan sampai ada
   keputusan.
-- **Rekomendasi tetap:** pakai **"Nonaktifkan"** di seluruh UI inventaris (kontrak server
-  memakai `status_aktif`), tanpa mengubah data.
+- **Konteks untuk PM (bukti kode):**
+  - Inventaris memakai **"Arsip"**: chip filter `Semua / Menipis / Arsip`
+    (`v2_inventaris_data.dart:158`), frame `4.28 Arsip`, `4.29 Detail barang arsip`, dan
+    `V2InventarisItem.arsip` (`v2_inventaris_data.dart:75,99`).
+  - Akun pegawai memakai **"Nonaktif"**: label status baris "Nonaktif, <username>"
+    (`v2_akun_employee.dart:27`) dan tombol "Nonaktifkan" (`v2_employee_detail_page.dart`).
+  - Kontrak/DB konsisten memakai `status_aktif` (0/1) di kedua area.
+- **Rekomendasi tetap:** pakai **"Nonaktifkan"** di seluruh UI inventaris agar sejalan dengan
+  layar akun dan kontrak server, tanpa mengubah data. Dampak bila diubah: teks chip filter,
+  judul frame 4.28/4.29, dan istilah di panduan/pelatihan — bukan perubahan skema.
+- **Yang dibutuhkan dari PM:** pilih satu istilah (mis. "Nonaktifkan" untuk keduanya, atau
+  pertahankan "Arsip" khusus inventaris + "Nonaktifkan" khusus akun).
 
 ## D-39 — Keterangan penjualan (K-25) — **FINAL: diimplementasikan** (25–26 Nov 2026)
 - **Konteks:** FigCraft 8.7/8.21 tidak punya isian "Keterangan" penjualan, tetapi pelapor
