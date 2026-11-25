@@ -23,6 +23,7 @@ import { registerScans } from './features/scans/index.js';
 import { registerWeather } from './features/weather/index.js';
 import type { WeatherDeps } from './features/weather/service.js';
 import { registerUploads } from './features/uploads/index.js';
+import { registerNotifications } from './features/notifications/index.js';
 
 interface AppOptions {
   db: Client;
@@ -133,5 +134,6 @@ export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigr
   registerWeather(app, db, clock, weather);
   registerScans(app, db, clock, config);
   registerUploads(app, db, clock, config);
+  registerNotifications(app, db, clock);
   return app;
 }

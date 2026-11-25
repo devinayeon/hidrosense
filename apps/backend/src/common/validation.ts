@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiError } from './errors.js';
+import { ApiError, type ErrorDetail } from './errors.js';
 
 export const integerIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$(?![\s\S])/)
   .pipe(z.string().refine((value) => BigInt(value) <= 9223372036854775807n));
@@ -61,9 +61,50 @@ export const clearable = <T extends z.ZodType>(schema: T) => z.preprocess(
 /** Email dibakukan huruf kecil supaya keunikannya tidak bergantung pada huruf besar kecil. */
 export const emailSchema = z.string().trim().max(100).email().transform((value) => value.toLowerCase());
 
+const MAX_DETAILS = 20;
+
+/** Indonesian, value-free text for one zod issue. Never includes what the client sent. */
+function issueMessage(issue: z.core.$ZodIssue): string {
+  switch (issue.code) {
+    case 'too_big': {
+      const max = Number(issue.maximum);
+      return issue.origin === 'string' ? `Maksimal ${max} karakter.`
+        : issue.origin === 'array' ? `Maksimal ${max} item.` : `Maksimal ${max}.`;
+    }
+    case 'too_small': {
+      const min = Number(issue.minimum);
+      if (issue.origin === 'string' || issue.origin === 'array') {
+        return min <= 1 ? 'Wajib diisi.' : `Minimal ${min} ${issue.origin === 'string' ? 'karakter' : 'item'}.`;
+      }
+      return issue.inclusive === false ? `Harus lebih dari ${min}.` : `Minimal ${min}.`;
+    }
+    case 'invalid_type': return /received undefined/.test(issue.message) ? 'Wajib diisi.' : 'Tipe data tidak sesuai.';
+    case 'invalid_format': return 'Format tidak valid.';
+    case 'invalid_value': return 'Nilai tidak dikenal.';
+    default: return 'Nilai tidak valid.';
+  }
+}
+
+/** Field-level details of a failed parse: one entry per problem, capped, unknown fields listed by name. */
+export function validationDetails(error: z.ZodError): ErrorDetail[] {
+  const details: ErrorDetail[] = [];
+  for (const issue of error.issues) {
+    const base = issue.path.map(String);
+    if (issue.code === 'unrecognized_keys') {
+      for (const key of issue.keys) details.push({ field: [...base, key].join('.'), message: 'Field tidak dikenal.' });
+    } else {
+      details.push({ field: base.join('.') || '_', message: issueMessage(issue) });
+    }
+    if (details.length >= MAX_DETAILS) break;
+  }
+  return details.slice(0, MAX_DETAILS);
+}
+
 export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
-  if (!result.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.');
+  if (!result.success) {
+    throw new ApiError(400, 'VALIDATION_ERROR', 'Input tidak sesuai kontrak API.', validationDetails(result.error));
+  }
   return result.data;
 }
 

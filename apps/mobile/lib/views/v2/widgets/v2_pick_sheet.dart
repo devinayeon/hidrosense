@@ -196,7 +196,8 @@ class _QtyRow extends StatelessWidget {
         const SizedBox(width: V2Space.sm),
         Expanded(
           child: Container(
-            height: 56,
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: V2Space.md),
             decoration: BoxDecoration(
               color: V2Colors.white,
               borderRadius: BorderRadius.circular(V2Radius.pill),
@@ -206,11 +207,22 @@ class _QtyRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('$value', style: V2Type.bodyStrong),
+                  Flexible(
+                    child: Text(
+                      '$value',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.bodyStrong,
+                    ),
+                  ),
                   const SizedBox(width: V2Space.sm),
-                  Text(
-                    unit,
-                    style: V2Type.body.copyWith(color: V2Colors.muted),
+                  Flexible(
+                    child: Text(
+                      unit,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: V2Type.body.copyWith(color: V2Colors.muted),
+                    ),
                   ),
                 ],
               ),

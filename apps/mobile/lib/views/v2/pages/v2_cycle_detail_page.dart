@@ -78,6 +78,8 @@ class V2CycleDetailPage extends StatelessWidget {
 
   static Route<void> route({
     String tableName = 'Meja A2',
+    int value = 23,
+    int total = 60,
     VoidCallback? onOpenTable,
     String? weatherTitle,
     String? weatherSubtitle,
@@ -86,6 +88,9 @@ class V2CycleDetailPage extends StatelessWidget {
     return MaterialPageRoute<void>(
       builder: (_) => V2CycleDetailPage(
         tableName: tableName,
+        value: value,
+        total: total,
+        daysLeft: (total - value).clamp(0, total),
         onOpenTable: onOpenTable,
         weatherTitle: weatherTitle,
         weatherSubtitle: weatherSubtitle,

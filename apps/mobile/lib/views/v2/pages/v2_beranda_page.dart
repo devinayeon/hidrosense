@@ -84,6 +84,10 @@ class V2BerandaPage extends StatefulWidget {
     this.siapPindahSubtitle = '1 semaian, HSS 17',
     this.lowStock = '2',
     this.filledHoles = '400',
+    this.heroTitle = _tableName,
+    this.heroSubtitle = '37 hari lagi',
+    this.heroValue = 23,
+    this.heroTotal = 60,
     this.weatherTitle = 'Berawan, 29°C',
     this.weatherSubtitle = 'Hujan 14.00',
     this.initialEmployees = designEmployees,
@@ -104,6 +108,8 @@ class V2BerandaPage extends StatefulWidget {
     this.notificationGroups,
     this.onNotificationRead,
     this.onNotificationMarkAllRead,
+    this.onSiapPindah,
+    this.onOpenCycleTable,
     this.onOpenWeather,
     this.onLogOut,
   });
@@ -141,6 +147,12 @@ class V2BerandaPage extends StatefulWidget {
        siapPindahSubtitle = '1 semaian, HSS 17',
        lowStock = '2',
        filledHoles = '400',
+       heroTitle = _tableName,
+       heroSubtitle = '37 hari lagi',
+       heroValue = 23,
+       heroTotal = 60,
+       onSiapPindah = null,
+       onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
        weatherSubtitle = 'Hujan 14.00';
 
@@ -177,6 +189,12 @@ class V2BerandaPage extends StatefulWidget {
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
        filledHoles = '184',
+       heroTitle = _tableName,
+       heroSubtitle = '37 hari lagi',
+       heroValue = 23,
+       heroTotal = 60,
+       onSiapPindah = null,
+       onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
        weatherSubtitle = 'Hujan 14.00';
 
@@ -213,6 +231,12 @@ class V2BerandaPage extends StatefulWidget {
        siapPindahSubtitle = '2 semaian, HSS 15',
        lowStock = '3',
        filledHoles = '184',
+       heroTitle = _tableName,
+       heroSubtitle = '37 hari lagi',
+       heroValue = 23,
+       heroTotal = 60,
+       onSiapPindah = null,
+       onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
        weatherSubtitle = 'Hujan 14.00';
 
@@ -228,6 +252,10 @@ class V2BerandaPage extends StatefulWidget {
   final String siapPindahSubtitle;
   final String lowStock;
   final String filledHoles;
+  final String heroTitle;
+  final String heroSubtitle;
+  final int heroValue;
+  final int heroTotal;
 
   /// Teks kartu cuaca (frame 2.1/2.2); diisi data BMKG saat beranda tersambung.
   final String weatherTitle;
@@ -290,6 +318,12 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Menyimpan semua notifikasi yang belum dibaca sebagai sudah dibaca.
   final ValueChanged<List<String>>? onNotificationMarkAllRead;
+
+  /// Membuka daftar semaian siap pindah; null berarti halaman contoh galeri.
+  final VoidCallback? onSiapPindah;
+
+  /// Membuka meja siklus berjalan dari detail siklus; null berarti contoh.
+  final VoidCallback? onOpenCycleTable;
 
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
   final VoidCallback? onOpenWeather;
@@ -588,15 +622,19 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     final cuacaTersedia = _state != V2BerandaState.weatherUnavailable;
     Navigator.of(context).push(
       V2CycleDetailPage.route(
-        tableName: V2BerandaPage._tableName,
+        tableName: widget.heroTitle,
+        value: widget.heroValue,
+        total: widget.heroTotal,
         weatherTitle: cuacaTersedia ? widget.weatherTitle : null,
         weatherSubtitle: cuacaTersedia ? widget.weatherSubtitle : null,
         onOpenWeather:
             widget.onOpenWeather ??
             () => Navigator.of(context).push(V2CuacaPage.route()),
-        onOpenTable: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => V2MejaDetailPage.biasa()),
-        ),
+        onOpenTable:
+            widget.onOpenCycleTable ??
+            () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => V2MejaDetailPage.biasa()),
+            ),
       ),
     );
   }
@@ -717,17 +755,33 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
           ),
           const SizedBox(height: V2Space.lg),
         ],
-        V2BerandaHero(onTap: _openCycle),
+        V2BerandaHero(
+          title: widget.heroTitle,
+          subtitle: widget.heroSubtitle,
+          value: widget.heroValue,
+          total: widget.heroTotal,
+          onTap: _openCycle,
+        ),
         const SizedBox(height: V2Space.lg),
         V2ListItem(
           icon: V2IconName.sprout,
           title: 'Siap pindah',
           subtitle: widget.siapPindahSubtitle,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<V2SemaianItem>(
-              builder: (_) => V2SemaianDetailPage.siapPindah(),
-            ),
-          ),
+          onTap: () {
+            if (widget.onSiapPindah != null) {
+              widget.onSiapPindah!();
+              return;
+            }
+            if (widget.tanamTab != null) {
+              setState(() => _activeTab = v2TanamTabIndex);
+              return;
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute<V2SemaianItem>(
+                builder: (_) => V2SemaianDetailPage.siapPindah(),
+              ),
+            );
+          },
         ),
         const SizedBox(height: V2Space.lg),
         V2BerandaStats(

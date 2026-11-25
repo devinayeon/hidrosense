@@ -4,11 +4,26 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+/// Satu masalah isian dari `error.details` backend: nama field dan pesannya.
+class ApiFieldError {
+  const ApiFieldError({required this.field, required this.message});
+  final String field;
+  final String message;
+}
+
 class ApiException implements Exception {
-  const ApiException(this.status, this.code, this.message);
+  const ApiException(
+    this.status,
+    this.code,
+    this.message, {
+    this.details = const [],
+  });
   final int status;
   final String code;
   final String message;
+
+  /// Kosong kalau backend tidak mengirim `error.details`.
+  final List<ApiFieldError> details;
   @override
   String toString() => message;
 }
@@ -181,12 +196,27 @@ class ApiClient {
             : error is Map && error['message'] is String
             ? error['message']
             : 'Layanan tidak dapat memenuhi permintaan.',
+        details: _fieldErrors(error),
       );
     }
     if (json == null) {
       throw const FormatException('Respons layanan tidak valid.');
     }
     return json;
+  }
+
+  /// Membaca `error.details` dengan toleran: entri yang bentuknya salah dilewati.
+  List<ApiFieldError> _fieldErrors(Object? error) {
+    final raw = error is Map ? error['details'] : null;
+    if (raw is! List) return const [];
+    return [
+      for (final item in raw)
+        if (item is Map && item['field'] is String && item['message'] is String)
+          ApiFieldError(
+            field: item['field'] as String,
+            message: item['message'] as String,
+          ),
+    ];
   }
 
   Map<String, dynamic> _data(Map<String, dynamic> json) {

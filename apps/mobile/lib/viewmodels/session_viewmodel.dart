@@ -119,6 +119,12 @@ String _friendlyApiMessage(ApiException error) {
   if (error.code == 'VALIDATION_ERROR') {
     final message = error.message.toLowerCase();
     if (message.contains('kontrak api') || message.contains('body json')) {
+      // Backend baru menyebut field yang salah; pakai itu bila ada.
+      if (error.details.isNotEmpty) {
+        final first = error.details.first;
+        final label = first.field.replaceAll('_', ' ').replaceAll('.', ' ');
+        return 'Ada isian yang belum sesuai ($label): ${first.message}';
+      }
       return 'Ada isian yang belum sesuai. Periksa kembali data yang Anda masukkan.';
     }
     if (message.contains('header sinkronisasi')) {

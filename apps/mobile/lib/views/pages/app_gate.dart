@@ -39,10 +39,13 @@ class _AppGateState extends ConsumerState<AppGate> {
         onGenerateRoute: (_) => MaterialPageRoute<void>(
           builder: (_) {
             if (user == null) {
-              return V2OnboardingPage(
-                onLogin: (username, password) =>
-                    v2SessionLogin(ref, username, password),
+              // Container dipegang di awal: halaman login dilepas begitu sesi
+              // terpasang, jadi `ref` halaman tidak aman dipakai sesudahnya.
+              final container = ProviderScope.containerOf(
+                context,
+                listen: false,
               );
+              return V2OnboardingPage(onLogin: v2SessionLogin(container));
             }
             return V2BerandaConnectedPage(
               userName: user.name,

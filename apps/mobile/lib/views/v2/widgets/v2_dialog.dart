@@ -39,33 +39,35 @@ class V2Dialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(V2Radius.sheet),
         boxShadow: V2Shadow.card,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: V2Type.h2),
-          if (body != null) ...[
-            const SizedBox(height: V2Space.lg),
-            Text(body!, style: V2Type.body.copyWith(color: V2Colors.muted)),
-          ],
-          if (child != null) ...[const SizedBox(height: V2Space.lg), child!],
-          const SizedBox(height: V2Space.lg),
-          V2Button(
-            label: primaryLabel,
-            type: type == V2DialogType.destructive
-                ? V2ButtonType.destructive
-                : V2ButtonType.primary,
-            onPressed: onPrimary,
-          ),
-          if (secondaryLabel != null) ...[
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: V2Type.h2),
+            if (body != null) ...[
+              const SizedBox(height: V2Space.lg),
+              Text(body!, style: V2Type.body.copyWith(color: V2Colors.muted)),
+            ],
+            if (child != null) ...[const SizedBox(height: V2Space.lg), child!],
             const SizedBox(height: V2Space.lg),
             V2Button(
-              label: secondaryLabel!,
-              type: V2ButtonType.tertiary,
-              onPressed: onSecondary,
+              label: primaryLabel,
+              type: type == V2DialogType.destructive
+                  ? V2ButtonType.destructive
+                  : V2ButtonType.primary,
+              onPressed: onPrimary,
             ),
+            if (secondaryLabel != null) ...[
+              const SizedBox(height: V2Space.lg),
+              V2Button(
+                label: secondaryLabel!,
+                type: V2ButtonType.tertiary,
+                onPressed: onSecondary,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

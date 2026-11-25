@@ -29,6 +29,36 @@ void main() {
     );
   });
 
+  test('detail field dari backend dipakai sebagai pesan yang spesifik', () {
+    expect(
+      serviceError(
+        const ApiException(
+          400,
+          'VALIDATION_ERROR',
+          'Input tidak sesuai kontrak API.',
+          details: [
+            ApiFieldError(field: 'jumlah_lubang', message: 'Maksimal 1000.'),
+          ],
+        ),
+      ),
+      'Ada isian yang belum sesuai (jumlah lubang): Maksimal 1000.',
+    );
+  });
+
+  test('tanpa detail field, kalimat umum tetap dipakai', () {
+    expect(
+      serviceError(
+        const ApiException(
+          400,
+          'VALIDATION_ERROR',
+          'Input tidak sesuai kontrak API.',
+          details: [],
+        ),
+      ),
+      'Ada isian yang belum sesuai. Periksa kembali data yang Anda masukkan.',
+    );
+  });
+
   test('header sinkronisasi yang rusak diberi kalimat pengguna', () {
     expect(
       serviceError(

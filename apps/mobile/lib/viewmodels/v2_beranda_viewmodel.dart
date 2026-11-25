@@ -22,6 +22,10 @@ class V2BerandaData {
     this.readySeedlingSubtitle = 'Belum ada semaian siap pindah',
     this.lowStockCount = '0',
     this.filledHoles = '0',
+    this.heroTitle = 'Belum ada siklus',
+    this.heroSubtitle = 'Mulai dari semai benih',
+    this.heroValue = 0,
+    this.heroTotal = 60,
     this.weatherTitle,
     this.weatherSubtitle,
   });
@@ -44,6 +48,18 @@ class V2BerandaData {
 
   /// Total lubang terisi dari semua meja aktif.
   final String filledHoles;
+
+  /// Judul kartu hero siklus berjalan (nama meja aktif / semaian aktif).
+  final String heroTitle;
+
+  /// Subjudul kartu hero siklus berjalan.
+  final String heroSubtitle;
+
+  /// Nilai HSS pada cincin siklus.
+  final int heroValue;
+
+  /// Total hari siklus (bawaan 60 HSS).
+  final int heroTotal;
 
   /// Judul kartu cuaca, mis. `Berawan, 29°C`. Null saat cuaca tak tersedia.
   final String? weatherTitle;
@@ -78,9 +94,38 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
 
   final ready = nursery.records.where((item) => item.canTransfer).toList();
   final lowStock = berandaLowStockCount(inventory.activeRecords);
-  final filledHoles = tables.records
-      .where((table) => table.isActive)
-      .fold<int>(0, (sum, table) => sum + table.activePlants);
+  final activeTables = tables.records.where((table) => table.isActive).toList();
+  final filledHoles = activeTables.fold<int>(
+    0,
+    (sum, table) => sum + table.activePlants,
+  );
+  final populatedTable = activeTables
+      .where((table) => table.activePlants > 0)
+      .firstOrNull;
+  final activeNursery = nursery.records
+      .where((item) => item.remainingSeedCount > 0)
+      .firstOrNull;
+
+  final String heroTitle;
+  final String heroSubtitle;
+  final int heroValue;
+  if (populatedTable != null) {
+    final hss = (activeNursery?.ageDays ?? 15).clamp(0, 60);
+    final remaining = (60 - hss).clamp(0, 60);
+    heroTitle = populatedTable.displayName;
+    heroSubtitle = remaining == 0 ? 'Siap panen' : '$remaining hari lagi';
+    heroValue = hss;
+  } else if (activeNursery != null) {
+    final hss = (activeNursery.ageDays ?? 0).clamp(0, 60);
+    final remaining = (60 - hss).clamp(0, 60);
+    heroTitle = 'Semaian aktif';
+    heroSubtitle = '$remaining hari lagi';
+    heroValue = hss;
+  } else {
+    heroTitle = 'Belum ada siklus';
+    heroSubtitle = 'Mulai dari semai benih';
+    heroValue = 0;
+  }
 
   return V2BerandaData(
     loading: nursery.loading || inventory.isInitialLoading,
@@ -89,6 +134,9 @@ final v2BerandaDataProvider = Provider.autoDispose<V2BerandaData>((ref) {
     readySeedlingSubtitle: _readySubtitle(ready),
     lowStockCount: '$lowStock',
     filledHoles: '$filledHoles',
+    heroTitle: heroTitle,
+    heroSubtitle: heroSubtitle,
+    heroValue: heroValue,
     weatherTitle: _weatherTitle(weather.data),
     weatherSubtitle: _weatherSubtitle(weather.data),
   );
@@ -118,8 +166,7 @@ String? _weatherSubtitle(WeatherData? data) {
 /// bukan aman): semua jenis barang yang **di bawah** stok minimum atau sudah
 /// habis. Dengan begitu angka kartu selalu sama dengan jumlah baris daftar
 /// (BUG-06); barang yang tepat di angka minimum tidak dihitung (BUG-03).
-bool isBerandaLowStock(InventoryRecord item) =>
-    item.isLow || item.isOutOfStock;
+bool isBerandaLowStock(InventoryRecord item) => item.isLow || item.isOutOfStock;
 
 /// Jumlah barang "Stok menipis" untuk kartu Beranda.
 int berandaLowStockCount(Iterable<InventoryRecord> records) =>

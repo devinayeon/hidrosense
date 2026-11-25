@@ -355,14 +355,28 @@ class _BarisRangka extends StatelessWidget {
         children: [
           const V2Skeleton.circle(size: 48),
           const SizedBox(width: V2Space.lg),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              V2Skeleton.line(width: 180, height: 16),
-              SizedBox(height: V2Space.sm),
-              V2Skeleton.line(width: 120, height: 16),
-            ],
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: const V2Skeleton.line(
+                    width: double.infinity,
+                    height: 16,
+                  ),
+                ),
+                const SizedBox(height: V2Space.sm),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: const V2Skeleton.line(
+                    width: double.infinity,
+                    height: 16,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

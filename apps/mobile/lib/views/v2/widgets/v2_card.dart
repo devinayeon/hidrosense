@@ -27,7 +27,7 @@ class V2Card extends StatelessWidget {
     V2CardTone.plain => V2Colors.white,
     V2CardTone.soft => V2Colors.blue50,
     V2CardTone.brand => V2Colors.blue500,
-    V2CardTone.bone => const Color(0xFFF7F3EA),
+    V2CardTone.bone => V2Colors.bone,
   };
 
   Color get _titleColor =>
