@@ -6,7 +6,7 @@ memakai status test case nyata dari `qa/testing.md`.
 
 Ringkasan: requirement yang diimplementasikan → **PASS**. Requirement yang belum
 dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi → tabel
-**§Gap**. Diperbarui **25 November 2026** (fitur deteksi/rotasi kini dibangun).
+**§Gap**. Diperbarui **26 November 2026** (lanjutan Sesi 6: D-34/D-35/D-36/D-39).
 
 > Perubahan besar vs versi sebelumnya: PB-05 (deteksi hama) dan PB-06 (rekomendasi &
 > perawatan) **kini ada**; evaluasi model AI **tidak lagi BLOCKED**. Gap lama
@@ -25,6 +25,11 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 > PERLU-KEPUTUSAN / PERLU-KLARIFIKASI. `flutter analyze` **0 temuan**;
 > Regression: **816/816** tes mobile lulus. Gap baru **G-19..G-21** + pertanyaan terbuka
 > (`qa/decisions.md` §7). Backend tidak diubah.
+> **Lanjutan Sesi 6 (26 Nov 2026)** mengerjakan keputusan PM D-34..D-36 & D-39:
+> password 6–12 & telepon 10–13 digit (BUG-56, butuh backend), pop-up konfirmasi simpan
+> (BUG-57), tombol "Aktifkan" pegawai (BUG-58), keterangan penjualan (BUG-59).
+> `flutter analyze` **0 temuan**; Regression: **841/841** tes mobile lulus. Gap **G-21**
+> menjadi RESOLVED; gap baru **G-22** (password server min 12). D-37 & S-05/G-18 di-skip.
 
 ---
 
@@ -120,7 +125,8 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | G-18 | Menu Sinkron pada aplikasi online-only | Antrean hanya berisi kiriman gagal; saat online tombol "Sinkron sekarang" menjawab "Tidak ada data untuk disinkronkan" | OPEN (D-19) | PM memutuskan: pertahankan menu dengan kalimat "Semua data sudah tersimpan di server", atau sembunyikan menu Sinkron |
 | G-19 | NFR-5 "12 meja × 250 = 3.000 lubang" dapat dibaca sebagai maksimum **per meja** 250 | Kontrak & DB per meja maks **1000** lubang; "3.000" adalah **kapasitas kebun total** (12 × 250), bukan batas per meja | OPEN (klarifikasi dokumen) | Perjelas kalimat NFR-5: "12 meja, masing-masing 250 → kapasitas total 3.000" |
 | G-20 | BR/use case menyiratkan petani kelola profil sendiri (lihat/edit/nonaktif) | FigCraft 3.1 "Lainnya (Petani)" hanya Akun pegawai/Penjualan/Sinkron; tak ada rute profil petani & tak ada endpoint nonaktifkan petani (lihat juga G-08) | OPEN | Selaraskan dokumen, atau tentukan apakah profil petani mandiri memang dibutuhkan |
-| G-21 | PB-11/3.16 mencakup akun pegawai, tetapi aktivasi ulang tidak disebut | FigCraft 3.16 menyatakan "Aktivasi ulang tidak ada di lingkup"; backend **punya** `POST /employees/:id/activate`; UI 3.17 hanya "Ubah" | OPEN (keputusan produk, D-36) | Bila diinginkan, tambah tombol "Aktifkan" (backend siap); bila tidak, catat eksplisit di lingkup |
+| G-21 | PB-11/3.16 mencakup akun pegawai, tetapi aktivasi ulang tidak disebut | FigCraft 3.16 menyatakan "Aktivasi ulang tidak ada di lingkup"; backend **punya** `POST /employees/:id/activate`; UI 3.17 kini punya tombol "Aktifkan" (D-36, BUG-58) | RESOLVED (D-36) | — |
+| G-22 | D-34 menetapkan password **min 6 / max 12** | `apps/backend/src/common/validation.ts:42` `newPasswordSchema = z.string().min(12).max(128)` → password 6–11 ditolak server (klien menerima) | OPEN (butuh backend/PM) | Selaraskan server ke `min(6).max(12)`, atau batalkan D-34. Telepon tidak bermasalah (kontrak server lebih longgar). Lihat BUG-56 |
 
 ---
 
@@ -130,7 +136,7 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
 | 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` tersisa **BUG-04** (dependensi backend) di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **816/816** (`flutter test`, 25 Nov 2026, `testing.md` §1) |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **841/841** (`flutter test`, 26 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |

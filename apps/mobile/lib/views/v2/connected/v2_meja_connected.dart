@@ -268,7 +268,7 @@ class V2MejaConnectedTab extends ConsumerWidget {
     final result = await Navigator.of(context).push<V2MejaItem>(
       V2MejaFormPage.route(takenCodes: takenCodes),
     );
-    if (result == null) return;
+    if (result == null || !context.mounted) return;
     // Id meja ditentukan server, jadi baris baru baru bisa tampil setelah
     // jawaban tiba. Beri umpan balik segera supaya daftar lama tidak terlihat
     // seperti diam saja (K-17).

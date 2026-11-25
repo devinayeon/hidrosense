@@ -67,6 +67,11 @@ class V2EmployeeDeactivated extends V2EmployeeResult {
   const V2EmployeeDeactivated(super.employee);
 }
 
+/// Hasil halaman detail saat pegawai nonaktif diaktifkan kembali (D-36).
+class V2EmployeeActivated extends V2EmployeeResult {
+  const V2EmployeeActivated(super.employee);
+}
+
 /// Inisial dua kata pertama sebuah nama (dipakai kartu Profil dan avatar baris).
 String v2InitialsOf(String name) {
   final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);

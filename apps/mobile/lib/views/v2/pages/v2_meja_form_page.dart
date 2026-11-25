@@ -159,7 +159,7 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
     super.dispose();
   }
 
-  void _simpan() {
+  Future<void> _simpan() async {
     final kode = _kode.text.trim().toUpperCase();
     final lubang = int.tryParse(_lubang.text.trim()) ?? 0;
 
@@ -191,6 +191,19 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
         _lubangError != null ||
         _keteranganError != null) {
       return;
+    }
+
+    // Konfirmasi ulang sebelum menyimpan perubahan (K-18, D-35). Form tambah
+    // tidak memakai konfirmasi karena tidak mengubah data yang ada.
+    if (_ubah) {
+      final confirmed = await showV2Dialog(
+        context,
+        title: 'Simpan perubahan meja?',
+        body: 'Perubahan meja akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        secondaryLabel: 'Batal',
+      );
+      if (confirmed != true || !mounted) return;
     }
 
     final meja =

@@ -13,14 +13,14 @@ perubahan itu tidak mengubah perilaku produk.
 | Severity | Ditemukan | Diperbaiki | Terbuka / review |
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
-| S2 Major | 14 | 13 | 1 |
-| S3 Minor | 38 | 35 | 3 |
+| S2 Major | 16 | 14 | 2 |
+| S3 Minor | 40 | 37 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **55** | **51** | **4** |
+| **Total** | **59** | **54** | **5** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55 (51).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,57,58,59 (54).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
-BUG-12/13 (S3, harness ML & doc API usang).
+BUG-12/13 (S3, harness ML & doc API usang), BUG-56 (S2, password server min 12 — butuh backend).
 Catatan: BUG-31 tetap dihitung FIXED walau sempat dibuka ulang (OPEN) di sesi 4, karena
 sudah diperbaiki ulang dan lulus tes; hitungan menemukan/memperbaiki tidak berubah dua kali.
 Gap fitur (bukan bug kode) dicatat di `qa/rtm.md` §Gap. Tidak ada temuan **S1**.
@@ -46,6 +46,12 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > BUG-39..BUG-43, lalu BUG-44..BUG-47 dari uji manual dev FE. Semuanya **FIXED di kode**
 > + regression test (701 tes lulus). **Verifikasi ulang di HP asli belum dilakukan**;
 > hasil manual dev FE dicatat sebagai "diuji manual dev FE", bukan PASS QA.
+> Sesi 6 (25 Nov 2026): triase 30 temuan pelapor (K-01..K-30, D-33) → BUG-48..BUG-55
+> **FIXED di kode** + regression test (**816 PASS**, `flutter analyze` 0).
+> Lanjutan Sesi 6 (26 Nov 2026): keputusan PM D-34/D-35/D-36/D-39 → BUG-57..BUG-59
+> **FIXED di kode** + regression test (**841 PASS**); **BUG-56** (password server min 12)
+> dicatat **butuh backend/PM** (`NEEDS-HUMAN-REVIEW`). Semua verifikasi ulang di HP asli
+> masih menunggu dev FE (bukan klaim PASS).
 
 ---
 
@@ -653,6 +659,61 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Penyebab (akar): filter `activePlants > 0` menyembunyikan semua meja tanpa menjelaskan sebabnya.
 - Status: **FIXED di kode, belum diuji ulang di HP** — pesan "Belum ada meja dengan tanaman aktif…" tampil saat daftar kosong. File: `pest_scan_page.dart`.
 - Regression test: `apps/mobile/test/pest_scan_page_test.dart`.
+
+## BUG-56 [S2] Password 6–11 karakter ditolak server walau klien mengizinkan (butuh backend)
+- Area/PB: 03 Akun — Tambah/Ubah pegawai (3.7/3.12) · Ditemukan lewat: keputusan PM D-34 (26 Nov 2026, K-02)
+- Langkah reproduksi: 1) Petani → Akun pegawai → Tambah/ubah pegawai; 2) isi password 6–11 karakter; 3) Simpan.
+- Ekspektasi (D-34): password minimal 6 karakter diterima.
+- Aktual: klien menerima (validasi 6–12), tetapi server menolak dengan `VALIDATION_ERROR` karena
+  `apps/backend/src/common/validation.ts:42` memakai `newPasswordSchema = z.string().min(12).max(128)`.
+- Bukti: `apps/mobile/test/v2_employee_d34_test.dart` (batas klien 6–12 dipaku); baris server
+  `apps/backend/src/common/validation.ts:42`.
+- Penyebab (akar): kontrak server belum disesuaikan dengan D-34. **Di luar batas FE** (backend READ-ONLY).
+- Status: **BUTUH BACKEND/PM** — validasi klien sudah 6–12; agar konsisten, server perlu
+  `min(6).max(12)`. Telepon **tidak** bermasalah: kontrak server
+  (`apps/backend/src/features/accounts/contracts.ts:12`) lebih longgar daripada 10–13 digit.
+- Mitigasi klien: batas 6–12 tetap ditampilkan agar pengguna mengisi nilai yang diterima kedua sisi;
+  pesan galat server tetap ditampilkan apa adanya.
+
+## BUG-57 [S3] Tidak ada konfirmasi sebelum menyimpan perubahan akun/meja
+- Area/PB: 03 Akun — Ubah pegawai (3.12); 06 Meja — Ubah meja (6.18) · Ditemukan lewat: QA manual Sesi 6 (K-03/K-18)
+- Langkah reproduksi: 1) buka Ubah pegawai/meja; 2) ubah satu isian; 3) tekan Simpan.
+- Ekspektasi (D-35): muncul pop-up konfirmasi sebelum menyimpan.
+- Aktual (sebelum perbaikan): Simpan langsung mengirim/menutup form tanpa konfirmasi.
+- Bukti: `apps/mobile/test/v2_meja_d35_test.dart` — di kode lama hasil pop tidak null sebelum dialog.
+- Penyebab (akar): aksi Simpan tidak meminta konfirmasi ulang untuk perubahan data yang sudah ada.
+- Status: **FIXED di kode, belum diuji ulang di HP** — dialog `showV2Dialog` pada mode ubah
+  (`v2_employee_form_page.dart` "Simpan perubahan akun?"; `v2_meja_form_page.dart`
+  "Simpan perubahan meja?"). Form tambah tetap tanpa konfirmasi.
+- Regression test: `apps/mobile/test/v2_meja_d35_test.dart`, `apps/mobile/test/v2_employee_d34_test.dart`.
+
+## BUG-58 [S2] Tidak ada jalan mengaktifkan kembali pegawai nonaktif
+- Area/PB: 03 Akun — Detail pegawai nonaktif (3.17) · Ditemukan lewat: QA manual Sesi 6 (K-05)
+- Langkah reproduksi: 1) Petani → Akun pegawai; 2) buka pegawai nonaktif; 3) cari cara mengaktifkan kembali.
+- Ekspektasi (D-36): tersedia aksi "Aktifkan" untuk petani.
+- Aktual (sebelum perbaikan): hanya tombol "Ubah"; server sudah punya `POST /employees/:id/activate` (204).
+- Bukti: `apps/mobile/test/v2_employee_d36_test.dart` — di kode lama tombol "Aktifkan" tidak ada.
+- Penyebab (akar): `V2EmployeeStore` belum punya operasi `activate`; UI detail belum menampilkannya.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `V2EmployeeStore.activate` +
+  `V2EmployeeApiStore.activate` (`POST /employees/:id/activate`), `V2EmployeeActivated`, tombol
+  "Aktifkan" (menggantikan "Nonaktifkan" saat nonaktif), toast "<nama> diaktifkan kembali".
+  File: `v2_akun_employee_store.dart`, `v2_employee_store.dart`, `v2_akun_employee.dart`,
+  `v2_employee_detail_page.dart`, `v2_employee_list_page.dart`.
+- Regression test: `apps/mobile/test/v2_employee_d36_test.dart`.
+
+## BUG-59 [S3] Keterangan penjualan tidak ada di form/detail (fitur D-39)
+- Area/PB: 08 Penjualan — Catat/Ubah penjualan (8.7/8.21), Detail (8.15) · Ditemukan lewat: QA manual Sesi 6 (K-25)
+- Langkah reproduksi: 1) Penjualan → Catat penjualan; 2) cari isian catatan bebas; 3) simpan.
+- Ekspektasi (D-39): tersedia "Keterangan (opsional)" yang tersimpan & tampil kembali.
+- Aktual (sebelum perbaikan): model/form tidak mengenal kolom keterangan walau server mendukung
+  (`sales/contracts.ts:27,36,44`).
+- Bukti: `apps/mobile/test/v2_penjualan_d39_test.dart` — di kode lama field ke-4 tidak ada dan
+  draft tanpa `keterangan`.
+- Penyebab (akar): fitur belum diimplementasikan (di luar desain FigCraft) sampai diputuskan PM.
+- Status: **FIXED di kode, belum diuji ulang di HP** — field `keterangan` pada
+  `V2Penjualan`/`V2PenjualanDraft`, isian form, kartu info di detail, dan pemetaan antrean
+  (`v2_penjualan_mappers.dart`); dikirim sebagai `note` pada create/update/markPaid.
+- Regression test: `apps/mobile/test/v2_penjualan_d39_test.dart`.
 
 ---
 

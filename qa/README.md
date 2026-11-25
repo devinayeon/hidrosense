@@ -28,6 +28,12 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 > **0 temuan** (11 info lama di `lib/features/pest/` ikut dibersihkan); `flutter test` mobile
 > kini **816 PASS** (koreksi: jumlah nyata setelah sesi 5 adalah **808**, bukan 701). Gap baru
 > **G-19..G-21** + pertanyaan terbuka di `decisions.md` §7. **Backend tidak diubah.**
+> Lanjutan Sesi 6 (26 Nov 2026): mengerjakan keputusan PM **D-34..D-36 & D-39**
+> (BUG-56..59) — password 6–12 & telepon 10–13 digit, pop-up konfirmasi simpan,
+> tombol "Aktifkan" pegawai, keterangan penjualan. `flutter analyze` **0 temuan**;
+> `flutter test` mobile kini **841 PASS**. **D-37 & S-05/G-18 di-skip** (keputusan PM).
+> Catatan: D-34 password 6–11 hanya lolos di klien; server masih min 12 (BUG-56/G-22,
+> butuh backend). Status BUG-56..59 = **FIXED di kode, belum diuji ulang di HP**.
 
 ## Dokumen
 

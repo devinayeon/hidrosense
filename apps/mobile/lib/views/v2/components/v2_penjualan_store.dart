@@ -9,6 +9,7 @@ class V2PenjualanDraft {
     required this.jumlahKg,
     required this.hargaPerKg,
     required this.pembayaran,
+    this.keterangan,
   });
 
   final DateTime tanggal;
@@ -17,6 +18,9 @@ class V2PenjualanDraft {
   final double jumlahKg;
   final double hargaPerKg;
   final V2PenjualanBayar pembayaran;
+
+  /// Catatan bebas opsional (D-39); null/kosong berarti tanpa keterangan.
+  final String? keterangan;
 }
 
 /// Data yang dimuat sekali saat daftar penjualan dibuka.

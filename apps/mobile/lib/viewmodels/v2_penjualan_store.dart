@@ -63,6 +63,7 @@ class V2PenjualanQueueStore implements V2PenjualanStore {
       jumlahKg: draft.jumlahKg,
       hargaPerKg: draft.hargaPerKg,
       pembayaran: draft.pembayaran,
+      keterangan: draft.keterangan,
       sync: V2PenjualanSync.terkirim,
     );
   }
@@ -174,6 +175,7 @@ class V2PenjualanApiStore
             date: apiDate(draft.tanggal),
             buyer: draft.pembeli,
             status: _statusWire(draft.pembayaran),
+            note: draft.keterangan,
           ),
         );
         return v2PenjualanFromItem(updated, _viewModel.current.batches);
@@ -197,6 +199,8 @@ class V2PenjualanApiStore
           date: apiDate(existing.tanggal),
           buyer: existing.pembeli,
           status: 'lunas',
+          // Pertahankan catatan pengguna saat menandai lunas (D-39).
+          note: existing.keterangan,
         ),
       );
       return v2PenjualanFromItem(updated, _viewModel.current.batches);
@@ -322,6 +326,7 @@ class V2PenjualanApiStore
             : V2PenjualanBayar.belumLunas,
         panen: label,
         panenAsal: 'Dari $label',
+        keterangan: payload.note,
         panenId: payload.harvestId,
         tanggalPanen: tanggalPanen,
         sync: V2PenjualanSync.antrean,
@@ -493,6 +498,7 @@ class V2PenjualanApiStore
       harvestId: panenId,
       quantity: draft.jumlahKg,
       price: draft.hargaPerKg,
+      note: draft.keterangan,
     );
   }
 
