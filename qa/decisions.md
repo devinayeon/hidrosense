@@ -271,6 +271,28 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
 - **G-17 (SRS offline-first → online-only, D-14):** **SA** yang merevisi SRS → panduan
   revisi dibuat di `qa/srs-revision-guide.md`.
 
+## D-31 — Pencocokan jenis potong stok pakai pengenal stabil / kata kunci (BUG-46) (25 Nov 2026)
+- **Konteks:** Fitur-3 (D-29) hanya menawarkan stok berjenis "nutrisi"/"obat". Di data
+  nyata nama jenis bisa berbeda (mis. seed backend memakai **"Obat & Pestisida"**), jadi
+  pencocokan nama persis membuat obat tidak pernah muncul (BUG-46).
+- **Keputusan:** jangan menebak atau mengganti nama jenis di server. Barang inventaris
+  yang punya **`id_obat`** (pengenal stabil) dianggap obat; untuk sisanya, nama jenis
+  dicocokkan per **kata kunci** (`nutrisi`, `obat`, `pestisida`), bukan sama persis.
+  Backend **tidak** diubah; hanya `apps/mobile/`.
+- **Alasan:** mengandalkan pengenal stabil lebih tahan terhadap variasi ejaan nama jenis,
+  sementara kata kunci menutup barang nutrisi/obat yang belum tertaut katalog obat.
+
+## D-32 — Filter rentang tanggal WIB di Riwayat rotasi (Fitur-4, melengkapi D-28) (25 Nov 2026)
+- **Konteks:** dev FE menilai Riwayat rotasi (Fitur-1) perlu filter rentang tanggal,
+  bukan hanya filter status/hama/meja.
+- **Pilihan:** tambahkan filter **dari–sampai** (inklusif) berbasis **tanggal WIB** yang
+  sama dengan pengelompokan D-28, berdampingan dengan filter lama dan pengelompokan
+  header tanggal. Sediakan tombol **hapus filter**; bila rentang mengosongkan daftar,
+  tampilkan pesan netral ("Tidak ada riwayat pada rentang tanggal ini") + tombol hapus.
+  Filter berjalan **di layar** lewat `saringRiwayatTanggal`; server tidak diubah.
+- **Alasan:** batas inklusif + tanggal WIB konsisten mencegah entri tengah malam masuk
+  kelompok yang salah. Aman pada skala teks 2.0.
+
 ---
 
 ## §6 — Inkonsistensi spesifikasi (diuji kedua sisi, asumsi dicatat)

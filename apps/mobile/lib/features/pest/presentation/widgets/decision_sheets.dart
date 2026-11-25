@@ -22,16 +22,37 @@ class StockOption {
 ///
 /// Hanya nutrisi dan obat yang dipakai untuk perawatan; benih, media, dan
 /// jenis lain tidak ditawarkan supaya stok tanam tidak ikut terpotong.
+///
+/// Nama jenis mengikuti data nyata (mis. `Nutrisi`, `Obat & Pestisida`), jadi
+/// pencocokan memakai kata kunci, bukan nama persis. Keputusan D-31.
 const Set<String> jenisPotongStok = <String>{'nutrisi', 'obat'};
 
-/// `true` bila jenis inventaris boleh dipotong dari rekomendasi (D-29).
-bool bolehPotongStok(String category) =>
-    jenisPotongStok.contains(category.trim().toLowerCase());
+bool _jenisCocok(String category) {
+  final jenis = category.trim().toLowerCase();
+  if (jenis.isEmpty) return false;
+  return jenis == 'nutrisi' ||
+      jenis.contains('nutrisi') ||
+      jenis == 'obat' ||
+      jenis.contains('obat') ||
+      jenis.contains('pestisida');
+}
 
-/// Daftar stok yang boleh dipilih dari [records] aktif (D-29).
+/// `true` bila jenis inventaris boleh dipotong dari rekomendasi (D-29).
+///
+/// Nama jenis dari server bisa `Obat & Pestisida`, bukan hanya `obat`.
+bool bolehPotongStok(String category) => _jenisCocok(category);
+
+/// `true` bila satu baris inventaris boleh dipotong (D-31).
+///
+/// Barang yang punya `id_obat` dikenali sebagai obat lewat pengenal stabil,
+/// jadi tidak bergantung pada ejaan nama jenis.
+bool bolehPotongStokRecord(InventoryRecord item) =>
+    item.medicineId != null || _jenisCocok(item.category);
+
+/// Daftar stok yang boleh dipilih dari [records] aktif (D-29/D-31).
 List<StockOption> stockOptionsDari(Iterable<InventoryRecord> records) => <StockOption>[
   for (final r in records)
-    if (r.active && bolehPotongStok(r.category))
+    if (r.active && bolehPotongStokRecord(r))
       StockOption(id: r.id, name: r.name, unit: r.unit),
 ];
 

@@ -46,6 +46,27 @@ class RiwayatHarian {
   String get label => labelTanggalWib(tanggal);
 }
 
+/// Saring riwayat ke rentang tanggal WIB, dari–sampai inklusif (D-32).
+///
+/// Batas tanggal saja (jam diabaikan) supaya entri pada hari terakhir ikut
+/// tampil. Null berarti batas itu terbuka.
+List<PestRecommendation> saringRiwayatTanggal(
+  List<PestRecommendation> items, {
+  DateTime? dari,
+  DateTime? sampai,
+}) {
+  final awal = dari == null ? null : DateTime(dari.year, dari.month, dari.day);
+  final akhir = sampai == null
+      ? null
+      : DateTime(sampai.year, sampai.month, sampai.day);
+  return <PestRecommendation>[
+    for (final item in items)
+      if ((awal == null || !tanggalWibRekomendasi(item).isBefore(awal)) &&
+          (akhir == null || !tanggalWibRekomendasi(item).isAfter(akhir)))
+        item,
+  ];
+}
+
 /// Kelompokkan riwayat per tanggal WIB, tanpa mengubah urutan kemunculan.
 ///
 /// Urutan grup mengikuti kemunculan pertama di [items] supaya urutan terbaru

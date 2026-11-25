@@ -35,6 +35,14 @@ int _jumlahBahan(String? amount) {
   return value <= 0 ? 1 : value.round();
 }
 
+/// Nama bahan dari inventaris; `Bahan` bila barisnya tak lagi ada di daftar.
+String _namaBahan(List<InventoryRecord> inventaris, String inventoryId) {
+  final item = inventaris
+      .where((row) => row.id == inventoryId)
+      .firstOrNull;
+  return item == null ? 'Bahan' : v2NamaBenih(item.name);
+}
+
 /// Pemetaan satu batch penyemaian backend ke model page 05.
 V2SemaianItem v2SemaianItemFromRecord(
   SowingRecord record, {
@@ -45,6 +53,17 @@ V2SemaianItem v2SemaianItemFromRecord(
       ? null
       : inventaris.where((item) => item.id == material.inventoryId).firstOrNull;
   final pindah = record.seedCount - record.remainingSeedCount;
+  // Semua baris bahan ikut ditampilkan (BUG-44): kartu detail tidak boleh
+  // hanya menyebut bahan pertama.
+  final bahanList = <V2SemaianBahanPakai>[
+    for (final line in record.materials)
+      V2SemaianBahanPakai(
+        nama: _namaBahan(inventaris, line.inventoryId),
+        jumlah: _jumlahBahan(line.amount),
+        satuan: line.unit,
+        inventoryId: line.inventoryId,
+      ),
+  ];
   return V2SemaianItem(
     id: record.id,
     nama: benih == null ? 'Semaian' : v2NamaBenih(benih.name),
@@ -59,6 +78,7 @@ V2SemaianItem v2SemaianItemFromRecord(
     bahanInventoryId: material?.inventoryId,
     bahanAmount: material?.amount,
     bahanUnit: material?.unit,
+    bahanList: bahanList.isEmpty ? null : List.unmodifiable(bahanList),
   );
 }
 
@@ -122,63 +142,112 @@ class V2SemaianConnectedTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _tambah(BuildContext context, WidgetRef ref) async {
-    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
-    final bahan = v2BahanSemaianDariInventaris(inventaris);
-    if (bahan.isEmpty) {
-      _pesan(context, 'Belum ada benih aktif di inventaris.');
-      return;
-    }
-    final result = await Navigator.of(context).push<V2SemaianItem>(
-      V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
-    );
-    if (result == null) return;
-    final pakai = result.bahanList;
-    final inventoryId = result.bahanInventoryId;
-    if ((pakai == null || pakai.isEmpty) && inventoryId == null) {
-      if (!context.mounted) return;
-      _pesan(context, 'Pilih bahan dari inventaris.');
-      return;
-    }
-    try {
-      await ref
-          .read(connectedNurseryProvider.notifier)
-          .saveSowing(
-            SowingDraft(
-              date: apiDate(result.tanggalSemai),
-              seedCount: result.jumlahBenih,
-              note: result.keterangan ?? '',
-              inventoryId: inventoryId,
-              amount: result.bahanAmount ?? '1',
-              unit: result.bahanUnit ?? 'pak',
-              materials: [
-                for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
-                  if (bahan.inventoryId != null)
-                    SowingMaterialDraft(
-                      inventoryId: bahan.inventoryId!,
-                      amount: '${bahan.jumlah}',
-                      unit: bahan.satuan,
-                    ),
-              ],
-            ),
-          );
-      if (!context.mounted) return;
-      _pesan(context, 'Semaian ditambahkan.');
-    } catch (error) {
-      if (!context.mounted) return;
-      _pesan(context, serviceError(error));
-    }
-  }
+  Future<void> _tambah(BuildContext context, WidgetRef ref) =>
+      v2TambahSemaian(context, ref);
 
   Future<void> _bukaDetail(
     BuildContext context,
     WidgetRef ref,
     V2SemaianItem item,
   ) {
-    return Navigator.of(context).push<V2SemaianItem>(
-      MaterialPageRoute<V2SemaianItem>(
-        builder: (_) => V2SemaianConnectedDetailPage(item: item),
-      ),
+    return v2BukaDetailSemaian(context, item);
+  }
+}
+
+/// Tambah semaian dari inventaris nyata (form 5.7). Dipakai tab Semaian dan
+/// daftar semaian tersambung supaya keduanya satu perilaku.
+Future<void> v2TambahSemaian(BuildContext context, WidgetRef ref) async {
+  final inventaris = ref.read(connectedInventoryProvider).activeRecords;
+  final bahan = v2BahanSemaianDariInventaris(inventaris);
+  if (bahan.isEmpty) {
+    _pesan(context, 'Belum ada benih aktif di inventaris.');
+    return;
+  }
+  final result = await Navigator.of(context).push<V2SemaianItem>(
+    V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
+  );
+  if (result == null) return;
+  final pakai = result.bahanList;
+  final inventoryId = result.bahanInventoryId;
+  if ((pakai == null || pakai.isEmpty) && inventoryId == null) {
+    if (!context.mounted) return;
+    _pesan(context, 'Pilih bahan dari inventaris.');
+    return;
+  }
+  try {
+    await ref
+        .read(connectedNurseryProvider.notifier)
+        .saveSowing(
+          SowingDraft(
+            date: apiDate(result.tanggalSemai),
+            seedCount: result.jumlahBenih,
+            note: result.keterangan ?? '',
+            inventoryId: inventoryId,
+            amount: result.bahanAmount ?? '1',
+            unit: result.bahanUnit ?? 'pak',
+            materials: [
+              for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
+                if (bahan.inventoryId != null)
+                  SowingMaterialDraft(
+                    inventoryId: bahan.inventoryId!,
+                    amount: '${bahan.jumlah}',
+                    unit: bahan.satuan,
+                  ),
+            ],
+          ),
+        );
+    if (!context.mounted) return;
+    _pesan(context, 'Semaian ditambahkan.');
+  } catch (error) {
+    if (!context.mounted) return;
+    _pesan(context, serviceError(error));
+  }
+}
+
+/// Buka detail semaian tersambung; hasilnya menggantikan baris pemanggil.
+Future<V2SemaianItem?> v2BukaDetailSemaian(
+  BuildContext context,
+  V2SemaianItem item,
+) {
+  return Navigator.of(context).push<V2SemaianItem>(
+    MaterialPageRoute<V2SemaianItem>(
+      builder: (_) => V2SemaianConnectedDetailPage(item: item),
+    ),
+  );
+}
+
+/// Daftar semaian tersambung (frame 5.1) untuk dibuka dari alur lain lewat
+/// pintu yang sama — mis. tombol "Lihat semaian" di pemilih semaian (BUG-41).
+class V2SemaianConnectedListPage extends ConsumerWidget {
+  const V2SemaianConnectedListPage({super.key});
+
+  static Route<void> route() => MaterialPageRoute<void>(
+    builder: (_) => const V2SemaianConnectedListPage(),
+  );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(connectedNurseryProvider);
+    final inventaris = ref.watch(
+      connectedInventoryProvider.select((value) => value.activeRecords),
+    );
+    final items = state.records
+        .map(
+          (record) => v2SemaianItemFromRecord(record, inventaris: inventaris),
+        )
+        .toList();
+    final viewState = switch (state) {
+      ConnectedNurseryState(loading: true) when items.isEmpty =>
+        V2SemaianState.loading,
+      ConnectedNurseryState(error: _?) when items.isEmpty =>
+        V2SemaianState.error,
+      _ => V2SemaianState.ready,
+    };
+    return V2SemaianListPage(
+      items: items,
+      state: viewState,
+      onAdd: () => v2TambahSemaian(context, ref),
+      onTapItem: (item) => v2BukaDetailSemaian(context, item),
     );
   }
 }
@@ -327,11 +396,7 @@ class _V2SemaianConnectedDetailPageState
       sowings: sowings,
       inventaris: ref.read(connectedInventoryProvider).activeRecords,
     );
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => V2MejaConnectedDetailPage(item: item),
-      ),
-    );
+    await bukaDetailMeja(Navigator.of(context), tableId, item: item);
   }
 
   Future<void> _kirimPindah(V2SemaianPindah pindah) async {

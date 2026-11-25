@@ -13,12 +13,12 @@ perubahan itu tidak mengubah perilaku produk.
 | Severity | Ditemukan | Diperbaiki | Terbuka / review |
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
-| S2 Major | 7 | 6 | 1 |
-| S3 Minor | 28 | 25 | 3 |
+| S2 Major | 11 | 10 | 1 |
+| S3 Minor | 33 | 30 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **38** | **34** | **4** |
+| **Total** | **47** | **43** | **4** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38 (34).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47 (43).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
 BUG-12/13 (S3, harness ML & doc API usang).
 Catatan: BUG-31 tetap dihitung FIXED walau sempat dibuka ulang (OPEN) di sesi 4, karena
@@ -42,6 +42,10 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > (audit pintu masuk + invalidasi provider), semuanya sudah **FIXED di kode** + regression
 > test, plus 3 fitur tambahan sesuai keputusan PM (Fitur-1..3, D-27/D-28/D-29).
 > Status BUG-33..38 = **FIXED di kode, belum diuji ulang di HP** (menunggu dev FE).
+> Sesi 5 (25 Nov 2026): audit pintu masuk Detail meja & alur panen menghasilkan
+> BUG-39..BUG-43, lalu BUG-44..BUG-47 dari uji manual dev FE. Semuanya **FIXED di kode**
+> + regression test (701 tes lulus). **Verifikasi ulang di HP asli belum dilakukan**;
+> hasil manual dev FE dicatat sebagai "diuji manual dev FE", bukan PASS QA.
 
 ---
 
@@ -390,15 +394,15 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Regression test: `apps/mobile/test/v2_notifikasi_bug30_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
 
-## BUG-31 [S3, DIBUKA ULANG] Ringkasan penjualan: label bulan tidak sejajar dengan grafik
+## BUG-31 [S3] Ringkasan penjualan: label bulan tidak sejajar dengan grafik
 - Area/PB: Penjualan → Ringkasan penjualan (grafik) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), tercatat ulang dari BUG-24
 - Langkah reproduksi: 1) buka Ringkasan penjualan; 2) lihat label bulan di bawah batang (skala 1.0 dan 2.0).
 - Ekspektasi: label bulan sejajar dengan batangnya, atau tidak dipaksa sejajar.
 - Aktual: setelah perbaikan sesi 3 (FittedBox), label tetap **tidak sejajar** dengan grafik menurut dev FE.
-- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` (sesi 3) — menyejajarkan label; **tidak cukup** menurut uji manual dev FE.
+- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` (sesi 3) — menyejajarkan label; **tidak cukup** menurut uji manual dev FE. Diperbaiki ulang sesi 4 (commit `eedbb43`) dan **PASS di HP** (diuji manual dev FE, 25 Nov 2026).
 - Penyebab (akar): menyejajarkan label di bawah batang rapuh pada lebar/skala berbeda.
-- Status: **OPEN** (dibuka ulang sesi 4). Keputusan dev FE: jangan menyejajarkan lagi; ubah teks ringkasan per bulan menjadi **daftar ke bawah** (nama bulan kiri, nilai kanan rata), dan hapus label bulan yang tidak sejajar. (lihat sesi 4 / BUG-31 ulang).
-- Catatan: detail perbaikan ulang dicatat di sesi 4.
+- Status: **FIXED** — keputusan dev FE: tidak lagi menyejajarkan label; teks ringkasan per bulan jadi **daftar ke bawah** (nama bulan kiri, nilai kanan rata) dan label bulan yang tidak sejajar dihapus. File: `v2_penjualan_page.dart` / komponen ringkasan penjualan (D-25).
+- Regression test: `apps/mobile/test/v2_penjualan_chart_align_test.dart` (dibuka ulang untuk daftar per bulan).
 
 ## BUG-32 [S3] Filter riwayat rotasi rapat dan daftar terlalu panjang
 - Area/PB: Rawat/Tanaman → Riwayat rotasi (pest) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)
@@ -476,6 +480,96 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Status: **FIXED** (D-26) — audit kontrak server selesai: `POST /penyemaian` menerima `materials[]` (minimal satu, tiap baris `id_inventaris` unik), **backend tidak diubah**. Form kini multi-baris (`V2SemaianBahanPakai`, `V2SemaianItem.bahanList`): pilih/hapus baris, bahan terpakai tidak ditawarkan lagi, galat stok per baris; simpan mengirim semua `materials[]` (`SowingDraft.materials` + `SowingMaterialDraft`). File: `v2_semaian_data.dart`, `v2_semaian_form_page.dart`, `sowing_draft.dart`.
 - Regression test: `apps/mobile/test/v2_semaian_bahan_bug38_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
+
+## BUG-39 [S2] Detail meja dari halaman sukses "Pindah ke meja" bisa kosong/basi
+- Area/PB: 06 Meja Tanam — Detail meja · Ditemukan lewat: uji manual dev FE (HP asli, 25 Nov 2026) + audit pintu masuk
+- Langkah reproduksi: 1) pindahkan semaian ke meja dari alur semaian; 2) di halaman sukses tekan "Lihat meja"; 3) bandingkan kapasitas/tanaman dengan daftar Meja.
+- Ekspektasi: Detail meja menampilkan data terbaru dari server.
+- Aktual: halaman memegang salinan objek dari halaman sebelumnya, jadi kapasitas/tanaman bisa kosong atau basi.
+- Bukti: `flutter test test/v2_meja_pintu_bersama_bug39_test.dart` — gagal di kode lama (parameter `tableId` belum ada; halaman tidak pernah membaca ulang provider).
+- Penyebab (akar): dua jalur pembuka (daftar Meja dan halaman sukses pindah) mengirim snapshot berbeda; Detail meja hanya menyegarkan saat menulis.
+- Status: **FIXED di kode, belum diuji ulang di HP** — satu pintu masuk `bukaDetailMeja(navigator, tableId, item?)`; `V2MejaConnectedDetailPage` menerima `tableId` dan selalu menghitung ulang dari provider (kapasitas, tanaman, kerusakan); `item` hanya gambar awal. File: `v2_meja_connected.dart`, `v2_semaian_connected.dart`.
+- Regression test: `apps/mobile/test/v2_meja_pintu_bersama_bug39_test.dart`.
+
+## BUG-40 [S2] Semaian siap pindah tidak muncul di pemilih "Tambah tanaman"
+- Area/PB: 06 Meja Tanam — Tambah tanaman · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) buat semaian HSS ≥ 15 yang belum ditandai `siap_pindah` oleh server; 2) buka Detail meja → Tambah tanaman.
+- Ekspektasi: semaian HSS 15+ ditawarkan (sama seperti daftar Semaian).
+- Aktual: pemilih kosong karena memakai `SowingRecord.canTransfer` yang menuntut `siap_pindah` dari server.
+- Bukti: `flutter test test/v2_meja_pemilih_semaian_bug40_41_test.dart` — kasus BUG-40 gagal di kode lama (pemilih kosong).
+- Penyebab (akar): dua aturan kesiapan berbeda antara daftar Semaian (`V2SemaianItem.siapPindah`, HSS ≥ 15) dan pemilih meja (`canTransfer`).
+- Status: **FIXED di kode, belum diuji ulang di HP** — pemilih memakai `v2SemaianItemFromRecord(...).siapPindah`, satu aturan dengan daftar Semaian. File: `v2_meja_connected.dart`.
+- Regression test: `apps/mobile/test/v2_meja_pemilih_semaian_bug40_41_test.dart`.
+
+## BUG-41 [S3] "Lihat semaian" di pemilih justru kembali ke Detail meja
+- Area/PB: 06 Meja Tanam — Pilih semaian · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) buka Tambah tanaman saat belum ada semaian siap; 2) tekan "Lihat semaian".
+- Ekspektasi: daftar Semaian terbuka.
+- Aktual: pemilih tertutup dan kembali ke Detail meja.
+- Bukti: `flutter test test/v2_meja_pemilih_semaian_bug40_41_test.dart` — kasus BUG-41 gagal di kode lama (daftar semaian tidak terbuka).
+- Penyebab (akar): `V2PilihSemaianPage` memakai `Navigator.pop` bawaan karena pemanggil tidak mengirim `onLihatSemaian`.
+- Status: **FIXED di kode, belum diuji ulang di HP** — pemanggil mengirim callback: tutup pemilih lalu buka `V2SemaianConnectedListPage.route()`. File: `v2_meja_connected.dart`, `v2_semaian_connected.dart`.
+- Regression test: `apps/mobile/test/v2_meja_pemilih_semaian_bug40_41_test.dart`.
+
+## BUG-42 [S2] "Catat penjualan" dari Detail panen memakai tanggal contoh dan tidak menyimpan
+- Area/PB: 07 Panen — Detail panen · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) buka Detail panen tersambung; 2) tekan "Catat penjualan"; 3) isi lalu Simpan.
+- Ekspektasi: tanggal awal hari ini (WIB) dan penjualan tersimpan ke server.
+- Aktual: tanggal awal 15 Nov (data contoh) dan form berjalan mode pratinjau, jadi Simpan hanya menutup form.
+- Bukti: `flutter test test/v2_panen_jual_bug42_43_test.dart` — kasus BUG-42 gagal di kode lama (tanggal 15 Nov, `drafts` kosong).
+- Penyebab (akar): `V2PanenConnectedDetailPage` hanya mengirim `onUbah`; tombol "Catat penjualan" memakai jalur contoh tanpa `store`/`initialDate`.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `V2PanenDetailPage` menerima `onCatatPenjualan`; halaman tersambung mengirim `store: v2PenjualanStoreProvider` dan `initialDate: jakartaToday()`. File: `v2_panen_detail_page.dart`, `v2_panen_connected.dart`.
+- Regression test: `apps/mobile/test/v2_panen_jual_bug42_43_test.dart`.
+
+## BUG-43 [S2] Status dan sisa panen tidak berubah setelah penjualan dicatat
+- Area/PB: 07 Panen — Detail panen · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) catat penjualan untuk satu panen; 2) buka kembali Detail panen.
+- Ekspektasi: angka "Terjual" bertambah dan "Sisa" berkurang.
+- Aktual: selalu "Terjual 0 kg" karena `terjual` tidak pernah diisi.
+- Bukti: `flutter test test/v2_panen_jual_bug42_43_test.dart` — kasus BUG-43 gagal di kode lama (menampilkan "Terjual 0 kg. Sisa 100 kg.").
+- Penyebab (akar): endpoint panen tidak mengembalikan angka terjual dan mapper tidak menghitungnya dari batch penjualan.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `terjual` dihitung dari `BatchPanen.stokTersedia` (`berat layak − stok tersedia`) oleh `v2TerjualDariBatch`, reaktif ke `penjualanViewModelProvider`. Backend tidak diubah. File: `v2_panen_connected.dart`.
+- Regression test: `apps/mobile/test/v2_panen_jual_bug42_43_test.dart`.
+
+## BUG-44 [S3] "Stok terpakai" di Detail semaian hanya menyebut satu bahan
+- Area/PB: 05 Semaian — Detail semaian · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) buat semaian dengan dua bahan (BUG-38); 2) buka Detail semaian.
+- Ekspektasi: semua bahan tampil, mis. "Benih Romaine 2 pak, Nutrisi AB Mix 1 liter".
+- Aktual: hanya bahan pertama yang tampil.
+- Bukti: `flutter test test/v2_semaian_stok_bug44_test.dart` — gagal di kode lama (`bahanList` selalu null).
+- Penyebab (akar): `v2SemaianItemFromRecord` hanya membaca `materials.first`.
+- Status: **FIXED di kode, belum diuji ulang di HP** — semua `record.materials` dipetakan ke `bahanList` (nama dari inventaris). File: `v2_semaian_connected.dart`.
+- Regression test: `apps/mobile/test/v2_semaian_stok_bug44_test.dart`.
+
+## BUG-45 [S3] Tombol simpan tidak punya keadaan loading yang seragam
+- Area/PB: semua layar dengan simpan/aksi tulis · Ditemukan lewat: audit UI (25 Nov 2026)
+- Langkah reproduksi: 1) jalankan simpan yang butuh jaringan; 2) perhatikan tombol.
+- Ekspektasi: tombol menampilkan spinner dan tidak bisa ditekan ulang selama proses.
+- Aktual: sebagian layar menulis ternary `V2ButtonState.loading` sendiri, sebagian lagi tidak menampilkan proses.
+- Bukti: `flutter test test/v2_button_loading_bug45_test.dart` — gagal di kode lama (parameter `loading` belum ada).
+- Penyebab (akar): `V2Button` hanya punya enum `state`; tidak ada properti ringkas untuk keadaan menyimpan.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `V2Button(loading: true)` menampilkan spinner dan memblokir ketukan; layar login, karyawan (form/detail), penjualan (form/detail) memakai properti itu. File: `v2_button.dart` + 5 layar.
+- Regression test: `apps/mobile/test/v2_button_loading_bug45_test.dart`.
+
+## BUG-46 [S3] Stok obat tidak muncul di lembar terima rekomendasi (Fitur-3)
+- Area/PB: 08 Rawat — Riwayat rotasi / lembar terima (PB-06) · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) terima rekomendasi hama; 2) buka pilihan bahan.
+- Ekspektasi: barang obat (mis. Abamectin) dan nutrisi bisa dipilih.
+- Aktual: obat tidak muncul; hanya jenis yang namanya persis "nutrisi"/"obat".
+- Bukti: `flutter test test/v2_potong_stok_obat_bug46_test.dart` — gagal di kode lama (jenis "Obat & Pestisida" tidak cocok).
+- Penyebab (akar): data nyata memakai nama jenis "Obat & Pestisida" (seed backend), sedangkan pencocokan lama memakai nama persis.
+- Status: **FIXED di kode, belum diuji ulang di HP** (D-31) — barang dengan `id_obat` dikenali lewat pengenal stabil; nama jenis dicocokkan per kata kunci (nutrisi/obat/pestisida). Backend tidak diubah. File: `decision_sheets.dart`.
+- Regression test: `apps/mobile/test/v2_potong_stok_obat_bug46_test.dart`.
+
+## BUG-47 [S3] Catatan tanaman bisa diubah tetapi tidak pernah tampil di Detail tanaman
+- Area/PB: 06 Meja Tanam — Detail tanaman (6.21/6.22) · Ditemukan lewat: uji manual dev FE (25 Nov 2026)
+- Langkah reproduksi: 1) buka Detail tanaman; 2) tekan "Ubah" dan isi catatan; 3) simpan.
+- Ekspektasi: catatan tampil di kartu info dan tersimpan ke batch pemindahan.
+- Aktual: simpan berhasil, tetapi catatan tidak terlihat di halaman.
+- Bukti: `flutter test test/v2_detail_tanaman_catatan_bug47_test.dart` — gagal di kode lama (teks "Catatan" tidak ditemukan).
+- Penyebab (akar): kartu info hanya menampilkan "Tanaman aktif" dan "Pindah". Server sudah punya kolom `keterangan` di `pemindahan`, jadi backend tidak perlu diubah.
+- Status: **FIXED di kode, belum diuji ulang di HP** — kartu info menampilkan baris "Catatan" bila terisi; data sudah dipetakan dari `TransferRecord.note`. File: `v2_detail_tanaman_page.dart`.
+- Regression test: `apps/mobile/test/v2_detail_tanaman_catatan_bug47_test.dart`.
 
 ---
 

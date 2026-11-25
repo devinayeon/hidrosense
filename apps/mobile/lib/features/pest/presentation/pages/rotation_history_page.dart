@@ -5,6 +5,7 @@ import '../../../../viewmodels/connected_table_viewmodel.dart';
 import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_chip.dart';
+import '../../../../views/v2/widgets/v2_icon.dart';
 import '../../data/pest_models.dart';
 import '../../domain/pest_summary.dart';
 import '../../domain/pest_history_group.dart';
@@ -23,11 +24,48 @@ class RotationHistoryPage extends ConsumerStatefulWidget {
 }
 
 class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
+  DateTime? _dari;
+  DateTime? _sampai;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(pestHistoryProvider.notifier).refresh());
   }
+
+  bool get _adaRentang => _dari != null || _sampai != null;
+
+  String get _labelRentang {
+    if (_dari != null && _sampai != null) {
+      return '${labelTanggalWib(_dari!)} – ${labelTanggalWib(_sampai!)}';
+    }
+    if (_dari != null) return 'Dari ${labelTanggalWib(_dari!)}';
+    if (_sampai != null) return 'Sampai ${labelTanggalWib(_sampai!)}';
+    return 'Semua tanggal';
+  }
+
+  Future<void> _pilihRentang() async {
+    final sekarang = DateTime.now();
+    final hasil = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(sekarang.year + 1, 12, 31),
+      initialDateRange: _dari != null && _sampai != null
+          ? DateTimeRange(start: _dari!, end: _sampai!)
+          : null,
+      helpText: 'Pilih rentang tanggal',
+    );
+    if (!mounted || hasil == null) return;
+    setState(() {
+      _dari = hasil.start;
+      _sampai = hasil.end;
+    });
+  }
+
+  void _hapusRentang() => setState(() {
+    _dari = null;
+    _sampai = null;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +118,28 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
                     onChanged: notifier.setTable,
                   ),
                 ],
+                const SizedBox(height: V2Space.md),
+                Wrap(
+                  spacing: V2Space.sm,
+                  runSpacing: V2Space.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    V2Button(
+                      label: _labelRentang,
+                      type: V2ButtonType.secondary,
+                      expand: false,
+                      icon: V2IconName.calendar,
+                      onPressed: _pilihRentang,
+                    ),
+                    if (_adaRentang)
+                      V2Button(
+                        label: 'Hapus tanggal',
+                        type: V2ButtonType.ghost,
+                        expand: false,
+                        onPressed: _hapusRentang,
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -120,9 +180,39 @@ class _RotationHistoryPageState extends ConsumerState<RotationHistoryPage> {
         ),
       );
     }
+    // Rentang tanggal disaring di layar (D-32); batas inklusif dan memakai
+    // tanggal WIB yang sama dengan pengelompokan D-28.
+    final tersaring = saringRiwayatTanggal(
+      state.items,
+      dari: _dari,
+      sampai: _sampai,
+    );
+    if (tersaring.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(V2Space.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Tidak ada riwayat pada rentang tanggal ini.',
+                style: V2Type.body,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: V2Space.lg),
+              V2Button(
+                label: 'Hapus filter tanggal',
+                type: V2ButtonType.secondary,
+                onPressed: _hapusRentang,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     // Riwayat dikelompokkan per tanggal WIB (D-28); entri di bawah tiap header
     // tetap bisa dilipat seperti sebelumnya.
-    final kelompok = kelompokkanRiwayatPerTanggal(state.items);
+    final kelompok = kelompokkanRiwayatPerTanggal(tersaring);
     final anak = <Widget>[];
     for (final grup in kelompok) {
       anak.add(_headerTanggal(grup.label));

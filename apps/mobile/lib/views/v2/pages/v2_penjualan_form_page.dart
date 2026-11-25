@@ -772,9 +772,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
                     actions: [
                       V2Button(
                         label: _actionLabel,
-                        state: _saving
-                            ? V2ButtonState.loading
-                            : V2ButtonState.normal,
+                        loading: _saving,
                         onPressed: _saving ? null : _save,
                       ),
                     ],
