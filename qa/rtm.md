@@ -17,7 +17,9 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 > **G-18** (menu Sinkron untuk aplikasi online-only). Sesi 4 (24 Nov 2026) menutup
 > BUG-33..BUG-38 + 3 fitur (D-27/D-28/D-29) di mobile, menambah dokumen
 > `qa/deployment-notes.md` & `qa/srs-revision-guide.md`; **G-17** kini dimiliki **SA**
-> (panduan revisi SRS tersedia).
+> (panduan revisi SRS tersedia). Sesi 5 (25 Nov 2026) memverifikasi hasil uji manual dev FE
+> dan menutup BUG-39..BUG-47 + Fitur-4 (D-31/D-32) di mobile (`apps/mobile/` saja);
+> backend tidak diubah. Regression: **701/701** tes mobile lulus, `flutter analyze` 0 temuan.
 
 ---
 
@@ -120,7 +122,7 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
 | 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` tersisa **BUG-04** (dependensi backend) di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **689/689** (`flutter test`, 24 Nov 2026, `testing.md` §1) |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **701/701** (`flutter test`, 25 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |

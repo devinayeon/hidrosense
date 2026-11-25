@@ -16,6 +16,12 @@ audit oleh dosen penguji. Semua status berasal dari **bukti nyata**, bukan asums
 > (FIXED di kode + regression test) dan 3 fitur tambahan (D-27/D-28/D-29); `flutter test`
 > mobile kini **689 PASS**. Status BUG-33..38 = **FIXED di kode, belum diuji ulang di HP**.
 > Dua dokumen baru: `deployment-notes.md` & `srs-revision-guide.md`.
+> Sesi 5 (25 Nov 2026): menyinkronkan status verifikasi HP dev FE (Part A), lalu mengerjakan
+> BUG-39..BUG-47 dan Fitur-4 (filter tanggal riwayat, D-32) di `apps/mobile` saja
+> (`flutter test` mobile kini **701 PASS**, `flutter analyze` 0 temuan). Obat yang tidak
+> muncul saat potong stok (BUG-46) diperbaiki dengan pengenal stabil (D-31); **backend tidak
+> diubah**. Status BUG-39..47 & Fitur-4 = **FIXED di kode, belum diuji ulang di HP**
+> (bukan klaim PASS).
 
 ## Dokumen
 

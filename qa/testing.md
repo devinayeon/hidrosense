@@ -52,7 +52,7 @@ cd apps/backend && node --import tsx qa/fuzz-invariants.mjs               # 638 
 
 # 6) Mobile
 cd apps/mobile && flutter analyze                                        # tanpa temuan
-cd apps/mobile && flutter test                                           # 689 tes
+cd apps/mobile && flutter test                                           # 701 tes
 
 # 7) AI / ML
 cd /home/eiser/coolyeah/PPL/hidrosense && python3 -m pytest ml/tests -q   # 165 lulus, 3 gagal-harness
@@ -68,7 +68,7 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 | Suite | Baseline (awal sesi) | Hasil akhir | Catatan |
 |---|---|---|---|
 | `npm test` (backend) | 432/432 PASS | **432/432 PASS** | Tidak ada tes backend yang diubah. |
-| `flutter test` (mobile) | 592 PASS | **689 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21), +26 tes sesi 2 (BUG-22..25), +28 tes sesi 3 (BUG-26..32), +29 tes sesi 4 (BUG-33..38 + Fitur-1..3) di atas 592 baseline; termasuk 61 tes fitur pest. |
+| `flutter test` (mobile) | 592 PASS | **701 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21), +26 tes sesi 2 (BUG-22..25), +28 tes sesi 3 (BUG-26..32), +29 tes sesi 4 (BUG-33..38 + Fitur-1..3), +12 tes sesi 5 (BUG-39..47 + Fitur-4) di atas 592 baseline; termasuk 61 tes fitur pest. |
 | `flutter analyze` | 2 warning aset | **0 temuan** (exit 0) | Entri aset yang menunjuk folder hilang dihapus dari `pubspec.yaml`. |
 | `python3 -m pytest ml/tests` | tak jalan (dep hilang) | **165 PASS / 3 FAIL / 0 SKIP** | 3 FAIL = bug harness ML, bukan model (lihat §4.8). |
 | `qa/backend-pest-rotation.sh` | — (baru) | **109/109 PASS** | Fitur baru backend. |
@@ -92,6 +92,10 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 > BUG-33..BUG-38 dan Fitur-1..3 (daftar berkas di §4.2) sehingga **689 PASS**
 > (`/tmp/opencode/qa_flutter_test.log`, exit 0). `flutter analyze` tetap **0 temuan**
 > (`/tmp/opencode/qa_flutter_analyze.log`).
+>
+> Sesi 5 (25 Nov 2026): baseline 689 PASS; ditambah **12 tes** untuk
+> BUG-39..BUG-47 dan Fitur-4 (daftar berkas di §4.2) sehingga **701 PASS**
+> (`flutter test`, exit 0). `flutter analyze` tetap **0 temuan**.
 
 ---
 
@@ -422,9 +426,9 @@ i fail 0
 backend npm test exit=0
 ```
 
-### 4.2 `flutter test` (mobile) — 689 tes
+### 4.2 `flutter test` (mobile) — 701 tes
 ```
-01:42 +689: All tests passed!
+01:55 +701: All tests passed!
 flutter test exit=0
 ```
 Baseline sesi 3: `+632: All tests passed!` (`/tmp/opencode/hsqa/s2-full-test.log`).
@@ -463,6 +467,19 @@ gagal di kode lama):
 `v2_penjualan_chart_align_test.dart` (BUG-31 diulang),
 `v2_pindah_meja_success_test.dart`, `v2_rotation_history_bug32_test.dart`, dan
 `pest_widgets_test.dart` (header tanggal menggeser kartu → `ensureVisible`).
+
+Sesi 5 menambahkan berkas tes berikut (semuanya lulus; bukti gagal di kode lama ada di
+`qa/issues.md`):
+`v2_meja_pintu_bersama_bug39_test.dart` (BUG-39, 1),
+`v2_meja_pemilih_semaian_bug40_41_test.dart` (BUG-40/41, 2),
+`v2_panen_jual_bug42_43_test.dart` (BUG-42/43, 2),
+`v2_semaian_stok_bug44_test.dart` (BUG-44, 1),
+`v2_button_loading_bug45_test.dart` (BUG-45, 1),
+`v2_potong_stok_obat_bug46_test.dart` (BUG-46/D-31, 2),
+`v2_detail_tanaman_catatan_bug47_test.dart` (BUG-47, 1),
+`v2_riwayat_tanggal_fitur4_test.dart` (Fitur-4/D-32, 2); serta penyesuaian di
+`v2_riwayat_group_fitur1_test.dart` (filter tanggal menambah tombol → tinggi viewport
+uji dinaikkan ke 1200).
 
 ### 4.3 Backend adversarial
 ```

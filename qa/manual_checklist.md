@@ -16,6 +16,11 @@ menjalankan widget/unit tes tanpa Android.
 > Sesi 4 (24 Nov 2026): perbaikan BUG-33..BUG-38 dan Fitur-1..3 ditambahkan di §H dengan
 > status **`FIXED di kode, belum diuji ulang di HP`** — verifikasi visual di HP masih tugas
 > dev FE dan **belum diklaim PASS**.
+>
+> Sesi 5 (25 Nov 2026): temuan lanjutan dari uji manual dev FE (BUG-39..47, Fitur-4)
+> diperbaiki di `apps/mobile` dan ditambahkan di §H bagian bawah dengan status
+> **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang ditulis `PASS`;
+> verifikasi ulang di HP akan diisi dev FE.
 
 ---
 
@@ -167,9 +172,20 @@ yang dicatat dengan status apa adanya.
 | MC-FIT-1 | Fitur-1 (D-28) — riwayat rotasi per tanggal | Buka Riwayat rotasi, cek header tanggal WIB & lipat entri | `PASS` (diuji manual dev FE, 25 Nov 2026); pengguna masih butuh **filter rentang tanggal** → **Fitur-4** |
 | MC-FIT-2 | Fitur-2 (D-27) — urutan daftar meja di form pindah | Buka "Pindah ke meja", cek urutan (tersedia dulu, penuh di bawah) | `PASS` (diuji manual dev FE, 25 Nov 2026) |
 | MC-FIT-3 | Fitur-3 (D-29) — potong stok hanya Nutrisi & Obat | Setujui rekomendasi, cek daftar bahan hanya nutrisi/obat | **TIDAK LULUS** (diuji manual dev FE, 25 Nov 2026) — bahan **obat tidak muncul** → **BUG-46** |
+| MC-FIX-39 | BUG-39 — Detail meja dari halaman sukses "Lihat meja" | Selesai pindah, tekan "Lihat meja", bandingkan data dengan daftar Meja | `FIXED di kode, belum diuji ulang di HP` — Detail meja kini satu pintu masuk & selalu baca ulang dari server |
+| MC-FIX-40 | BUG-40 — semaian siap pindah di pemilih "Tambah tanaman" | Buat semaian HSS ≥ 15, buka Detail meja → Tambah tanaman | `FIXED di kode, belum diuji ulang di HP` — pemilih memakai aturan sama dengan daftar Semaian |
+| MC-FIX-41 | BUG-41 — "Lihat semaian" di pemilih | Tekan "Lihat semaian" saat pemilih kosong | `FIXED di kode, belum diuji ulang di HP` — membuka daftar Semaian |
+| MC-FIX-42 | BUG-42 — "Catat penjualan" dari Detail panen | Buka Detail panen, tekan "Catat penjualan", isi & simpan | `FIXED di kode, belum diuji ulang di HP` — tanggal hari ini (WIB) dan tersimpan ke server |
+| MC-FIX-43 | BUG-43 — "Terjual"/"Sisa" setelah penjualan | Catat penjualan, buka kembali Detail panen | `FIXED di kode, belum diuji ulang di HP` — "Terjual" bertambah dari batch penjualan |
+| MC-FIX-44 | BUG-44 — "Stok terpakai" semua bahan | Buat semaian 2 bahan, buka Detail semaian | `FIXED di kode, belum diuji ulang di HP` — semua bahan tampil |
+| MC-FIX-45 | BUG-45 — tombol simpan punya spinner | Simpan yang butuh jaringan (login/karyawan/penjualan) | `FIXED di kode, belum diuji ulang di HP` — tombol menampilkan spinner & tak bisa ditekan ulang |
+| MC-FIX-46 | BUG-46 — stok obat muncul di lembar terima | Terima rekomendasi hama, cek daftar bahan | `FIXED di kode, belum diuji ulang di HP` — obat (mis. Abamectin) & nutrisi bisa dipilih |
+| MC-FIX-47 | BUG-47 — catatan tanaman tampil | Ubah catatan tanaman, simpan, lihat Detail tanaman | `FIXED di kode, belum diuji ulang di HP` — baris "Catatan" tampil di kartu info |
+| MC-FIT-4 | Fitur-4 (D-32) — filter rentang tanggal riwayat | Buka Riwayat rotasi, pilih rentang tanggal, hapus filter | `FIXED di kode, belum diuji ulang di HP` — dari–sampai inklusif (WIB) + tombol hapus |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
 > (tidak ada perangkat Android di sini). Baris yang menyebut temuan lanjutan
-> (BUG-39..47, Fitur-4) berarti bagian itu **belum lulus** di HP dan sudah/sedang
-> diperbaiki di `apps/mobile` dengan regression test; verifikasi visual ulang di HP
-> wajib dilakukan dev FE sebelum dinyatakan tuntas untuk rilis.
+> (BUG-39..47, Fitur-4) berarti bagian itu **belum lulus** di HP; semuanya kini
+> **sudah diperbaiki** di `apps/mobile` dengan regression test (baris MC-FIX-39..47 &
+> MC-FIT-4). Verifikasi visual ulang di HP wajib dilakukan dev FE sebelum dinyatakan
+> tuntas untuk rilis.
