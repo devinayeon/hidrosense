@@ -491,7 +491,15 @@ __marimo__/
 
 ml/venv/
 ml/dataset/raw/
+ml/data/
+ml/runs/
+ml/kaggle_output/
+ml/kaggle_remote_output/
+ml/kaggle_work/
+runs/
+.kaggle/
 *.pt
+*.onnx
 
 /.agent/
 /.agents/
