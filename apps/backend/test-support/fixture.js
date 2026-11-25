@@ -21,7 +21,7 @@ export async function fixture(t, options = {}) {
   let now = Date.parse('2026-09-30T00:00:00Z');
   const clock = () => now;
   const config = readConfig({ NODE_ENV: 'test', LOG_LEVEL: 'silent', ...options.env });
-  const app = buildApp({ db, config, clock });
+  const app = buildApp({ db, config, clock, weather: options.weather });
   // The Flutter client sends Idempotency-Key on every write. Mirror that here so suites
   // model the real client; a test that must prove the server rejects a missing key passes
   // `omitIdempotencyKey: true`.

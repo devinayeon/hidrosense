@@ -267,6 +267,18 @@ Konfigurasi lewat `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API
 |---|---|
 | `GET /sync/changes` | Query: `cursor`, `limit` (paling besar 200). Lihat `docs/panduan-menjalankan-backend.md` bagian 7 |
 | `POST /sync/operations` | Mencadangkan `public_id` untuk `client_id` sebelum catatannya dibuat |
+| `GET /sync/status` | Query wajib: `device_id` (UUID dari aplikasi). Mengembalikan `data.last_synced_at` (ISO 8601) atau `null` bila perangkat itu belum pernah sinkron. Dipakai layar Sinkron supaya jam "Terakhir sinkron" tidak kembali ke awal |
+| `POST /sync/status` | Body: `{ "device_id": "<uuid>" }`. Mencatat sinkron yang baru selesai memakai jam server, tidak pernah mundur. Aman diulang. Dicatat per pengguna dan per perangkat |
+
+## Cuaca
+
+Izin: `cuaca:read` (petani). Aplikasi memilih desa/kelurahan lalu meminta prakiraan BMKG untuk kode `adm4`-nya. Daftar wilayah berasal dari wilayah.id (kode Kemendagri bertitik, sama dengan `adm4` BMKG), posisi GPS diterjemahkan lewat OpenStreetMap Nominatim, prakiraan dari API publik BMKG. Semuanya disimpan sementara di server.
+
+| Endpoint | Catatan |
+|---|---|
+| `GET /weather/regions` | Query: `level` = `province`/`regency`/`district`/`village`; `parent` = kode induk (`35`, `35.09`, `35.09.12`), tanpa `parent` hanya untuk `province`. Mengembalikan `data: [{ id, name }]`; desa juga punya `adm4`. Disimpan 24 jam |
+| `GET /weather/locate` | Query: `lat`, `lon`. Mengembalikan `adm4`, `province`, `regency`, `district`, `village`, `approximate`. Nominatim sering tanpa kecamatan dan mengeja desa sedikit beda dari daftar resmi, jadi desa dicari dari nama di seluruh kabupaten (ejaan persis lebih dulu, lalu mirip) dan desa kembar dipilih yang terdekat. `approximate: true` berarti desa persisnya tidak dikenali dan yang dipakai desa terdekat di kecamatan yang sama. `404 LOCATION_NOT_FOUND` di luar Indonesia atau bila nama tidak cocok |
+| `GET /weather/forecast` | Query: `adm4`. `data` adalah jawaban BMKG apa adanya; `meta.stale` true bila BMKG gangguan dan yang disajikan prakiraan terakhir (paling lama 6 jam). Disimpan 10 menit. `502 WEATHER_UPSTREAM_UNAVAILABLE` bila tidak ada cadangan |
 
 Saat mengirim antrean, kirim induk lebih dulu, misalnya penyemaian sebelum pemindahan, karena anak merujuk ID server milik induk. Kalau respons hilang, kirim ulang dengan kunci yang sama untuk mendapatkan ID itu.
 

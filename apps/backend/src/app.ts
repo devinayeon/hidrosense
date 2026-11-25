@@ -20,6 +20,8 @@ import { registerDamage } from './features/damage/index.js';
 import { registerSales } from './features/sales/index.js';
 import { registerRotation } from './features/rotation/index.js';
 import { registerScans } from './features/scans/index.js';
+import { registerWeather } from './features/weather/index.js';
+import type { WeatherDeps } from './features/weather/service.js';
 import { registerUploads } from './features/uploads/index.js';
 
 interface AppOptions {
@@ -27,6 +29,8 @@ interface AppOptions {
   config?: AppConfig;
   clock?: () => number;
   loadMigrationFiles?: typeof loadMigrations;
+  /** Hanya untuk pengujian: mengganti `fetch` ke layanan wilayah dan BMKG. */
+  weather?: WeatherDeps;
 }
 
 // Ambil path lewat URL, bukan potongan teks. Bentuk absolut (GET http://host/api/... HTTP/1.1)
@@ -45,7 +49,7 @@ function trustedProxy({ proxyHops, proxies }: AppConfig) {
   return proxies.length ? proxies : false;
 }
 
-export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigrationFiles = loadMigrations }: AppOptions) {
+export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigrationFiles = loadMigrations, weather }: AppOptions) {
   // Files do not change while the process runs; readiness is public and unthrottled, so read them once.
   let migrationFiles: ReturnType<typeof loadMigrations> | undefined;
   const readMigrationFiles = () => migrationFiles ??= loadMigrationFiles().catch((error) => {
@@ -126,6 +130,7 @@ export function buildApp({ db, config = readConfig(), clock = Date.now, loadMigr
   registerHarvest(app, db, clock);
   registerSales(app, db, clock);
   registerRotation(app, db, clock);
+  registerWeather(app, db, clock, weather);
   registerScans(app, db, clock, config);
   registerUploads(app, db, clock, config);
   return app;
