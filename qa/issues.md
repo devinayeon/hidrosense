@@ -390,15 +390,15 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 - Regression test: `apps/mobile/test/v2_notifikasi_bug30_test.dart`.
 - Catatan bukti: perbaikan dibuktikan lewat tes widget; **verifikasi ulang di HP asli menunggu dev FE**.
 
-## BUG-31 [S3, DIBUKA ULANG] Ringkasan penjualan: label bulan tidak sejajar dengan grafik
+## BUG-31 [S3] Ringkasan penjualan: label bulan tidak sejajar dengan grafik
 - Area/PB: Penjualan → Ringkasan penjualan (grafik) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026), tercatat ulang dari BUG-24
 - Langkah reproduksi: 1) buka Ringkasan penjualan; 2) lihat label bulan di bawah batang (skala 1.0 dan 2.0).
 - Ekspektasi: label bulan sejajar dengan batangnya, atau tidak dipaksa sejajar.
 - Aktual: setelah perbaikan sesi 3 (FittedBox), label tetap **tidak sejajar** dengan grafik menurut dev FE.
-- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` (sesi 3) — menyejajarkan label; **tidak cukup** menurut uji manual dev FE.
+- Bukti: `flutter test test/v2_penjualan_chart_align_test.dart` (sesi 3) — menyejajarkan label; **tidak cukup** menurut uji manual dev FE. Diperbaiki ulang sesi 4 (commit `eedbb43`) dan **PASS di HP** (diuji manual dev FE, 25 Nov 2026).
 - Penyebab (akar): menyejajarkan label di bawah batang rapuh pada lebar/skala berbeda.
-- Status: **OPEN** (dibuka ulang sesi 4). Keputusan dev FE: jangan menyejajarkan lagi; ubah teks ringkasan per bulan menjadi **daftar ke bawah** (nama bulan kiri, nilai kanan rata), dan hapus label bulan yang tidak sejajar. (lihat sesi 4 / BUG-31 ulang).
-- Catatan: detail perbaikan ulang dicatat di sesi 4.
+- Status: **FIXED** — keputusan dev FE: tidak lagi menyejajarkan label; teks ringkasan per bulan jadi **daftar ke bawah** (nama bulan kiri, nilai kanan rata) dan label bulan yang tidak sejajar dihapus. File: `v2_penjualan_page.dart` / komponen ringkasan penjualan (D-25).
+- Regression test: `apps/mobile/test/v2_penjualan_chart_align_test.dart` (dibuka ulang untuk daftar per bulan).
 
 ## BUG-32 [S3] Filter riwayat rotasi rapat dan daftar terlalu panjang
 - Area/PB: Rawat/Tanaman → Riwayat rotasi (pest) · Ditemukan lewat: uji manual dev FE (HP asli, 24 Nov 2026)

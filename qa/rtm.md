@@ -71,8 +71,8 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 
 | # | Requirement / target | Test case | Status |
 |---|---|---|---|
-| NFR-1 | Muat halaman utama < 3 dtk | TC-5.7-02 | MANUAL-PENDING |
-| NFR-2 | Inferensi lokal per gambar < 5 dtk | TC-PB05-04 | PASS di perangkat (diuji manual dev FE, 24 Nov 2026; angka belum dicatat) — host 129,65 ms/gambar |
+| NFR-1 | Muat halaman utama < 3 dtk | TC-5.7-02 | PASS (diuji manual dev FE, 25 Nov 2026; angka belum dicatat) |
+| NFR-2 | Inferensi lokal per gambar < 5 dtk | TC-PB05-04 | PASS (diuji manual dev FE, 25 Nov 2026; angka belum dicatat) — host 129,65 ms/gambar |
 | NFR-3 | Sinkronisasi < 1 menit | TC-PB07-19 | MANUAL-PENDING |
 | NFR-4 | Pencocokan aturan cuaca < 2 dtk | TC-PB10-11 | PASS |
 | NFR-5 | 12 meja × 250 = 3.000 lubang | TC-PB04-17 | PASS |

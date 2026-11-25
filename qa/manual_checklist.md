@@ -29,8 +29,8 @@ menjalankan widget/unit tes tanpa Android.
 | MC-DEV-04 | Font sistem besar | Set 200% font | Teks tak terpotong, tombol ≥ 48dp | `PASS` (diuji manual dev FE) — layout dibuat fleksibel; 24 uji widget skala 2.0; temuan sisa dicatat BUG-31 |
 | MC-DEV-05 | Layar 360x640 & tablet | Jalankan di layar kecil & besar | Tak rusak/overflow | `PASS` (diuji manual dev FE) — diuji lewat simulasi lebar kecil di HP, bukan perangkat 360x640 asli |
 | MC-DEV-06 | Mode gelap/terang | Ganti tema sistem | Kontras cukup, teks terbaca | `GAP (D-16)` — aplikasi hanya satu tema; bukan bug |
-| MC-DEV-07 | Background/foreground | Buka form, isi sebagian, tekan Home, buka app lain, lalu kembali ke app | Isi form masih ada, tak crash | `MANUAL-PENDING` |
-| MC-DEV-08 | Kill paksa | Catat satu data (mis. panen), force-stop app, lalu buka lagi | Data yang sudah tersimpan tetap ada setelah dibuka ulang | `MANUAL-PENDING` |
+| MC-DEV-07 | Background/foreground | Buka form, isi sebagian, tekan Home, buka app lain, lalu kembali ke app | Isi form masih ada, tak crash | `PASS` (diuji manual dev FE, 25 Nov 2026) — isian form bertahan saat app di-background, tak crash |
+| MC-DEV-08 | Kill paksa | Catat satu data (mis. panen), force-stop app, lalu buka lagi | Data yang sudah tersimpan tetap ada setelah dibuka ulang | `PASS` (diuji manual dev FE, 25 Nov 2026) — data tersimpan bertahan setelah force-stop |
 | MC-DEV-09 | Memori rendah & penyimpanan penuh | Trigger low-memory; isi penyimpanan | Tak crash; pesan jelas saat gagal simpan | `MANUAL-PENDING` |
 | MC-DEV-10 | Jam/zona waktu diubah | Set jam mundur/maju, ganti TZ | HSS/tanggal tetap WIB; sync tak rusak | `PASS` (diuji manual dev FE) |
 | MC-DEV-11 | Build release | `flutter build apk --release` lalu pasang | Tak ada banner debug; TFLite/aset utuh; ukuran wajar | `PASS` (diuji manual dev FE) |
@@ -134,10 +134,13 @@ Isi per baris: **berhasil / berhasil dengan bantuan / gagal**, waktu, dan catata
 
 ---
 
-## H. Verifikasi perbaikan bug di HP (dev FE, 24 Nov 2026)
+## H. Verifikasi perbaikan bug di HP (dev FE, 24–25 Nov 2026)
 
 Bagian ini mencatat hasil uji **manual dev FE di HP asli** (bukan uji otomatis), sebagai
-bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat.
+bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat. Baris bertanggal
+**25 Nov 2026** adalah hasil verifikasi ulang sesi 4 (BUG-33..38, Fitur-1..3) dan BUG-31.
+Beberapa perbaikan lulus sebagian dan melahirkan temuan lanjutan (BUG-39..47, Fitur-4)
+yang dicatat dengan status apa adanya.
 
 | ID | Bug yang diverifikasi | Skenario singkat | Hasil |
 |---|---|---|---|
@@ -153,19 +156,20 @@ bukti bahwa perbaikan sesi 1 benar-benar terasa di perangkat.
 | MC-FIX-28 | BUG-28 — tombol halaman sukses "Pindah ke meja" | Pindah semaian, tekan tiap tombol di halaman sukses | `PASS` untuk tombolnya (diuji manual dev FE) — tetapi data setelahnya basi, dicatat **BUG-34** |
 | MC-FIX-29 | BUG-29 — jumlah form pindah | Tahan plus/minus, ketik angka, cek bawaan meja | `PASS` (diuji manual dev FE) |
 | MC-FIX-30 | BUG-30 — notifikasi bisa diketuk | Buka notifikasi, ketuk baris, cek tujuan & status dibaca | `PASS` (diuji manual dev FE) |
-| MC-FIX-31 | BUG-31 — label bulan grafik penjualan | Buka Ringkasan penjualan, cek label bulan | `OPEN` (diuji manual dev FE) — label tetap tidak sejajar; diperbaiki ulang jadi daftar per bulan |
+| MC-FIX-31 | BUG-31 — daftar nilai per bulan penjualan | Buka Ringkasan penjualan, cek daftar per bulan | `PASS` (diuji manual dev FE, 25 Nov 2026) — kini daftar ke bawah (nama bulan kiri, nilai kanan), label bulan yang tidak sejajar dihapus |
 | MC-FIX-32 | BUG-32 — riwayat rotasi | Buka Riwayat rotasi, cek filter & lipat entri | `PASS` (diuji manual dev FE) |
-| MC-FIX-33 | BUG-33 — pemilih tanaman Catat panen | Catat panen dengan dua batch bernama sama, pilih keduanya | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIX-34 | BUG-34 — data meja setelah pindah | Selesai pindah, buka daftar/detail meja tujuan | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIX-35 | BUG-35 — "Tambah tanaman" di detail meja | Tekan "Tambah tanaman", pastikan lewat form pindah | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIX-36 | BUG-36 — HST & perkiraan panen tanaman tersambung | Buka tanaman tersambung, cek HST & perkiraan panen | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIX-37 | BUG-37 — jumlah besar bisa diketik | Ketik angka besar di stok/semaian/rusak/rawat/panen | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIX-38 | BUG-38 — "Tambah bahan" menambah baris | Tambah semaian, tekan "Tambah bahan" 2–3×, simpan | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIT-1 | Fitur-1 (D-28) — riwayat rotasi per tanggal | Buka Riwayat rotasi, cek header tanggal WIB & lipat entri | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIT-2 | Fitur-2 (D-27) — urutan daftar meja di form pindah | Buka "Pindah ke meja", cek urutan (tersedia dulu, penuh di bawah) | `FIXED di kode, belum diuji ulang di HP` |
-| MC-FIT-3 | Fitur-3 (D-29) — potong stok hanya Nutrisi & Obat | Setujui rekomendasi, cek daftar bahan hanya nutrisi/obat | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-33 | BUG-33 — pemilih tanaman Catat panen | Catat panen dengan dua batch bernama sama, pilih keduanya | `PASS` (diuji manual dev FE, 25 Nov 2026) |
+| MC-FIX-34 | BUG-34 — data meja setelah pindah | Selesai pindah, buka daftar/detail meja tujuan | `PASS` untuk bagian form sisa & invalidasi (diuji manual dev FE, 25 Nov 2026); tombol **"Lihat meja"** masih salah/basi → **BUG-39**, **BUG-41** |
+| MC-FIX-35 | BUG-35 — "Tambah tanaman" di detail meja | Tekan "Tambah tanaman", pastikan lewat form pindah | `PASS` untuk bagian form pindah (diuji manual dev FE, 25 Nov 2026); pemilih **tidak mengenali semaian siap pindah** → **BUG-40** |
+| MC-FIX-36 | BUG-36 — HST & perkiraan panen tanaman tersambung | Buka tanaman tersambung, cek HST & perkiraan panen | `PASS` (diuji manual dev FE, 25 Nov 2026) — tanggal benar (WIB) |
+| MC-FIX-37 | BUG-37 — jumlah besar bisa diketik | Ketik angka besar di stok/semaian/rusak/rawat/panen | `PASS` (diuji manual dev FE, 25 Nov 2026) |
+| MC-FIX-38 | BUG-38 — "Tambah bahan" menambah baris | Tambah semaian, tekan "Tambah bahan" 2–3×, simpan | `PASS` untuk bagian UI "Tambah bahan" (diuji manual dev FE, 25 Nov 2026); **stok terpakai** di Detail semaian masih salah → **BUG-44** |
+| MC-FIT-1 | Fitur-1 (D-28) — riwayat rotasi per tanggal | Buka Riwayat rotasi, cek header tanggal WIB & lipat entri | `PASS` (diuji manual dev FE, 25 Nov 2026); pengguna masih butuh **filter rentang tanggal** → **Fitur-4** |
+| MC-FIT-2 | Fitur-2 (D-27) — urutan daftar meja di form pindah | Buka "Pindah ke meja", cek urutan (tersedia dulu, penuh di bawah) | `PASS` (diuji manual dev FE, 25 Nov 2026) |
+| MC-FIT-3 | Fitur-3 (D-29) — potong stok hanya Nutrisi & Obat | Setujui rekomendasi, cek daftar bahan hanya nutrisi/obat | **TIDAK LULUS** (diuji manual dev FE, 25 Nov 2026) — bahan **obat tidak muncul** → **BUG-46** |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
-> (tidak ada perangkat Android di sini). Baris `FIXED di kode, belum diuji ulang di HP`
-> berarti sudah lulus tes otomatis tetapi **verifikasi visual di HP wajib** dilakukan dev FE
-> sebelum dinyatakan tuntas untuk rilis.
+> (tidak ada perangkat Android di sini). Baris yang menyebut temuan lanjutan
+> (BUG-39..47, Fitur-4) berarti bagian itu **belum lulus** di HP dan sudah/sedang
+> diperbaiki di `apps/mobile` dengan regression test; verifikasi visual ulang di HP
+> wajib dilakukan dev FE sebelum dinyatakan tuntas untuk rilis.

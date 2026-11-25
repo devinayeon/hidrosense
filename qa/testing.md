@@ -110,10 +110,10 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 | PB-09 Pencatatan penjualan | 12 | 12 | 0 | 0 | 0 | 0 |
 | PB-10 Rekomendasi cuaca (BMKG) | 14 | 12 | 0 | 2 | 0 | 0 |
 | PB-11 Pengelolaan akun | 13 | 13 | 0 | 0 | 0 | 0 |
-| §5 lintas-area | 33 | 27 | 2 | 0 | 2 | 2 |
-| **Total** | **204** | **186** | **2** | **3** | **3** | **10** |
+| §5 lintas-area | 33 | 28 | 2 | 0 | 2 | 1 |
+| **Total** | **204** | **187** | **2** | **3** | **3** | **9** |
 
-> Jumlah pada kolom = 186 + 2 + 3 + 3 + 10 = **204**. Tidak ada test case berstatus kosong.
+> Jumlah pada kolom = 187 + 2 + 3 + 3 + 9 = **204**. Tidak ada test case berstatus kosong.
 > Dua **FAIL** berada di §5.3 (keamanan): `TC-5.3-10` = token plaintext (BUG-05) dan
 > `TC-5.3-11` = dependensi rentan (BUG-04) — keduanya temuan **keamanan**, bukan cacat
 > alur bisnis, dan berada di luar batas perbaikan sesi (`apps/mobile/` saja) sehingga
@@ -404,7 +404,7 @@ Model & aset: `ml/artifacts/yolo11n_lettuce_pests.tflite` (sha256 `cd388bda…b2
 | TC-5.6-01 | Heuristic usability statis | Temuan masuk akal | Dilakukan | PASS | §5.6 (di bawah) |
 | TC-5.6-02 | Usability bersama mitra | Lembar observasi | Butuh mitra | MANUAL-PENDING | `manual_checklist.md` §G |
 | TC-5.7-01 | Latensi API backend | Cepat & stabil | avg ~2 ms; p95 ~2,5 ms (loopback) | PASS | `qa/perf.sh` |
-| TC-5.7-02 | Muat halaman utama < 3 dtk | Terukur | Butuh perangkat | MANUAL-PENDING | MC-PERF-* |
+| TC-5.7-02 | Muat halaman utama < 3 dtk | Terukur | Lolos target (diuji manual dev FE, 25 Nov 2026); angka belum dicatat | PASS | MC-PERF-* |
 | TC-5.7-03 | Data besar tetap lancar | Tak lambat | Paginasi ≤ 100, indeks ada | PASS | `inventory-pagination.test.js`, `perf.sh` |
 | TC-5.8-01 | Invarian §5.8 (semua) | 0 pelanggaran | 638 pemeriksaan × 3 run lulus | PASS | `apps/backend/qa/fuzz-invariants.mjs` |
 | TC-5.8-02 | Uji balapan stok (2 request bersamaan) | Salah satu/keduanya aman, tak negatif | 22/22 | PASS | `qa/backend-concurrency.sh` |
