@@ -100,7 +100,18 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
   late DateTime _tanggal = widget.initialDate ?? DateTime(2026, 11, 15);
   String? _error;
 
+  /// Menahan aksi ganda selama pemindahan dikirim: input di-disable dan tombol
+  /// menampilkan loading sampai proses selesai (BUG-FE pola umum form).
+  bool _submitting = false;
+
   V2SemaianMeja get _terpilih => _meja[_mejaIndex];
+
+  /// Bibit yang masih bisa dipindah dari semaian ini.
+  int get _sisaBibit => widget.item.sisaBenih ?? widget.item.jumlahBenih;
+
+  /// Perkiraan panen selalu HST hari sejak tanggal pindah, bukan dari tanggal
+  /// semai: tanam terlambat pun tetap dihitung dari 0 (keputusan SA nomor 5).
+  DateTime get _perkiraanPanen => v2PerkiraanPanen(_tanggal);
 
   @override
   void initState() {
@@ -140,29 +151,40 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
     return 'Lubang kosong hanya ${meja.lubangKosong}';
   }
 
+  /// Galat jumlah: dicek langsung terhadap sisa bibit semaian dan lubang kosong
+  /// meja, bukan hanya saat tombol "Pindahkan" ditekan (BUG-FE).
+  String? _pesanJumlah(int jumlah) {
+    if (jumlah > _sisaBibit) return 'Sisa bibit hanya $_sisaBibit';
+    return _pesanLubang(jumlah);
+  }
+
   void _setJumlah(int value) {
     setState(() {
       _jumlah = value;
-      _error = _pesanLubang(value);
+      _error = _pesanJumlah(value);
     });
   }
 
   void _pilihMeja(int index) {
-    if (!_meja[index].tersedia) return;
+    if (_submitting || !_meja[index].tersedia) return;
     setState(() {
       _mejaIndex = index;
-      _error = _pesanLubang(_jumlah);
+      _error = _pesanJumlah(_jumlah);
     });
   }
 
   Future<void> _pickTanggal() async {
+    // Selama submit input tanggal tidak boleh dibuka: kalau tidak, picker bisa
+    // tertinggal di atas halaman setelah navigasi selesai dan tak bisa ditutup.
+    if (_submitting) return;
     final result = await showV2SemaianDateSheet(context, selected: _tanggal);
     if (!mounted || result == null) return;
     setState(() => _tanggal = result);
   }
 
   Future<void> _pindahkan() async {
-    final galat = _pesanLubang(_jumlah);
+    if (_submitting) return;
+    final galat = _pesanJumlah(_jumlah);
     setState(() => _error = galat);
     if (galat != null) return;
 
@@ -174,10 +196,14 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
     );
     final kirim = widget.onPindahkan;
     if (kirim != null) {
+      FocusScope.of(context).unfocus();
+      setState(() => _submitting = true);
       final messenger = ScaffoldMessenger.of(context);
       try {
         await kirim(pindah);
       } catch (error) {
+        if (!mounted) return;
+        setState(() => _submitting = false);
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text('$error')));
@@ -284,10 +310,11 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                         label: 'Tanggal pindah',
                         value: formatTanggalIndo(_tanggal, singkat: true),
                         icon: V2IconName.calendar,
+                        enabled: !_submitting,
                         onTap: _pickTanggal,
                       ),
                       // Kartu tint menerangkan perkiraan panen; tidak tampil saat
-                      // jumlah melebihi lubang kosong (frame 5.21).
+                      // jumlah melebihi lubang kosong atau sisa bibit (5.21).
                       if (_error == null) ...[
                         const SizedBox(height: V2Space.lg),
                         _tintCard(),
@@ -297,7 +324,13 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                 ),
               ),
               V2ActionBar(
-                actions: [V2Button(label: 'Pindahkan', onPressed: _pindahkan)],
+                actions: [
+                  V2Button(
+                    label: 'Pindahkan',
+                    loading: _submitting,
+                    onPressed: _submitting ? null : _pindahkan,
+                  ),
+                ],
               ),
             ],
           ),
@@ -321,7 +354,7 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                 : _meja[index].tersedia
                 ? V2OptionState.normal
                 : V2OptionState.disabled,
-            onTap: () => _pilihMeja(index),
+            onTap: _submitting ? null : () => _pilihMeja(index),
           ),
         ],
       ],
@@ -342,10 +375,20 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
           value: _jumlah,
           unit: 'tanaman',
           error: _error != null,
+          enabled: !_submitting,
           onChanged: _setJumlah,
           onMinus: _jumlah <= 1 ? null : () => _setJumlah(_jumlah - 1),
           onPlus: () => _setJumlah(_jumlah + 1),
         ),
+        // Keterangan sisa bibit, seperti "Jumlah bahan" di Tambah semaian:
+        // pengguna melihat batasnya sebelum menekan "Pindahkan".
+        if (_error == null) ...[
+          const SizedBox(height: V2Space.sm),
+          Text(
+            'Sisa bibit di semaian $_sisaBibit tanaman',
+            style: V2Type.label.copyWith(color: V2Colors.muted),
+          ),
+        ],
         if (_error != null) ...[
           const SizedBox(height: V2Space.sm),
           Row(
@@ -385,7 +428,8 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
           Text('Estimasi panen', style: V2Type.h2),
           const SizedBox(height: V2Space.sm),
           Text(
-            designEstimasiPanen,
+            'Panen sekitar ${labelTanggalMeja(_perkiraanPanen)} '
+            '($v2MejaUmurPanenHst hari setelah pindah).',
             style: V2Type.body.copyWith(color: V2Colors.slate600),
           ),
         ],

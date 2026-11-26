@@ -202,7 +202,7 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-53 | BUG-53 (K-17) — umpan balik simpan meja | Tambah meja → Simpan, amati daftar sebelum jawaban | `FIXED di kode (sebagian), belum diuji ulang di HP` — pesan "Menyimpan meja..." muncul segera; jeda jaringan tetap ada |
 | MC-FIX-54 | BUG-54 (K-26) — form "Catat penjualan" mulai kosong | Penjualan → Catat penjualan (alur nyata), langsung Simpan | `FIXED di kode, belum diuji ulang di HP` — isian kosong, panen wajib dipilih |
 | MC-FIX-55 | BUG-55 (K-28) — pemilih "Meja tanam" di deteksi | Buka Foto tanaman saat belum ada meja bertanaman | `FIXED di kode, belum diuji ulang di HP` — pesan prasyarat meja tampil |
-| MC-FIX-56 | BUG-56 (K-02/D-34) — password 6–12 & telepon 10–13 | Tambah/ubah pegawai dengan password 6–11 & telepon 10–13 angka | `FIXED di kode (klien), belum diuji ulang di HP` — validasi klien 6–12 & telepon 10–13; **password 6–11 ditolak server** sampai backend diselaraskan (G-22) |
+| MC-FIX-56 | BUG-56 (K-02/D-34→D-40) — password 6–8 huruf+angka & telepon 10–13 | Tambah/ubah pegawai dengan password 6–8 huruf+angka, telepon 10–13, alamat bukan angka saja | `FIXED di kode, belum diuji ulang di HP` — validasi klien 6–8 + huruf&angka; server `newPasswordSchema` min 6 (max 128) |
 | MC-FIX-57 | BUG-57 (K-03/K-18/D-35) — pop-up konfirmasi simpan | Ubah pegawai/meja lalu Simpan | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi muncul; Batal tak menutup form; form tambah tanpa pop-up |
 | MC-FIX-58 | BUG-58 (K-05/D-36) — tombol "Aktifkan" pegawai | Nonaktifkan pegawai, buka detailnya, tekan "Aktifkan" | `FIXED di kode, belum diuji ulang di HP` — pegawai kembali aktif + toast "diaktifkan kembali" |
 | MC-FIX-59 | BUG-59 (K-25/D-39) — keterangan penjualan | Catat/ubah penjualan, isi "Keterangan", simpan, buka detail | `FIXED di kode, belum diuji ulang di HP` — keterangan tersimpan, tampil di detail, terbawa dari antrean |
@@ -213,3 +213,23 @@ yang dicatat dengan status apa adanya.
 > **sudah diperbaiki** di `apps/mobile` dengan regression test (baris MC-FIX-39..59 &
 > MC-FIT-4). Verifikasi visual ulang di HP wajib dilakukan dev FE sebelum dinyatakan
 > tuntas untuk rilis.
+
+---
+
+> Sesi 7 (26 Nov 2026): bug FE dari testing pelapor + keputusan SA dikerjakan
+> (BUG-60..67, D-40..D-50) dan ditambahkan di §H (MC-FIX-60..67) dengan status
+> **`FIXED di kode, belum diuji ulang di HP`**. Tiga butir **butuh backend** dan
+> sengaja tidak diubah di klien: hapus "belum lunas"/pembeli penjualan, dropdown
+> obat dari katalog AI, dan riwayat perawatan (`docs/backend-change-requests.md`).
+> **Tidak** ada baris baru yang ditulis `PASS`.
+
+| Kode | Bug/keputusan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-60 | BUG-60 — arsip stok tidak termuat | Arsipkan barang → buka chip "Arsip" → cek barang muncul; "Semua" tidak memuatnya | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-61 | BUG-61 — ubah jenis barang | Ubah barang Benih→Nutrisi → Simpan → cek kategori ikut berubah | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-62 | BUG-62 — pindah meja dobel submit/sisa bibit/estimasi | Pindah meja: tekan "Pindahkan" dua kali cepat; isi jumlah > sisa bibit; ubah tanggal | `FIXED di kode, belum diuji ulang di HP` — tombol loading, input terkunci, "Sisa bibit hanya N", estimasi HST dari tanggal pindah |
+| MC-FIX-63 | BUG-63 — "Lihat semaian" menumpuk route | Dari Detail meja tekan "Lihat semaian" | `FIXED di kode, belum diuji ulang di HP` — kembali ke dashboard lalu tab Semaian |
+| MC-FIX-64 | BUG-64 — keterangan tidak tampil di detail | Isi keterangan semaian/meja/panen → buka detail | `FIXED di kode, belum diuji ulang di HP` |
+| MC-FIX-65 | BUG-65 — grafik panen data contoh | Catat 2–4 panen di tanggal berbeda → buka Riwayat Panen | `FIXED di kode, belum diuji ulang di HP` — grafik dari data asli, maks 3 tanggal, hari sama dijumlahkan |
+| MC-FIX-66 | BUG-66 — pegawai bisa buka cuaca | Masuk sebagai pegawai → buka detail siklus | `FIXED di kode, belum diuji ulang di HP` — baris cuaca tidak ada (tanpa 403) |
+| MC-FIX-67 | BUG-67 — kode meja otomatis | Tambah meja saat sudah ada A1/A2 | `FIXED di kode, belum diuji ulang di HP` — kode terisi A3, masih bisa ditimpa |

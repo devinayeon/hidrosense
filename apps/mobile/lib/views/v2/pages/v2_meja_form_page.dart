@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/validators.dart';
 import '../components/v2_meja_data.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
@@ -131,6 +132,13 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
       );
       _lubangError = 'Minimal ${aktif ?? 40}, ada ${aktif ?? 40} tanaman aktif';
     }
+    // Form tambah mengisi kode berikutnya dari daftar meja yang ada (tanpa
+    // menebak bila belum ada meja), supaya pengguna tidak perlu menghitung
+    // sendiri. Pengguna tetap bisa menimpanya.
+    if (widget.meja == null && widget.takenCodes.isNotEmpty) {
+      final berikut = v2KodeMejaBerikutnya(widget.takenCodes);
+      if (berikut != null) _kode.text = berikut;
+    }
     // Pesan galat hanya berlaku untuk nilai yang barusan dikirim. Begitu
     // pengguna memperbaiki isian, pesan harus hilang tanpa menekan Simpan lagi
     // (K-15).
@@ -178,11 +186,7 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
           : kodeSudahDipakai
           ? 'Kode meja sudah dipakai'
           : null;
-      _lubangError = lubang <= 0
-          ? 'Isi angka lebih dari 0'
-          : lubang > 1000
-          ? 'Maksimal 1.000 lubang'
-          : null;
+      _lubangError = jumlahLubangProblem(_lubang.text);
       _keteranganError = _keterangan.text.trim().length > 1000
           ? 'Maksimal 1.000 karakter'
           : null;

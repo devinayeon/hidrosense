@@ -33,7 +33,7 @@ test('bootstrap creates the first petani with a hash and never replaces an exist
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());
   await migrate(db, await loadMigrations());
-  await assert.rejects(bootstrapPetani(db, { username: 'first', nama: 'Petani', password: 'short' }), /12/);
+  await assert.rejects(bootstrapPetani(db, { username: 'first', nama: 'Petani', password: 'short' }), /6/);
   const user = await bootstrapPetani(db, { username: 'first', nama: 'Petani', password });
   assert.equal(user.id_user, '1');
   const stored = (await db.execute('SELECT password FROM users')).rows[0].password;

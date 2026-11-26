@@ -107,28 +107,46 @@ const v2KategoriKosongPesan =
 const _kategoriGagalPesan =
     'Kategori barang gagal dimuat. Periksa koneksi lalu coba lagi.';
 
+bool _samaKata(String nama, List<String> kata) {
+  final lower = nama.toLowerCase();
+  return kata.any(lower.contains);
+}
+
+/// Kategori yang benar-benar cocok dengan [jenis] berdasarkan kata kunci nama
+/// jenis. Null bila tidak ada yang cocok (tidak menebak).
+JenisInventarisRecord? _kategoriCocok(
+  List<JenisInventarisRecord> kategori,
+  V2JenisBarang jenis,
+) {
+  final aktif = kategori.where((item) => item.active).toList();
+  if (aktif.isEmpty) return null;
+  return switch (jenis) {
+    V2JenisBarang.benih =>
+      aktif.where((item) => _samaKata(item.name, ['benih', 'bibit'])).firstOrNull,
+    V2JenisBarang.nutrisi =>
+      aktif
+          .where((item) => _samaKata(item.name, ['nutrisi', 'pupuk']))
+          .firstOrNull,
+    V2JenisBarang.media =>
+      aktif
+          .where((item) => _samaKata(item.name, ['media', 'perlengkapan']))
+          .firstOrNull,
+    V2JenisBarang.obat =>
+      aktif
+          .where((item) => _samaKata(item.name, ['obat', 'pestisida']))
+          .firstOrNull,
+  };
+}
+
+/// Kategori untuk [jenis] saat menambah barang: yang cocok, atau kategori aktif
+/// pertama sebagai upaya terakhir supaya penambahan tetap bisa jalan.
 JenisInventarisRecord? _kategoriUntuk(
   List<JenisInventarisRecord> kategori,
   V2JenisBarang jenis,
 ) {
   final aktif = kategori.where((item) => item.active).toList();
   if (aktif.isEmpty) return null;
-  bool cocok(JenisInventarisRecord item, List<String> kata) {
-    final nama = item.name.toLowerCase();
-    return kata.any(nama.contains);
-  }
-
-  final pilihan = switch (jenis) {
-    V2JenisBarang.benih =>
-      aktif.where((item) => cocok(item, ['benih', 'bibit'])).firstOrNull,
-    V2JenisBarang.nutrisi =>
-      aktif.where((item) => cocok(item, ['nutrisi', 'pupuk'])).firstOrNull,
-    V2JenisBarang.media =>
-      aktif.where((item) => cocok(item, ['media', 'perlengkapan'])).firstOrNull,
-    V2JenisBarang.obat =>
-      aktif.where((item) => cocok(item, ['obat', 'pestisida'])).firstOrNull,
-  };
-  return pilihan ?? aktif.first;
+  return _kategoriCocok(kategori, jenis) ?? aktif.first;
 }
 
 /// Kategori aktif dari cache provider bila sudah dimuat; selain itu menunggu
@@ -327,11 +345,15 @@ class _V2InventarisConnectedDetailPageState
     final record = _record();
     try {
       final kategori = await _bacaKategori(ref);
+      // Jenis boleh diubah di form, jadi kategori tujuan dihitung dari jenis
+      // baru. `record?.categoryId` selalu terisi sehingga dulu menahan
+      // perubahan jenis; sekarang hanya dipakai sebagai cadangan bila kategori
+      // belum termuat atau jenis baru tidak punya kategori yang cocok.
       final pilihan =
-          record?.categoryId ??
           (kategori == null
               ? null
-              : _kategoriUntuk(kategori, updated.jenis)?.id);
+              : _kategoriCocok(kategori, updated.jenis)?.id) ??
+          record?.categoryId;
       if (pilihan == null) {
         if (!mounted) return;
         _pesan(context, v2KategoriKosongPesan);

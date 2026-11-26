@@ -773,3 +773,96 @@ Rincian bukti ada di `mcdocs/qa-sesi6-tasks.md` (tabel triase); ringkasannya:
 - **K-02/K-03/K-05/K-18:** memerlukan keputusan produk (D-34..D-36); lihat `qa/decisions.md`.
 - **K-17/K-08/K-28 (bagian data):** akar data/jaringan, bukan cacat tombol; mitigasi klien
   sudah ditambahkan (BUG-50/53/55).
+
+---
+
+# Sesi 7 (26 Nov 2026) — fix bug FE sesuai keputusan SA
+
+Rencana & status: `mcdocs/qa-sesi7-plan.md`, `mcdocs/qa-sesi7-tasks.md`.
+Butir yang butuh backend: `docs/backend-change-requests.md`.
+Semua status di bawah = **FIXED di kode, belum diuji ulang di HP**.
+
+## BUG-60 [S2] Barang arsip tidak pernah muncul di chip "Arsip"
+- Area/PB: 04 Stok — daftar & arsip (4.28/4.29) · Ditemukan lewat: testing FE Sesi 7
+- Langkah: 1) arsipkan satu barang; 2) buka chip "Arsip".
+- Ekspektasi: barang arsip tampil di chip "Arsip" dan hilang dari "Semua".
+- Aktual: daftar selalu memuat barang aktif saja, jadi arsip tidak pernah termuat.
+- Bukti: `inventory_repository.refresh()` mengirim `status_aktif=1`; sekarang dihapus
+  supaya server mengirim aktif **dan** arsip. `test/inventory_backend_flow_test.dart`
+  disesuaikan (101 baris arsip ikut termuat, 6 halaman).
+- Status: **FIXED di kode** — filter "Semua" tetap menyembunyikan arsip
+  (`v2_inventaris_list_page.dart`: `item.arsip != (_status == 2)`).
+- Regression test: `test/inventory_backend_flow_test.dart`.
+
+## BUG-61 [S2] Ubah barang: jenis baru tidak terkirim, kategori lama dipakai
+- Area/PB: 04 Stok — Ubah barang (4.24)
+- Langkah: 1) ubah barang dari Benih ke Nutrisi; 2) Simpan.
+- Ekspektasi: jenis/kategori ikut berubah.
+- Aktual (sebelum): payload memakai `record?.categoryId` sehingga jenis baru diabaikan.
+- Status: **FIXED di kode** — `v2_inventaris_connected.dart` menurunkan kategori dari
+  `updated.jenis` (`_kategoriCocok`), dengan `record?.categoryId` hanya sebagai cadangan.
+- Regression test: `test/inventory_backend_flow_test.dart` (alur ubah).
+
+## BUG-62 [S2] Pindah meja: bisa dobel submit, sisa bibit tak divalidasi, estimasi dari tanggal semai
+- Area/PB: 05 Semaian — Pindah ke meja (5.17/5.21)
+- Ekspektasi: satu ketukan = satu permintaan; jumlah tidak melebihi sisa bibit; estimasi
+  panen dihitung dari tanggal pindah (HST 0 sejak pindah).
+- Aktual (sebelum): tombol bisa ditekan berkali-kali, jumlah melebihi sisa bibit baru
+  ditolak setelahnya, dan estimasi memakai umur tetap dari semai.
+- Status: **FIXED di kode** — `_submitting`, `_sisaBibit`, `_pesanJumlah`,
+  `_pickTanggal` dijaga, input disable, tombol `loading`, helper "Sisa bibit di semaian N",
+  `v2PerkiraanPanen(_tanggal)`.
+- Regression test: `test/v2_pindah_meja_jumlah_test.dart`,
+  `test/v2_pindah_meja_success_test.dart`, `test/v2_validators_sesi7_test.dart`.
+
+## BUG-63 [S2] "Lihat semaian" menumpuk route dan tidak kembali ke tab Semaian
+- Area/PB: 06 Meja — Detail meja (6.10)
+- Ekspektasi: kembali ke dashboard lalu membuka tab Tanam/Semaian.
+- Aktual (sebelum): push halaman daftar semaian baru di atas detail meja.
+- Status: **FIXED di kode** — `onOpenSemaian` diteruskan Beranda → Tanam → Meja;
+  aksi `popUntil(isFirst)` + ganti tab.
+- Regression test: `test/v2_meja_pemilih_semaian_bug40_41_test.dart`.
+
+## BUG-64 [S3] Keterangan tidak tampil di detail semaian, meja, dan panen
+- Area/PB: 05 Semaian, 06 Meja, 07 Panen — detail
+- Ekspektasi (keputusan SA): keterangan yang diisi ikut terbaca di detail.
+- Aktual (sebelum): data keterangan dibawa mapper tetapi tidak dirender.
+- Status: **FIXED di kode** — kartu info "Keterangan" muncul bila tidak kosong di
+  `v2_semaian_detail_page.dart`, `v2_meja_detail_page.dart`, `v2_panen_detail_page.dart`.
+- Regression test: tidak ada (widget detail tidak punya tes khusus keterangan); alur
+  pemetaan ditutup `test/v2_connected_mappers_test.dart`.
+
+## BUG-65 [S3] Grafik berat panen memakai data contoh, bukan riwayat nyata
+- Area/PB: 07 Panen — Riwayat (7.6)
+- Ekspektasi (keputusan SA): grafik dari data asli, maks 3 tanggal terakhir, satu panen
+  = satu tanggal (beberapa panen di hari sama dijumlahkan).
+- Aktual (sebelum): `designGrafikPanen` hardcoded (12 Okt/29 Okt/6 Nov).
+- Status: **FIXED di kode** — `v2GrafikPanenDari` + `v2GrafikPanenKeterangan`.
+- Regression test: `test/v2_validators_sesi7_test.dart`.
+
+## BUG-66 [S3] Pegawai bisa membuka Cuaca lewat detail siklus (berakhir 403)
+- Area/PB: 02 Beranda — detail siklus (2.7) · Ditemukan lewat: audit role Sesi 7
+- Langkah: 1) masuk sebagai pegawai; 2) buka kartu siklus; 3) ketuk baris cuaca.
+- Ekspektasi (keputusan SA): route terlarang disembunyikan.
+- Aktual (sebelum): `onOpenWeather` selalu diteruskan; pegawai tanpa `cuaca:read`.
+- Status: **FIXED di kode** — `_openCycle` hanya meneruskan cuaca saat `_petani` dan
+  beranda tidak menyediakan cuaca BMKG.
+- Regression test: `test/v2_role_gating_sesi7_test.dart`.
+
+## BUG-67 [S3] Kode meja tidak otomatis bertambah
+- Area/PB: 06 Meja — Tambah meja (6.7)
+- Ekspektasi (keputusan SA Sesi 7, merevisi triase K-16): kode berikutnya terisi otomatis
+  dari daftar meja yang ada; pengguna tetap bisa menimpanya.
+- Status: **FIXED di kode** — `v2KodeMejaBerikutnya` (pola huruf+angka, mis. A1→A2,
+  M-01→M-02); tidak menebak bila belum ada meja berpola.
+- Regression test: `test/v2_validators_sesi7_test.dart`.
+
+## Catatan Sesi 7 — butir yang sengaja tidak diubah
+- **Penjualan hapus "belum lunas"/pembeli:** `pembeli` wajib di kontrak server; tanpa
+  perubahan backend klien hanya bisa mengirim nilai palsu. Diblokir, lihat
+  `docs/backend-change-requests.md` #2.
+- **Stok nama barang dropdown dari katalog AI:** `obat_katalog` tidak diekspos API dan
+  berbeda dari `/obat`. Diblokir, lihat #3.
+- **Riwayat perawatan:** tidak ada endpoint daftar `perawatan`; tab Rawat masih menampilkan
+  laporan kerusakan. Diblokir, lihat #4.
+- **Profil pegawai:** tanpa `profil:read`, telepon/alamat tampil "-". Diblokir, lihat #5.

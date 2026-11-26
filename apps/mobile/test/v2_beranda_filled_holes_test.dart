@@ -15,7 +15,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: V2BerandaPage(
-          tanamTabBuilder: (s) {
+          tanamTabBuilder: (s, _) {
             segmen.add(s);
             return Center(child: Text('segmen:$s'));
           },

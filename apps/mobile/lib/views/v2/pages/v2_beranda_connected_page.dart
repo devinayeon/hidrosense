@@ -132,8 +132,11 @@ class _V2BerandaConnectedPageState
         final V2PenjualanRepairer repairer => repairer,
         _ => null,
       },
-      tanamTabBuilder: (segmen) =>
-          V2TanamConnectedTab(initialSegmen: segmen, key: ValueKey(segmen)),
+      tanamTabBuilder: (segmen, onOpenSemaian) => V2TanamConnectedTab(
+        initialSegmen: segmen,
+        onOpenSemaian: onOpenSemaian,
+        key: ValueKey(segmen),
+      ),
       stokTabBuilder: (jenis, status) => V2InventarisConnectedTab(
         key: ValueKey('stok-${jenis?.name}-$status'),
         initialJenis: jenis,

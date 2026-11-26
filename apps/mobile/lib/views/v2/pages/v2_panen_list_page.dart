@@ -236,13 +236,16 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
       );
     }
 
+    final grafik = v2GrafikPanenDari(_riwayat);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!widget.offline) ...[
+          // Grafik dari riwayat yang benar-benar tampil, bukan data contoh
+          // (maks 3 tanggal terakhir, satu panen = satu tanggal).
           V2PanenChartCard(
-            bars: designGrafikPanen,
-            caption: 'Panen 12 Okt, 29 Okt, dan 6 Nov: 180, 210, dan 240 kg.',
+            bars: grafik,
+            caption: v2GrafikPanenKeterangan(grafik),
           ),
           const SizedBox(height: V2Space.sm),
         ],

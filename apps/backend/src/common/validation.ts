@@ -38,8 +38,8 @@ const isPlainUsername = (value: string) => !hiddenCharacters.test(value) && !val
 export const usernameSchema = z.string().min(1).max(200).transform(canonicalUsername)
   .pipe(z.string().min(1).max(50).refine(isPlainUsername));
 
-/** Password baru: 12–128 karakter dan memuat minimal satu karakter yang terlihat. */
-export const newPasswordSchema = z.string().min(12).max(128).refine((value) => /\S/u.test(value));
+/** Password baru: 6–128 karakter dan memuat minimal satu karakter yang terlihat. */
+export const newPasswordSchema = z.string().min(6).max(128).refine((value) => /\S/u.test(value));
 
 /** Satu baris teks tampak, misalnya nama: tanpa karakter kontrol, tak terlihat, atau spasi selain ' '. */
 export const plainLine = (max: number) => z.string().trim().min(1).max(max)

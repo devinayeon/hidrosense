@@ -203,10 +203,15 @@ Future<void> bukaDetailMeja(
   NavigatorState navigator,
   String tableId, {
   V2MejaItem? item,
+  VoidCallback? onOpenSemaian,
 }) {
   return navigator.push<void>(
     MaterialPageRoute<void>(
-      builder: (_) => V2MejaConnectedDetailPage(tableId: tableId, item: item),
+      builder: (_) => V2MejaConnectedDetailPage(
+        tableId: tableId,
+        item: item,
+        onOpenSemaian: onOpenSemaian,
+      ),
     ),
   );
 }
@@ -217,10 +222,14 @@ class V2MejaConnectedTab extends ConsumerWidget {
     super.key,
     this.initialStatusIndex = 0,
     this.onSegmentChanged,
+    this.onOpenSemaian,
   });
 
   final int initialStatusIndex;
   final ValueChanged<int>? onSegmentChanged;
+
+  /// Kembali ke dashboard lalu membuka Semaian (diteruskan ke Detail meja).
+  final VoidCallback? onOpenSemaian;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -256,6 +265,31 @@ class V2MejaConnectedTab extends ConsumerWidget {
     );
   }
 
+  Future<void> _bukaDetail(
+    BuildContext context,
+    WidgetRef ref,
+    V2MejaItem item,
+  ) {
+    final id = item.id;
+    if (id == null) {
+      // Data contoh galeri/offline belum punya id; tetap tampilkan salinannya.
+      return Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => V2MejaConnectedDetailPage(
+            item: item,
+            onOpenSemaian: onOpenSemaian,
+          ),
+        ),
+      );
+    }
+    return bukaDetailMeja(
+      Navigator.of(context),
+      id,
+      item: item,
+      onOpenSemaian: onOpenSemaian,
+    );
+  }
+
   Future<void> _tambah(BuildContext context, WidgetRef ref) async {
     // Kode yang sudah ada ditolak di form sebelum ditutup, supaya isian tidak
     // hilang saat server menolak duplikat (K-14).
@@ -288,23 +322,6 @@ class V2MejaConnectedTab extends ConsumerWidget {
       _pesan(context, serviceError(error));
     }
   }
-
-  Future<void> _bukaDetail(
-    BuildContext context,
-    WidgetRef ref,
-    V2MejaItem item,
-  ) {
-    final id = item.id;
-    if (id == null) {
-      // Data contoh galeri/offline belum punya id; tetap tampilkan salinannya.
-      return Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => V2MejaConnectedDetailPage(item: item),
-        ),
-      );
-    }
-    return bukaDetailMeja(Navigator.of(context), id, item: item);
-  }
 }
 
 void _pesan(BuildContext context, String pesan) {
@@ -318,17 +335,25 @@ void _pesan(BuildContext context, String pesan) {
 /// Dibuka lewat [tableId] (pintu masuk bersama, BUG-39) supaya isinya selalu
 /// dihitung ulang dari provider. [item] hanya gambar awal/pratinjau.
 class V2MejaConnectedDetailPage extends ConsumerStatefulWidget {
-  const V2MejaConnectedDetailPage({super.key, this.tableId, this.item})
-    : assert(
-        tableId != null || item != null,
-        'Butuh tableId (pintu masuk bersama) atau item (pratinjau).',
-      );
+  const V2MejaConnectedDetailPage({
+    super.key,
+    this.tableId,
+    this.item,
+    this.onOpenSemaian,
+  }) : assert(
+         tableId != null || item != null,
+         'Butuh tableId (pintu masuk bersama) atau item (pratinjau).',
+       );
 
   /// Identitas meja backend; bila diisi, Detail meja membaca ulang dari provider.
   final String? tableId;
 
   /// Data awal/pratinjau; null bila dibuka hanya dengan [tableId].
   final V2MejaItem? item;
+
+  /// Kembali ke dashboard lalu membuka segmen Semaian. Null berarti tidak ada
+  /// akses ke shell; tombol "Lihat semaian" lalu hanya menutup pemilih.
+  final VoidCallback? onOpenSemaian;
 
   @override
   ConsumerState<V2MejaConnectedDetailPage> createState() =>
@@ -447,7 +472,20 @@ class _V2MejaConnectedDetailPageState
     // Langkah 1: pilih semaian siap pindah. Kesiapan dihitung sama seperti
     // daftar semaian (HSS ≥ 15 dari tanggal semai), bukan menebak dari kolom
     // server yang bisa kosong (BUG-40).
-    final siap = (ref.read(v2AllSowingsProvider).valueOrNull ?? const [])
+    //
+    // Tunggu daftar semaian benar-benar termuat: `valueOrNull` bernilai null
+    // selama loading sehingga pemilih sempat tampil "Belum ada yang siap"
+    // padahal semaian siap pindah ada (BUG-FE tambah tanaman).
+    List<SowingRecord> rows;
+    try {
+      rows = await ref.read(v2AllSowingsProvider.future);
+    } catch (error) {
+      if (!mounted) return null;
+      _pesan(context, serviceError(error));
+      return null;
+    }
+    if (!mounted) return null;
+    final siap = rows
         .map((row) => v2SemaianItemFromRecord(row, inventaris: _inventaris))
         .where((item) => item.siapPindah)
         .toList();
@@ -456,12 +494,14 @@ class _V2MejaConnectedDetailPageState
       MaterialPageRoute<V2SemaianItem>(
         builder: (_) => V2PilihSemaianPage(
           items: siap,
-          // "Lihat semaian" membuka daftar semaian tersambung, bukan menutup
-          // kembali ke Detail meja (BUG-41).
-          onLihatSemaian: () {
-            navigator.pop();
-            navigator.push(V2SemaianConnectedListPage.route());
-          },
+          // "Lihat semaian" harus kembali ke dashboard lalu membuka segmen
+          // Semaian, bukan menumpuk halaman baru di atas shell (BUG-FE).
+          onLihatSemaian: widget.onOpenSemaian == null
+              ? null
+              : () {
+                  navigator.popUntil((route) => route.isFirst);
+                  widget.onOpenSemaian!();
+                },
         ),
       ),
     );

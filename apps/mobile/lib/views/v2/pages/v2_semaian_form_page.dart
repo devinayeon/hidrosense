@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formatting.dart';
+import '../../../core/validators.dart';
 import '../components/v2_semaian_data.dart';
 import '../components/v2_semaian_date_sheet.dart';
 import '../theme/v2_tokens.dart';
@@ -262,11 +263,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
     final teksBenih = _jumlahBenih.text.trim();
     final benih = int.tryParse(teksBenih);
     setState(() {
-      _benihError = teksBenih.isEmpty
-          ? 'Isi jumlah benih'
-          : benih == null || benih <= 0
-          ? 'Jumlah benih harus angka'
-          : null;
+      _benihError = jumlahBenihProblem(teksBenih);
       _bahanError = _baris.first.bahan == null ? 'Pilih bahan' : null;
       for (final baris in _baris) {
         baris.error = _stokPesan(baris);

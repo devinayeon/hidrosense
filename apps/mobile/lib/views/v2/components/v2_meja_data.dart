@@ -29,6 +29,44 @@ const List<String> _bulanSingkat = <String>[
   'Des',
 ];
 
+/// Tanggal perkiraan panen dari [tanggalPindah].
+///
+/// HST dihitung dari 0 sejak pindah, bukan dari tanggal semai (keputusan SA):
+/// tanaman yang terlambat dipindah tetap punya sisa umur penuh.
+DateTime v2PerkiraanPanen(
+  DateTime tanggalPindah, {
+  int hst = v2MejaUmurPanenHst,
+}) => DateTime(tanggalPindah.year, tanggalPindah.month, tanggalPindah.day + hst);
+
+/// Kode berikutnya untuk meja baru, dari kode yang sudah ada.
+///
+/// Mengikuti pola `huruf`+`angka` (mis. `A1`, `A2`, `M-01`): awalan yang paling
+/// banyak dipakai dipertahankan, angkanya dinaikkan satu, lebar nol disamakan.
+/// Mengembalikan `null` bila tidak ada kode yang mengikuti pola itu, supaya
+/// form tidak menebak awalan yang belum pernah dipakai.
+String? v2KodeMejaBerikutnya(Iterable<String> codes) {
+  final pola = RegExp(r'^([A-Za-z]+-?)([0-9]+)$');
+  final perAwalan = <String, List<int>>{};
+  var lebar = 0;
+  for (final kode in codes) {
+    final cocok = pola.firstMatch(kode.trim());
+    if (cocok == null) continue;
+    final awalan = cocok.group(1)!.toUpperCase();
+    final digit = cocok.group(2)!;
+    if (digit.length > lebar) lebar = digit.length;
+    (perAwalan[awalan] ??= <int>[]).add(int.parse(digit));
+  }
+  if (perAwalan.isEmpty) return null;
+  var awalanTerpilih = perAwalan.keys.first;
+  for (final awalan in perAwalan.keys) {
+    if (perAwalan[awalan]!.length > perAwalan[awalanTerpilih]!.length) {
+      awalanTerpilih = awalan;
+    }
+  }
+  final tertinggi = perAwalan[awalanTerpilih]!.reduce((a, b) => a > b ? a : b);
+  return '$awalanTerpilih${(tertinggi + 1).toString().padLeft(lebar, '0')}';
+}
+
 /// `10 Nov` — hari dan bulan tanpa tahun (subjudul daftar rusak).
 String labelTanggalMeja(DateTime tanggal) =>
     '${tanggal.day} ${_bulanSingkat[tanggal.month - 1]}';
