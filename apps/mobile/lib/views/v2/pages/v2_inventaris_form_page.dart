@@ -280,9 +280,22 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     return minimum == null ? '' : formatAngka(minimum);
   }
 
+  /// Menandai isian sudah disentuh (frame 4.30) sekaligus membersihkan galat
+  /// yang sudah diperbaiki, supaya pesan merah hilang begitu isian benar.
   void _markDirty() {
-    if (_dirty) return;
-    setState(() => _dirty = true);
+    final namaBaik = _namaError != null && _nama.text.trim().isNotEmpty;
+    final satuanBaik = _satuanError != null && _satuan.text.trim().isNotEmpty;
+    final stokBaik =
+        _stokAwalError != null &&
+        _stokAwal.text.trim().isNotEmpty &&
+        _parseAngka(_stokAwal.text) >= 0;
+    if (_dirty && !namaBaik && !satuanBaik && !stokBaik) return;
+    setState(() {
+      _dirty = true;
+      if (namaBaik) _namaError = null;
+      if (satuanBaik) _satuanError = null;
+      if (stokBaik) _stokAwalError = null;
+    });
   }
 
   void _pop() {
@@ -407,7 +420,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     return double.tryParse(cleaned) ?? 0;
   }
 
-  void _save() {
+  Future<void> _save() async {
     FocusScope.of(context).unfocus();
     final item = widget.initialItem;
     final nama = _nama.text.trim();
@@ -424,6 +437,17 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         _stokAwalError = null;
       });
       if (_hasError) return;
+
+      // Konfirmasi ulang sebelum menyimpan perubahan (K-03/K-18, D-35), sama
+      // seperti form akun dan meja.
+      final confirmed = await showV2Dialog(
+        context,
+        title: 'Simpan perubahan barang?',
+        body: 'Perubahan barang akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        secondaryLabel: 'Batal',
+      );
+      if (confirmed != true || !mounted) return;
       _dirty = false;
       Navigator.of(context).pop(
         V2InventarisItem(
@@ -559,6 +583,10 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         hint: _satuanError == null ? hint.$2 : '',
         controller: _satuan,
         error: _satuanError,
+        // Satuan tidak boleh diubah setelah barang dibuat (keputusan SA),
+        // supaya riwayat stok tetap konsisten; hanya jenis/nama yang bisa diubah.
+        enabled: !edit,
+        helper: edit ? 'Satuan tidak bisa diubah.' : null,
       ),
       // Mode ubah tidak menyentuh jumlah, jadi "Stok awal" tidak muncul
       // (frame 4.24).

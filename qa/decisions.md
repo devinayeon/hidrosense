@@ -418,3 +418,78 @@ Selisih lengkap ada di `qa/rtm.md` §Gap.
    riwayat), 0 baris; fitur cuaca berjalan di klien (G-04).
 7. **Tombol "ubah" vs "konfirmasi" perawatan (§6.7).** Perawatan dibuat lewat "Terima";
    belum ada alur edit/koreksi perawatan terpisah (G-02/G-12).
+
+---
+
+# Sesi 7 (26 Nov 2026) — keputusan SA untuk bug FE
+
+Status implementasi: `mcdocs/qa-sesi7-tasks.md`; permintaan backend:
+`docs/backend-change-requests.md`.
+
+## D-40 — Aturan akun: password 6–8 huruf+angka, telepon 10–13, alamat bukan angka saja
+- **Konteks:** D-34 (6–12) direvisi oleh SA Sesi 7.
+- **Keputusan:** password 6–8 karakter **wajib** memuat huruf dan angka; telepon opsional
+  10–13 angka; alamat opsional tetapi tidak boleh hanya angka.
+- **Implementasi:** `lib/core/validators.dart`; `v2_employee_form_page.dart` (galat hilang
+  saat diperbaiki + input disable saat menyimpan). Server `newPasswordSchema` min 12→6,
+  max tetap 128 (kontrak lama aman) — max 8 vs 128 dicatat sebagai pertanyaan terbuka.
+- **Bukti:** `test/v2_validators_sesi7_test.dart`, `test/v2_employee_d34_test.dart`.
+
+## D-41 — Batas 250 benih per semai dan 250 lubang per meja
+- **Keputusan:** semaian maks 250 benih; meja maks 250 lubang (revisi triase K-16 yang
+  dulu menyebut 250 hanya kapasitas total).
+- **Implementasi:** `jumlahBenihProblem`/`jumlahLubangProblem`; dipakai form semaian & meja.
+- **Bukti:** `test/v2_meja_form_test.dart` (251 ditolak), `test/v2_validators_sesi7_test.dart`.
+
+## D-42 — Estimasi panen dihitung 0 sejak pindah
+- **Keputusan:** HST panen dihitung dari tanggal pindah, bukan tanggal semai.
+- **Implementasi:** `v2PerkiraanPanen` (`v2_meja_data.dart`); dipakai halaman Pindah.
+- **Bukti:** 6 Jan + 45 → 20 Feb; 30 Nov + 45 → 14 Jan 2027 (`v2_validators_sesi7_test.dart`).
+
+## D-43 — Keterangan tampil di detail semaian, meja, panen
+- **Keputusan:** isian keterangan yang sudah tersimpan harus terbaca di detail.
+- **Implementasi:** kartu info "Keterangan" di tiga halaman detail; data dari mapper
+  connected (`note`/`notes`).
+
+## D-44 — Grafik berat panen dari riwayat nyata
+- **Keputusan:** grafik memakai riwayat nyata; maksimal 3 tanggal terakhir; satu panen =
+  satu tanggal (beberapa panen di hari sama dijumlahkan).
+- **Implementasi:** `v2GrafikPanenDari`, `v2GrafikPanenKeterangan`; halaman Riwayat Panen.
+- **Bukti:** `test/v2_validators_sesi7_test.dart`.
+
+## D-45 — Kode meja otomatis bertambah
+- **Keputusan:** form tambah meja mengisi kode berikutnya dari daftar meja yang ada;
+  pengguna tetap bisa menimpa. Tidak menebak bila belum ada kode berpola.
+- **Implementasi:** `v2KodeMejaBerikutnya` (A1→A2, M-01→M-02).
+- **Bukti:** `test/v2_validators_sesi7_test.dart`.
+
+## D-46 — Stok: arsip dimuat, jenis bisa diubah, satuan dikunci
+- **Keputusan:** barang arsip harus muncul di chip "Arsip"; jenis dapat diubah; satuan
+  tidak dapat diubah setelah dibuat.
+- **Implementasi:** `inventory_repository.refresh()` tanpa `status_aktif`;
+  `v2_inventaris_connected.dart` memakai jenis baru; `v2_inventaris_form_page.dart`
+  (`enabled: !edit` + helper).
+- **Bukti:** `test/inventory_backend_flow_test.dart` (101 baris termasuk arsip).
+
+## D-47 — Penjualan: hapus "belum lunas" & pembeli — **BUTUH BACKEND**
+- **Keputusan:** hapus status pembayaran "belum lunas" dan nama pembeli dari penjualan.
+- **Alasan tertunda:** `pembeli` wajib dan `status_pembayaran` enum di
+  `apps/backend/src/features/sales/contracts.ts`. Klien tidak boleh mengirim placeholder.
+- **Tindak lanjut:** `docs/backend-change-requests.md` #2.
+
+## D-48 — Stok: dropdown nama obat dari katalog AI — **BUTUH BACKEND**
+- **Keputusan:** "Nama barang" obat memakai daftar yang sama dengan rekomendasi AI.
+- **Alasan tertunda:** daftar AI = `obat_katalog` (tidak diekspos API); form memakai
+  `/obat` (master berbeda). Lihat `docs/backend-change-requests.md` #3.
+
+## D-49 — Role Pegawai: sembunyikan/blokir route terlarang
+- **Keputusan:** pegawai tidak boleh melihat jalan menuju fitur yang ditolak backend.
+- **Implementasi:** kartu & baris cuaca disembunyikan (`v2_beranda_page.dart`); tab Profil
+  read-only tanpa Akun pegawai/Penjualan (sudah ada).
+- **Sisa:** telepon/alamat profil pegawai butuh `profil:read` — `docs/backend-change-requests.md` #5.
+- **Bukti:** `test/v2_role_gating_sesi7_test.dart`.
+
+## D-50 — Riwayat perawatan — **BUTUH BACKEND**
+- **Keputusan:** investigasi selesai; akar = tidak ada endpoint daftar `perawatan`.
+- **Tindak lanjut:** `docs/backend-change-requests.md` #4. Tab Rawat sementara tetap
+  menampilkan laporan kerusakan.

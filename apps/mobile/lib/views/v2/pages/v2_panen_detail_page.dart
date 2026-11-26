@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../components/v2_panen_assets.dart';
 import '../components/v2_panen_data.dart';
 import '../components/v2_penjualan_data.dart';
+import '../components/v2_penjualan_info_card.dart';
 import '../theme/v2_tokens.dart';
 import '../v2_roles.dart';
 import '../widgets/v2_action_bar.dart';
@@ -189,6 +190,18 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
                       _ringkasan(),
                       const SizedBox(height: V2Space.lg),
                       _info(),
+                      // Keterangan panen yang diisi saat mencatat (keputusan SA).
+                      if ((_item.keterangan ?? '').isNotEmpty) ...[
+                        const SizedBox(height: V2Space.lg),
+                        V2PenjualanInfoCard(
+                          rows: <V2PenjualanInfoRow>[
+                            V2PenjualanInfoRow(
+                              label: 'Keterangan',
+                              value: _item.keterangan!,
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

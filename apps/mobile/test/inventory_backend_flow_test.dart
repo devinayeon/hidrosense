@@ -140,9 +140,11 @@ process.on('SIGTERM',async()=>{for(const cleanup of cleanups.reverse())await cle
       expect(vm.state.records.last.isLow, true);
       client.trace.clear();
       await vm.deactivateItem(item.id);
-      expect(client.trace.length, 6); // Archive + five pages.
-      expect(vm.state.records.length, 100);
-      expect((await repo.cached())!.records.length, 100);
+      // Arsip ikut dimuat supaya chip "Arsip" bisa menampilkannya (BUG arsip):
+      // tanpa `status_aktif` server mengirim 101 baris (6 halaman), bukan 100.
+      expect(client.trace.length, 7); // Archive + six pages.
+      expect(vm.state.records.length, 101);
+      expect((await repo.cached())!.records.length, 101);
       final archived = await api.get('inventaris/${item.id}');
       expect(archived['data']['status_aktif'], 0);
       expect(archived['data']['saldo'], '10');

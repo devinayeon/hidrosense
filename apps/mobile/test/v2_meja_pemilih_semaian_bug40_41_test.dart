@@ -104,6 +104,7 @@ Future<void> _pumpDetail(
   WidgetTester tester,
   ApiClient api, {
   List<SowingRecord> sowings = const <SowingRecord>[_sowing, _sowingMuda],
+  VoidCallback? onOpenSemaian,
 }) async {
   tester.view.physicalSize = const Size(390, 900);
   tester.view.devicePixelRatio = 1;
@@ -126,8 +127,11 @@ Future<void> _pumpDetail(
           (ref) async => const <TransferRecord>[],
         ),
       ],
-      child: const MaterialApp(
-        home: V2MejaConnectedDetailPage(tableId: '1'),
+      child: MaterialApp(
+        home: V2MejaConnectedDetailPage(
+          tableId: '1',
+          onOpenSemaian: onOpenSemaian,
+        ),
       ),
     ),
   );
@@ -154,26 +158,35 @@ void main() {
     },
   );
 
-  testWidgets('BUG-41: "Lihat semaian" membuka daftar semaian', (tester) async {
-    final api = _api();
-    addTearDown(api.close);
-    await _pumpDetail(
-      tester,
-      api,
-      sowings: const <SowingRecord>[_sowingMuda],
-    );
+  testWidgets(
+    'BUG-41: "Lihat semaian" kembali ke dashboard lalu membuka Semaian',
+    (tester) async {
+      final api = _api();
+      addTearDown(api.close);
+      var dibuka = 0;
+      await _pumpDetail(
+        tester,
+        api,
+        sowings: const <SowingRecord>[_sowingMuda],
+        onOpenSemaian: () => dibuka++,
+      );
 
-    await tester.tap(find.text('Tambah tanaman'));
-    await tester.pumpAndSettle();
-    expect(find.text('Belum ada yang siap'), findsOneWidget);
+      await tester.tap(find.text('Tambah tanaman'));
+      await tester.pumpAndSettle();
+      expect(find.text('Belum ada yang siap'), findsOneWidget);
 
-    await tester.tap(find.text('Lihat semaian'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Lihat semaian'));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byType(V2SemaianConnectedListPage),
-      findsOneWidget,
-      reason: 'BUG-41: "Lihat semaian" harus membuka daftar semaian',
-    );
-  });
+      // Pemilih ditutup (tidak menumpuk route baru) dan shell diminta
+      // membuka segmen Semaian.
+      expect(dibuka, 1, reason: 'shell harus diminta membuka tab Semaian');
+      expect(find.text('Belum ada yang siap'), findsNothing);
+      expect(
+        find.byType(V2SemaianConnectedListPage),
+        findsNothing,
+        reason: 'tidak boleh push halaman daftar semaian baru',
+      );
+    },
+  );
 }

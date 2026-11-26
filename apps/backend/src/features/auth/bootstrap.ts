@@ -12,7 +12,7 @@ const schema = z.object({
 
 export async function bootstrapPetani(db: Client, input: unknown) {
   const parsed = schema.safeParse(input);
-  if (!parsed.success) throw new ApiError(400, 'INVALID_BOOTSTRAP', 'Isi username, nama, dan password 12–128 karakter yang valid.');
+  if (!parsed.success) throw new ApiError(400, 'INVALID_BOOTSTRAP', 'Isi username, nama, dan password 6–128 karakter yang valid.');
   const { username, nama, password } = parsed.data;
   const hash = await hashPassword(password);
   const tx = await db.transaction('write');

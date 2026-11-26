@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../components/v2_meja_data.dart';
 import '../components/v2_meja_detail_cards.dart';
+import '../components/v2_penjualan_info_card.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
@@ -378,6 +379,19 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
                                   type: V2ButtonType.tertiary,
                                   onPressed: _ubahMeja,
                                 ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        // Keterangan meja yang diisi saat menambah/ubah
+                        // (keputusan SA): ikut terbaca di detail.
+                        if ((_item.keterangan ?? '').isNotEmpty) ...[
+                          const SizedBox(height: V2Space.md),
+                          V2PenjualanInfoCard(
+                            rows: <V2PenjualanInfoRow>[
+                              V2PenjualanInfoRow(
+                                label: 'Keterangan',
+                                value: _item.keterangan!,
                               ),
                             ],
                           ),

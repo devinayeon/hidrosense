@@ -297,7 +297,12 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Versi tab Tanam yang bisa dibuka langsung ke segmen tertentu (0 Semaian,
   /// 1 Meja, 2 Panen). Dipakai kartu "Lubang terisi" membuka Tanam → Meja.
-  final Widget Function(int segmen)? tanamTabBuilder;
+  ///
+  /// [onOpenSemaian] diberikan ke halaman turunan supaya tombol "Lihat semaian"
+  /// bisa kembali ke dashboard lalu membuka segmen Semaian, tanpa menumpuk
+  /// route baru di atas shell (BUG-FE navigasi).
+  final Widget Function(int segmen, VoidCallback onOpenSemaian)?
+  tanamTabBuilder;
 
   /// Isi tab Stok versi backend; menerima jenis dan indeks keadaan terpilih
   /// supaya kartu "stok menipis" bisa langsung membuka Benih + Menipis.
@@ -446,6 +451,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
     setState(() {
       _activeTab = v2TanamTabIndex;
       _tanamSegmen = 1;
+    });
+  }
+
+  /// Kembali ke tab Tanam bagian Semaian tanpa push route baru. Dipakai tombol
+  /// "Lihat semaian" dari Detail meja setelah seluruh route di atas dashboard
+  /// ditutup (BUG-FE navigasi).
+  void _openSemaianTab() {
+    if (!mounted) return;
+    setState(() {
+      _activeTab = v2TanamTabIndex;
+      _tanamSegmen = 0;
     });
   }
 
@@ -618,8 +634,11 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
 
   void _openCycle() {
     // Saat BMKG gagal, beranda menampilkan kartu "Coba lagi"; detail siklus
-    // tidak boleh menampilkan cuaca contoh yang seolah tersedia.
-    final cuacaTersedia = _state != V2BerandaState.weatherUnavailable;
+    // tidak boleh menampilkan cuaca contoh yang seolah tersedia. Pegawai tidak
+    // punya izin `cuaca:read`, jadi baris cuaca disembunyikan agar tidak
+    // menabrak 403 (keputusan SA: sembunyikan route terlarang).
+    final cuacaTersedia =
+        _petani && _state != V2BerandaState.weatherUnavailable;
     Navigator.of(context).push(
       V2CycleDetailPage.route(
         tableName: widget.heroTitle,
@@ -627,9 +646,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         total: widget.heroTotal,
         weatherTitle: cuacaTersedia ? widget.weatherTitle : null,
         weatherSubtitle: cuacaTersedia ? widget.weatherSubtitle : null,
-        onOpenWeather:
-            widget.onOpenWeather ??
-            () => Navigator.of(context).push(V2CuacaPage.route()),
+        onOpenWeather: !cuacaTersedia
+            ? null
+            : widget.onOpenWeather ??
+                  () => Navigator.of(context).push(V2CuacaPage.route()),
         onOpenTable:
             widget.onOpenCycleTable ??
             () => Navigator.of(context).push(
@@ -675,7 +695,10 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                     ? KeyedSubtree(
                         key: ValueKey('tanam-$_tanamSegmen'),
                         child:
-                            widget.tanamTabBuilder?.call(_tanamSegmen) ??
+                            widget.tanamTabBuilder?.call(
+                              _tanamSegmen,
+                              _openSemaianTab,
+                            ) ??
                             widget.tanamTab ??
                             V2SemaianTabView(
                               items: _semaian,

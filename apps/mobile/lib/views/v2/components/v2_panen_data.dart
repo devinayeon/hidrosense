@@ -322,6 +322,46 @@ final List<V2PanenItem> designPanenRiwayatAntrean = <V2PanenItem>[
   designPanenTerjual,
 ];
 
+/// Grafik berat layak dari riwayat panen nyata (frame 7.6).
+///
+/// Satu batang mewakili satu tanggal (beberapa panen di hari yang sama
+/// dijumlahkan), diurutkan menaik, dan hanya [maks] batang terakhir yang
+/// ditampilkan supaya grafik tetap terbaca.
+List<V2PanenGrafikBatang> v2GrafikPanenDari(
+  Iterable<V2PanenItem> riwayat, {
+  int maks = 3,
+}) {
+  final perTanggal = <DateTime, double>{};
+  for (final item in riwayat) {
+    final hari = DateTime(
+      item.tanggal.year,
+      item.tanggal.month,
+      item.tanggal.day,
+    );
+    perTanggal[hari] = (perTanggal[hari] ?? 0) + item.beratLayak;
+  }
+  final tanggal = perTanggal.keys.toList()..sort();
+  final dipakai = tanggal.length <= maks
+      ? tanggal
+      : tanggal.sublist(tanggal.length - maks);
+  return <V2PanenGrafikBatang>[
+    for (final hari in dipakai)
+      V2PanenGrafikBatang(
+        label: labelTanggalPanen(hari),
+        berat: perTanggal[hari]!,
+      ),
+  ];
+}
+
+/// Keterangan grafik dari batangnya, mis. `Panen 12 Okt, 29 Okt, 6 Nov: 180,
+/// 210, dan 240 kg.`
+String v2GrafikPanenKeterangan(List<V2PanenGrafikBatang> bars) {
+  if (bars.isEmpty) return 'Belum ada panen tercatat.';
+  final label = bars.map((bar) => bar.label).join(', ');
+  final berat = bars.map((bar) => bar.display).join(', ');
+  return 'Panen $label: $berat kg.';
+}
+
 /// Grafik berat layak per panen (frame 7.6).
 final List<V2PanenGrafikBatang> designGrafikPanen = <V2PanenGrafikBatang>[
   V2PanenGrafikBatang(label: '12 Okt', berat: 180),

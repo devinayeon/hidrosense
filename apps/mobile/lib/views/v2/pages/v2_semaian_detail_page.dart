@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../components/v2_penjualan_info_card.dart';
 import '../components/v2_semaian_data.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
@@ -184,6 +185,19 @@ class _V2SemaianDetailPageState extends State<V2SemaianDetailPage> {
                         _ringkasan(),
                         const SizedBox(height: V2Space.lg),
                         _tahap(),
+                        // Keterangan bebas yang diisi saat menambah semaian
+                        // (keputusan SA): selalu ikut terbaca di detail.
+                        if ((item.keterangan ?? '').isNotEmpty) ...[
+                          const SizedBox(height: V2Space.lg),
+                          V2PenjualanInfoCard(
+                            rows: <V2PenjualanInfoRow>[
+                              V2PenjualanInfoRow(
+                                label: 'Keterangan',
+                                value: item.keterangan!,
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -136,9 +136,12 @@ class InventoryRepository {
     var totalPages = 1;
     int? expectedTotal;
     do {
+      // Tanpa `status_aktif`, server mengirim barang aktif **dan** arsip, supaya
+      // chip "Arsip" di daftar stok punya datanya. Penyaring aktif tetap dipakai
+      // di klien (`activeRecords`) untuk kartu stok menipis dan pemilihan bahan.
       final response = await _api.get(
         'inventaris',
-        query: {'page': '$page', 'limit': '20', 'status_aktif': '1'},
+        query: {'page': '$page', 'limit': '20'},
       );
       final data = response['data'];
       final meta = response['meta'];

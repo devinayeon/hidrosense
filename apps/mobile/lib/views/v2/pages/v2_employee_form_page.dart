@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/validators.dart';
 import '../components/v2_akun_action_bar.dart';
 import '../components/v2_akun_employee.dart';
 import '../components/v2_akun_employee_store.dart';
@@ -123,6 +124,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
   String? _usernameError;
   String? _passwordError;
   String? _phoneError;
+  String? _addressError;
 
   /// Menandai isian sudah disentuh, supaya tombol kembali meminta konfirmasi.
   bool _dirty = false;
@@ -173,9 +175,26 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     super.dispose();
   }
 
+  /// Menandai isian disentuh sekaligus membersihkan galat yang sudah
+  /// diperbaiki, supaya pesan merah hilang begitu isian benar.
   void _markDirty() {
-    if (_dirty) return;
-    setState(() => _dirty = true);
+    final nama = _nameError != null && _name.text.trim().isNotEmpty;
+    final pengguna =
+        _usernameError != null &&
+        _username.text.trim().isNotEmpty &&
+        !widget.takenUsernames.contains(_username.text.trim().toLowerCase());
+    final sandi = _passwordError != null && _passwordProblem(_password.text) == null;
+    final telp = _phoneError != null && phoneProblem(_phone.text.trim()) == null;
+    final alamat = _addressError != null && addressProblem(_address.text.trim()) == null;
+    if (_dirty && !nama && !pengguna && !sandi && !telp && !alamat) return;
+    setState(() {
+      _dirty = true;
+      if (nama) _nameError = null;
+      if (pengguna) _usernameError = null;
+      if (sandi) _passwordError = null;
+      if (telp) _phoneError = null;
+      if (alamat) _addressError = null;
+    });
   }
 
   void _resetToInitial() {
@@ -191,6 +210,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       _usernameError = null;
       _passwordError = null;
       _phoneError = null;
+      _addressError = null;
     });
   }
 
@@ -232,28 +252,10 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     _confirmDiscard();
   }
 
-  /// Password: 6–12 karakter (keputusan PM, D-34). Saat mengubah, kosong
-  /// berarti password tidak diganti.
-  String? _passwordProblem(String password) {
-    if (password.isEmpty) {
-      return widget.isEdit ? null : 'Isi password';
-    }
-    if (password.length < 6) return 'Minimal 6 karakter';
-    if (password.length > 12) return 'Maksimal 12 karakter';
-    return null;
-  }
-
-  /// Telepon: opsional, 10–13 angka bila diisi (keputusan PM, D-34).
-  String? _phoneProblem(String phone) {
-    if (phone.isEmpty) return null;
-    if (!RegExp(r'^\+?[0-9 ()\-]+$').hasMatch(phone)) {
-      return 'Nomor telepon tidak valid';
-    }
-    final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length < 10) return 'Minimal 10 angka';
-    if (digits.length > 13) return 'Maksimal 13 angka';
-    return null;
-  }
+  /// Password: 6–8 karakter, huruf dan angka (keputusan SA). Saat mengubah,
+  /// kosong berarti password tidak diganti.
+  String? _passwordProblem(String password) =>
+      passwordProblem(password, optional: widget.isEdit);
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
@@ -262,6 +264,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     final username = _username.text.trim();
     final password = _password.text;
     final phone = _phone.text.trim();
+    final address = _address.text.trim();
     final ownUsername = widget.initial?.username.toLowerCase();
 
     setState(() {
@@ -273,13 +276,15 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                 ? 'Username sudah dipakai'
                 : null);
       _passwordError = _passwordProblem(password);
-      _phoneError = _phoneProblem(phone);
+      _phoneError = phoneProblem(phone);
+      _addressError = addressProblem(address);
     });
 
     if (_nameError != null ||
         _usernameError != null ||
         _passwordError != null ||
-        _phoneError != null) {
+        _phoneError != null ||
+        _addressError != null) {
       return;
     }
 
@@ -387,6 +392,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           hint: 'Contoh: Sari Dewi',
                           controller: _name,
                           error: _nameError,
+                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
@@ -394,6 +400,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           hint: 'Contoh: sari.dewi',
                           controller: _username,
                           error: _usernameError,
+                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2PasswordField(
@@ -402,9 +409,10 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                               : 'Password',
                           hint: widget.isEdit
                               ? 'Kosongkan jika tetap'
-                              : '6–12 karakter',
+                              : '6–8 karakter, huruf & angka',
                           controller: _password,
                           error: _passwordError,
+                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
@@ -413,12 +421,15 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           controller: _phone,
                           keyboardType: TextInputType.phone,
                           error: _phoneError,
+                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
                           label: 'Alamat (opsional)',
                           hint: 'Jalan dan kota',
                           controller: _address,
+                          error: _addressError,
+                          enabled: !_saving,
                         ),
                       ],
                     ),
