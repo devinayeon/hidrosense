@@ -8,7 +8,6 @@ import '../../../data/models/nursery_record.dart';
 import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_nursery_viewmodel.dart';
 import '../../../viewmodels/connected_table_viewmodel.dart';
-import '../../../viewmodels/session_viewmodel.dart';
 import '../../../viewmodels/sowing_draft.dart';
 import '../components/v2_semaian_data.dart';
 import '../pages/v2_pindah_meja_page.dart';
@@ -164,44 +163,45 @@ Future<void> v2TambahSemaian(BuildContext context, WidgetRef ref) async {
     return;
   }
   final result = await Navigator.of(context).push<V2SemaianItem>(
-    V2SemaianFormPage.route(bahanList: bahan, initialDate: jakartaToday()),
+    V2SemaianFormPage.route(
+      bahanList: bahan,
+      initialDate: jakartaToday(),
+      onSubmit: (hasil) => _kirimSemaianBaru(ref, hasil),
+    ),
   );
-  if (result == null) return;
-  final pakai = result.bahanList;
-  final inventoryId = result.bahanInventoryId;
+  if (result == null || !context.mounted) return;
+  _pesan(context, 'Semaian ditambahkan.');
+}
+
+/// Kirim semaian baru ke backend. Dipanggil dari pop-up konfirmasi di form
+/// supaya daftar tidak kembali lebih dulu sebelum proses selesai (Sesi 9).
+Future<void> _kirimSemaianBaru(WidgetRef ref, V2SemaianItem hasil) async {
+  final pakai = hasil.bahanList;
+  final inventoryId = hasil.bahanInventoryId;
   if ((pakai == null || pakai.isEmpty) && inventoryId == null) {
-    if (!context.mounted) return;
-    _pesan(context, 'Pilih bahan dari inventaris.');
-    return;
+    throw StateError('Pilih bahan dari inventaris.');
   }
-  try {
-    await ref
-        .read(connectedNurseryProvider.notifier)
-        .saveSowing(
-          SowingDraft(
-            date: apiDate(result.tanggalSemai),
-            seedCount: result.jumlahBenih,
-            note: result.keterangan ?? '',
-            inventoryId: inventoryId,
-            amount: result.bahanAmount ?? '1',
-            unit: result.bahanUnit ?? 'pak',
-            materials: [
-              for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
-                if (bahan.inventoryId != null)
-                  SowingMaterialDraft(
-                    inventoryId: bahan.inventoryId!,
-                    amount: '${bahan.jumlah}',
-                    unit: bahan.satuan,
-                  ),
-            ],
-          ),
-        );
-    if (!context.mounted) return;
-    _pesan(context, 'Semaian ditambahkan.');
-  } catch (error) {
-    if (!context.mounted) return;
-    _pesan(context, serviceError(error));
-  }
+  await ref
+      .read(connectedNurseryProvider.notifier)
+      .saveSowing(
+        SowingDraft(
+          date: apiDate(hasil.tanggalSemai),
+          seedCount: hasil.jumlahBenih,
+          note: hasil.keterangan ?? '',
+          inventoryId: inventoryId,
+          amount: hasil.bahanAmount ?? '1',
+          unit: hasil.bahanUnit ?? 'pak',
+          materials: [
+            for (final bahan in pakai ?? const <V2SemaianBahanPakai>[])
+              if (bahan.inventoryId != null)
+                SowingMaterialDraft(
+                  inventoryId: bahan.inventoryId!,
+                  amount: '${bahan.jumlah}',
+                  unit: bahan.satuan,
+                ),
+          ],
+        ),
+      );
 }
 
 /// Buka detail semaian tersambung; hasilnya menggantikan baris pemanggil.
@@ -293,30 +293,28 @@ class _V2SemaianConnectedDetailPageState
   Future<void> _ubah() async {
     final updated = await Navigator.of(context).push<V2SemaianItem>(
       MaterialPageRoute<V2SemaianItem>(
-        builder: (_) => V2SemaianEditPage(item: _item),
+        builder: (_) => V2SemaianEditPage(
+          item: _item,
+          onSubmit: (hasil) async {
+            await ref
+                .read(connectedNurseryProvider.notifier)
+                .saveSowing(
+                  SowingDraft(
+                    id: _item.id,
+                    date: apiDate(_item.tanggalSemai),
+                    seedCount: hasil.jumlahBenih,
+                    note: hasil.keterangan ?? '',
+                    // Tandai selesai hanya bila status berubah; tidak ada jalan
+                    // balik karena form ubah disembunyikan untuk semaian selesai.
+                    status: hasil.selesai && !_item.selesai ? 'selesai' : null,
+                  ),
+                );
+          },
+        ),
       ),
     );
     if (!mounted || updated == null) return;
-    try {
-      await ref
-          .read(connectedNurseryProvider.notifier)
-          .saveSowing(
-            SowingDraft(
-              id: _item.id,
-              date: apiDate(_item.tanggalSemai),
-              seedCount: updated.jumlahBenih,
-              note: updated.keterangan ?? '',
-              // Tandai selesai hanya bila status berubah; tidak ada jalan
-              // balik karena form ubah disembunyikan untuk semaian selesai.
-              status: updated.selesai && !_item.selesai ? 'selesai' : null,
-            ),
-          );
-      if (!mounted) return;
-      _segarkan('Perubahan tersimpan');
-    } catch (error) {
-      if (!mounted) return;
-      _pesan(context, serviceError(error));
-    }
+    _segarkan('Perubahan tersimpan');
   }
 
   Future<void> _pindah() async {

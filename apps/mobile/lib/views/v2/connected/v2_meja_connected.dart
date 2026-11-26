@@ -300,27 +300,18 @@ class V2MejaConnectedTab extends ConsumerWidget {
         .where((code) => code.isNotEmpty)
         .toSet();
     final result = await Navigator.of(context).push<V2MejaItem>(
-      V2MejaFormPage.route(takenCodes: takenCodes),
+      V2MejaFormPage.route(
+        takenCodes: takenCodes,
+        onSubmit: (meja) =>
+            ref.read(connectedTableProvider.notifier).createTable(
+              code: meja.kode,
+              holeCount: meja.jumlahLubang,
+              notes: meja.keterangan,
+            ),
+      ),
     );
     if (result == null || !context.mounted) return;
-    // Id meja ditentukan server, jadi baris baru baru bisa tampil setelah
-    // jawaban tiba. Beri umpan balik segera supaya daftar lama tidak terlihat
-    // seperti diam saja (K-17).
-    _pesan(context, 'Menyimpan meja…');
-    try {
-      await ref
-          .read(connectedTableProvider.notifier)
-          .createTable(
-            code: result.kode,
-            holeCount: result.jumlahLubang,
-            notes: result.keterangan,
-          );
-      if (!context.mounted) return;
-      _pesan(context, 'Meja ditambahkan.');
-    } catch (error) {
-      if (!context.mounted) return;
-      _pesan(context, serviceError(error));
-    }
+    _pesan(context, 'Meja ditambahkan.');
   }
 }
 

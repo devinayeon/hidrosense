@@ -125,6 +125,9 @@ void main() {
 
     await tester.tap(find.text('Aktifkan'));
     await tester.pumpAndSettle();
+    // Pop-up konfirmasi ulang (Sesi 9) muncul sebelum menulis ke server.
+    await tester.tap(find.text('Aktifkan').last);
+    await tester.pumpAndSettle();
 
     expect(store.activateCalls, 1);
     expect(hasil, isA<V2EmployeeActivated>());
@@ -139,6 +142,9 @@ void main() {
     await _pumpHost(tester, _nonaktif, store: store, simpan: (r) => hasil = r);
 
     await tester.tap(find.text('Aktifkan'));
+    await tester.pumpAndSettle();
+    // Pop-up konfirmasi ulang (Sesi 9) muncul sebelum menulis ke server.
+    await tester.tap(find.text('Aktifkan').last);
     await tester.pumpAndSettle();
 
     expect(store.activateCalls, 1);

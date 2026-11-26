@@ -9,6 +9,7 @@ import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_option_row.dart';
 import '../widgets/v2_select_field.dart';
@@ -197,10 +198,21 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
     final kirim = widget.onPindahkan;
     if (kirim != null) {
       FocusScope.of(context).unfocus();
-      setState(() => _submitting = true);
       final messenger = ScaffoldMessenger.of(context);
+      setState(() => _submitting = true);
       try {
-        await kirim(pindah);
+        final done = await showV2ActionDialog(
+          context,
+          title: 'Pindahkan ke ${pindah.meja}?',
+          body: '${pindah.jumlah} tanaman akan dipindah ke ${pindah.meja}.',
+          primaryLabel: 'Pindahkan',
+          onConfirm: () => kirim(pindah),
+        );
+        if (!mounted) return;
+        if (!done) {
+          setState(() => _submitting = false);
+          return;
+        }
       } catch (error) {
         if (!mounted) return;
         setState(() => _submitting = false);
@@ -548,21 +560,65 @@ class V2PindahMejaResultPage extends StatelessWidget {
                   ),
                 ),
               ),
-              V2ActionBar(
-                actions: [
-                  V2Button(label: primaryLabel, onPressed: onPrimary),
-                  if (secondaryLabel != null)
-                    V2Button(
-                      label: secondaryLabel!,
-                      type: V2ButtonType.ghost,
-                      onPressed: onSecondary,
-                    ),
-                ],
+              _ResultActions(
+                primaryLabel: primaryLabel,
+                onPrimary: onPrimary,
+                secondaryLabel: secondaryLabel,
+                onSecondary: onSecondary,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Footer halaman hasil pindah. Tombol navigasi memakai loading sejenak agar
+/// ketukan ganda tidak menumpuk dua halaman (Sesi 9: navigasi saja, tanpa
+/// pop-up konfirmasi).
+class _ResultActions extends StatefulWidget {
+  const _ResultActions({
+    required this.primaryLabel,
+    this.onPrimary,
+    this.secondaryLabel,
+    this.onSecondary,
+  });
+
+  final String primaryLabel;
+  final VoidCallback? onPrimary;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
+  @override
+  State<_ResultActions> createState() => _ResultActionsState();
+}
+
+class _ResultActionsState extends State<_ResultActions> {
+  bool _busy = false;
+
+  void _run(VoidCallback? action) {
+    if (_busy || action == null) return;
+    setState(() => _busy = true);
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return V2ActionBar(
+      actions: [
+        V2Button(
+          label: widget.primaryLabel,
+          loading: _busy,
+          onPressed: _busy ? null : () => _run(widget.onPrimary),
+        ),
+        if (widget.secondaryLabel != null)
+          V2Button(
+            label: widget.secondaryLabel!,
+            type: V2ButtonType.ghost,
+            onPressed: _busy ? null : () => _run(widget.onSecondary),
+          ),
+      ],
     );
   }
 }

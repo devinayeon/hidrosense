@@ -25,6 +25,7 @@ class V2PanenEditPage extends StatefulWidget {
     required this.item,
     this.previewUnderSold = false,
     this.previewKonflik = false,
+    this.onSubmit,
   });
 
   /// Frame `7.19 Ubah panen`: 255 kg total, 15 kg reject, "Panen pagi".
@@ -43,9 +44,18 @@ class V2PanenEditPage extends StatefulWidget {
   final bool previewUnderSold;
   final bool previewKonflik;
 
-  static Route<V2PanenItem> route(V2PanenItem item) {
+  /// Simpan koreksi panen ke backend. Bila diisi, tombol "Simpan" membuka
+  /// pop-up konfirmasi ulang dan menampilkan spinner sampai proses selesai,
+  /// baru form menutup; galat server tampil sebagai pesan dan form tetap
+  /// terbuka. Mengembalikan panen terbaru untuk ditampilkan.
+  final Future<V2PanenItem> Function(V2PanenItem item)? onSubmit;
+
+  static Route<V2PanenItem> route(
+    V2PanenItem item, {
+    Future<V2PanenItem> Function(V2PanenItem item)? onSubmit,
+  }) {
     return MaterialPageRoute<V2PanenItem>(
-      builder: (_) => V2PanenEditPage(item: item),
+      builder: (_) => V2PanenEditPage(item: item, onSubmit: onSubmit),
     );
   }
 
@@ -128,7 +138,7 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
   double _berat(TextEditingController controller) =>
       double.tryParse(controller.text.trim()) ?? 0;
 
-  void _simpan() {
+  Future<void> _simpan() async {
     final layak = _rincian.fold<double>(
       0,
       (total, baris) => total + (_berat(baris.total) - _berat(baris.reject)),
@@ -150,16 +160,40 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
           beratReject: _berat(baris.reject),
         ),
     ];
-    Navigator.of(context).pop(
-      widget.item.copyWith(
-        beratTotal: rincian.fold<double>(0, (a, b) => a + b.beratTotal),
-        beratReject: rincian.fold<double>(0, (a, b) => a + b.beratReject),
-        keterangan: keterangan.isEmpty ? null : keterangan,
-        // Data contoh galeri tidak punya rincian; jangan munculkan rincian
-        // tiruan ke data yang ditampilkan.
-        rincian: widget.item.rincian.isEmpty ? null : rincian,
-      ),
+    final hasil = widget.item.copyWith(
+      beratTotal: rincian.fold<double>(0, (a, b) => a + b.beratTotal),
+      beratReject: rincian.fold<double>(0, (a, b) => a + b.beratReject),
+      keterangan: keterangan.isEmpty ? null : keterangan,
+      // Data contoh galeri tidak punya rincian; jangan munculkan rincian
+      // tiruan ke data yang ditampilkan.
+      rincian: widget.item.rincian.isEmpty ? null : rincian,
     );
+
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+
+    V2PanenItem? tersimpan;
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Simpan perubahan panen?',
+        body: 'Perubahan berat panen akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        onConfirm: () async {
+          tersimpan = await submit(hasil);
+        },
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(tersimpan ?? hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

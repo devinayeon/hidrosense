@@ -10,6 +10,7 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_penjualan_form_page.dart';
 
@@ -106,9 +107,6 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
   Timer? _toastTimer;
   String? _toast;
 
-  /// Sedang mengirim "Tandai lunas" ke backend.
-  bool _busy = false;
-
   @override
   void initState() {
     super.initState();
@@ -147,21 +145,26 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
       return;
     }
 
-    setState(() => _busy = true);
+    V2Penjualan? updated;
     try {
-      final updated = await store.markPaid(_penjualan);
-      if (!mounted) return;
-      setState(() {
-        _penjualan = updated;
-        _busy = false;
-      });
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Tandai lunas?',
+        body:
+            'Penjualan ${_penjualan.pembeli} akan ditandai lunas di server.',
+        primaryLabel: 'Tandai lunas',
+        onConfirm: () async {
+          updated = await store.markPaid(_penjualan);
+        },
+      );
+      if (!mounted || !done) return;
+      setState(() => _penjualan = updated!);
       _showToast('Ditandai lunas');
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -244,8 +247,7 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                         state: antrean
                             ? V2ButtonState.disabled
                             : V2ButtonState.normal,
-                        loading: !antrean && _busy,
-                        onPressed: antrean || _busy ? null : _markPaid,
+                        onPressed: antrean ? null : _markPaid,
                       ),
                     V2Button(
                       label: 'Ubah',

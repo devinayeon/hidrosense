@@ -219,45 +219,44 @@ class V2PanenConnectedTab extends ConsumerWidget {
       V2PanenFormPage.route(
         pilihan: pilihan,
         initialDate: jakartaToday(),
+        onSubmit: (hasil) async {
+          final transferId = hasil.transferId;
+          if (transferId == null) {
+            throw StateError('Pilih tanaman dari daftar estimasi.');
+          }
+          final result = await ref
+              .read(panenViewModelProvider.notifier)
+              .submit(
+                HarvestDraft(
+                  date: apiDate(hasil.tanggal),
+                  note: hasil.keterangan,
+                  rows: [
+                    HarvestDraftRow(
+                      transferId: transferId,
+                      plantCount: hasil.jumlahTanaman,
+                      total: formatAngka(hasil.beratTotal),
+                      reject: formatAngka(hasil.beratReject),
+                    ),
+                  ],
+                ),
+              );
+          switch (result) {
+            case HarvestSubmitResult.saved:
+            case HarvestSubmitResult.savedRefreshFailed:
+              ref.invalidate(v2AllTransfersProvider);
+            case HarvestSubmitResult.failed:
+              throw StateError(
+                ref.read(panenViewModelProvider).error ??
+                    'Panen gagal dicatat.',
+              );
+            case HarvestSubmitResult.busy:
+              throw StateError('Panen sedang disimpan.');
+          }
+        },
       ),
     );
-    if (hasil == null) return;
-    final transferId = hasil.transferId;
-    if (transferId == null) {
-      if (!context.mounted) return;
-      _pesan(context, 'Pilih tanaman dari daftar estimasi.');
-      return;
-    }
-    final result = await ref
-        .read(panenViewModelProvider.notifier)
-        .submit(
-          HarvestDraft(
-            date: apiDate(hasil.tanggal),
-            note: hasil.keterangan,
-            rows: [
-              HarvestDraftRow(
-                transferId: transferId,
-                plantCount: hasil.jumlahTanaman,
-                total: formatAngka(hasil.beratTotal),
-                reject: formatAngka(hasil.beratReject),
-              ),
-            ],
-          ),
-        );
-    if (!context.mounted) return;
-    switch (result) {
-      case HarvestSubmitResult.saved:
-      case HarvestSubmitResult.savedRefreshFailed:
-        ref.invalidate(v2AllTransfersProvider);
-        _pesan(context, 'Panen dicatat.');
-      case HarvestSubmitResult.failed:
-        _pesan(
-          context,
-          ref.read(panenViewModelProvider).error ?? 'Panen gagal dicatat.',
-        );
-      case HarvestSubmitResult.busy:
-        _pesan(context, 'Panen sedang disimpan.');
-    }
+    if (!context.mounted || hasil == null) return;
+    _pesan(context, 'Panen dicatat.');
   }
 
   Future<void> _bukaDetail(

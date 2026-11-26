@@ -223,37 +223,31 @@ class V2InventarisConnectedTab extends ConsumerWidget {
     }
     final obat = await _obatPilihan(ref);
     if (!context.mounted) return;
-    final result = await Navigator.of(
-      context,
-    ).push<V2InventarisItem>(V2InventarisFormPage.route(obatPilihan: obat));
+    final result = await Navigator.of(context).push<V2InventarisItem>(
+      V2InventarisFormPage.route(
+        obatPilihan: obat,
+        onSubmit: (hasil) async {
+          final pilihan = _kategoriUntuk(kategori, hasil.jenis);
+          if (pilihan == null) throw StateError(v2KategoriKosongPesan);
+          await ref
+              .read(connectedInventoryProvider.notifier)
+              .saveItem(
+                InventoryDraft(
+                  name: hasil.nama,
+                  categoryId: pilihan.id,
+                  unit: hasil.satuan,
+                  minimum: hasil.minimum == null
+                      ? ''
+                      : _angkaDraft(hasil.minimum!),
+                  initialStock: _angkaDraft(hasil.jumlah),
+                  medicineId: hasil.medicineId,
+                ),
+              );
+        },
+      ),
+    );
     if (result == null || !context.mounted) return;
-    try {
-      final pilihan = _kategoriUntuk(kategori, result.jenis);
-      if (pilihan == null) {
-        if (!context.mounted) return;
-        _pesan(context, v2KategoriKosongPesan);
-        return;
-      }
-      await ref
-          .read(connectedInventoryProvider.notifier)
-          .saveItem(
-            InventoryDraft(
-              name: result.nama,
-              categoryId: pilihan.id,
-              unit: result.satuan,
-              minimum: result.minimum == null
-                  ? ''
-                  : _angkaDraft(result.minimum!),
-              initialStock: _angkaDraft(result.jumlah),
-              medicineId: result.medicineId,
-            ),
-          );
-      if (!context.mounted) return;
-      _pesan(context, 'Barang ditambahkan.');
-    } catch (error) {
-      if (!context.mounted) return;
-      _pesan(context, serviceError(error));
-    }
+    _pesan(context, 'Barang ditambahkan.');
   }
 
   Future<void> _bukaDetail(
@@ -319,15 +313,23 @@ class _V2InventarisConnectedDetailPageState
       return;
     }
     try {
-      await ref
-          .read(connectedInventoryProvider.notifier)
-          .recordStock(
-            item: record,
-            masuk: hasil.masuk,
-            jumlah: '${hasil.jumlah}',
-            note: 'Dicatat dari halaman detail v2',
-          );
-      if (!mounted) return;
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Catat stok ${hasil.masuk ? 'masuk' : 'keluar'}?',
+        body:
+            '${_item.nama}: ${hasil.jumlah} ${_item.satuan} akan dicatat '
+            '${hasil.masuk ? 'masuk' : 'keluar'}.',
+        primaryLabel: 'Catat',
+        onConfirm: () => ref
+            .read(connectedInventoryProvider.notifier)
+            .recordStock(
+              item: record,
+              masuk: hasil.masuk,
+              jumlah: '${hasil.jumlah}',
+              note: 'Dicatat dari halaman detail v2',
+            ),
+      );
+      if (!mounted || !done) return;
       _segarkan('Stok dicatat');
     } catch (error) {
       if (!mounted) return;
@@ -339,66 +341,58 @@ class _V2InventarisConnectedDetailPageState
     final obat = await _obatPilihan(ref);
     if (!mounted) return;
     final updated = await Navigator.of(context).push<V2InventarisItem>(
-      V2InventarisFormPage.routeUbah(_item, obatPilihan: obat),
+      V2InventarisFormPage.routeUbah(
+        _item,
+        obatPilihan: obat,
+        onSubmit: (hasil) async {
+          final record = _record();
+          final kategori = await _bacaKategori(ref);
+          // Jenis boleh diubah di form, jadi kategori tujuan dihitung dari jenis
+          // baru. `record?.categoryId` selalu terisi sehingga dulu menahan
+          // perubahan jenis; sekarang hanya dipakai sebagai cadangan bila
+          // kategori belum termuat atau jenis baru tidak punya kategori cocok.
+          final pilihan =
+              (kategori == null
+                  ? null
+                  : _kategoriCocok(kategori, hasil.jenis)?.id) ??
+              record?.categoryId;
+          if (pilihan == null) throw StateError(v2KategoriKosongPesan);
+          await ref
+              .read(connectedInventoryProvider.notifier)
+              .saveItem(
+                InventoryDraft(
+                  id: _item.id,
+                  name: hasil.nama,
+                  categoryId: pilihan,
+                  unit: hasil.satuan,
+                  minimum: hasil.minimum == null
+                      ? ''
+                      : _angkaDraft(hasil.minimum!),
+                  initialStock: '',
+                  medicineId: hasil.medicineId,
+                ),
+              );
+        },
+      ),
     );
     if (!mounted || updated == null) return;
-    final record = _record();
-    try {
-      final kategori = await _bacaKategori(ref);
-      // Jenis boleh diubah di form, jadi kategori tujuan dihitung dari jenis
-      // baru. `record?.categoryId` selalu terisi sehingga dulu menahan
-      // perubahan jenis; sekarang hanya dipakai sebagai cadangan bila kategori
-      // belum termuat atau jenis baru tidak punya kategori yang cocok.
-      final pilihan =
-          (kategori == null
-              ? null
-              : _kategoriCocok(kategori, updated.jenis)?.id) ??
-          record?.categoryId;
-      if (pilihan == null) {
-        if (!mounted) return;
-        _pesan(context, v2KategoriKosongPesan);
-        return;
-      }
-      await ref
-          .read(connectedInventoryProvider.notifier)
-          .saveItem(
-            InventoryDraft(
-              id: _item.id,
-              name: updated.nama,
-              categoryId: pilihan,
-              unit: updated.satuan,
-              minimum: updated.minimum == null
-                  ? ''
-                  : _angkaDraft(updated.minimum!),
-              initialStock: '',
-              medicineId: updated.medicineId,
-            ),
-          );
-      if (!mounted) return;
-      _segarkan('Perubahan tersimpan');
-    } catch (error) {
-      if (!mounted) return;
-      _pesan(context, serviceError(error));
-    }
+    _segarkan('Perubahan tersimpan');
   }
 
   Future<void> _arsipkan() async {
-    final confirmed = await showV2Dialog(
-      context,
-      type: V2DialogType.destructive,
-      title: 'Arsipkan barang?',
-      body:
-          '${_item.nama} hilang dari daftar. Riwayat tetap bisa dilihat di '
-          'Arsip.',
-      primaryLabel: 'Arsipkan',
-      secondaryLabel: 'Batal',
-    );
-    if (!mounted || confirmed != true) return;
     try {
-      await ref
-          .read(connectedInventoryProvider.notifier)
-          .deactivateItem(_item.id);
-      if (!mounted) return;
+      final done = await showV2ActionDialog(
+        context,
+        type: V2DialogType.destructive,
+        title: 'Arsipkan barang?',
+        body:
+            '${_item.nama} hilang dari daftar. Riwayat tetap bisa dilihat di '
+            'Arsip.',
+        primaryLabel: 'Arsipkan',
+        onConfirm: () =>
+            ref.read(connectedInventoryProvider.notifier).deactivateItem(_item.id),
+      );
+      if (!mounted || !done) return;
       Navigator.of(context).pop(_item.copyWith(arsip: true));
     } catch (error) {
       if (!mounted) return;

@@ -24,6 +24,7 @@ class V2MejaFormPage extends StatefulWidget {
     this.previewValidation = false,
     this.previewLubangKurang = false,
     this.previewKonflik = false,
+    this.onSubmit,
   });
 
   /// Frame `6.6 Tambah meja`.
@@ -32,7 +33,8 @@ class V2MejaFormPage extends StatefulWidget {
       takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
-      previewKonflik = false;
+      previewKonflik = false,
+      onSubmit = null;
 
   /// Frame `6.7 Tambah meja, validasi`: kode sudah dipakai dan jumlah 0.
   const V2MejaFormPage.validation({super.key})
@@ -40,7 +42,8 @@ class V2MejaFormPage extends StatefulWidget {
       takenCodes = const <String>{},
       previewValidation = true,
       previewLubangKurang = false,
-      previewKonflik = false;
+      previewKonflik = false,
+      onSubmit = null;
 
   /// Frame `6.18 Ubah meja`: Meja A2 terisi 240 lubang.
   V2MejaFormPage.ubah({super.key})
@@ -48,7 +51,8 @@ class V2MejaFormPage extends StatefulWidget {
       takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
-      previewKonflik = false;
+      previewKonflik = false,
+      onSubmit = null;
 
   /// Frame `6.19 Ubah meja, lubang kurang`: 30 lubang, minimal 40.
   V2MejaFormPage.lubangKurang({super.key})
@@ -56,7 +60,8 @@ class V2MejaFormPage extends StatefulWidget {
       takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = true,
-      previewKonflik = false;
+      previewKonflik = false,
+      onSubmit = null;
 
   /// Frame `6.30 Data sudah berubah`: dialog konflik di atas form ubah.
   V2MejaFormPage.konflik({super.key})
@@ -64,7 +69,8 @@ class V2MejaFormPage extends StatefulWidget {
       takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
-      previewKonflik = true;
+      previewKonflik = true,
+      onSubmit = null;
 
   /// Meja yang diubah; null berarti form tambah.
   final V2MejaItem? meja;
@@ -83,12 +89,22 @@ class V2MejaFormPage extends StatefulWidget {
   /// Dialog "Data sudah berubah" tampil saat halaman dibuka (frame 6.30).
   final bool previewKonflik;
 
+  /// Simpan meja ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<void> Function(V2MejaItem meja)? onSubmit;
+
   static Route<V2MejaItem> route({
     V2MejaItem? meja,
     Set<String> takenCodes = const <String>{},
+    Future<void> Function(V2MejaItem meja)? onSubmit,
   }) {
     return MaterialPageRoute<V2MejaItem>(
-      builder: (_) => V2MejaFormPage(meja: meja, takenCodes: takenCodes),
+      builder: (_) => V2MejaFormPage(
+        meja: meja,
+        takenCodes: takenCodes,
+        onSubmit: onSubmit,
+      ),
     );
   }
 
@@ -197,19 +213,6 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
       return;
     }
 
-    // Konfirmasi ulang sebelum menyimpan perubahan (K-18, D-35). Form tambah
-    // tidak memakai konfirmasi karena tidak mengubah data yang ada.
-    if (_ubah) {
-      final confirmed = await showV2Dialog(
-        context,
-        title: 'Simpan perubahan meja?',
-        body: 'Perubahan meja akan dikirim ke server.',
-        primaryLabel: 'Simpan',
-        secondaryLabel: 'Batal',
-      );
-      if (confirmed != true || !mounted) return;
-    }
-
     final meja =
         widget.meja ??
         V2MejaItem(
@@ -218,13 +221,47 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
           terisi: 0,
           status: V2MejaStatus.tersedia,
         );
-    Navigator.of(context).pop(
-      meja.copyWith(
-        kode: kode,
-        jumlahLubang: lubang,
-        keterangan: _keterangan.text.trim(),
-      ),
+    final hasil = meja.copyWith(
+      kode: kode,
+      jumlahLubang: lubang,
+      keterangan: _keterangan.text.trim(),
     );
+
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      // Pratinjau galeri: ubah minta konfirmasi, tambah langsung menutup.
+      if (_ubah) {
+        final confirmed = await showV2Dialog(
+          context,
+          title: 'Simpan perubahan meja?',
+          body: 'Perubahan meja akan dikirim ke server.',
+          primaryLabel: 'Simpan',
+          secondaryLabel: 'Batal',
+        );
+        if (confirmed != true || !mounted) return;
+      }
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: _ubah ? 'Simpan perubahan meja?' : 'Tambah meja?',
+        body: _ubah
+            ? 'Perubahan meja akan dikirim ke server.'
+            : 'Meja baru akan dikirim ke server.',
+        primaryLabel: _ubah ? 'Simpan' : 'Tambah',
+        onConfirm: () => submit(hasil),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

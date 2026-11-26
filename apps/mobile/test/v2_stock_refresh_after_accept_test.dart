@@ -82,6 +82,16 @@ Future<void> _tapSheetTerima(WidgetTester tester) async {
       matching: find.widgetWithText(V2Button, 'Terima'),
     ),
   );
+  // Pop-up konfirmasi ulang (Sesi 9) muncul setelah lembar terima ditutup;
+  // kartu masih berstatus loading selama dialog terbuka, jadi jangan
+  // pumpAndSettle dulu.
+  await _settle(tester);
+  await tester.tap(
+    find.descendant(
+      of: find.byType(Dialog),
+      matching: find.widgetWithText(V2Button, 'Terima'),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 

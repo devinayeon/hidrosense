@@ -129,9 +129,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
   /// Menandai isian sudah disentuh, supaya tombol kembali meminta konfirmasi.
   bool _dirty = false;
 
-  /// Sedang mengirim ke backend.
-  bool _saving = false;
-
   @override
   void initState() {
     super.initState();
@@ -288,21 +285,19 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       return;
     }
 
-    // Konfirmasi ulang sebelum menyimpan perubahan (K-03/K-18, D-35). Form
-    // tambah tidak memakai konfirmasi karena tidak mengubah data yang ada.
-    if (widget.isEdit) {
-      final confirmed = await showV2Dialog(
-        context,
-        title: 'Simpan perubahan akun?',
-        body: 'Perubahan data pegawai akan dikirim ke server.',
-        primaryLabel: 'Simpan',
-        secondaryLabel: 'Batal',
-      );
-      if (confirmed != true || !mounted) return;
-    }
-
     final store = widget.store;
     if (store == null) {
+      // Pratinjau galeri: ubah tetap minta konfirmasi, tambah langsung menutup.
+      if (widget.isEdit) {
+        final confirmed = await showV2Dialog(
+          context,
+          title: 'Simpan perubahan akun?',
+          body: 'Perubahan data pegawai akan dikirim ke server.',
+          primaryLabel: 'Simpan',
+          secondaryLabel: 'Batal',
+        );
+        if (confirmed != true || !mounted) return;
+      }
       _popWithPreview(name, username, password);
       return;
     }
@@ -324,13 +319,17 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     );
   }
 
+  /// Kirim data pegawai ke backend setelah konfirmasi ulang (Sesi 9).
+  ///
+  /// Pop-up konfirmasi menampilkan spinner di tombolnya sampai proses selesai,
+  /// baru form menutup. Galat server tampil sebagai pesan dan form tetap terbuka
+  /// supaya isian tidak hilang.
   Future<void> _submitToStore(
     V2EmployeeStore store,
     String name,
     String username,
     String password,
   ) async {
-    setState(() => _saving = true);
     final draft = V2EmployeeDraft(
       name: name,
       username: username,
@@ -338,19 +337,29 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       phone: _phone.text.trim(),
       address: _address.text.trim(),
     );
+    V2Employee? hasil;
     try {
-      final result = widget.isEdit
-          ? await store.update(widget.initial!.id, draft)
-          : await store.create(draft);
-      if (!mounted) return;
+      final done = await showV2ActionDialog(
+        context,
+        title: widget.isEdit ? 'Simpan perubahan akun?' : 'Tambah pegawai?',
+        body: widget.isEdit
+            ? 'Perubahan data pegawai akan dikirim ke server.'
+            : 'Pegawai baru akan ditambahkan ke server.',
+        primaryLabel: widget.isEdit ? 'Simpan' : 'Tambah',
+        onConfirm: () async {
+          hasil = widget.isEdit
+              ? await store.update(widget.initial!.id, draft)
+              : await store.create(draft);
+        },
+      );
+      if (!mounted || !done) return;
       _dirty = false;
-      Navigator.of(context).pop(result);
+      Navigator.of(context).pop(hasil);
     } on V2EmployeeStoreException catch (error) {
       if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -359,7 +368,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
     return Theme(
       data: V2Theme.light,
       child: PopScope<V2Employee>(
-        canPop: !_dirty && !_saving,
+        canPop: !_dirty,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
           _back();
@@ -392,7 +401,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           hint: 'Contoh: Sari Dewi',
                           controller: _name,
                           error: _nameError,
-                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
@@ -400,7 +408,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           hint: 'Contoh: sari.dewi',
                           controller: _username,
                           error: _usernameError,
-                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2PasswordField(
@@ -412,7 +419,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                               : '6–8 karakter, huruf & angka',
                           controller: _password,
                           error: _passwordError,
-                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
@@ -421,7 +427,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           controller: _phone,
                           keyboardType: TextInputType.phone,
                           error: _phoneError,
-                          enabled: !_saving,
                         ),
                         const SizedBox(height: V2Space.lg),
                         V2TextField(
@@ -429,7 +434,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                           hint: 'Jalan dan kota',
                           controller: _address,
                           error: _addressError,
-                          enabled: !_saving,
                         ),
                       ],
                     ),
@@ -440,8 +444,7 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                   actions: [
                     V2Button(
                       label: 'Simpan',
-                      loading: _saving,
-                      onPressed: _saving ? null : _save,
+                      onPressed: _save,
                     ),
                   ],
                 ),

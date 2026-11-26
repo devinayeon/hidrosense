@@ -247,3 +247,22 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-68c | BUG-68 — urutan Panen & Penjualan | Koreksi panen/penjualan lama (ubah berat/jumlah) tanpa mengubah tanggal → buka daftar | `FIXED di kode, belum diuji ulang di HP` — baris yang dikoreksi naik ke atas walau tanggalnya lama |
 | MC-FIX-68d | BUG-68 — urutan Akun pegawai | Ubah data satu pegawai (atau aktif/nonaktifkan) → buka daftar akun | `FIXED di kode, belum diuji ulang di HP` — pegawai yang baru diubah paling atas |
 | MC-FIX-68e | BUG-68 — tulis lalu refresh | Catat/ubah satu baris, amati daftar sebelum dan sesudah muat ulang | `FIXED di kode, belum diuji ulang di HP` — baris yang baru diubah tampil paling atas setelah server menjawab dan daftar disegarkan |
+
+---
+
+> Sesi 9 (27 Nov 2026): setiap tombol proses tulis memakai pop-up konfirmasi ulang dengan
+> spinner sampai proses selesai, baru layar berpindah (BUG-69, D-52). **FE saja**. Status
+> **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang ditulis `PASS`.
+
+| Kode | Bug/keputusan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-69a | BUG-69 — semaian | Tambah semaian; ubah semaian; pindah semaian ke meja (jaringan lambat) | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner; layar pindah setelah selesai |
+| MC-FIX-69b | BUG-69 — meja | Tambah meja; ubah meja; ubah status meja | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner di tombolnya |
+| MC-FIX-69c | BUG-69 — kerusakan & catatan | Catat tanaman rusak; ubah laporan rusak; ubah catatan tanaman | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
+| MC-FIX-69d | BUG-69 — panen | Catat panen; koreksi berat panen | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
+| MC-FIX-69e | BUG-69 — penjualan | Catat penjualan; ubah penjualan; tandai lunas | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
+| MC-FIX-69f | BUG-69 — stok | Tambah barang; ubah barang; catat stok; arsipkan barang | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner (arsip: pop-up destruktif) |
+| MC-FIX-69g | BUG-69 — rekomendasi obat | Terima rekomendasi (pilih/tanpa potong stok); tolak rekomendasi (pilih alasan) | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi muncul setelah lembar terima/tolak |
+| MC-FIX-69h | BUG-69 — tambah/ubah pegawai | Tambah pegawai; ubah pegawai (jaringan lambat) | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
+| MC-FIX-69i | BUG-69 — aktif/nonaktif pegawai | Nonaktifkan pegawai; aktifkan kembali pegawai nonaktif | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
+| MC-FIX-69j | BUG-69 — navigasi & galat | Halaman hasil pindah: tekan "Lihat meja"; lalu jalankan proses saat server menolak | `FIXED di kode, belum diuji ulang di HP` — navigasi loading tanpa pop-up; galat server tampil sebagai pesan dan form tetap terbuka |

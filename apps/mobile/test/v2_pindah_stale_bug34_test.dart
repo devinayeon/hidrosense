@@ -68,6 +68,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Pindahkan'));
+    // Tombol "Pindahkan" form berputar selama dialog terbuka, jadi jangan
+    // pumpAndSettle dulu.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Pindahkan').last);
     await tester.pumpAndSettle();
     expect(find.text('Pindahkan sisa'), findsOneWidget);
 
