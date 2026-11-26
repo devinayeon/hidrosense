@@ -2,6 +2,7 @@ import type { Row } from '@libsql/client';
 import type { Client } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
 import { fromMinor } from '../../common/quantities.js';
+import { lastChangedAt } from '../../common/sync.js';
 
 type Executor = Pick<Client, 'execute'>;
 
@@ -70,7 +71,8 @@ const inventarisColumns = `CAST(i.id_inventaris AS TEXT) AS id_inventaris,
   CAST(i.id_jenis_inventaris AS TEXT) AS id_jenis_inventaris,CAST(i.id_obat AS TEXT) AS id_obat,
   i.nama_barang,i.satuan,CAST(i.stok_minimum_minor AS TEXT) AS stok_minimum,i.status_aktif,
   j.nama_jenis,o.nama_obat,CAST(COALESCE(b.saldo_minor,0) AS TEXT) AS saldo_minor,
-  ${syncColumns('inventaris', 'i.id_inventaris')}`;
+  ${syncColumns('inventaris', 'i.id_inventaris')},
+  ${lastChangedAt('inventaris', 'i.id_inventaris')}`;
 
 export function inventarisResponse(row: Row) {
   return {
@@ -86,6 +88,7 @@ export function inventarisResponse(row: Row) {
     status_aktif: Number(row.status_aktif),
     nama_jenis: String(row.nama_jenis),
     nama_obat: row.nama_obat === null ? null : String(row.nama_obat),
+    updated_at: row.updated_at == null ? null : Number(row.updated_at),
   };
 }
 

@@ -32,7 +32,7 @@ export function registerProfile(app: FastifyInstance, db: Client, clock: () => n
       }
       if (input.username !== undefined) await assertUsernameAvailable(tx, input.username, actor.id_user);
       await assertEmailAvailable(tx, input.email, actor.id_user);
-      await updateAccount(tx, actor.id_user, input, passwordHash);
+      await updateAccount(tx, actor.id_user, input, passwordHash, clock());
       return getAccount(tx, actor.id_user, 'petani');
     });
     return { data };

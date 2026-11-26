@@ -47,7 +47,9 @@ test('tables unique code, pagination and status filter', async (t) => {
   check(await f.create(), 409, 'TABLE_CODE_CONFLICT');
   check(await f.send('PATCH', `/${b.id_meja}`, { kode_meja: a.kode_meja }), 409, 'TABLE_CODE_CONFLICT');
   const listed = (await f.send('GET', '?limit=1&page=2')).json();
-  assert.equal(listed.meta.total, 2); assert.equal(listed.data[0].id_meja, b.id_meja);
+  assert.equal(listed.meta.total, 2); assert.equal(listed.data[0].id_meja, a.id_meja);
+  const firstPage = (await f.send('GET', '?limit=1')).json();
+  assert.equal(firstPage.data[0].id_meja, b.id_meja);
   const filtered = (await f.send('GET', '?status_meja=perbaikan')).json();
   assert.equal(filtered.meta.total, 1); assert.equal(filtered.data[0].id_meja, b.id_meja);
 });

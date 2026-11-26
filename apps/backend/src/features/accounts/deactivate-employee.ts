@@ -14,7 +14,7 @@ export function registerDeactivateEmployee(app: FastifyInstance, db: Client, clo
     parseInput(emptyBodySchema, request.body);
     await authenticatedWrite(db, request.headers.authorization, 'pegawai:manage', clock, async (tx) => {
       await getAccount(tx, id, 'pegawai');
-      await tx.execute({ sql: 'UPDATE users SET status_aktif=0 WHERE id_user=?', args: [id] });
+      await tx.execute({ sql: 'UPDATE users SET status_aktif=0,updated_at=? WHERE id_user=?', args: [clock(), id] });
       await tx.execute({ sql: 'DELETE FROM auth_sessions WHERE id_user=?', args: [id] });
     });
     return reply.code(204).send();

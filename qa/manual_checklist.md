@@ -233,3 +233,17 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-65 | BUG-65 — grafik panen data contoh | Catat 2–4 panen di tanggal berbeda → buka Riwayat Panen | `FIXED di kode, belum diuji ulang di HP` — grafik dari data asli, maks 3 tanggal, hari sama dijumlahkan |
 | MC-FIX-66 | BUG-66 — pegawai bisa buka cuaca | Masuk sebagai pegawai → buka detail siklus | `FIXED di kode, belum diuji ulang di HP` — baris cuaca tidak ada (tanpa 403) |
 | MC-FIX-67 | BUG-67 — kode meja otomatis | Tambah meja saat sudah ada A1/A2 | `FIXED di kode, belum diuji ulang di HP` — kode terisi A3, masih bisa ditimpa |
+
+---
+
+> Sesi 8 (27 Nov 2026): daftar menu umum diurutkan "perubahan terakhir" (BUG-68, D-51).
+> Backend + FE berubah. Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada
+> baris baru yang ditulis `PASS`.
+
+| Kode | Bug/keputusan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-68a | BUG-68 — urutan Stok | Buka Stok → ubah/perbarui satu barang lama (atau catat panen yang mengubah saldo) → buka Stok lagi | `FIXED di kode, belum diuji ulang di HP` — barang yang baru diubah paling atas |
+| MC-FIX-68b | BUG-68 — urutan Semaian & Meja | Catat semaian baru; pindah tanaman ke meja lama | `FIXED di kode, belum diuji ulang di HP` — semaian/meja yang baru berubah paling atas |
+| MC-FIX-68c | BUG-68 — urutan Panen & Penjualan | Koreksi panen/penjualan lama (ubah berat/jumlah) tanpa mengubah tanggal → buka daftar | `FIXED di kode, belum diuji ulang di HP` — baris yang dikoreksi naik ke atas walau tanggalnya lama |
+| MC-FIX-68d | BUG-68 — urutan Akun pegawai | Ubah data satu pegawai (atau aktif/nonaktifkan) → buka daftar akun | `FIXED di kode, belum diuji ulang di HP` — pegawai yang baru diubah paling atas |
+| MC-FIX-68e | BUG-68 — tulis lalu refresh | Catat/ubah satu baris, amati daftar sebelum dan sesudah muat ulang | `FIXED di kode, belum diuji ulang di HP` — baris yang baru diubah tampil paling atas setelah server menjawab dan daftar disegarkan |

@@ -1,5 +1,8 @@
 # Permintaan Perubahan Backend — Sesi 7 (26 Nov 2026)
 
+> Sesi 8 (27 Nov 2026): server **sudah berubah** untuk urutan daftar "perubahan
+> terakhir" (client memilih "Backend exact last-changed"). Lihat §6.
+
 Batas sesi 7: perubahan klien hanya di `apps/mobile/`. Backend **hanya** boleh berubah
 untuk panjang password (min 6). Semua temuan berikut tidak dapat diselesaikan benar
 hanya dari sisi klien; jangan dipaksakan dengan nilai pengganti (placeholder) yang
@@ -113,6 +116,29 @@ Status tiap butir: `BUTUH BACKEND`, `SUDAH DIKERJAKAN`, atau `PERTANYAAN`.
 
 ---
 
+## 6. Daftar: urutkan "perubahan terakhir" — `SUDAH DIKERJAKAN`
+
+- **Fitur/bug terkait:** BUG-68 / D-51 (permintaan client Sesi 8).
+- **Berkas/endpoint:**
+  - `apps/backend/migrations/0023_list_last_changed.{up,down}.sql` — indeks
+    `idx_sync_changes_resource_domain` + kolom `users.updated_at`.
+  - `apps/backend/src/common/sync.ts` — helper `lastChangedAt()`; respons tulis membaca
+    ulang `MAX(changed_at)`.
+  - `apps/backend/src/features/{inventory,nursery,tables,harvest,sales}/store.ts` — kolom
+    `updated_at` + `ORDER BY COALESCE(updated_at,0) DESC, <id> DESC`.
+  - `apps/backend/src/features/accounts/*.ts` — tulis/baca `users.updated_at`, urut
+    `COALESCE(updated_at,0) DESC, id_user DESC`.
+- **Alasan:** urutan "paling baru diubah" hanya benar bila waktu ubah berasal dari server;
+  `sync_changes` sudah memuat perubahan turunan (saldo stok, tanaman aktif meja, pindah,
+  kerusakan, panen) sehingga koreksi pada baris lama pun naik ke atas.
+- **Perubahan kontrak:** `GET` daftar inventaris/penyemaian/meja/panen/penjualan/pegawai
+  kini menyertakan `updated_at` (integer epoch ms, **nullable**). Klien lama yang tidak
+  membaca field baru tetap aman.
+- **Catatan:** akun tidak ikut registry sync, jadi waktu ubahnya disimpan di
+  `users.updated_at` (baris lama `NULL` → diurut paling bawah). Tidak ada backfill.
+
+---
+
 ## Ringkasan prioritas
 
 | # | Butir | Dampak | Status |
@@ -122,3 +148,4 @@ Status tiap butir: `BUTUH BACKEND`, `SUDAH DIKERJAKAN`, atau `PERTANYAAN`.
 | 3 | Dropdown obat dari katalog AI | Stok | BUTUH BACKEND |
 | 4 | Endpoint riwayat perawatan | Rawat | BUTUH BACKEND |
 | 5 | `profil:read` untuk pegawai | Profil pegawai | BUTUH BACKEND |
+| 6 | `updated_at` + urut daftar terbaru | BUG-68 | SUDAH DIKERJAKAN |

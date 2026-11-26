@@ -1,12 +1,14 @@
 import type { Client, Row } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { lastChangedAt } from '../../common/sync.js';
 import { formatWeight } from '../../common/weights.js';
 import type { ListHarvestQuery } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
 
 const headerSelect = `SELECT CAST(p.id_panen AS TEXT) AS id_panen, CAST(p.id_user AS TEXT) AS id_user,
-  p.tanggal_panen, p.keterangan, l.public_id, CAST(v.version AS TEXT) AS version
+  p.tanggal_panen, p.keterangan, l.public_id, CAST(v.version AS TEXT) AS version,
+  ${lastChangedAt('panen', 'p.id_panen')}
   FROM panen p
   LEFT JOIN sync_resource_links l ON l.resource_type='panen' AND l.domain_id=CAST(p.id_panen AS TEXT)
   LEFT JOIN sync_resource_versions v ON v.resource_type=l.resource_type AND v.public_id=l.public_id`;
@@ -54,6 +56,7 @@ function harvestResponse(header: Row, detailRows: Row[]) {
     keterangan: header.keterangan == null ? null : String(header.keterangan),
     public_id: header.public_id == null ? null : String(header.public_id),
     version: header.version == null ? null : String(header.version),
+    updated_at: header.updated_at == null ? null : Number(header.updated_at),
     details,
     berat_layak: formatWeight(totalLayak),
     berat_reject: rejectKnown ? formatWeight(totalReject) : null,
@@ -71,7 +74,7 @@ export async function getHarvest(db: Executor, id: string) {
 export async function listHarvests(db: Executor, query: ListHarvestQuery) {
   const total = Number((await db.execute('SELECT COUNT(*) AS total FROM panen')).rows[0].total);
   const headers = (await db.execute({
-    sql: `${headerSelect} ORDER BY p.tanggal_panen DESC, p.id_panen DESC LIMIT ? OFFSET ?`,
+    sql: `${headerSelect} ORDER BY COALESCE(updated_at,0) DESC, p.id_panen DESC LIMIT ? OFFSET ?`,
     args: [query.limit, (query.page - 1) * query.limit],
   })).rows;
   const details = new Map<string, Row[]>();

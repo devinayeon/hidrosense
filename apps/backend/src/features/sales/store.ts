@@ -1,5 +1,6 @@
 import type { Client, Row } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { lastChangedAt } from '../../common/sync.js';
 import { formatWeight, parseWeight } from '../../common/weights.js';
 import { formatMoney, parseMoney, saleLineTotal } from '../../common/money.js';
 import type { ListSalesQuery } from './contracts.js';
@@ -14,7 +15,8 @@ const headerColumns = `
   s.status_pembayaran,
   s.keterangan,
   l.public_id,
-  CAST(v.version AS TEXT) AS version
+  CAST(v.version AS TEXT) AS version,
+  ${lastChangedAt('penjualan', 's.id_penjualan')}
 `;
 
 const linkJoin = `LEFT JOIN sync_resource_links l ON l.resource_type = 'penjualan' AND l.domain_id = CAST(s.id_penjualan AS TEXT)
@@ -71,6 +73,7 @@ function saleResponse(row: Row, details: Row[]) {
     keterangan: row.keterangan == null ? null : String(row.keterangan),
     public_id: row.public_id == null ? null : String(row.public_id),
     version: row.version == null ? null : String(row.version),
+    updated_at: row.updated_at == null ? null : Number(row.updated_at),
     details: details.map((detail) => {
       const quantity = exactWeight(detail);
       const price = exactPrice(detail);
@@ -100,7 +103,7 @@ export async function listSales(db: Executor, query: ListSalesQuery) {
   const total = Number((await db.execute('SELECT COUNT(*) AS total FROM penjualan')).rows[0].total);
   const headers = (await db.execute({
     sql: `SELECT ${headerColumns} FROM penjualan s ${linkJoin}
-      ORDER BY s.tanggal_penjualan DESC, s.id_penjualan DESC LIMIT ? OFFSET ?`,
+      ORDER BY COALESCE(updated_at,0) DESC, s.id_penjualan DESC LIMIT ? OFFSET ?`,
     args: [query.limit, (query.page - 1) * query.limit],
   })).rows;
   const details = new Map<string, Row[]>();

@@ -18,10 +18,10 @@ export function registerCreateEmployee(app: FastifyInstance, db: Client, clock: 
       const role = (await tx.execute("SELECT id_role FROM roles WHERE nama_role='pegawai'")).rows[0];
       if (!role) throw new ApiError(503, 'NOT_READY', 'Role pegawai belum tersedia.');
       const result = await tx.execute({
-        sql: `INSERT INTO users (id_role,nama,username,password,email,no_telepon,alamat)
-          VALUES (?,?,?,?,?,?,?) RETURNING CAST(id_user AS TEXT) AS id_user`,
+        sql: `INSERT INTO users (id_role,nama,username,password,email,no_telepon,alamat,updated_at)
+          VALUES (?,?,?,?,?,?,?,?) RETURNING CAST(id_user AS TEXT) AS id_user`,
         args: [role.id_role, input.nama, input.username, passwordHash,
-          input.email ?? null, input.no_telepon ?? null, input.alamat ?? null],
+          input.email ?? null, input.no_telepon ?? null, input.alamat ?? null, clock()],
       });
       return getAccount(tx, String(result.rows[0].id_user), 'pegawai');
     });

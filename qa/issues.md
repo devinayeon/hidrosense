@@ -14,11 +14,11 @@ perubahan itu tidak mengubah perilaku produk.
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
 | S2 Major | 16 | 14 | 2 |
-| S3 Minor | 40 | 37 | 3 |
+| S3 Minor | 41 | 38 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **59** | **54** | **5** |
+| **Total** | **60** | **55** | **5** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,57,58,59 (54).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,57,58,59,68 (55).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
 BUG-12/13 (S3, harness ML & doc API usang), BUG-56 (S2, password server min 12 — butuh backend).
 Catatan: BUG-31 tetap dihitung FIXED walau sempat dibuka ulang (OPEN) di sesi 4, karena
@@ -866,3 +866,34 @@ Semua status di bawah = **FIXED di kode, belum diuji ulang di HP**.
 - **Riwayat perawatan:** tidak ada endpoint daftar `perawatan`; tab Rawat masih menampilkan
   laporan kerusakan. Diblokir, lihat #4.
 - **Profil pegawai:** tanpa `profil:read`, telepon/alamat tampil "-". Diblokir, lihat #5.
+
+## Sesi 8 (27 Nov 2026) — daftar terurut "perubahan terakhir"
+
+Permintaan client: setiap daftar menu umum (Stok, Semaian, Meja, Panen, Penjualan,
+Akun/pegawai) menaruh baris yang **paling baru diubah** di paling atas, bukan yang
+paling baru **dibuat** atau tanggal transaksinya.
+
+## BUG-68 [S3] Daftar fitur tidak terurut berdasarkan perubahan terakhir
+- Area/PB: 04 Stok, 05 Semaian, 06 Meja, 07 Panen, 08 Penjualan, 09 Akun/pegawai.
+- Langkah: 1) catat/ubah satu baris lama (mis. koreksi panen atau ubah barang);
+  2) buka kembali daftar fitur itu.
+- Ekspektasi (keputusan SA Sesi 8, D-51): baris yang **paling baru diubah** tampil
+  paling atas. Perubahan turunan (saldo stok, tanaman aktif meja, pindah/kerusakan/
+  panen) ikut dihitung sebagai perubahan barang/meja.
+- Aktual (sebelum): daftar memakai tanggal bisnis (`tanggal_panen`, `tanggal_semai`,
+  `tanggal_penjualan`) atau `id` menaik, sehingga koreksi pada baris lama tidak
+  memindahkannya ke atas; akun diurut `id_user` menaik.
+- Status: **FIXED di kode (backend + FE), belum diuji ulang di HP.**
+  - Backend: kolom `updated_at` = `MAX(sync_changes.changed_at)` per record
+    (`lastChangedAt()` di `common/sync.ts`); daftar `ORDER BY COALESCE(updated_at,0)
+    DESC, <id> DESC`. Akun memakai `users.updated_at` (diisi jalur tulis akun).
+  - FE: order backend tidak ditimpa. Stok/Semaian/Meja/Akun sudah memetakan daftar
+    apa adanya (tanpa sort), jadi cukup mengikuti backend. Panen/Penjualan punya sort
+    sendiri di klien, jadi `HarvestRecord`/`SaleRecord` (dan `PenjualanItem`) membaca
+    `updated_at` (nullable) dan `panen_viewmodel._merge` + `comparePenjualanItems`
+    memakai `updated_at` lebih dulu.
+  - Migrasi: `apps/backend/migrations/0023_list_last_changed.{up,down}.sql`.
+- Regression test: FE `test/list_last_changed_test.dart`; backend
+  `test/accounts.test.js`, `test/tables.test.js`, `test/inventory-read-model.test.js`.
+- Catatan: server sesi ini **boleh** berubah (berbeda dari batas Sesi 7) karena
+  urutan "perubahan terakhir" hanya benar bila waktu ubah berasal dari server.

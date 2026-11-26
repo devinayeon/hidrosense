@@ -14,7 +14,7 @@ export function registerActivateEmployee(app: FastifyInstance, db: Client, clock
     parseInput(emptyBodySchema, request.body);
     await authenticatedWrite(db, request.headers.authorization, 'pegawai:manage', clock, async (tx) => {
       await getAccount(tx, id, 'pegawai');
-      await tx.execute({ sql: 'UPDATE users SET status_aktif=1 WHERE id_user=?', args: [id] });
+      await tx.execute({ sql: 'UPDATE users SET status_aktif=1,updated_at=? WHERE id_user=?', args: [clock(), id] });
     });
     return reply.code(204).send();
   });

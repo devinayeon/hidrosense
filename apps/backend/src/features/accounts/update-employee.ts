@@ -20,7 +20,7 @@ export function registerUpdateEmployee(app: FastifyInstance, db: Client, clock: 
       }
       if (input.username !== undefined) await assertUsernameAvailable(tx, input.username, id);
       await assertEmailAvailable(tx, input.email, id);
-      await updateAccount(tx, id, input, passwordHash);
+      await updateAccount(tx, id, input, passwordHash, clock());
       return getAccount(tx, id, 'pegawai');
     });
     return { data };

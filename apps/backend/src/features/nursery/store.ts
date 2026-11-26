@@ -3,6 +3,7 @@ import { jakartaDate } from '../../common/dates.js';
 import { ApiError } from '../../common/errors.js';
 import { MIN_TRANSFER_AGE_DAYS } from '../../common/growth-rules.js';
 import { fromMinor } from '../../common/quantities.js';
+import { lastChangedAt } from '../../common/sync.js';
 
 type Executor = Pick<Client, 'execute'>;
 
@@ -17,6 +18,7 @@ function sowingRow(row: Row, today: string) {
     id_penyemaian: String(row.id_penyemaian),
     public_id: nullableId(row.public_id),
     version: nullableId(row.version),
+    updated_at: row.updated_at == null ? null : Number(row.updated_at),
     id_user: String(row.id_user),
     tanggal_semai: String(row.tanggal_semai),
     jumlah_benih: Number(row.jumlah_benih),
@@ -46,6 +48,7 @@ const columns = `
   CAST(p.id_penyemaian AS TEXT) AS id_penyemaian,
   l.public_id,
   CAST(v.version AS TEXT) AS version,
+  ${lastChangedAt('penyemaian', 'p.id_penyemaian')},
   CAST(p.id_user AS TEXT) AS id_user,
   p.tanggal_semai,
   p.jumlah_benih,
@@ -96,7 +99,7 @@ export async function listSowings(
   const rows = (await db.execute({
     sql: `SELECT ${columns} FROM penyemaian p ${linkJoin}
       WHERE ${filter}
-      ORDER BY p.tanggal_semai DESC, p.id_penyemaian DESC
+      ORDER BY COALESCE(updated_at,0) DESC, p.id_penyemaian DESC
       LIMIT ? OFFSET ?`,
     args: [...args, query.limit, (query.page - 1) * query.limit],
   })).rows;

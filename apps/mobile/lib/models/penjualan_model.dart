@@ -58,6 +58,9 @@ class PenjualanItem {
   final String? catatan;
   final String? batchPanenId;
   final String? version;
+
+  /// Waktu perubahan terakhir dari server (epoch milidetik), dasar urutan daftar.
+  final int? updatedAt;
   final List<PenjualanLine> details;
 
   const PenjualanItem({
@@ -71,6 +74,7 @@ class PenjualanItem {
     this.catatan,
     this.batchPanenId,
     this.version,
+    this.updatedAt,
     this.details = const [],
   });
 
@@ -96,6 +100,7 @@ class PenjualanItem {
     String? catatan,
     String? batchPanenId,
     String? version,
+    int? updatedAt,
     List<PenjualanLine>? details,
   }) {
     return PenjualanItem(
@@ -109,6 +114,7 @@ class PenjualanItem {
       catatan: catatan ?? this.catatan,
       batchPanenId: batchPanenId ?? this.batchPanenId,
       version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
       details: details ?? this.details,
     );
   }

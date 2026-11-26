@@ -18,7 +18,9 @@ test('auth migration upgrades and rolls back without changing original users or 
   await db.execute("INSERT INTO users (id_role,nama,username,password) VALUES (1,'Existing','existing','legacy-hash')");
   const before = (await db.execute('SELECT * FROM users')).rows;
   await migrate(db, migrations);
-  assert.deepEqual((await db.execute('SELECT * FROM users')).rows, before);
+  // 0023 adds a nullable updated_at column for list ordering; the original account data is untouched.
+  const after = (await db.execute('SELECT id_user,id_role,nama,username,password,email,no_telepon,alamat,status_aktif FROM users')).rows;
+  assert.deepEqual(after, before);
   await assert.rejects(db.execute(`INSERT INTO auth_sessions VALUES ('a',999,'b','c','d',1,2,3)`), /FOREIGN KEY/);
   for (let i = 1; i < migrations.length; i++) {
   await migrate(db, migrations, { direction: 'down', allowDataLoss: true });

@@ -122,10 +122,15 @@ class SaleRecord {
     this.note,
     this.version,
     this.publicId,
+    this.updatedAt,
   });
 
   final String id, userId, date, buyer, status;
   final String? note, version, publicId;
+
+  /// Waktu perubahan terakhir dari server (epoch milidetik). Dipakai daftar agar
+  /// transaksi yang paling baru diubah tampil paling atas.
+  final int? updatedAt;
   final List<SaleDetail> details;
 
   HarvestWeight get quantity =>
@@ -166,6 +171,7 @@ class SaleRecord {
       note: json['keterangan'] as String?,
       version: version == null ? null : saleId(version),
       publicId: json['public_id'] as String?,
+      updatedAt: json['updated_at'] is int ? json['updated_at'] as int : null,
       details: List.unmodifiable(details),
     );
   }

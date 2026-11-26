@@ -493,3 +493,23 @@ Status implementasi: `mcdocs/qa-sesi7-tasks.md`; permintaan backend:
 - **Keputusan:** investigasi selesai; akar = tidak ada endpoint daftar `perawatan`.
 - **Tindak lanjut:** `docs/backend-change-requests.md` #4. Tab Rawat sementara tetap
   menampilkan laporan kerusakan.
+
+## D-51 — Urutan daftar: "perubahan terakhir" dari backend (27 Nov 2026)
+- **Konteks:** client meminta daftar Stok/Semaian/Meja/Panen/Penjualan/Akun menaruh
+  baris yang paling baru diubah di atas.
+- **Pilihan:** **waktu ubah nyata dari backend**, lalu `ORDER BY`, bukan perkiraan
+  "terbaru dulu" di klien. Sumber waktu: `sync_changes` `MAX(changed_at)` per
+  `(resource_type, domain_id)` — log yang sama dipakai perangkat, sudah memuat
+  perubahan turunan (saldo stok, tanaman aktif meja, pindah, kerusakan, panen).
+- **Alasan:** memperkirakan di klien (mis. dari `version` atau tanggal) tidak menangkap
+  koreksi pada baris lama dan bisa berbeda dari server; satu sumber kebenaran = server.
+- **Akun:** tidak ikut registry sync, jadi ditambah kolom `users.updated_at` (nullable,
+  tanpa backfill, diisi jalur tulis akun) dan diurut `COALESCE(updated_at,0) DESC,
+  id_user DESC`. Baris lama yang `NULL` jatuh ke bawah.
+- **Respons tulis:** `executeDomainMutation` membaca ulang `MAX(changed_at)` setelah
+  efeknya, supaya respons create/update sama dengan `GET` berikutnya.
+- **Batas:** server berubah sesi ini (menyimpang dari batas "FE saja" Sesi 7) — disetujui
+  client lewat pilihan "Backend exact last-changed".
+- **Bukti:** `apps/backend/migrations/0023_list_last_changed.{up,down}.sql`;
+  `test/list_last_changed_test.dart` (FE), `accounts.test.js`/`tables.test.js`/
+  `inventory-read-model.test.js` (backend).

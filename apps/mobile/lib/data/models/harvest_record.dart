@@ -123,9 +123,14 @@ class HarvestRecord {
     this.version,
     this.publicId,
     this.note,
+    this.updatedAt,
   });
   final String id, userId, date;
   final String? version, publicId, note;
+
+  /// Waktu perubahan terakhir dari server (epoch milidetik). Dipakai daftar agar
+  /// panen yang paling baru diubah tampil paling atas.
+  final int? updatedAt;
   final List<HarvestDetail> details;
   final HarvestWeight saleable;
   final HarvestWeight? total, reject;
@@ -171,6 +176,7 @@ class HarvestRecord {
       version: json['version'] == null ? null : harvestId(json['version']),
       publicId: json['public_id'],
       note: json['keterangan'],
+      updatedAt: json['updated_at'] is int ? json['updated_at'] as int : null,
       details: List.unmodifiable(details),
       total: total,
       reject: reject,

@@ -150,10 +150,11 @@ class PanenViewModel extends StateNotifier<PanenState> {
     }
     final result = records.values.toList()
       ..sort((a, b) {
-        final date = b.date.compareTo(a.date);
-        return date == 0
+        // Baris yang paling baru diubah (termasuk hasil koreksi) tampil lebih dulu.
+        final byChange = (b.updatedAt ?? 0).compareTo(a.updatedAt ?? 0);
+        return byChange == 0
             ? BigInt.parse(b.id).compareTo(BigInt.parse(a.id))
-            : date;
+            : byChange;
       });
     return List.unmodifiable(result);
   }
