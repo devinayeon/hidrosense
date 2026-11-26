@@ -77,6 +77,16 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       throw V2EmployeeStoreException(employeeErrorMessage(error));
     }
   }
+
+  @override
+  Future<V2Employee> activate(String id) async {
+    try {
+      await _repository.activateEmployee(id);
+      return _toV2(await _repository.getEmployeeDetail(id));
+    } catch (error) {
+      throw V2EmployeeStoreException(employeeErrorMessage(error));
+    }
+  }
 }
 
 final v2EmployeeStoreProvider = Provider<V2EmployeeStore>(

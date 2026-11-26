@@ -100,10 +100,12 @@ class Medicine {
   factory Medicine.fromJson(Object? json) {
     final m = _map(json, 'Obat');
     final phi = m['phi_hari'];
-    if (phi != null && phi is! int)
+    if (phi != null && phi is! int) {
       throw const FormatException('Field phi_hari tidak valid.');
-    if (m['terverifikasi'] is! bool)
+    }
+    if (m['terverifikasi'] is! bool) {
       throw const FormatException('Field terverifikasi tidak valid.');
+    }
     return Medicine(
       id: _str(m, 'id_katalog'),
       activeIngredient: _str(m, 'bahan_aktif'),
@@ -220,15 +222,18 @@ class PestRecommendation {
     final severity = PestSeverity.values.where(
       (s) => s.apiCode == m['tingkat'],
     );
-    if (severity.isEmpty)
+    if (severity.isEmpty) {
       throw FormatException('Tingkat tidak dikenal: ${m['tingkat']}');
+    }
     final created = DateTime.tryParse(_str(m, 'tanggal_rekomendasi'));
-    if (created == null)
+    if (created == null) {
       throw const FormatException('Tanggal rekomendasi tidak valid.');
+    }
     final decidedRaw = _strOrNull(m, 'tanggal_keputusan');
     final materials = m['bahan_terpakai'];
-    if (materials is! List)
+    if (materials is! List) {
       throw const FormatException('Field bahan_terpakai tidak valid.');
+    }
     return PestRecommendation(
       id: _str(m, 'id_rekomendasi'),
       tableId: _str(m, 'id_meja'),

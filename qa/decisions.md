@@ -1,6 +1,6 @@
 # qa/decisions.md — Keputusan & asumsi (HidroSense QA)
 
-Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
+Format: tanggal, konteks, pilihan, alasan. Diperbarui 25 November 2026.
 
 ## D-01 — Bekerja solo, tanpa subagent (23 Nov 2026)
 - **Konteks:** PROMPT §3.1 mengizinkan delegasi opsional (Herdr + TokenHarbor High + automation).
@@ -292,6 +292,110 @@ Format: tanggal, konteks, pilihan, alasan. Diperbarui 24 November 2026.
   Filter berjalan **di layar** lewat `saringRiwayatTanggal`; server tidak diubah.
 - **Alasan:** batas inklusif + tanggal WIB konsisten mencegah entri tengah malam masuk
   kelompok yang salah. Aman pada skala teks 2.0.
+
+## D-33 — Triase QA manual Sesi 6 (25 Nov 2026)
+- **Konteks:** pelapor QA mengirim 30 temuan (K-01..K-30) dari uji manual di HP, sebagian
+  tanpa langkah/pesan yang jelas.
+- **Pilihan:** setiap temuan diklasifikasikan **berbasis bukti** menjadi salah satu dari
+  BUG-FE / NOT-A-BUG / DATA-PRASYARAT / BACKEND-LIMIT / PERLU-KEPUTUSAN / PERLU-KLARIFIKASI.
+  Hanya BUG-FE yang diperbaiki, yaitu yang bisa direproduksi di kode dan bukan akar backend.
+- **Alasan:** menjaga batas D-02 (hanya `apps/mobile/`) dan tidak mengklaim PASS dari
+  pembacaan kode; status tetap "FIXED di kode, belum diuji ulang di HP".
+
+## D-34 — Kekuatan password & panjang minimum telepon (K-02) — **FINAL: min 6 / max 12; telepon 10–13 digit** (25–26 Nov 2026)
+- **Konteks:** pelapor menilai validasi akun lemah. Server: `passwordSchema` minimal 12
+  karakter tanpa aturan kompleksitas; `no_telepon` divalidasi `^\+?[0-9 ()\-]+$` + minimal 1
+  angka, ≤20 karakter; `alamat` boleh berisi apa saja (angka saja sah).
+- **Keputusan PM (26 Nov 2026):** password **minimal 6 dan maksimal 12 karakter**; nomor
+  telepon **10–13 angka** (pemisah spasi/`-`/`()` diabaikan saat menghitung digit).
+- **Yang sudah jelas:** alamat berisi angka **bukan** bug (server memang mengizinkan).
+- **Implementasi klien:** `v2_employee_form_page.dart` — `_passwordProblem` (6–12) dan
+  `_phoneProblem` (10–13 digit). Hint password menjadi "6–12 karakter".
+- **Batasan:** `apps/backend/src/common/validation.ts:42` masih memakai
+  `newPasswordSchema = z.string().min(12).max(128)`. Password 6–11 karakter **lolos di klien
+  tetapi ditolak server** → butuh perubahan backend. Telepon aman: kontrak server
+  (`accounts/contracts.ts:12`) lebih longgar daripada 10–13, jadi klien (lebih ketat) tidak
+  memicu penolakan server. Dicatat sebagai **butuh backend/PM** (lihat BUG-56).
+- **Alasan:** mengikuti keputusan produk; batas klien lebih ketat/aman tetap tidak melanggar
+  kontrak server.
+
+## D-35 — Konfirmasi sebelum menyimpan perubahan (K-03/K-18) — **FINAL: tambah pop-up** (25–26 Nov 2026)
+- **Konteks:** pelapor ingin pop-up "yakin mengubah?" sebelum menyimpan perubahan akun/meja.
+- **Keputusan PM (26 Nov 2026):** **tambahkan** pop-up konfirmasi ulang sebelum menyimpan.
+- **Implementasi klien:** dialog `showV2Dialog` sebelum kirim pada mode **ubah** —
+  `v2_employee_form_page.dart` ("Simpan perubahan akun?") dan `v2_meja_form_page.dart`
+  ("Simpan perubahan meja?"). Form **tambah** tidak memakai konfirmasi karena tidak mengubah
+  data yang ada. Tombol Batal menutup dialog tanpa menutup form.
+- **Alasan:** keputusan produk; konfirmasi hanya pada aksi yang mengubah data yang sudah ada.
+
+## D-36 — Aktivasi ulang pegawai nonaktif (K-05) — **FINAL: tambah tombol "Aktifkan"** (25–26 Nov 2026)
+- **Konteks:** pelapor bertanya cara mengaktifkan kembali pegawai yang sudah dinonaktifkan.
+- **Fakta:** server punya `POST /api/v1/employees/:id/activate` (204) dan
+  `EmployeeRepository.activateEmployee` sudah ada, tetapi `V2EmployeeStore`/layar 3.17 hanya
+  punya aksi "Ubah". FigCraft 3.16 menyatakan "Aktivasi ulang tidak ada di lingkup".
+- **Keputusan PM (26 Nov 2026):** **tambahkan** tombol "Aktifkan" (untuk petani) pada detail
+  pegawai nonaktif.
+- **Implementasi klien:** `V2EmployeeStore.activate` + `V2EmployeeApiStore.activate`
+  (`POST /employees/:id/activate`), hasil `V2EmployeeActivated`, tombol "Aktifkan" di
+  `v2_employee_detail_page.dart` (menggantikan "Nonaktifkan" saat nonaktif), toast
+  "<nama> diaktifkan kembali" di `v2_employee_list_page.dart`.
+- **Alasan:** backend sudah mendukung penuh, jadi biayanya kecil dan menutup jalan buntu.
+
+## D-37 — Penyimpanan token sesi (S-02) — **SKIP** (26 Nov 2026)
+- **Konteks:** token sesi disimpan plaintext di `session.db` (SQLite lokal).
+- **Keputusan PM:** **dilewati** pada sesi ini (tidak dikerjakan). Tetap dicatat sebagai
+  rekomendasi pengerasan (mis. `flutter_secure_storage`) untuk sesi berikutnya.
+
+## D-38 — Satu istilah untuk status data: "Nonaktifkan" (S-03/G-05) — **butuh konteks (26 Nov 2026)**
+- **Konteks:** UI bergantian memakai "arsip" dan "nonaktifkan" untuk hal yang sama
+  (`status_aktif`).
+- **Keputusan PM:** **belum diputuskan**; PM minta konteks tambahan lebih dulu (contoh layar &
+  dampaknya). Konteks disertakan di laporan sesi ini; **tidak** diimplementasikan sampai ada
+  keputusan.
+- **Konteks untuk PM (bukti kode):**
+  - Inventaris memakai **"Arsip"**: chip filter `Semua / Menipis / Arsip`
+    (`v2_inventaris_data.dart:158`), frame `4.28 Arsip`, `4.29 Detail barang arsip`, dan
+    `V2InventarisItem.arsip` (`v2_inventaris_data.dart:75,99`).
+  - Akun pegawai memakai **"Nonaktif"**: label status baris "Nonaktif, <username>"
+    (`v2_akun_employee.dart:27`) dan tombol "Nonaktifkan" (`v2_employee_detail_page.dart`).
+  - Kontrak/DB konsisten memakai `status_aktif` (0/1) di kedua area.
+- **Rekomendasi tetap:** pakai **"Nonaktifkan"** di seluruh UI inventaris agar sejalan dengan
+  layar akun dan kontrak server, tanpa mengubah data. Dampak bila diubah: teks chip filter,
+  judul frame 4.28/4.29, dan istilah di panduan/pelatihan — bukan perubahan skema.
+- **Yang dibutuhkan dari PM:** pilih satu istilah (mis. "Nonaktifkan" untuk keduanya, atau
+  pertahankan "Arsip" khusus inventaris + "Nonaktifkan" khusus akun).
+
+## D-39 — Keterangan penjualan (K-25) — **FINAL: diimplementasikan** (25–26 Nov 2026)
+- **Konteks:** FigCraft 8.7/8.21 tidak punya isian "Keterangan" penjualan, tetapi pelapor
+  memintanya (K-25) dan server mendukung opsional (`sales/contracts.ts:27,36,44`).
+- **Keputusan PM (26 Nov 2026):** **implementasikan** fitur keterangan penjualan.
+- **Implementasi klien:** field `keterangan` pada `V2Penjualan`/`V2PenjualanDraft`; isian
+  "Keterangan (opsional)" di `v2_penjualan_form_page.dart`; dikirim sebagai `note` pada
+  create/update/markPaid (`SalesDraft`/`SalesHeaderDraft` → `keterangan`); tampil sebagai kartu
+  info di `v2_penjualan_detail_page.dart` bila ada; ikut terbawa dari baris antrean
+  (`v2_penjualan_mappers.dart`).
+- **Catatan K-12:** jurnal dosis/pemakaian obat tetap **tidak** diimplementasikan (di luar
+  desain 4.11/4.12); katalog obat + riwayat rotasi sudah ada.
+
+---
+
+## §7 — Pertanyaan terbuka untuk pelapor QA / PM (Sesi 6)
+
+Temuan tanpa langkah reproduksi atau di luar batas FE. Jawaban pelapor diperlukan sebelum
+bisa ditriase lebih jauh.
+
+1. **K-06** "Fitur nonaktif ngebug": akun mana, tombol apa, pesan apa? (Gejala paling dekat =
+   BUG-48 yang sudah diperbaiki.)
+2. **K-19** "Tambah tanaman ngebug": langkah persis/screenshot? (BUG-35 baru menyentuh alur ini.)
+3. **K-29** "Modelnya lucu": apa yang aneh (label salah, kotak meleset, hasil kosong, UI)?
+   Lihat `qa/model_evaluation.md` — thrips adalah kelas terlemah.
+4. **K-06/K-19/K-29:** PM akan menguji ulang sendiri; tidak perlu klarifikasi tambahan sekarang.
+5. **S-05/G-18** aplikasi online-only tetapi menu "Sinkron" masih tampil (D-19) — sembunyikan,
+   atau ubah kalimatnya? (PM: **skip** pada sesi ini.)
+
+Sudah terjawab (26 Nov 2026): **K-05** → D-36 (tambah tombol "Aktifkan"); **K-03/K-18** → D-35
+(tambah pop-up konfirmasi); **K-02** → D-34 (password 6–12, telepon 10–13 digit); **K-08** → PM
+menduga kategori memang belum di-seed di server (verifikasi seed backend, bukan bug FE).
 
 ---
 

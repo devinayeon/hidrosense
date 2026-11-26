@@ -4,8 +4,9 @@ Dokumen ini memuat **semua test case** beserta status nyata dan cara menjalankan
 Status yang dipakai: `PASS`, `FAIL` (temuan), `BLOCKED` (dengan alasan), `N/A` (dengan
 alasan), `MANUAL-PENDING` (uji perangkat fisik, lihat `qa/manual_checklist.md`).
 
-- Tanggal pengujian: **24 November 2026** (re-QA setelah backend + AI/`ml` menyusul,
-  lalu perbaikan bug hasil uji manual dev FE).
+- Tanggal pengujian: **26 November 2026** (re-QA setelah backend + AI/`ml` menyusul,
+  lalu perbaikan bug hasil uji manual dev FE, triase temuan uji manual Sesi 6, dan
+  lanjutan Sesi 6 untuk keputusan PM D-34/D-35/D-36/D-39).
 - Lingkungan: Linux x86_64; Node v22.23.1; npm 10.9.8; Flutter 3.47.7 (stable);
   Python 3.14.3.
 - DB uji: `/tmp/opencode/hsqa/qa.db` (SQLite), server `http://127.0.0.1:3100`.
@@ -52,7 +53,7 @@ cd apps/backend && node --import tsx qa/fuzz-invariants.mjs               # 638 
 
 # 6) Mobile
 cd apps/mobile && flutter analyze                                        # tanpa temuan
-cd apps/mobile && flutter test                                           # 701 tes
+cd apps/mobile && flutter test                                           # 841 tes
 
 # 7) AI / ML
 cd /home/eiser/coolyeah/PPL/hidrosense && python3 -m pytest ml/tests -q   # 165 lulus, 3 gagal-harness
@@ -68,7 +69,7 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 | Suite | Baseline (awal sesi) | Hasil akhir | Catatan |
 |---|---|---|---|
 | `npm test` (backend) | 432/432 PASS | **432/432 PASS** | Tidak ada tes backend yang diubah. |
-| `flutter test` (mobile) | 592 PASS | **701 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21), +26 tes sesi 2 (BUG-22..25), +28 tes sesi 3 (BUG-26..32), +29 tes sesi 4 (BUG-33..38 + Fitur-1..3), +12 tes sesi 5 (BUG-39..47 + Fitur-4) di atas 592 baseline; termasuk 61 tes fitur pest. |
+| `flutter test` (mobile) | 592 PASS | **841 PASS** (exit 0) | +14 tes regresi sesi 1 (BUG-15..21), +26 tes sesi 2 (BUG-22..25), +28 tes sesi 3 (BUG-26..32), +29 tes sesi 4 (BUG-33..38 + Fitur-1..3), +12 tes sesi 5 (BUG-39..47 + Fitur-4), +7 tes sesi 6 (BUG-48..55), +25 tes lanjutan sesi 6 (BUG-56..59: D-34/D-35/D-36/D-39) di atas 592 baseline; termasuk 61 tes fitur pest. |
 | `flutter analyze` | 2 warning aset | **0 temuan** (exit 0) | Entri aset yang menunjuk folder hilang dihapus dari `pubspec.yaml`. |
 | `python3 -m pytest ml/tests` | tak jalan (dep hilang) | **165 PASS / 3 FAIL / 0 SKIP** | 3 FAIL = bug harness ML, bukan model (lihat §4.8). |
 | `qa/backend-pest-rotation.sh` | — (baru) | **109/109 PASS** | Fitur baru backend. |
@@ -96,6 +97,21 @@ sqlite3 -header /tmp/opencode/hsqa/qa.db < qa/audit_queries.sql
 > Sesi 5 (25 Nov 2026): baseline 689 PASS; ditambah **12 tes** untuk
 > BUG-39..BUG-47 dan Fitur-4 (daftar berkas di §4.2) sehingga **701 PASS**
 > (`flutter test`, exit 0). `flutter analyze` tetap **0 temuan**.
+>
+> Sesi 6 (25 Nov 2026): **koreksi angka** — hitungan inkremental sesi 1–5 di atas
+> kurang lengkap; jumlah `flutter test` nyata setelah sesi 5 adalah **808 PASS**
+> (bukan 701). Sesi 6 menambah **8 kasus uji** (BUG-48..55, daftar di §4.2) sehingga
+> **816 PASS** (`flutter test`, exit 0); `flutter analyze` **0 temuan**
+> (11 info `curly_braces_in_flow_control_structures` di `lib/features/pest/` juga
+> dibereskan). Tidak ada tes lama yang dihapus; `v2_panen_jual_bug42_43_test.dart`
+> disesuaikan karena alur nyata "Catat penjualan" kini mulai kosong (BUG-54).
+>
+> Lanjutan Sesi 6 (26 Nov 2026): baseline 816 PASS; ditambah **25 tes** untuk
+> keputusan PM D-34/D-35/D-36/D-39 (BUG-56..59: D-34 9, D-35 4, D-36 5, D-39 7)
+> sehingga **841 PASS** (`flutter test`, exit 0). `flutter analyze` **0 temuan**
+> (satu info `use_build_context_synchronously` di `v2_meja_connected.dart` juga
+> dibereskan). D-34 password 6–12 hanya berfungsi di klien; server masih min 12
+> (BUG-56/G-22, butuh backend). D-37 & S-05/G-18 di-skip sesuai keputusan PM.
 
 ---
 
@@ -426,9 +442,9 @@ i fail 0
 backend npm test exit=0
 ```
 
-### 4.2 `flutter test` (mobile) — 701 tes
+### 4.2 `flutter test` (mobile) — 841 tes
 ```
-01:55 +701: All tests passed!
+01:14 +841: All tests passed!
 flutter test exit=0
 ```
 Baseline sesi 3: `+632: All tests passed!` (`/tmp/opencode/hsqa/s2-full-test.log`).
@@ -480,6 +496,23 @@ Sesi 5 menambahkan berkas tes berikut (semuanya lulus; bukti gagal di kode lama 
 `v2_riwayat_tanggal_fitur4_test.dart` (Fitur-4/D-32, 2); serta penyesuaian di
 `v2_riwayat_group_fitur1_test.dart` (filter tanggal menambah tombol → tinggi viewport
 uji dinaikkan ke 1200).
+
+Sesi 6 menambahkan 8 kasus uji (semuanya lulus; bukti gagal di kode lama ada di
+`qa/issues.md`):
+- `api_client_test.dart` — +1 (`empty 204 response is accepted`, BUG-48);
+- `v2_inventaris_tambah_prasyarat_test.dart` — berkas baru, 2 (BUG-49/50);
+- `v2_meja_form_test.dart` — +2 (kode duplikat tak menutup form; galat hilang saat
+  diperbaiki, BUG-51/52);
+- `v2_penjualan_form_default_test.dart` — berkas baru, 2 (BUG-54);
+- `pest_scan_page_test.dart` — +1 (pesan prasyarat meja, BUG-55);
+- `v2_panen_jual_bug42_43_test.dart` — disesuaikan (isi form dulu), bukan kasus baru.
+
+Lanjutan sesi 6 (26 Nov 2026) menambahkan **berkas baru** untuk keputusan PM
+D-34..D-36 & D-39 (semua lulus):
+- `v2_employee_d34_test.dart` — 9 (password 6–12; telepon 10–13 digit, BUG-56);
+- `v2_employee_d36_test.dart` — 5 (tombol "Aktifkan" + `V2EmployeeActivated`, BUG-58);
+- `v2_meja_d35_test.dart` — 4 (pop-up konfirmasi simpan ubah meja, BUG-57);
+- `v2_penjualan_d39_test.dart` — 7 (keterangan penjualan: form, detail, antrean, BUG-59).
 
 ### 4.3 Backend adversarial
 ```

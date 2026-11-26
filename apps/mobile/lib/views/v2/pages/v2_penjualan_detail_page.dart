@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../components/v2_penjualan_data.dart';
+import '../components/v2_penjualan_info_card.dart';
 import '../components/v2_penjualan_store.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
@@ -203,14 +204,30 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                       V2Space.xl,
                       V2Space.lg,
                     ),
-                    child: V2SummaryCard(
-                      kicker: _penjualan.pembeli,
-                      value: formatRupiahPenuh(_penjualan.total),
-                      meta: formatMetaPenjualan(_penjualan),
-                      extra: antrean
-                          ? 'Belum di server.'
-                          : _penjualan.panenAsal,
-                      badge: _badge(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        V2SummaryCard(
+                          kicker: _penjualan.pembeli,
+                          value: formatRupiahPenuh(_penjualan.total),
+                          meta: formatMetaPenjualan(_penjualan),
+                          extra: antrean
+                              ? 'Belum di server.'
+                              : _penjualan.panenAsal,
+                          badge: _badge(),
+                        ),
+                        if ((_penjualan.keterangan ?? '').isNotEmpty) ...[
+                          const SizedBox(height: V2Space.lg),
+                          V2PenjualanInfoCard(
+                            rows: [
+                              V2PenjualanInfoRow(
+                                label: 'Keterangan',
+                                value: _penjualan.keterangan!,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),

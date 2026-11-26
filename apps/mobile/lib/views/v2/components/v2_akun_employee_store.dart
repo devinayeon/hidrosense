@@ -31,6 +31,10 @@ abstract interface class V2EmployeeStore {
   Future<V2Employee> update(String id, V2EmployeeDraft draft);
 
   Future<V2Employee> deactivate(String id);
+
+  /// Mengaktifkan kembali pegawai nonaktif (D-36). Server sudah menyediakan
+  /// `POST /employees/:id/activate`; aksi ini hanya membuka jalannya di UI.
+  Future<V2Employee> activate(String id);
 }
 
 /// Galat store yang pesannya sudah siap ditampilkan ke pengguna.

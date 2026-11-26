@@ -169,10 +169,16 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
     ]);
 
     // Ubah data sudah diumumkan halaman detail ("Perubahan tersimpan"),
-    // jadi hanya nonaktifkan yang memunculkan toast di daftar (frame 3.16).
+    // jadi hanya nonaktifkan/aktifkan yang memunculkan toast di daftar
+    // (frame 3.16; D-36).
     if (result is V2EmployeeDeactivated) {
       setState(() {
         _toast = '${result.employee.firstName} dinonaktifkan';
+        _scheduleToastDismiss();
+      });
+    } else if (result is V2EmployeeActivated) {
+      setState(() {
+        _toast = '${result.employee.firstName} diaktifkan kembali';
         _scheduleToastDismiss();
       });
     }

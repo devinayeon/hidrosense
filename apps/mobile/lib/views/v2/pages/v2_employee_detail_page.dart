@@ -17,9 +17,9 @@ import 'v2_employee_form_page.dart';
 /// Detail pegawai: frame 3.11 (aktif), 3.17 (nonaktif), 3.15 (dialog
 /// nonaktifkan), dan 3.14 (notifikasi "Perubahan tersimpan" setelah ubah).
 ///
-/// Dua tombol saat pegawai masih aktif (Ubah + Nonaktifkan); setelah nonaktif
-/// hanya "Ubah" yang tersisa, sama seperti frame 3.17. Saat [store] diisi,
-/// ubah dan nonaktifkan dikirim ke backend.
+/// Dua tombol saat pegawai masih aktif (Ubah + Nonaktifkan); pegawai nonaktif
+/// dapat diaktifkan kembali lewat tombol "Aktifkan" (D-36) di samping "Ubah".
+/// Saat [store] diisi, ubah/nonaktifkan/aktifkan dikirim ke backend.
 class V2EmployeeDetailPage extends StatefulWidget {
   const V2EmployeeDetailPage({
     super.key,
@@ -145,6 +145,31 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
     Navigator.of(context).maybePop();
   }
 
+  /// Mengaktifkan kembali pegawai nonaktif (D-36). Aksi ini tidak merusak data,
+  /// jadi langsung dikirim tanpa dialog konfirmasi.
+  Future<void> _activate() async {
+    final store = widget.store;
+    if (store == null) {
+      Navigator.of(
+        context,
+      ).pop(V2EmployeeActivated(_employee.copyWith(active: true)));
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final updated = await store.activate(_employee.id);
+      if (!mounted) return;
+      Navigator.of(context).pop(V2EmployeeActivated(updated));
+    } on V2EmployeeStoreException catch (error) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -216,6 +241,12 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
                       type: V2ButtonType.destructive,
                       loading: _busy,
                       onPressed: _busy ? null : _confirmDeactivate,
+                    )
+                  else
+                    V2Button(
+                      label: 'Aktifkan',
+                      loading: _busy,
+                      onPressed: _busy ? null : _activate,
                     ),
                 ],
               ),

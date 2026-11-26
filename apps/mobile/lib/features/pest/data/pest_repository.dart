@@ -31,8 +31,9 @@ class PestRepository {
 
   Map<String, dynamic> _data(Map<String, dynamic> response) {
     final data = response['data'];
-    if (data is! Map<String, dynamic>)
+    if (data is! Map<String, dynamic>) {
       throw const FormatException('Respons server tidak valid.');
+    }
     return data;
   }
 
@@ -72,12 +73,14 @@ class PestRepository {
       );
     }
     final body = jsonDecode(utf8.decode(response.bodyBytes));
-    if (body is! Map<String, dynamic>)
+    if (body is! Map<String, dynamic>) {
       throw const FormatException('Respons Cloudinary tidak valid.');
+    }
     final url = body['secure_url'];
     final publicId = body['public_id'];
-    if (url is! String || publicId is! String)
+    if (url is! String || publicId is! String) {
       throw const FormatException('Respons Cloudinary tidak lengkap.');
+    }
     final photo = Uri.parse(url);
     if (photo.scheme != 'https' || photo.host != 'res.cloudinary.com') {
       throw const FormatException('Alamat foto bukan dari Cloudinary.');
@@ -105,8 +108,9 @@ class PestRepository {
       },
     );
     final id = _data(response)['id_hasil_deteksi'];
-    if (id is! String)
+    if (id is! String) {
       throw const FormatException('Respons pindaian tidak valid.');
+    }
     return id;
   }
 

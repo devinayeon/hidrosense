@@ -13,14 +13,14 @@ perubahan itu tidak mengubah perilaku produk.
 | Severity | Ditemukan | Diperbaiki | Terbuka / review |
 |---|---|---|---|
 | S1 Critical | 0 | 0 | 0 |
-| S2 Major | 11 | 10 | 1 |
-| S3 Minor | 33 | 30 | 3 |
+| S2 Major | 16 | 14 | 2 |
+| S3 Minor | 40 | 37 | 3 |
 | S4 Cosmetic | 3 | 3 | 0 |
-| **Total** | **47** | **43** | **4** |
+| **Total** | **59** | **54** | **5** |
 
-Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47 (43).
+Rincian: **FIXED** = BUG-01,02,03,06,07,08,09,10,11,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,57,58,59 (54).
 **NEEDS-HUMAN-REVIEW** = BUG-04 (S2, dependensi), BUG-05 (S3, token plaintext),
-BUG-12/13 (S3, harness ML & doc API usang).
+BUG-12/13 (S3, harness ML & doc API usang), BUG-56 (S2, password server min 12 — butuh backend).
 Catatan: BUG-31 tetap dihitung FIXED walau sempat dibuka ulang (OPEN) di sesi 4, karena
 sudah diperbaiki ulang dan lulus tes; hitungan menemukan/memperbaiki tidak berubah dua kali.
 Gap fitur (bukan bug kode) dicatat di `qa/rtm.md` §Gap. Tidak ada temuan **S1**.
@@ -46,6 +46,12 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 > BUG-39..BUG-43, lalu BUG-44..BUG-47 dari uji manual dev FE. Semuanya **FIXED di kode**
 > + regression test (701 tes lulus). **Verifikasi ulang di HP asli belum dilakukan**;
 > hasil manual dev FE dicatat sebagai "diuji manual dev FE", bukan PASS QA.
+> Sesi 6 (25 Nov 2026): triase 30 temuan pelapor (K-01..K-30, D-33) → BUG-48..BUG-55
+> **FIXED di kode** + regression test (**816 PASS**, `flutter analyze` 0).
+> Lanjutan Sesi 6 (26 Nov 2026): keputusan PM D-34/D-35/D-36/D-39 → BUG-57..BUG-59
+> **FIXED di kode** + regression test (**841 PASS**); **BUG-56** (password server min 12)
+> dicatat **butuh backend/PM** (`NEEDS-HUMAN-REVIEW`). Semua verifikasi ulang di HP asli
+> masih menunggu dev FE (bukan klaim PASS).
 
 ---
 
@@ -573,6 +579,144 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
 
 ---
 
+## BUG-48 [S2] Nonaktifkan akun gagal di layar padahal server sudah menyimpan (204 tanpa body)
+- Area/PB: 03 Akun — pegawai (3.16/3.17) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-04)
+- Langkah reproduksi: 1) login sebagai petani; 2) Akun pegawai → pilih pegawai → Nonaktifkan; 3) lihat pesan dan daftar.
+- Ekspektasi: akun nonaktif, daftar ikut berubah, tanpa pesan galat.
+- Aktual: pesan "Format data tidak sesuai"; akun tetap tampak aktif di daftar, padahal `GET /employees/:id` menunjukkan `status_aktif: 0`.
+- Bukti: backend lokal menjawab `POST /api/v1/employees/2/deactivate` → **204 No Content tanpa body**; `ApiClient._request` melempar `FormatException('Respons layanan tidak valid.')` untuk body kosong. Tes baru di `test/api_client_test.dart` gagal di kode lama dengan galat yang sama.
+- Penyebab (akar): respons 2xx tanpa body dianggap format salah; `deactivate`, `activate`, dan `logout` memang 204.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `_request` mengembalikan map kosong untuk 204/body kosong pada status sukses. File: `lib/data/services/api_client.dart`.
+- Regression test: `apps/mobile/test/api_client_test.dart` (`empty 204 response is accepted`).
+
+## BUG-49 [S3] Tombol "Tambah barang" menunggu jaringan sebelum membuka form
+- Area/PB: 04 Inventaris — Stok · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-07)
+- Langkah reproduksi: 1) buka tab Stok; 2) tekan "Tambah barang".
+- Ekspektasi: form 4.10 langsung terbuka.
+- Aktual: terasa jeda karena `_tambah` menunggu `inventoryMedicinesProvider` (permintaan jaringan) lebih dulu; kategori baru dimuat setelah form ditutup.
+- Bukti: `test/v2_inventaris_tambah_prasyarat_test.dart` — di kode lama tidak ada permintaan `/jenis-inventaris` atau `/obat` sebelum tombol ditekan.
+- Penyebab (akar): daftar pendukung dimuat saat dibutuhkan, bukan saat tab dibuka.
+- Status: **FIXED di kode, belum diuji ulang di HP** — kategori & obat dihangatkan sejak tab dibuka (`ref.watch`), lalu dibaca dari cache tanpa menunggu jaringan. File: `v2_inventaris_connected.dart`.
+- Regression test: `apps/mobile/test/v2_inventaris_tambah_prasyarat_test.dart`.
+
+## BUG-50 [S2] "Kategori barang belum tersedia" baru muncul setelah form stok diisi penuh
+- Area/PB: 04 Inventaris — Stok (4.10/4.11) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-08)
+- Langkah reproduksi: 1) Tambah barang → isi form → Simpan; 2) amati pesan.
+- Ekspektasi: bila server memang tak punya kategori aktif, beri tahu sebelum form dibuka; bila gagal jaringan, bedakan pesannya.
+- Aktual: pesan generik baru muncul setelah isian penuh dan form ditutup; kategori kosong dan gangguan jaringan memakai pesan yang sama.
+- Bukti: backend lokal + seed mengembalikan **4 kategori aktif** (`Benih`, `Nutrisi`, `Obat & Pestisida`, `Perlengkapan`) dan `POST /inventaris` **201**; jadi pesan di sesi QA menandakan jalur prasyarat/jaringan, bukan kontrak yang tak didukung.
+- Penyebab (akar): kategori diperiksa setelah form selesai; tidak ada pembeda "daftar kosong" vs "gagal memuat".
+- Status: **FIXED di kode, belum diuji ulang di HP** — kategori diperiksa sebelum form dibuka; pesan kosong (`v2KategoriKosongPesan`) dan gagal-muat dibedakan. File: `v2_inventaris_connected.dart`.
+- Regression test: `apps/mobile/test/v2_inventaris_tambah_prasyarat_test.dart`.
+
+## BUG-51 [S3] Kode meja duplikat baru ditolak server setelah form ditutup, isian hilang
+- Area/PB: 06 Meja Tanam — Tambah meja (6.6/6.7) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-14)
+- Langkah reproduksi: 1) Tambah meja; 2) isi kode yang sudah ada + jumlah + keterangan; 3) Simpan.
+- Ekspektasi: pesan "Kode meja sudah dipakai" tampil di field kode dan isian lain tidak hilang.
+- Aktual: form ditutup, server menolak, pengguna harus membuka form lagi dan mengisi ulang semuanya.
+- Bukti: `test/v2_meja_form_test.dart` (`kode meja yang sudah dipakai ditolak tanpa menutup form`) — di kode lama form langsung `pop` karena kode duplikat tidak diperiksa di klien.
+- Penyebab (akar): validasi duplikat hanya di server; daftar meja yang sudah dimuat tidak dipakai untuk pencegahan awal.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `V2MejaFormPage` menerima `takenCodes`; duplikat ditolak sebelum `pop` (server tetap penentu akhir). File: `v2_meja_form_page.dart`, `v2_meja_connected.dart`.
+- Catatan: auto-increment kode **bukan** lingkup desain 6.6 (input manual "Contoh: A2") → NOT-A-BUG.
+- Regression test: `apps/mobile/test/v2_meja_form_test.dart`.
+
+## BUG-52 [S3] Pesan galat form meja tidak hilang setelah nilai diperbaiki
+- Area/PB: 06 Meja Tanam — Tambah/Ubah meja (6.7/6.19) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-15)
+- Langkah reproduksi: 1) isi jumlah lubang 0 → Simpan; 2) perbaiki menjadi 240 tanpa menekan Simpan lagi.
+- Ekspektasi: pesan "Isi angka lebih dari 0" hilang begitu nilai valid.
+- Aktual: pesan bertahan sampai Simpan ditekan ulang.
+- Bukti: `test/v2_meja_form_test.dart` (`pesan galat hilang begitu isian diperbaiki`) — gagal di kode lama (`findsNothing` tidak terpenuhi).
+- Penyebab (akar): galat hanya disetel di `_simpan`; tak ada listener yang membersihkannya saat isian berubah.
+- Status: **FIXED di kode, belum diuji ulang di HP** — listener `_clearKodeError/_clearLubangError/_clearKeteranganError`. File: `v2_meja_form_page.dart`.
+- Regression test: `apps/mobile/test/v2_meja_form_test.dart`.
+
+## BUG-53 [S3] Daftar meja tampak diam sesaat setelah Simpan (baris baru menunggu jaringan)
+- Area/PB: 06 Meja Tanam — daftar (6.1) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-17)
+- Langkah reproduksi: 1) Tambah meja → Simpan; 2) amati daftar sebelum/sesudah jawaban server.
+- Ekspektasi: pengguna tahu penyimpanan sedang berjalan.
+- Aktual: form tertutup dan daftar lama tampil tanpa tanda proses; baris baru muncul setelah jawaban server. Id meja ditentukan server, jadi baris tidak bisa ditampilkan lebih awal tanpa data sementara.
+- Bukti: alur `_tambah` → `createTable` → `_merge` (menaruh di depan) → `refresh()`; tidak ada umpan balik sebelum `await` selesai.
+- Penyebab (akar): jeda jaringan + tidak ada indikator proses di daftar.
+- Status: **sebagian, FIXED di kode** — pesan "Menyimpan meja…" muncul segera lalu diganti "Meja ditambahkan.". Akar (jeda/ID dari server) tetap; perbaikan penuh butuh pola form menyimpan sendiri (dicatat sebagai rekomendasi, belum dikerjakan).
+- Regression test: tidak ada (perilaku waktu; diverifikasi lewat alur kode).
+
+## BUG-54 [S2] Form "Catat penjualan" alur nyata terisi contoh dan panen pertama otomatis
+- Area/PB: 08 Penjualan — Catat penjualan (8.7) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-26)
+- Langkah reproduksi: 1) Penjualan → Catat penjualan (alur tersambung, bukan galeri); 2) langsung tekan Simpan.
+- Ekspektasi: isian kosong, panen wajib dipilih; tidak ada penjualan contoh tersimpan.
+- Aktual: pembeli "Warung Sari", 60 kg, Rp40.000, dan panen pertama sudah terpilih; Simpan tanpa mengubah ikut menulis data contoh itu.
+- Bukti: `test/v2_penjualan_form_default_test.dart` — di kode lama field berisi nilai contoh dan Simpan lolos validasi; sekarang Simpan menolak dengan "Isi nama pembeli"/"Pilih panen"/"Isi jumlah"/"Isi harga".
+- Penyebab (akar): nilai contoh galeri dipakai juga untuk alur nyata; `empty` hanya menandai pratinjau validasi, bukan "bukan galeri".
+- Status: **FIXED di kode, belum diuji ulang di HP** — `_prefill` hanya untuk galeri/pratinjau atau mode ubah; alur nyata mulai kosong dan `_panen` null. File: `v2_penjualan_form_page.dart`. Tes BUG-42 disesuaikan (isi form dulu, lalu Simpan).
+- Regression test: `apps/mobile/test/v2_penjualan_form_default_test.dart`.
+
+## BUG-55 [S3] Pemilih "Meja tanam" di layar deteksi tampak mati tanpa penjelasan
+- Area/PB: 09 Perawatan — Foto tanaman/deteksi (9.5–9.8) · Ditemukan lewat: QA manual Sesi 6 (25 Nov 2026, K-28)
+- Langkah reproduksi: 1) buka Foto tanaman; 2) buka daftar "Meja tanam" saat belum ada meja berisi tanaman.
+- Ekspektasi: dijelaskan bahwa meja harus punya tanaman aktif lebih dulu.
+- Aktual: dropdown kosong, tombol simpan nonaktif dengan "Pilih meja tanam dulu", tanpa menyebut prasyaratnya.
+- Bukti: `test/pest_scan_page_test.dart` (`tanpa meja berisi tanaman: daftar meja dijelaskan`) — di kode lama teks prasyarat tidak ada. Backend menghitung `tanaman_aktif` (`apps/backend/src/features/tables/store.ts:12,69`), jadi bukan kekurangan data server.
+- Penyebab (akar): filter `activePlants > 0` menyembunyikan semua meja tanpa menjelaskan sebabnya.
+- Status: **FIXED di kode, belum diuji ulang di HP** — pesan "Belum ada meja dengan tanaman aktif…" tampil saat daftar kosong. File: `pest_scan_page.dart`.
+- Regression test: `apps/mobile/test/pest_scan_page_test.dart`.
+
+## BUG-56 [S2] Password 6–11 karakter ditolak server walau klien mengizinkan (butuh backend)
+- Area/PB: 03 Akun — Tambah/Ubah pegawai (3.7/3.12) · Ditemukan lewat: keputusan PM D-34 (26 Nov 2026, K-02)
+- Langkah reproduksi: 1) Petani → Akun pegawai → Tambah/ubah pegawai; 2) isi password 6–11 karakter; 3) Simpan.
+- Ekspektasi (D-34): password minimal 6 karakter diterima.
+- Aktual: klien menerima (validasi 6–12), tetapi server menolak dengan `VALIDATION_ERROR` karena
+  `apps/backend/src/common/validation.ts:42` memakai `newPasswordSchema = z.string().min(12).max(128)`.
+- Bukti: `apps/mobile/test/v2_employee_d34_test.dart` (batas klien 6–12 dipaku); baris server
+  `apps/backend/src/common/validation.ts:42`.
+- Penyebab (akar): kontrak server belum disesuaikan dengan D-34. **Di luar batas FE** (backend READ-ONLY).
+- Status: **BUTUH BACKEND/PM** — validasi klien sudah 6–12; agar konsisten, server perlu
+  `min(6).max(12)`. Telepon **tidak** bermasalah: kontrak server
+  (`apps/backend/src/features/accounts/contracts.ts:12`) lebih longgar daripada 10–13 digit.
+- Mitigasi klien: batas 6–12 tetap ditampilkan agar pengguna mengisi nilai yang diterima kedua sisi;
+  pesan galat server tetap ditampilkan apa adanya.
+
+## BUG-57 [S3] Tidak ada konfirmasi sebelum menyimpan perubahan akun/meja
+- Area/PB: 03 Akun — Ubah pegawai (3.12); 06 Meja — Ubah meja (6.18) · Ditemukan lewat: QA manual Sesi 6 (K-03/K-18)
+- Langkah reproduksi: 1) buka Ubah pegawai/meja; 2) ubah satu isian; 3) tekan Simpan.
+- Ekspektasi (D-35): muncul pop-up konfirmasi sebelum menyimpan.
+- Aktual (sebelum perbaikan): Simpan langsung mengirim/menutup form tanpa konfirmasi.
+- Bukti: `apps/mobile/test/v2_meja_d35_test.dart` — di kode lama hasil pop tidak null sebelum dialog.
+- Penyebab (akar): aksi Simpan tidak meminta konfirmasi ulang untuk perubahan data yang sudah ada.
+- Status: **FIXED di kode, belum diuji ulang di HP** — dialog `showV2Dialog` pada mode ubah
+  (`v2_employee_form_page.dart` "Simpan perubahan akun?"; `v2_meja_form_page.dart`
+  "Simpan perubahan meja?"). Form tambah tetap tanpa konfirmasi.
+- Regression test: `apps/mobile/test/v2_meja_d35_test.dart`, `apps/mobile/test/v2_employee_d34_test.dart`.
+
+## BUG-58 [S2] Tidak ada jalan mengaktifkan kembali pegawai nonaktif
+- Area/PB: 03 Akun — Detail pegawai nonaktif (3.17) · Ditemukan lewat: QA manual Sesi 6 (K-05)
+- Langkah reproduksi: 1) Petani → Akun pegawai; 2) buka pegawai nonaktif; 3) cari cara mengaktifkan kembali.
+- Ekspektasi (D-36): tersedia aksi "Aktifkan" untuk petani.
+- Aktual (sebelum perbaikan): hanya tombol "Ubah"; server sudah punya `POST /employees/:id/activate` (204).
+- Bukti: `apps/mobile/test/v2_employee_d36_test.dart` — di kode lama tombol "Aktifkan" tidak ada.
+- Penyebab (akar): `V2EmployeeStore` belum punya operasi `activate`; UI detail belum menampilkannya.
+- Status: **FIXED di kode, belum diuji ulang di HP** — `V2EmployeeStore.activate` +
+  `V2EmployeeApiStore.activate` (`POST /employees/:id/activate`), `V2EmployeeActivated`, tombol
+  "Aktifkan" (menggantikan "Nonaktifkan" saat nonaktif), toast "<nama> diaktifkan kembali".
+  File: `v2_akun_employee_store.dart`, `v2_employee_store.dart`, `v2_akun_employee.dart`,
+  `v2_employee_detail_page.dart`, `v2_employee_list_page.dart`.
+- Regression test: `apps/mobile/test/v2_employee_d36_test.dart`.
+
+## BUG-59 [S3] Keterangan penjualan tidak ada di form/detail (fitur D-39)
+- Area/PB: 08 Penjualan — Catat/Ubah penjualan (8.7/8.21), Detail (8.15) · Ditemukan lewat: QA manual Sesi 6 (K-25)
+- Langkah reproduksi: 1) Penjualan → Catat penjualan; 2) cari isian catatan bebas; 3) simpan.
+- Ekspektasi (D-39): tersedia "Keterangan (opsional)" yang tersimpan & tampil kembali.
+- Aktual (sebelum perbaikan): model/form tidak mengenal kolom keterangan walau server mendukung
+  (`sales/contracts.ts:27,36,44`).
+- Bukti: `apps/mobile/test/v2_penjualan_d39_test.dart` — di kode lama field ke-4 tidak ada dan
+  draft tanpa `keterangan`.
+- Penyebab (akar): fitur belum diimplementasikan (di luar desain FigCraft) sampai diputuskan PM.
+- Status: **FIXED di kode, belum diuji ulang di HP** — field `keterangan` pada
+  `V2Penjualan`/`V2PenjualanDraft`, isian form, kartu info di detail, dan pemetaan antrean
+  (`v2_penjualan_mappers.dart`); dikirim sebagai `note` pada create/update/markPaid.
+- Regression test: `apps/mobile/test/v2_penjualan_d39_test.dart`.
+
+---
+
 ## Catatan (bukan bug)
 
 - **XSS di field teks:** server menyimpan `<script>…` apa adanya dan mengembalikannya di
@@ -596,3 +740,36 @@ Semua temuan di luar perbaikan (backend/DB/ML/keamanan/dokumentasi) berstatus
   di server. Tim backend sudah mengisi env-nya dan simpan pindaian berhasil di HP
   (dev FE, 24 Nov 2026) → BUG-16 **FIXED**. Sisi mobile tetap punya pesan galat yang
   bisa ditindaklanjuti bila layanan unggah bermasalah lagi.
+
+### Sesi 6 (25 Nov 2026) — temuan pelapor yang **bukan bug kode**
+
+Rincian bukti ada di `mcdocs/qa-sesi6-tasks.md` (tabel triase); ringkasannya:
+
+- **K-01 profil petani tidak ada:** desain FigCraft 3.1 "Lainnya (Petani)" tidak punya rute
+  profil petani mandiri; lihat G-20 (gap dokumen), bukan bug.
+- **K-09 dropdown "Obat" vs isian "Nama barang":** FigCraft 4.11 memang memuat keduanya.
+- **K-10 form stok kurang tanggal/keterangan:** ERD `inventaris` memang tanpa keduanya;
+  tanggal/keterangan milik catatan `stok`.
+- **K-16 "maksimum 250 lubang per meja":** NFR-5 "12 meja × 250 = 3.000" adalah **kapasitas
+  total kebun**, bukan batas per meja (kontrak per meja maks 1000, lihat G-19).
+- **K-22 tombol Simpan naik di atas keyboard:** FigCraft 8.10 memang menggambar tombol tepat
+  di atas keyboard saat isian aktif; implementasi cocok.
+- **K-23 status "lunas"/"belum lunas":** ada di desain 8.7 **dan** kontrak server
+  (`lunas|belum_lunas`).
+- **K-24 menyimpan nama pembeli:** `pembeli` wajib di kontrak server dan ada di 8.7.
+- **K-25 keterangan penjualan kurang:** server mendukung opsional, tetapi FigCraft 8.7/8.21
+  tidak punya isiannya → fitur di luar desain, dicatat sebagai rekomendasi (D-39), tidak
+  diimplementasikan.
+- **K-30 pegawai "sama seperti petani":** matriks izin sudah diterapkan; pegawai 4 tab
+  (Beranda/Tanam/Stok/Profil) tanpa Rawat/Lainnya; tab Profil read-only (G-18 tetap terbuka).
+
+### Sesi 6 (25 Nov 2026) — temuan yang menunggu prasyarat atau penjelasan
+
+- **K-11/K-13/K-20/K-21/K-27 ("tidak bisa dicoba"):** jalur uji terblokir prasyarat data
+  (tambah barang → semai → pindah → panen → jual). Bukan bug; perlu uji ulang berurutan
+  setelah BUG-49/BUG-50.
+- **K-06/K-19/K-29 ("ngebug"/"modelnya lucu"):** tanpa langkah/pesan yang jelas. Pertanyaan
+  sudah disampaikan ke pelapor (`qa/decisions.md` §7).
+- **K-02/K-03/K-05/K-18:** memerlukan keputusan produk (D-34..D-36); lihat `qa/decisions.md`.
+- **K-17/K-08/K-28 (bagian data):** akar data/jaringan, bukan cacat tombol; mitigasi klien
+  sudah ditambahkan (BUG-50/53/55).

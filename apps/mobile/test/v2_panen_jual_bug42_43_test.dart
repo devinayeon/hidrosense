@@ -23,6 +23,8 @@ import 'package:hidrosense_mobile/viewmodels/session_viewmodel.dart';
 import 'package:hidrosense_mobile/viewmodels/v2_penjualan_store.dart';
 import 'package:hidrosense_mobile/views/v2/components/v2_penjualan_data.dart';
 import 'package:hidrosense_mobile/views/v2/connected/v2_panen_connected.dart';
+import 'package:hidrosense_mobile/views/v2/widgets/v2_option_row.dart';
+import 'package:hidrosense_mobile/views/v2/widgets/v2_select_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -164,6 +166,17 @@ void main() {
       findsOneWidget,
       reason: 'BUG-42: tanggal awal harus hari ini WIB, bukan 15 Nov contoh',
     );
+
+    // K-26: alur nyata mulai kosong, jadi isi dulu sebelum Simpan.
+    await tester.enterText(find.byType(TextField).at(0), 'Warung Sari');
+    await tester.enterText(find.byType(TextField).at(1), '10');
+    await tester.enterText(find.byType(TextField).at(2), '5.000');
+    await tester.tap(find.byType(V2SelectField).at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(V2OptionRow).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pilih'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();

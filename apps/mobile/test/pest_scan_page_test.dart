@@ -63,6 +63,7 @@ Future<FakeRepo> pumpPage(
   Future<Uint8List?> Function(ImageSource)? pick,
   double textScale = 1,
   Size size = const Size(800, 2400),
+  List<TableRecord> tables = const [_table],
 }) async {
   // Layar ponsel tinggi supaya seluruh isi ListView dirender tanpa menggulir.
   tester.view.physicalSize = size;
@@ -74,7 +75,7 @@ Future<FakeRepo> pumpPage(
   await tester.pumpWidget(ProviderScope(
     overrides: [
       sessionProvider.overrideWith((ref) => _Session(api, user(permissions))),
-      connectedTableProvider.overrideWith((ref) => _Tables(TableRepository(api), const [_table])),
+      connectedTableProvider.overrideWith((ref) => _Tables(TableRepository(api), tables)),
       pestScanProvider.overrideWith((ref) => PestScanNotifier(
         (_) async => _result(whiteflies), fake, (t) async => 'batch-$t', RecommendationDecider(fake),
       )),
@@ -178,5 +179,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Kutu kebul: 2 terdeteksi'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tanpa meja berisi tanaman: daftar meja dijelaskan, bukan diam saja (K-28)', (
+    tester,
+  ) async {
+    await pumpPage(tester, tables: const []);
+
+    expect(
+      find.textContaining('Belum ada meja dengan tanaman aktif'),
+      findsOneWidget,
+    );
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
   });
 }

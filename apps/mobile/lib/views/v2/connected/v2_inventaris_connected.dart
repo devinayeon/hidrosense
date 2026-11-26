@@ -97,6 +97,16 @@ V2InventarisRiwayat _riwayatFromMovement(StockMovementRecord movement) {
   );
 }
 
+/// Pesan saat server tidak punya satu pun jenis inventaris aktif. Tanpa
+/// kategori, barang tidak bisa dibuat sama sekali (kontrak mewajibkan
+/// `id_jenis_inventaris`), jadi form tidak perlu dibuka lebih dulu.
+const v2KategoriKosongPesan =
+    'Kategori barang belum tersedia di server. Minta admin menambahkan jenis '
+    'barang terlebih dahulu.';
+
+const _kategoriGagalPesan =
+    'Kategori barang gagal dimuat. Periksa koneksi lalu coba lagi.';
+
 JenisInventarisRecord? _kategoriUntuk(
   List<JenisInventarisRecord> kategori,
   V2JenisBarang jenis,
@@ -121,6 +131,20 @@ JenisInventarisRecord? _kategoriUntuk(
   return pilihan ?? aktif.first;
 }
 
+/// Kategori aktif dari cache provider bila sudah dimuat; selain itu menunggu
+/// permintaan. Null berarti permintaan gagal (bukan daftar kosong), supaya
+/// pesan "belum tersedia" tidak dipakai untuk gangguan jaringan.
+Future<List<JenisInventarisRecord>?> _bacaKategori(WidgetRef ref) async {
+  final cached = ref.read(inventoryCategoriesProvider).valueOrNull;
+  if (cached != null) return cached;
+  try {
+    return await ref.read(inventoryCategoriesProvider.future);
+  } catch (_) {
+    ref.invalidate(inventoryCategoriesProvider);
+    return null;
+  }
+}
+
 String _angkaDraft(double value) => formatAngka(value);
 
 /// Isi tab "Stok" dengan data backend; pengganti fixture saat sesi aktif.
@@ -138,6 +162,10 @@ class V2InventarisConnectedTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Hangatkan daftar pendukung sejak tab dibuka: tombol Tambah/Ubah tidak
+    // perlu menunggu permintaan jaringan sebelum form tampil (K-07).
+    ref.watch(inventoryCategoriesProvider);
+    ref.watch(inventoryMedicinesProvider);
     final data = ref.watch(connectedInventoryProvider);
     final items = data.records
         .map((record) => v2InventarisItemFromRecord(record))
@@ -162,6 +190,19 @@ class V2InventarisConnectedTab extends ConsumerWidget {
   }
 
   Future<void> _tambah(BuildContext context, WidgetRef ref) async {
+    // Periksa prasyarat sebelum form dibuka. Tanpa kategori aktif, barang tidak
+    // mungkin disimpan; lebih baik beri tahu sekarang daripada setelah isian
+    // penuh (K-08).
+    final kategori = await _bacaKategori(ref);
+    if (!context.mounted) return;
+    if (kategori == null) {
+      _pesan(context, _kategoriGagalPesan);
+      return;
+    }
+    if (kategori.every((item) => !item.active)) {
+      _pesan(context, v2KategoriKosongPesan);
+      return;
+    }
     final obat = await _obatPilihan(ref);
     if (!context.mounted) return;
     final result = await Navigator.of(
@@ -169,11 +210,10 @@ class V2InventarisConnectedTab extends ConsumerWidget {
     ).push<V2InventarisItem>(V2InventarisFormPage.route(obatPilihan: obat));
     if (result == null || !context.mounted) return;
     try {
-      final kategori = await ref.read(inventoryCategoriesProvider.future);
       final pilihan = _kategoriUntuk(kategori, result.jenis);
       if (pilihan == null) {
         if (!context.mounted) return;
-        _pesan(context, 'Kategori barang belum tersedia.');
+        _pesan(context, v2KategoriKosongPesan);
         return;
       }
       await ref
@@ -220,6 +260,8 @@ void _pesan(BuildContext context, String pesan) {
 /// Daftar obat untuk sheet "Pilih obat"; kosong bila layanan tidak tersedia
 /// supaya penambahan barang jenis lain tetap jalan.
 Future<List<V2ObatPilihan>> _obatPilihan(WidgetRef ref) async {
+  final cached = ref.read(inventoryMedicinesProvider).valueOrNull;
+  if (cached != null) return v2ObatPilihanDari(cached);
   try {
     final obat = await ref.read(inventoryMedicinesProvider.future);
     return v2ObatPilihanDari(obat);
@@ -284,12 +326,15 @@ class _V2InventarisConnectedDetailPageState
     if (!mounted || updated == null) return;
     final record = _record();
     try {
-      final kategori = await ref.read(inventoryCategoriesProvider.future);
+      final kategori = await _bacaKategori(ref);
       final pilihan =
-          record?.categoryId ?? _kategoriUntuk(kategori, updated.jenis)?.id;
+          record?.categoryId ??
+          (kategori == null
+              ? null
+              : _kategoriUntuk(kategori, updated.jenis)?.id);
       if (pilihan == null) {
         if (!mounted) return;
-        _pesan(context, 'Kategori barang belum tersedia.');
+        _pesan(context, v2KategoriKosongPesan);
         return;
       }
       await ref

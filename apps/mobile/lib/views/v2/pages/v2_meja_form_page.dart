@@ -19,6 +19,7 @@ class V2MejaFormPage extends StatefulWidget {
   const V2MejaFormPage({
     super.key,
     this.meja,
+    this.takenCodes = const <String>{},
     this.previewValidation = false,
     this.previewLubangKurang = false,
     this.previewKonflik = false,
@@ -27,6 +28,7 @@ class V2MejaFormPage extends StatefulWidget {
   /// Frame `6.6 Tambah meja`.
   const V2MejaFormPage.create({super.key})
     : meja = null,
+      takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
       previewKonflik = false;
@@ -34,6 +36,7 @@ class V2MejaFormPage extends StatefulWidget {
   /// Frame `6.7 Tambah meja, validasi`: kode sudah dipakai dan jumlah 0.
   const V2MejaFormPage.validation({super.key})
     : meja = null,
+      takenCodes = const <String>{},
       previewValidation = true,
       previewLubangKurang = false,
       previewKonflik = false;
@@ -41,6 +44,7 @@ class V2MejaFormPage extends StatefulWidget {
   /// Frame `6.18 Ubah meja`: Meja A2 terisi 240 lubang.
   V2MejaFormPage.ubah({super.key})
     : meja = designMejaA2,
+      takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
       previewKonflik = false;
@@ -48,6 +52,7 @@ class V2MejaFormPage extends StatefulWidget {
   /// Frame `6.19 Ubah meja, lubang kurang`: 30 lubang, minimal 40.
   V2MejaFormPage.lubangKurang({super.key})
     : meja = designMejaA2,
+      takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = true,
       previewKonflik = false;
@@ -55,12 +60,18 @@ class V2MejaFormPage extends StatefulWidget {
   /// Frame `6.30 Data sudah berubah`: dialog konflik di atas form ubah.
   V2MejaFormPage.konflik({super.key})
     : meja = designMejaA2,
+      takenCodes = const <String>{},
       previewValidation = false,
       previewLubangKurang = false,
       previewKonflik = true;
 
   /// Meja yang diubah; null berarti form tambah.
   final V2MejaItem? meja;
+
+  /// Kode meja yang sudah ada di server (huruf besar). Digunakan untuk
+  /// menolak duplikat sebelum form ditutup, supaya isian lain tidak hilang
+  /// dan tidak perlu diisi ulang dari awal (K-14).
+  final Set<String> takenCodes;
 
   /// Kode terisi "A2" dan dua field pertama menyala galat (frame 6.7).
   final bool previewValidation;
@@ -71,9 +82,12 @@ class V2MejaFormPage extends StatefulWidget {
   /// Dialog "Data sudah berubah" tampil saat halaman dibuka (frame 6.30).
   final bool previewKonflik;
 
-  static Route<V2MejaItem> route({V2MejaItem? meja}) {
+  static Route<V2MejaItem> route({
+    V2MejaItem? meja,
+    Set<String> takenCodes = const <String>{},
+  }) {
     return MaterialPageRoute<V2MejaItem>(
-      builder: (_) => V2MejaFormPage(meja: meja),
+      builder: (_) => V2MejaFormPage(meja: meja, takenCodes: takenCodes),
     );
   }
 
@@ -117,6 +131,24 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
       );
       _lubangError = 'Minimal ${aktif ?? 40}, ada ${aktif ?? 40} tanaman aktif';
     }
+    // Pesan galat hanya berlaku untuk nilai yang barusan dikirim. Begitu
+    // pengguna memperbaiki isian, pesan harus hilang tanpa menekan Simpan lagi
+    // (K-15).
+    _kode.addListener(_clearKodeError);
+    _lubang.addListener(_clearLubangError);
+    _keterangan.addListener(_clearKeteranganError);
+  }
+
+  void _clearKodeError() {
+    if (_kodeError != null) setState(() => _kodeError = null);
+  }
+
+  void _clearLubangError() {
+    if (_lubangError != null) setState(() => _lubangError = null);
+  }
+
+  void _clearKeteranganError() {
+    if (_keteranganError != null) setState(() => _keteranganError = null);
   }
 
   @override
@@ -127,15 +159,24 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
     super.dispose();
   }
 
-  void _simpan() {
+  Future<void> _simpan() async {
     final kode = _kode.text.trim().toUpperCase();
     final lubang = int.tryParse(_lubang.text.trim()) ?? 0;
+
+    // Duplikat yang sudah kelihatan dari daftar meja ditolak di sini, sebelum
+    // form ditutup, supaya isian tidak hilang (K-14). Server tetap penentu
+    // akhir untuk kode yang belum termuat di daftar.
+    final kodeSudahDipakai =
+        widget.takenCodes.contains(kode) &&
+        (!_ubah || widget.meja!.kode.trim().toUpperCase() != kode);
 
     setState(() {
       _kodeError = kode.isEmpty
           ? 'Isi kode meja'
           : kode.length > 30
           ? 'Maksimal 30 karakter'
+          : kodeSudahDipakai
+          ? 'Kode meja sudah dipakai'
           : null;
       _lubangError = lubang <= 0
           ? 'Isi angka lebih dari 0'
@@ -150,6 +191,19 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
         _lubangError != null ||
         _keteranganError != null) {
       return;
+    }
+
+    // Konfirmasi ulang sebelum menyimpan perubahan (K-18, D-35). Form tambah
+    // tidak memakai konfirmasi karena tidak mengubah data yang ada.
+    if (_ubah) {
+      final confirmed = await showV2Dialog(
+        context,
+        title: 'Simpan perubahan meja?',
+        body: 'Perubahan meja akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        secondaryLabel: 'Batal',
+      );
+      if (confirmed != true || !mounted) return;
     }
 
     final meja =

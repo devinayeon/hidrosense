@@ -6,7 +6,7 @@ memakai status test case nyata dari `qa/testing.md`.
 
 Ringkasan: requirement yang diimplementasikan → **PASS**. Requirement yang belum
 dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi → tabel
-**§Gap**. Diperbarui **24 November 2026** (fitur deteksi/rotasi kini dibangun).
+**§Gap**. Diperbarui **26 November 2026** (lanjutan Sesi 6: D-34/D-35/D-36/D-39).
 
 > Perubahan besar vs versi sebelumnya: PB-05 (deteksi hama) dan PB-06 (rekomendasi &
 > perawatan) **kini ada**; evaluasi model AI **tidak lagi BLOCKED**. Gap lama
@@ -20,6 +20,16 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 > (panduan revisi SRS tersedia). Sesi 5 (25 Nov 2026) memverifikasi hasil uji manual dev FE
 > dan menutup BUG-39..BUG-47 + Fitur-4 (D-31/D-32) di mobile (`apps/mobile/` saja);
 > backend tidak diubah. Regression: **701/701** tes mobile lulus, `flutter analyze` 0 temuan.
+> **Sesi 6 (25 Nov 2026)** men-triase 30 temuan uji manual pelapor (K-01..K-30, D-33):
+> 8 BUG-FE diperbaiki (BUG-48..BUG-55), sisanya NOT-A-BUG / DATA-PRASYARAT /
+> PERLU-KEPUTUSAN / PERLU-KLARIFIKASI. `flutter analyze` **0 temuan**;
+> Regression: **816/816** tes mobile lulus. Gap baru **G-19..G-21** + pertanyaan terbuka
+> (`qa/decisions.md` §7). Backend tidak diubah.
+> **Lanjutan Sesi 6 (26 Nov 2026)** mengerjakan keputusan PM D-34..D-36 & D-39:
+> password 6–12 & telepon 10–13 digit (BUG-56, butuh backend), pop-up konfirmasi simpan
+> (BUG-57), tombol "Aktifkan" pegawai (BUG-58), keterangan penjualan (BUG-59).
+> `flutter analyze` **0 temuan**; Regression: **841/841** tes mobile lulus. Gap **G-21**
+> menjadi RESOLVED; gap baru **G-22** (password server min 12). D-37 & S-05/G-18 di-skip.
 
 ---
 
@@ -77,7 +87,7 @@ dibangun → **BLOCKED**/`N/A` dengan alasan. Perbedaan dokumen vs implementasi 
 | NFR-2 | Inferensi lokal per gambar < 5 dtk | TC-PB05-04 | PASS (diuji manual dev FE, 25 Nov 2026; angka belum dicatat) — host 129,65 ms/gambar |
 | NFR-3 | Sinkronisasi < 1 menit | TC-PB07-19 | MANUAL-PENDING |
 | NFR-4 | Pencocokan aturan cuaca < 2 dtk | TC-PB10-11 | PASS |
-| NFR-5 | 12 meja × 250 = 3.000 lubang | TC-PB04-17 | PASS |
+| NFR-5 | 12 meja × 250 = 3.000 lubang | TC-PB04-17 | PASS (lihat G-19: "3.000" = kapasitas kebun total, bukan maksimum per meja) |
 | NFR-6 | Siklus 60 hari, semai tiap 10 hari (HSS per batch) | TC-PB04-12, TC-PB03-08 | PASS |
 | NFR-7 | Stok dari akumulasi transaksi | TC-PB02-09 | PASS |
 | NFR-8 | Rekomendasi AI = pendukung keputusan (tak otomatis) | TC-PB06-08 | PASS |
@@ -113,6 +123,10 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 | G-16 | Repo punya satu branch alur kerja | Branch `wild-fe` memuat seluruh produk; tes ML mengasumsikan branch khusus `ml/` | OPEN | Pisahkan branch ML/CI atau longgarkan asumsi (BUG-12) |
 | G-17 | SRS/Plan menyebut "offline-first" (PB-07, §5.1 varian offline) | PM memutuskan aplikasi **online-only** (D-14): mencatat/mengakses menu saat offline tidak didukung dan itu wajar | OPEN (owner SA) | Selaraskan SRS/Plan dengan keputusan online-only, atau rencanakan offline-first untuk rilis berikutnya. Panduan revisi untuk SA: `qa/srs-revision-guide.md`; model penyebaran: `qa/deployment-notes.md` |
 | G-18 | Menu Sinkron pada aplikasi online-only | Antrean hanya berisi kiriman gagal; saat online tombol "Sinkron sekarang" menjawab "Tidak ada data untuk disinkronkan" | OPEN (D-19) | PM memutuskan: pertahankan menu dengan kalimat "Semua data sudah tersimpan di server", atau sembunyikan menu Sinkron |
+| G-19 | NFR-5 "12 meja × 250 = 3.000 lubang" dapat dibaca sebagai maksimum **per meja** 250 | Kontrak & DB per meja maks **1000** lubang; "3.000" adalah **kapasitas kebun total** (12 × 250), bukan batas per meja | OPEN (klarifikasi dokumen) | Perjelas kalimat NFR-5: "12 meja, masing-masing 250 → kapasitas total 3.000" |
+| G-20 | BR/use case menyiratkan petani kelola profil sendiri (lihat/edit/nonaktif) | FigCraft 3.1 "Lainnya (Petani)" hanya Akun pegawai/Penjualan/Sinkron; tak ada rute profil petani & tak ada endpoint nonaktifkan petani (lihat juga G-08) | OPEN | Selaraskan dokumen, atau tentukan apakah profil petani mandiri memang dibutuhkan |
+| G-21 | PB-11/3.16 mencakup akun pegawai, tetapi aktivasi ulang tidak disebut | FigCraft 3.16 menyatakan "Aktivasi ulang tidak ada di lingkup"; backend **punya** `POST /employees/:id/activate`; UI 3.17 kini punya tombol "Aktifkan" (D-36, BUG-58) | RESOLVED (D-36) | — |
+| G-22 | D-34 menetapkan password **min 6 / max 12** | `apps/backend/src/common/validation.ts:42` `newPasswordSchema = z.string().min(12).max(128)` → password 6–11 ditolak server (klien menerima) | OPEN (butuh backend/PM) | Selaraskan server ke `min(6).max(12)`, atau batalkan D-34. Telepon tidak bermasalah (kontrak server lebih longgar). Lihat BUG-56 |
 
 ---
 
@@ -122,7 +136,7 @@ Ini **bukan** otomatis bug kode. Status: `RESOLVED` (kini cocok), `OPEN`, `PARTI
 |---|---|---|---|
 | 1 | Semua area §4/§5 punya status nyata (tanpa kosong) | PASS | `qa/testing.md` §2 & §3 (204 test case) |
 | 2 | S1/S2 diperbaiki & diverifikasi, atau `NEEDS-HUMAN-REVIEW` beralasan | PASS | tak ada S1; S2 `NEEDS-HUMAN-REVIEW` tersisa **BUG-04** (dependensi backend) di `qa/issues.md` |
-| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **701/701** (`flutter test`, 25 Nov 2026, `testing.md` §1) |
+| 3 | Regresi penuh setelah perbaikan terakhir | PASS | backend 432/432; mobile **841/841** (`flutter test`, 26 Nov 2026, `testing.md` §1) |
 | 4 | Invarian §5.8 lulus pada jumlah iterasi tercatat | PASS | 638 pemeriksaan ×3 run |
 | 5 | Target kinerja diukur apa adanya | PASS | `testing.md` §4.5 + `manual_checklist.md` (perangkat) |
 | 6 | RTM & dokumentasi lengkap/konsisten | PASS | dokumen ini |

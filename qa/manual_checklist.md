@@ -21,6 +21,18 @@ menjalankan widget/unit tes tanpa Android.
 > diperbaiki di `apps/mobile` dan ditambahkan di §H bagian bawah dengan status
 > **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang ditulis `PASS`;
 > verifikasi ulang di HP akan diisi dev FE.
+>
+> Sesi 6 (25 Nov 2026): 30 temuan uji manual pelapor (K-01..K-30) ditriase (D-33); 8 di
+> antaranya BUG-FE (BUG-48..55) dan ditambahkan di §H (MC-FIX-48..55) dengan status
+> **`FIXED di kode, belum diuji ulang di HP`**. Sisanya NOT-A-BUG / DATA-PRASYARAT /
+> PERLU-KEPUTUSAN / PERLU-KLARIFIKASI (lihat `qa-sesi6-tasks.md` & `issues.md`).
+> **Tidak** ada baris baru yang ditulis `PASS`.
+>
+> Lanjutan Sesi 6 (26 Nov 2026): keputusan PM D-34/D-35/D-36/D-39 dikerjakan
+> (BUG-56..59) dan ditambahkan di §H (MC-FIX-56..59) dengan status
+> **`FIXED di kode, belum diuji ulang di HP`**. Catatan penting: D-34 password 6–12
+> hanya berlaku di klien; server masih menuntut minimal 12 (BUG-56/G-22, butuh backend).
+> **Tidak** ada baris baru yang ditulis `PASS`.
 
 ---
 
@@ -182,10 +194,22 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-46 | BUG-46 — stok obat muncul di lembar terima | Terima rekomendasi hama, cek daftar bahan | `FIXED di kode, belum diuji ulang di HP` — obat (mis. Abamectin) & nutrisi bisa dipilih |
 | MC-FIX-47 | BUG-47 — catatan tanaman tampil | Ubah catatan tanaman, simpan, lihat Detail tanaman | `FIXED di kode, belum diuji ulang di HP` — baris "Catatan" tampil di kartu info |
 | MC-FIT-4 | Fitur-4 (D-32) — filter rentang tanggal riwayat | Buka Riwayat rotasi, pilih rentang tanggal, hapus filter | `FIXED di kode, belum diuji ulang di HP` — dari–sampai inklusif (WIB) + tombol hapus |
+| MC-FIX-48 | BUG-48 (K-04) — nonaktifkan pegawai | Akun pegawai → Nonaktifkan, cek pesan & status daftar | `FIXED di kode, belum diuji ulang di HP` — server 204 tanpa body kini diterima |
+| MC-FIX-49 | BUG-49 (K-07) — "Tambah barang" tak menunggu jaringan | Buka tab Stok, tekan "Tambah barang" | `FIXED di kode, belum diuji ulang di HP` — kategori/obat dihangatkan saat tab dibuka |
+| MC-FIX-50 | BUG-50 (K-08) — "Kategori barang belum tersedia" | Tambah barang saat kategori kosong / jaringan putus | `FIXED di kode, belum diuji ulang di HP` — pesan dibedakan & muncul sebelum form |
+| MC-FIX-51 | BUG-51 (K-14) — kode meja duplikat | Tambah meja dengan kode yang sudah ada, Simpan | `FIXED di kode, belum diuji ulang di HP` — ditolak di form, isian tak hilang |
+| MC-FIX-52 | BUG-52 (K-15) — galat form meja tak hilang | Isi jumlah 0 → Simpan → perbaiki angka | `FIXED di kode, belum diuji ulang di HP` — galat hilang saat isian berubah |
+| MC-FIX-53 | BUG-53 (K-17) — umpan balik simpan meja | Tambah meja → Simpan, amati daftar sebelum jawaban | `FIXED di kode (sebagian), belum diuji ulang di HP` — pesan "Menyimpan meja..." muncul segera; jeda jaringan tetap ada |
+| MC-FIX-54 | BUG-54 (K-26) — form "Catat penjualan" mulai kosong | Penjualan → Catat penjualan (alur nyata), langsung Simpan | `FIXED di kode, belum diuji ulang di HP` — isian kosong, panen wajib dipilih |
+| MC-FIX-55 | BUG-55 (K-28) — pemilih "Meja tanam" di deteksi | Buka Foto tanaman saat belum ada meja bertanaman | `FIXED di kode, belum diuji ulang di HP` — pesan prasyarat meja tampil |
+| MC-FIX-56 | BUG-56 (K-02/D-34) — password 6–12 & telepon 10–13 | Tambah/ubah pegawai dengan password 6–11 & telepon 10–13 angka | `FIXED di kode (klien), belum diuji ulang di HP` — validasi klien 6–12 & telepon 10–13; **password 6–11 ditolak server** sampai backend diselaraskan (G-22) |
+| MC-FIX-57 | BUG-57 (K-03/K-18/D-35) — pop-up konfirmasi simpan | Ubah pegawai/meja lalu Simpan | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi muncul; Batal tak menutup form; form tambah tanpa pop-up |
+| MC-FIX-58 | BUG-58 (K-05/D-36) — tombol "Aktifkan" pegawai | Nonaktifkan pegawai, buka detailnya, tekan "Aktifkan" | `FIXED di kode, belum diuji ulang di HP` — pegawai kembali aktif + toast "diaktifkan kembali" |
+| MC-FIX-59 | BUG-59 (K-25/D-39) — keterangan penjualan | Catat/ubah penjualan, isi "Keterangan", simpan, buka detail | `FIXED di kode, belum diuji ulang di HP` — keterangan tersimpan, tampil di detail, terbawa dari antrean |
 
 > Catatan: baris `PASS` di atas berasal dari laporan dev FE, bukan dari lingkungan QA ini
 > (tidak ada perangkat Android di sini). Baris yang menyebut temuan lanjutan
-> (BUG-39..47, Fitur-4) berarti bagian itu **belum lulus** di HP; semuanya kini
-> **sudah diperbaiki** di `apps/mobile` dengan regression test (baris MC-FIX-39..47 &
+> (BUG-39..59, Fitur-4) berarti bagian itu **belum lulus** di HP; semuanya kini
+> **sudah diperbaiki** di `apps/mobile` dengan regression test (baris MC-FIX-39..59 &
 > MC-FIT-4). Verifikasi visual ulang di HP wajib dilakukan dev FE sebelum dinyatakan
 > tuntas untuk rilis.

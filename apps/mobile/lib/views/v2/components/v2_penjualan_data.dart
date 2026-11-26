@@ -29,6 +29,7 @@ class V2Penjualan {
     required this.pembayaran,
     required this.panen,
     required this.panenAsal,
+    this.keterangan,
     this.panenId,
     this.tanggalPanen,
     this.version,
@@ -41,6 +42,10 @@ class V2Penjualan {
   final double jumlahKg;
   final double hargaPerKg;
   final V2PenjualanBayar pembayaran;
+
+  /// Catatan bebas penjualan (D-39); dipetakan dari kolom `keterangan` server.
+  /// Server mendukungnya opsional, jadi null berarti tidak ada catatan.
+  final String? keterangan;
 
   /// Label panen di kolom form dan sheet pemilih, mis. "Panen 6 Nov, sisa
   /// 150 kg".
@@ -77,6 +82,7 @@ class V2Penjualan {
     V2PenjualanBayar? pembayaran,
     String? panen,
     String? panenAsal,
+    String? keterangan,
     String? panenId,
     DateTime? tanggalPanen,
     String? version,
@@ -91,6 +97,7 @@ class V2Penjualan {
       pembayaran: pembayaran ?? this.pembayaran,
       panen: panen ?? this.panen,
       panenAsal: panenAsal ?? this.panenAsal,
+      keterangan: keterangan ?? this.keterangan,
       panenId: panenId ?? this.panenId,
       tanggalPanen: tanggalPanen ?? this.tanggalPanen,
       version: version ?? this.version,

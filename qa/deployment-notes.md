@@ -54,9 +54,44 @@ dan saat menjawab pertanyaan penguji "aplikasi ini online atau offline?".
 - Kredensial Cloudinary untuk uji = **palsu** khusus QA (`hsqa`).
 - Skrip menjalankan ulang ada di `qa/README.md`.
 
-## 5. Rujukan
+## 5. Kontrak respons & prasyarat data (catatan Sesi 6, 25 Nov 2026)
+
+- **Respons 204 tanpa body.** `POST /api/v1/employees/:id/deactivate`, `.../activate`, dan
+  `POST /api/v1/auth/logout` membalas **204 No Content** (tanpa body). Klien menerima body
+  kosong pada status 2xx sebagai `{}` (BUG-48). Bila menambah endpoint "aksi tanpa isi"
+  lain, pakai pola yang sama dan pastikan klien tidak menuntut body.
+- **Prasyarat data, bukan kontrak.** Pesan "Kategori barang belum tersedia" (K-08/BUG-50)
+  muncul bila `GET /jenis-inventaris` mengembalikan **0 kategori aktif**. Seed backend lokal
+  mengembalikan **4 kategori aktif** (Benih, Nutrisi, Obat & Pestisida, Perlengkapan) dan
+  `POST /inventaris` **201**, jadi jalur ini menandakan data/jaringan, bukan kontrak yang
+  tak didukung. **Perlu diverifikasi tim backend:** pastikan server deploy juga ter-seed
+  kategori & obat (kalau kosong, pengguna petani tak bisa menambah barang).
+- **Peran dropdown meja di deteksi (K-28/BUG-55).** Pemilih "Meja tanam" hanya memuat meja
+  dengan `tanaman_aktif > 0` (dihitung server, `tables/store.ts`). Bila semua meja kosong,
+  klien kini menjelaskan prasyaratnya; ini perilaku data, bukan bug tombol.
+
+## 6. Kebijakan password: klien vs server (lanjutan Sesi 6, 26 Nov 2026)
+
+- **D-34 (PM):** password **min 6 / max 12** karakter. Klien (`v2_employee_form_page.dart`)
+  sudah memakai batas itu.
+- **Server masih min 12:** `apps/backend/src/common/validation.ts:42`
+  `newPasswordSchema = z.string().min(12).max(128)`. Akibatnya password 6–11 karakter
+  **ditolak server** walau klien menerimanya (BUG-56/G-22). Sebelum rilis, backend harus
+  diselaraskan ke `min(6).max(12)` (atau D-34 ditinjau ulang). **Backend READ-ONLY** pada
+  sesi ini, jadi perbaikan ada di tangan tim backend.
+- **Telepon:** D-34 meminta 10–13 angka. Kontrak server
+  (`apps/backend/src/features/accounts/contracts.ts:12`) lebih longgar
+  (`^\+?[0-9 ()\-]+$`, ≤20 karakter), jadi batas klien yang lebih ketat **tidak** memicu
+  penolakan server. Tidak ada aksi backend untuk telepon.
+- **Keterangan penjualan (D-39):** server sudah mendukung kolom `keterangan` opsional
+  (`sales/contracts.ts:27,36,44`); tidak ada perubahan kontrak yang dibutuhkan.
+
+## 7. Rujukan
 
 - Keputusan: `qa/decisions.md` — **D-14** (online-only), **D-18** (TLS/LAN),
-  **D-19** (menu Sinkron), **D-30** (penyebaran cukup didokumentasikan).
-- Gap: `qa/rtm.md` — **G-17** (SRS offline-first vs online-only), **G-18** (menu Sinkron).
+  **D-19** (menu Sinkron), **D-30** (penyebaran cukup didokumentasikan),
+  **D-34..D-39** (keputusan PM: password/telepon, konfirmasi simpan, aktivasi pegawai,
+  keterangan penjualan; D-37 skip, D-38 butuh konteks).
+- Gap: `qa/rtm.md` — **G-17** (SRS offline-first vs online-only), **G-18** (menu Sinkron),
+  **G-19..G-22** (NFR-5, profil petani, aktivasi ulang pegawai, password server min 12).
 - Panduan revisi SRS: `qa/srs-revision-guide.md`.

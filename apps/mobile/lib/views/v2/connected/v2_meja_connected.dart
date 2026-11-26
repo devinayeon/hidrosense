@@ -257,10 +257,22 @@ class V2MejaConnectedTab extends ConsumerWidget {
   }
 
   Future<void> _tambah(BuildContext context, WidgetRef ref) async {
-    final result = await Navigator.of(
-      context,
-    ).push<V2MejaItem>(V2MejaFormPage.route());
-    if (result == null) return;
+    // Kode yang sudah ada ditolak di form sebelum ditutup, supaya isian tidak
+    // hilang saat server menolak duplikat (K-14).
+    final takenCodes = ref
+        .read(connectedTableProvider)
+        .records
+        .map((table) => table.code.trim().toUpperCase())
+        .where((code) => code.isNotEmpty)
+        .toSet();
+    final result = await Navigator.of(context).push<V2MejaItem>(
+      V2MejaFormPage.route(takenCodes: takenCodes),
+    );
+    if (result == null || !context.mounted) return;
+    // Id meja ditentukan server, jadi baris baru baru bisa tampil setelah
+    // jawaban tiba. Beri umpan balik segera supaya daftar lama tidak terlihat
+    // seperti diam saja (K-17).
+    _pesan(context, 'Menyimpan meja…');
     try {
       await ref
           .read(connectedTableProvider.notifier)

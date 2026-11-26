@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_penjualan_data.dart';
 import '../components/v2_penjualan_store.dart';
 import '../components/v2_penjualan_tint_card.dart';
@@ -274,9 +275,17 @@ class V2PenjualanFormPage extends StatefulWidget {
 }
 
 class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
+  /// Isian contoh hanya untuk galeri/pratinjau. Alur nyata yang menambah
+  /// penjualan (store terisi, initial null) mulai kosong supaya nama/angka
+  /// contoh tidak ikut tersimpan tanpa disadari (K-26).
+  bool get _prefill => widget.initial != null || widget.store == null;
+
   late final TextEditingController _pembeli;
   late final TextEditingController _jumlah;
   late final TextEditingController _harga;
+
+  /// Catatan bebas opsional (D-39).
+  late final TextEditingController _keterangan;
 
   /// Frame 8.10: form sudah digulir sampai baris Jumlah/Harga menempel di
   /// bawah AppBar. Gulirannya disamakan dengan ujung bawah daftar isian.
@@ -308,6 +317,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   String? _panenError;
   String? _jumlahError;
   String? _hargaError;
+  String? _keteranganError;
 
   bool _dirty = false;
 
@@ -316,7 +326,8 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       _pembeliError != null ||
       _panenError != null ||
       _jumlahError != null ||
-      _hargaError != null;
+      _hargaError != null ||
+      _keteranganError != null;
 
   /// Jarak antarbagian form: 12 untuk form baru yang bersih, 16 untuk form
   /// ubah/perbaiki, form bergalat, dan form dengan keyboard terbuka
@@ -394,31 +405,37 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     super.initState();
     final initial = widget.initial;
     final empty = widget.previewValidation;
+    final prefill = _prefill && !empty;
 
     _tanggal = widget.previewDateBefore
         ? DateTime(2026, 11, 4)
-        : initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
+        : initial?.tanggal ??
+              widget.initialDate ??
+              (prefill ? DateTime(2026, 11, 15) : jakartaToday());
     _pembeli = TextEditingController(
-      text: empty ? '' : initial?.pembeli ?? 'Warung Sari',
+      text: prefill ? initial?.pembeli ?? 'Warung Sari' : '',
     );
     _jumlah = TextEditingController(
-      text: empty
-          ? ''
-          : widget.previewExceeds
-          ? '200'
-          : formatAngkaKg(initial?.jumlahKg ?? 60),
+      text: prefill
+          ? widget.previewExceeds
+                ? '200'
+                : formatAngkaKg(initial?.jumlahKg ?? 60)
+          : '',
     );
     _harga = TextEditingController(
-      text: empty
-          ? ''
-          : formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000),
+      text: prefill ? formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000) : '',
+    );
+    _keterangan = TextEditingController(
+      text: prefill ? initial?.keterangan ?? '' : '',
     );
     if (!empty) {
       if (widget.panenLabel != null) {
         _panenPreview = widget.panenLabel;
       } else {
         final own = _ownOption;
-        _panen = own ?? (_options.isEmpty ? null : _options.first);
+        // Alur nyata wajib memilih panen: jangan pilihkan yang pertama supaya
+        // berat panen tidak terpakai tanpa disadari (K-26).
+        _panen = own ?? (prefill ? _options.firstOrNull : null);
       }
     }
     _pembayaran = (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
@@ -460,11 +477,17 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     _pembeli.dispose();
     _jumlah.dispose();
     _harga.dispose();
+    _keterangan.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
-  List<TextEditingController> get _controllers => [_pembeli, _jumlah, _harga];
+  List<TextEditingController> get _controllers => [
+    _pembeli,
+    _jumlah,
+    _harga,
+    _keterangan,
+  ];
 
   /// Setiap ketikan membangun ulang halaman, supaya kartu Total ikut bergerak;
   /// [_dirty] cukup dinyalakan sekali.
@@ -478,16 +501,23 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       controller.removeListener(_onFieldChanged);
     }
     _dirty = false;
-    _pembeli.text = initial?.pembeli ?? 'Warung Sari';
-    _jumlah.text = formatAngkaKg(initial?.jumlahKg ?? 60);
-    _harga.text = formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000);
+    final prefill = _prefill;
+    _pembeli.text = prefill ? initial?.pembeli ?? 'Warung Sari' : '';
+    _jumlah.text = prefill ? formatAngkaKg(initial?.jumlahKg ?? 60) : '';
+    _harga.text = prefill
+        ? formatAngkaRibu(initial?.hargaPerKg.round() ?? 40000)
+        : '';
+    _keterangan.text = prefill ? initial?.keterangan ?? '' : '';
     for (final controller in _controllers) {
       controller.addListener(_onFieldChanged);
     }
     setState(() {
-      _tanggal = initial?.tanggal ?? widget.initialDate ?? DateTime(2026, 11, 15);
+      _tanggal =
+          initial?.tanggal ??
+          widget.initialDate ??
+          (prefill ? DateTime(2026, 11, 15) : jakartaToday());
       _panenPreview = null;
-      _panen = _ownOption ?? (_options.isEmpty ? null : _options.first);
+      _panen = _ownOption ?? (prefill ? _options.firstOrNull : null);
       _pembayaran =
           (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
       _tanggalError = null;
@@ -495,6 +525,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       _panenError = null;
       _jumlahError = null;
       _hargaError = null;
+      _keteranganError = null;
     });
   }
 
@@ -654,6 +685,9 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           ? 'Sisa ${formatKg(_sisaPanen)}'
           : null;
       _hargaError = harga <= 0 ? 'Isi harga' : null;
+      _keteranganError = _keterangan.text.trim().length > 1000
+          ? 'Maksimal 1.000 karakter'
+          : null;
     });
 
     if (_hasError) return;
@@ -665,6 +699,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     }
 
     setState(() => _saving = true);
+    final catatan = _keterangan.text.trim();
     final draft = V2PenjualanDraft(
       tanggal: _tanggal,
       pembeli: pembeli,
@@ -674,6 +709,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       pembayaran: _pembayaran == 0
           ? V2PenjualanBayar.lunas
           : V2PenjualanBayar.belumLunas,
+      keterangan: catatan.isEmpty ? null : catatan,
     );
     try {
       final result = widget.isEdit
@@ -700,6 +736,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   void _popWithPreview(String pembeli, double jumlah, double harga) {
     final initial = _base;
     final panen = _panenLabel!;
+    final catatan = _keterangan.text.trim();
     _dirty = false;
     Navigator.of(context).pop(
       V2Penjualan(
@@ -715,6 +752,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         panenAsal: panen.contains('15 Nov')
             ? 'Dari panen 15 Nov, Meja A1'
             : 'Dari panen 6 Nov, Meja A1',
+        keterangan: catatan.isEmpty ? null : catatan,
         panenId: _panen?.id ?? initial?.panenId,
         tanggalPanen: _panen?.tanggalPanen ?? initial?.tanggalPanen,
         version: initial?.version,
@@ -849,6 +887,14 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
             }),
           ),
         ],
+      ),
+      // Keterangan penjualan (D-39): catatan bebas opsional, didukung server.
+      SizedBox(height: gap),
+      V2TextField(
+        label: 'Keterangan (opsional)',
+        hint: 'Contoh: diambil besok pagi',
+        controller: _keterangan,
+        error: _keteranganError,
       ),
       // Frame 8.11–8.13 dan 11.9 tidak menggambar kartu Total saat form
       // menampilkan galat, jadi kartu itu hanya muncul di form bersih.
