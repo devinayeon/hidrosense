@@ -280,6 +280,16 @@ class SessionViewModel extends StateNotifier<SessionState> {
     }
   }
 
+  /// Kredensial akun sendiri baru berubah: server sudah mencabut semua token,
+  /// jadi sesi lokal dibuang tanpa memanggil `logout` (token itu sudah mati).
+  /// `AppGate` lalu kembali ke layar masuk dengan username/password baru.
+  Future<void> clearLocalSession() async {
+    ++_operation;
+    _api.clearSession();
+    await _clearStore();
+    if (mounted) state = const SessionState();
+  }
+
   /// Menyelaraskan nama/username tampilan setelah profil sendiri diperbarui.
   void updateIdentity({required String name, required String username}) {
     final user = state.user;

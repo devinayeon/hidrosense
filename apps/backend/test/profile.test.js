@@ -78,3 +78,41 @@ test('username-only employee update revokes old sessions and preserves its passw
   assert.equal((await app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refresh_token: tokens.refresh_token } })).statusCode, 401);
   assert.equal((await login('renamed')).statusCode, 200);
 });
+
+test('pegawai reads and edits own profile too', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = bearer((await login('pegawai')).json().data.access_token);
+  const profile = await app.inject({ url: '/api/v1/profile', headers });
+  assert.equal(profile.statusCode, 200);
+  assert.equal(profile.json().data.id_user, '2');
+  assert.equal(profile.json().data.role, 'pegawai');
+  const updated = await app.inject({ method: 'PATCH', url: '/api/v1/profile', headers,
+    payload: { nama: 'Karyawan', no_telepon: '0812345678' } });
+  assert.equal(updated.statusCode, 200, updated.body);
+  assert.equal(updated.json().data.nama, 'Karyawan');
+  assert.equal(updated.json().data.username, 'pegawai');
+});
+
+test('profile refuses a new password identical to the current one', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  const before = (await db.execute('SELECT * FROM users')).rows;
+  const response = await app.inject({ method: 'PATCH', url: '/api/v1/profile', headers,
+    payload: { password, current_password: password } });
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.json().error.code, 'PASSWORD_UNCHANGED');
+  assert.deepEqual((await db.execute('SELECT * FROM users')).rows, before);
+});
+
+test('pegawai deactivates own account; petani cannot use the endpoint', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const petaniHeaders = bearer((await login()).json().data.access_token);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/profile/deactivate', headers: petaniHeaders })).statusCode, 403);
+  const pegawai = (await login('pegawai')).json().data;
+  const response = await app.inject({ method: 'POST', url: '/api/v1/profile/deactivate', headers: bearer(pegawai.access_token) });
+  assert.equal(response.statusCode, 204, response.body);
+  assert.equal((await db.execute('SELECT status_aktif FROM users WHERE id_user=2')).rows[0].status_aktif, 0);
+  assert.equal((await db.execute('SELECT COUNT(*) AS n FROM auth_sessions WHERE id_user=2')).rows[0].n, 0);
+  assert.equal((await app.inject({ url: '/api/v1/profile', headers: bearer(pegawai.access_token) })).statusCode, 401);
+  assert.equal((await login('pegawai')).statusCode, 403);
+});

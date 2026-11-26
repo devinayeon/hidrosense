@@ -192,6 +192,23 @@ V2MejaItem v2MejaItemFromRecord(
   );
 }
 
+/// Rute Detail meja lewat pintu masuk bersama (BUG-39), dipakai
+/// [bukaDetailMeja] dan alur yang mengganti halaman (mis. "Lihat meja" dari
+/// halaman sukses "Pindah ke meja").
+Route<void> detailMejaRoute({
+  required String tableId,
+  V2MejaItem? item,
+  VoidCallback? onOpenSemaian,
+}) {
+  return MaterialPageRoute<void>(
+    builder: (_) => V2MejaConnectedDetailPage(
+      tableId: tableId,
+      item: item,
+      onOpenSemaian: onOpenSemaian,
+    ),
+  );
+}
+
 /// Pintu masuk bersama Detail meja (BUG-39).
 ///
 /// Detail meja **selalu** dibuka lewat [tableId] supaya halamannya membaca
@@ -206,12 +223,10 @@ Future<void> bukaDetailMeja(
   VoidCallback? onOpenSemaian,
 }) {
   return navigator.push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => V2MejaConnectedDetailPage(
-        tableId: tableId,
-        item: item,
-        onOpenSemaian: onOpenSemaian,
-      ),
+    detailMejaRoute(
+      tableId: tableId,
+      item: item,
+      onOpenSemaian: onOpenSemaian,
     ),
   );
 }

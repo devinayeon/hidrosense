@@ -291,11 +291,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   /// bawah AppBar. Gulirannya disamakan dengan ujung bawah daftar isian.
   final ScrollController _scroll = ScrollController();
 
-  /// Frame 8.10 menyisakan 53 kosong antara kartu Total dan tombol Simpan;
-  /// ruang itu dipakai sebagai padding bawah supaya form bisa digulir sampai
-  /// posisi di frame tersebut.
-  static const double _keyboardBottomSpace = 53;
-
   late DateTime _tanggal;
   V2PenjualanPanen? _panen;
 
@@ -789,6 +784,15 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         },
         child: Scaffold(
           backgroundColor: V2Colors.canvas,
+          // Footer dipaku di dasar layar; keyboard tidak menggesernya.
+          bottomNavigationBar: V2ActionBar(
+            actions: [
+              V2Button(
+                label: _actionLabel,
+                onPressed: _save,
+              ),
+            ],
+          ),
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -799,32 +803,16 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
                     controller: _scroll,
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       V2Space.xl,
                       V2Space.sm,
                       V2Space.xl,
-                      keyboardOpen ? _keyboardBottomSpace : V2Space.lg,
+                      V2Space.lg,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: _buildFields(keyboardOpen),
                     ),
-                  ),
-                ),
-                // Dengan keyboard terbuka tombol berhenti 8 di atas keyboard
-                // (frame 8.10); tanpa keyboard SafeArea menambah 34 sendiri.
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: keyboardOpen ? V2Space.sm : 0,
-                  ),
-                  child: V2ActionBar(
-                    safeBottom: !keyboardOpen,
-                    actions: [
-                      V2Button(
-                        label: _actionLabel,
-                        onPressed: _save,
-                      ),
-                    ],
                   ),
                 ),
               ],

@@ -35,6 +35,7 @@ class V2PindahMejaFormPage extends StatefulWidget {
     this.daftarMeja,
     this.initialDate,
     this.onPindahkan,
+    this.onLihatMeja,
     this.showResultPage = true,
   });
 
@@ -83,6 +84,12 @@ class V2PindahMejaFormPage extends StatefulWidget {
 
   /// Kirim pemindahan ke backend; null berarti hanya pratinjau galeri.
   final Future<void> Function(V2SemaianPindah pindah)? onPindahkan;
+
+  /// Buka Detail meja tujuan langsung dari halaman sukses, menggantikannya
+  /// tanpa kembali ke Detail semaian dulu. Null berarti aksi
+  /// [V2PindahMejaAksi.lihatMeja] dikembalikan ke pemanggil seperti semula
+  /// (dipakai pratinjau galeri dan tes).
+  final void Function(String tableId)? onLihatMeja;
 
   /// Buka halaman hasil (5.18/5.22) setelah pindah. `false` membuat form
   /// langsung menutup dan mengembalikan [V2SemaianPindah] ke pemanggil — dipakai
@@ -261,11 +268,22 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                   : '${pindah.jumlah} tanaman. '
                         'Panen sekitar ${labelTanggalMeja(perkiraanPanen)}.',
               primaryLabel: sisa > 0 ? 'Pindahkan sisa' : 'Lihat meja',
-              onPrimary: () => Navigator.of(context).pop(
-                sisa > 0
-                    ? V2PindahMejaAksi.pindahkanSisa
-                    : V2PindahMejaAksi.lihatMeja,
-              ),
+              onPrimary: () {
+                final bukaMeja = widget.onLihatMeja;
+                // "Lihat meja" langsung menggantikan halaman sukses dengan
+                // Detail meja lewat pemanggil, supaya tidak kembali ke Detail
+                // semaian dulu. Tanpa pemanggil (pratinjau/tes), aksi
+                // dikembalikan seperti semula.
+                if (sisa <= 0 && bukaMeja != null && pindah.tableId != null) {
+                  bukaMeja(pindah.tableId!);
+                  return;
+                }
+                Navigator.of(context).pop(
+                  sisa > 0
+                      ? V2PindahMejaAksi.pindahkanSisa
+                      : V2PindahMejaAksi.lihatMeja,
+                );
+              },
               secondaryLabel: 'Ke daftar semaian',
               onSecondary: () =>
                   Navigator.of(context).pop(V2PindahMejaAksi.keDaftarSemaian),
@@ -274,6 +292,26 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
         ) ??
         V2PindahMejaAksi.selesai;
     if (!mounted) return;
+
+    // Halaman sukses sudah digantikan Detail meja (`onLihatMeja`): buang form
+    // ini dari tumpukan tanpa animasi dan teruskan hasilnya supaya Detail
+    // semaian tetap disegarkan saat pengguna kembali ke sana.
+    if (aksi == V2PindahMejaAksi.lihatMeja && widget.onLihatMeja != null) {
+      final route = ModalRoute.of<V2SemaianPindah>(context);
+      if (route != null) {
+        Navigator.of(context).removeRoute<V2SemaianPindah>(
+          route,
+          V2SemaianPindah(
+            meja: pindah.meja,
+            jumlah: pindah.jumlah,
+            tanggal: pindah.tanggal,
+            tableId: pindah.tableId,
+            aksi: V2PindahMejaAksi.selesai,
+          ),
+        );
+      }
+      return;
+    }
 
     // "Pindahkan sisa" tidak lagi membuka form di sini dengan daftar meja lama:
     // aksi dikembalikan ke pemanggil (halaman detail) supaya form dibuka ulang
@@ -295,6 +333,16 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Tombol Pindahkan dipaku di dasar layar; keyboard tidak menggesernya.
+        bottomNavigationBar: V2ActionBar(
+          actions: [
+            V2Button(
+              label: 'Pindahkan',
+              loading: _submitting,
+              onPressed: _submitting ? null : _pindahkan,
+            ),
+          ],
+        ),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -334,15 +382,6 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                     ],
                   ),
                 ),
-              ),
-              V2ActionBar(
-                actions: [
-                  V2Button(
-                    label: 'Pindahkan',
-                    loading: _submitting,
-                    onPressed: _submitting ? null : _pindahkan,
-                  ),
-                ],
               ),
             ],
           ),

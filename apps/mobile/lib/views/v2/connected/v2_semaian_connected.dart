@@ -348,6 +348,7 @@ class _V2SemaianConnectedDetailPageState
             initialDate: jakartaToday(),
             jumlahAwal: sisa,
             onPindahkan: _kirimPindah,
+            onLihatMeja: _bukaMejaLangsung,
           ),
         ),
       );
@@ -360,10 +361,6 @@ class _V2SemaianConnectedDetailPageState
       }
       // Segarkan semaian ini dari data yang baru dimuat `_kirimPindah`.
       _segarkan('Bibit dipindah');
-      if (hasil.aksi == V2PindahMejaAksi.lihatMeja && hasil.tableId != null) {
-        await _bukaMeja(ref, hasil.tableId!);
-        return;
-      }
       if (hasil.aksi == V2PindahMejaAksi.pindahkanSisa) {
         sisa = _item.sisaBenih ?? _item.jumlahBenih;
         if (sisa <= 0) return;
@@ -373,28 +370,32 @@ class _V2SemaianConnectedDetailPageState
     }
   }
 
-  /// Buka detail meja tujuan setelah pindah (tombol "Lihat meja", BUG-28).
+  /// Ganti halaman sukses "Pindah ke meja" dengan Detail meja tujuan, tanpa
+  /// kembali ke Detail semaian dulu (tombol "Lihat meja").
   ///
-  /// Memuat pemindahan & penyemaian terbaru dulu supaya Detail meja tidak
-  /// memakai objek lama (BUG-34b): tanaman terisi dan semaian siap pindah
-  /// tampil benar.
-  Future<void> _bukaMeja(WidgetRef ref, String tableId) async {
+  /// Detail meja dibuka lewat [tableId] (pintu masuk bersama, BUG-39) dan
+  /// memakai data provider yang sudah ada sebagai gambar awal. Halaman itu
+  /// menyegarkan sendiri lewat `watch` begitu pemindahan/penyemaian termuat,
+  /// jadi tidak perlu menunggu di sini; jeda menunggu itulah yang dulu membuat
+  /// Detail semaian tampil sesaat sebelum Detail meja.
+  void _bukaMejaLangsung(String tableId) {
     final record = ref
         .read(connectedTableProvider)
         .records
         .where((row) => row.id == tableId)
         .firstOrNull;
-    if (record == null) return;
-    final transfers = await ref.read(v2AllTransfersProvider.future);
-    final sowings = await ref.read(v2AllSowingsProvider.future);
-    if (!mounted) return;
-    final item = v2MejaItemFromRecord(
-      record,
-      transfers: transfers,
-      sowings: sowings,
-      inventaris: ref.read(connectedInventoryProvider).activeRecords,
+    final item = record == null
+        ? null
+        : v2MejaItemFromRecord(
+            record,
+            transfers: ref.read(v2AllTransfersProvider).valueOrNull ?? const [],
+            sowings: ref.read(v2AllSowingsProvider).valueOrNull ?? const [],
+            inventaris: ref.read(connectedInventoryProvider).activeRecords,
+          );
+    Navigator.of(context).pushReplacement<void, V2PindahMejaAksi>(
+      detailMejaRoute(tableId: tableId, item: item),
+      result: V2PindahMejaAksi.lihatMeja,
     );
-    await bukaDetailMeja(Navigator.of(context), tableId, item: item);
   }
 
   Future<void> _kirimPindah(V2SemaianPindah pindah) async {

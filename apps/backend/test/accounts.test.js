@@ -36,18 +36,23 @@ test('petani creates, lists, reads and updates an employee without exposing cred
   assert.equal((await login('baru')).statusCode, 200);
 });
 
-test('all account endpoints reject anonymous users and pegawai', async (t) => {
+test('account management endpoints reject anonymous users and pegawai', async (t) => {
   const { app, login } = await fixture(t);
   const employeeHeaders = bearer((await login('pegawai')).json().data.access_token);
   const routes = [['POST', '/employees', { nama: 'x', username: 'x', password }],
     ['GET', '/employees'], ['GET', '/employees/2'], ['PATCH', '/employees/2', { nama: 'x' }],
-    ['POST', '/employees/2/deactivate'], ['POST', '/employees/2/activate'],
-    ['GET', '/profile'], ['PATCH', '/profile', { nama: 'x' }]];
+    ['POST', '/employees/2/deactivate'], ['POST', '/employees/2/activate']];
   for (const [method, path, payload] of routes) {
     for (const [headers, expected] of [[{}, 401], [employeeHeaders, 403]]) {
       const response = await app.inject({ method, url: `/api/v1${path}`, headers, payload });
       assert.equal(response.statusCode, expected, `${method} ${path}: ${response.body}`);
     }
+  }
+  // Profil sendiri boleh dibaca pegawai sejak akun pegawai punya halaman
+  // profil; anonim tetap ditolak sebelum validasi body.
+  for (const [method, payload] of [['GET', undefined], ['PATCH', { nama: 'x' }]]) {
+    const response = await app.inject({ method, url: '/api/v1/profile', payload });
+    assert.equal(response.statusCode, 401, `${method} /profile: ${response.body}`);
   }
 });
 
@@ -121,6 +126,16 @@ test('employee password reset revokes every session while contact edits preserve
   }
   assert.equal((await login('pegawai')).statusCode, 401);
   assert.equal((await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { username: 'pegawai', password: newPassword } })).statusCode, 200);
+});
+
+test('employee update rejects a new password identical to the current one', async (t) => {
+  const { app, db, login } = await fixture(t);
+  const headers = bearer((await login()).json().data.access_token);
+  const before = (await db.execute('SELECT * FROM users')).rows;
+  const response = await app.inject({ method: 'PATCH', url: '/api/v1/employees/2', headers, payload: { password } });
+  assert.equal(response.statusCode, 400, response.body);
+  assert.equal(response.json().error.code, 'PASSWORD_UNCHANGED');
+  assert.deepEqual((await db.execute('SELECT * FROM users')).rows, before);
 });
 
 test('deactivation is repeatable, preserves referenced history, and revokes access and refresh', async (t) => {

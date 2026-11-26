@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/services/api_client.dart';
 import '../../../views/v2/components/v2_akun_employee.dart';
 import '../../../views/v2/components/v2_akun_employee_store.dart';
 import 'employee_errors.dart';
@@ -16,6 +17,12 @@ class V2EmployeeApiStore implements V2EmployeeStore {
 
   final EmployeeRepository _repository;
 
+  static V2EmployeeStoreException _error(Object error) =>
+      V2EmployeeStoreException(
+        employeeErrorMessage(error),
+        code: error is ApiException ? error.code : null,
+      );
+
   static V2Employee _toV2(EmployeeModel employee) => V2Employee(
     id: employee.id,
     name: employee.nama,
@@ -31,7 +38,7 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       final rows = await _repository.getEmployees();
       return List.unmodifiable(rows.map(_toV2));
     } catch (error) {
-      throw V2EmployeeStoreException(employeeErrorMessage(error));
+      throw _error(error);
     }
   }
 
@@ -47,7 +54,7 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       );
       return _toV2(created);
     } catch (error) {
-      throw V2EmployeeStoreException(employeeErrorMessage(error));
+      throw _error(error);
     }
   }
 
@@ -64,7 +71,7 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       );
       return _toV2(updated);
     } catch (error) {
-      throw V2EmployeeStoreException(employeeErrorMessage(error));
+      throw _error(error);
     }
   }
 
@@ -74,7 +81,7 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       await _repository.deactivateEmployee(id);
       return _toV2(await _repository.getEmployeeDetail(id));
     } catch (error) {
-      throw V2EmployeeStoreException(employeeErrorMessage(error));
+      throw _error(error);
     }
   }
 
@@ -84,7 +91,7 @@ class V2EmployeeApiStore implements V2EmployeeStore {
       await _repository.activateEmployee(id);
       return _toV2(await _repository.getEmployeeDetail(id));
     } catch (error) {
-      throw V2EmployeeStoreException(employeeErrorMessage(error));
+      throw _error(error);
     }
   }
 }

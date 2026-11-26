@@ -215,6 +215,9 @@ class _V2SemaianEditPageState extends State<V2SemaianEditPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        bottomNavigationBar: V2ActionBar(
+          actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
+        ),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -259,9 +262,6 @@ class _V2SemaianEditPageState extends State<V2SemaianEditPage> {
                     ],
                   ),
                 ),
-              ),
-              V2ActionBar(
-                actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
               ),
             ],
           ),

@@ -104,11 +104,14 @@ Endpoint ini tidak memakai `Idempotency-Key`. Pengiriman ulang `POST /employees`
 | `GET /employees` | `pegawai:manage` | Query: `status_aktif`, `q` |
 | `GET /employees/:id` | `pegawai:manage` | |
 | `POST /employees` | `pegawai:manage` | `nama`, `username`, `password` (12–128 karakter), `email?`, `no_telepon?`, `alamat?` |
-| `PATCH /employees/:id` | `pegawai:manage` | Field yang sama, semuanya opsional. Akun nonaktif: `409 ACCOUNT_DEACTIVATED` |
+| `PATCH /employees/:id` | `pegawai:manage` | Field yang sama, semuanya opsional. Akun nonaktif: `409 ACCOUNT_DEACTIVATED`. Password baru yang sama dengan yang lama: `400 PASSWORD_UNCHANGED` |
 | `POST /employees/:id/deactivate` | `pegawai:manage` | Tanpa body (body kosong atau `{}` juga diterima). `204`, dan sesi akun itu dicabut |
 | `POST /employees/:id/activate` | `pegawai:manage` | Tanpa body (body kosong atau `{}` juga diterima). `204` |
-| `GET /profile` | `profil:read` | |
-| `PATCH /profile` | `profil:write` | Field akun. Mengubah `username` atau `password` wajib menyertakan `current_password`, dan mencabut semua sesi |
+| `GET /profile` | `profil:read` | Profil akun sendiri; berlaku untuk petani maupun pegawai |
+| `PATCH /profile` | `profil:write` | Field akun. Mengubah `username` atau `password` wajib menyertakan `current_password`, dan mencabut semua sesi. Password baru yang sama dengan yang lama dibalas `400 PASSWORD_UNCHANGED` |
+| `POST /profile/deactivate` | `profil:deactivate` | Hanya pegawai. Tanpa body (body kosong atau `{}` juga diterima). `204`, menonaktifkan akun sendiri dan mencabut sesinya |
+
+`profil:read` dan `profil:write` dimiliki petani dan pegawai; `profil:deactivate` hanya pegawai, sehingga petani tidak bisa menonaktifkan akunnya sendiri.
 
 ## Inventaris
 
