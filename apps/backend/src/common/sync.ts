@@ -116,6 +116,17 @@ export async function recordDerivedChange(tx: Transaction, resourceType: string,
   });
 }
 
+/**
+ * Waktu perubahan terakhir satu record, dibaca dari log perubahan yang sama yang dipakai perangkat.
+ * Memakai MAX karena log ini juga memuat perubahan turunan (saldo stok, tanaman aktif meja) yang
+ * tidak menaikkan versi record. Dipakai daftar supaya baris yang paling baru diubah tampil paling atas.
+ * Null bila record belum pernah tercatat berubah.
+ */
+export function lastChangedAt(resourceType: string, idColumn: string) {
+  return `(SELECT MAX(c.changed_at) FROM sync_changes c
+    WHERE c.resource_type='${resourceType}' AND c.domain_id=CAST(${idColumn} AS TEXT)) AS updated_at`;
+}
+
 async function nextResourceVersion(tx: Transaction, resourceType: string, publicId: string, now: number) {
   const result = await tx.execute({ sql: `INSERT INTO sync_resource_versions (resource_type,public_id,version,changed_at) VALUES (?,?,1,?)
     ON CONFLICT(resource_type,public_id) DO UPDATE SET version=version+1, changed_at=excluded.changed_at
@@ -199,6 +210,16 @@ export function executeDomainMutation<T extends Json & Record<string, Json>>(
       args: [mutation.resourceType, publicId],
     })).rows[0] : undefined;
     const version = kept ? String(kept.version) : await nextResourceVersion(tx, mutation.resourceType, publicId, now);
-    return { ...(data as Record<string, Json>), public_id: publicId, version } as T & { public_id: string; version: string };
+    const response = { ...(data as Record<string, Json>), public_id: publicId, version };
+    // Store rows that expose a last-changed time read it from sync_changes, which is only written after
+    // this effect returns. Re-read it here so a create/update response matches the following GET.
+    if ('updated_at' in response) {
+      const changed = (await tx.execute({
+        sql: 'SELECT MAX(changed_at) AS changed_at FROM sync_changes WHERE resource_type=? AND domain_id=?',
+        args: [mutation.resourceType, domainId],
+      })).rows[0];
+      response.updated_at = changed?.changed_at == null ? null : Number(changed.changed_at);
+    }
+    return response as T & { public_id: string; version: string };
   });
 }

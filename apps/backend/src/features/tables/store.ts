@@ -1,5 +1,6 @@
 import type { Client, Row, Transaction } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { lastChangedAt } from '../../common/sync.js';
 import type { CreateTableInput, UpdateTableInput, ListTableInput } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -8,7 +9,7 @@ const batchActive = `p.jumlah_tanaman
   - COALESCE((SELECT SUM(k.jumlah_tanaman) FROM kerusakan_tanaman k WHERE k.id_pemindahan=p.id_pemindahan),0)
   - COALESCE((SELECT SUM(d.jumlah_tanaman) FROM detail_panen d WHERE d.id_pemindahan=p.id_pemindahan),0)`;
 const columns = `CAST(m.id_meja AS TEXT) AS id_meja,m.kode_meja,m.jumlah_lubang,m.status_meja,m.keterangan,
-  l.public_id,CAST(v.version AS TEXT) AS version,
+  l.public_id,CAST(v.version AS TEXT) AS version,${lastChangedAt('meja-tanam', 'm.id_meja')},
   COALESCE((SELECT SUM(${batchActive}) FROM pemindahan p WHERE p.id_meja=m.id_meja),0) AS tanaman_aktif,
   EXISTS(SELECT 1 FROM pemindahan p WHERE p.id_meja=m.id_meja AND (${batchActive})<0) AS invalid_balance`;
 const joins = `LEFT JOIN sync_resource_links l ON l.resource_type='meja-tanam' AND l.domain_id=CAST(m.id_meja AS TEXT)
@@ -34,6 +35,7 @@ function tableRow(row: Row) {
   return {
     id_meja: String(row.id_meja), public_id: row.public_id == null ? null : String(row.public_id),
     version: row.version == null ? null : String(row.version), kode_meja: String(row.kode_meja),
+    updated_at: row.updated_at == null ? null : Number(row.updated_at),
     jumlah_lubang: capacity, status_meja: occupancyStatus(row.status_meja, active, capacity),
     keterangan: row.keterangan == null ? null : String(row.keterangan),
     tanaman_aktif: active, kapasitas_tersedia: valid ? capacity - active : 0, saldo_valid: valid,
@@ -58,7 +60,7 @@ export async function listTables(db: Executor, query: ListTableInput) {
     sql: `SELECT COUNT(*) AS total FROM (${base}) t WHERE ${where}`, args: [filter, filter],
   })).rows[0].total);
   const rows = (await db.execute({ sql: `SELECT * FROM (${base}) t WHERE ${where}
-    ORDER BY sort_id LIMIT ? OFFSET ?`,
+    ORDER BY COALESCE(updated_at,0) DESC, sort_id DESC LIMIT ? OFFSET ?`,
     args: [filter, filter, query.limit, (query.page - 1) * query.limit] })).rows;
   return { data: rows.map(tableRow), meta: { page: query.page, limit: query.limit, total, total_pages: Math.ceil(total / query.limit) } };
 }

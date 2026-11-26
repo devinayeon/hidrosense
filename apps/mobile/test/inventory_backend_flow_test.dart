@@ -120,7 +120,14 @@ process.on('SIGTERM',async()=>{for(const cleanup of cleanups.reverse())await cle
       expect(item.id, '101');
       expect(item.balance, '10');
       expect(item.isLow, false);
-      expect((await repo.cached())!.records.last.balance, '10');
+      // Daftar kini terbaru-dulu, jadi barang yang baru dibuat ada di depan.
+      expect(
+        (await repo.cached())!
+            .records
+            .singleWhere((r) => r.name == 'Persisted seed')
+            .balance,
+        '10',
+      );
       final history = await repo.fetchStockHistory(inventoryId: item.id);
       expect(history.length, 1);
       expect(history.single.details.single.amount, '10');
@@ -136,8 +143,11 @@ process.on('SIGTERM',async()=>{for(const cleanup of cleanups.reverse())await cle
         ),
       );
       expect(client.trace.length, 7); // PATCH + six pages.
-      expect(vm.state.records.last.balance, '10');
-      expect(vm.state.records.last.isLow, true);
+      final updated = vm.state.records.singleWhere(
+        (r) => r.name == 'Updated seed',
+      );
+      expect(updated.balance, '10');
+      expect(updated.isLow, true);
       client.trace.clear();
       await vm.deactivateItem(item.id);
       // Arsip ikut dimuat supaya chip "Arsip" bisa menampilkannya (BUG arsip):

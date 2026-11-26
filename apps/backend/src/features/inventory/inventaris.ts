@@ -38,7 +38,7 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       { sql: `SELECT ${inventarisColumns} FROM inventaris i
           JOIN jenis_inventaris j ON j.id_jenis_inventaris=i.id_jenis_inventaris LEFT JOIN obat o ON o.id_obat=i.id_obat
           LEFT JOIN stok_saldo b ON b.id_inventaris=i.id_inventaris
-          WHERE (? IS NULL OR i.status_aktif=?) ORDER BY i.id_inventaris LIMIT ? OFFSET ?`,
+          WHERE (? IS NULL OR i.status_aktif=?) ORDER BY COALESCE(updated_at,0) DESC, i.id_inventaris DESC LIMIT ? OFFSET ?`,
         args: [filter, filter, limit, (page - 1) * limit] },
     ], 'read');
     const total = Number(count.rows[0].total);

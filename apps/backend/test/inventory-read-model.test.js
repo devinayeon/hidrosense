@@ -3,10 +3,13 @@ import { test } from 'node:test';
 import { stockFixture } from '../test-support/stock-fixture.js';
 
 test('inventory list and receipts expose exact balance without per-item reads', async (t) => {
-  const { app, db, headers, reader, items, post, movement } = await stockFixture(t);
+  const { app, db, headers, reader, items, post, movement, advance } = await stockFixture(t);
   assert.equal(items[0].saldo, '0');
   assert.equal(items[0].di_bawah_minimum, true);
   assert.equal(items[1].di_bawah_minimum, false);
+  // Geser jam sesaat supaya gerakan stok ini jelas lebih baru dari pembuatan kedua barang;
+  // daftar mengurutkan dari perubahan terakhir.
+  advance(1);
   assert.equal((await post(movement('masuk', '0.1'))).statusCode, 201);
   for (const auth of [headers, reader]) {
     const list = await app.inject({ url: '/api/v1/inventaris?limit=1', headers: auth });

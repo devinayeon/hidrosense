@@ -20,7 +20,7 @@ export function registerReadEmployees(app: FastifyInstance, db: Client, clock: (
       const needle = fold(q);
       const rows = (await db.execute({
         sql: `SELECT ${accountColumns} FROM users u JOIN roles r ON r.id_role=u.id_role
-          WHERE ${where} ORDER BY u.id_user`, args: [filter, filter],
+          WHERE ${where} ORDER BY COALESCE(u.updated_at,0) DESC, u.id_user DESC`, args: [filter, filter],
       })).rows.filter((row) => fold(String(row.nama)).includes(needle) || fold(String(row.username)).includes(needle));
       return {
         data: rows.slice((page - 1) * limit, page * limit).map(accountResponse),
@@ -31,7 +31,7 @@ export function registerReadEmployees(app: FastifyInstance, db: Client, clock: (
     const [count, records] = await db.batch([
       { sql: `SELECT COUNT(*) AS total FROM users u JOIN roles r ON r.id_role=u.id_role WHERE ${where}`, args: [filter, filter] },
       { sql: `SELECT ${accountColumns} FROM users u JOIN roles r ON r.id_role=u.id_role
-          WHERE ${where} ORDER BY u.id_user LIMIT ? OFFSET ?`, args: [filter, filter, limit, (page - 1) * limit] },
+          WHERE ${where} ORDER BY COALESCE(u.updated_at,0) DESC, u.id_user DESC LIMIT ? OFFSET ?`, args: [filter, filter, limit, (page - 1) * limit] },
     ], 'read');
     const total = Number(count.rows[0].total);
     return { data: records.rows.map(accountResponse), meta: { page, limit, total, total_pages: Math.ceil(total / limit) } };

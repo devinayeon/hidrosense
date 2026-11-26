@@ -23,7 +23,10 @@ test('petani creates, lists, reads and updates an employee without exposing cred
   const list = await app.inject({ url: '/api/v1/employees?page=2&limit=1', headers });
   assert.equal(list.statusCode, 200, list.body);
   assert.deepEqual(list.json().meta, { page: 2, limit: 1, total: 2, total_pages: 2 });
-  assert.deepEqual(list.json().data, [employee]);
+  // Daftar diurutkan dari yang paling baru diubah, jadi akun baru ada di halaman 1.
+  assert.equal(list.json().data[0].username, 'pegawai');
+  const firstPage = await app.inject({ url: '/api/v1/employees?limit=1', headers });
+  assert.equal(firstPage.json().data[0].id_user, employee.id_user);
   const updated = await app.inject({ method: 'PATCH', url: created.headers.location, headers,
     payload: { nama: 'Nama Baru', email: null, no_telepon: null, alamat: null } });
   assert.equal(updated.statusCode, 200, updated.body);

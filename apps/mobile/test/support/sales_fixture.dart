@@ -45,6 +45,7 @@ Map<String, dynamic> saleJson({
   String status = 'lunas',
   String? note,
   String version = '1',
+  int? updatedAt,
   List<Map<String, dynamic>>? details,
 }) => {
   'id_penjualan': id,
@@ -55,6 +56,7 @@ Map<String, dynamic> saleJson({
   'keterangan': note,
   'public_id': salePublicId,
   'version': version,
+  'updated_at': updatedAt,
   'details': details ?? [saleDetailJson()],
 };
 
@@ -114,6 +116,7 @@ SaleRecord saleRecord({
   String status = 'lunas',
   String? note,
   String version = '1',
+  int? updatedAt,
   List<Map<String, dynamic>>? details,
 }) => SaleRecord.fromJson(
   saleJson(
@@ -124,6 +127,7 @@ SaleRecord saleRecord({
     status: status,
     note: note,
     version: version,
+    updatedAt: updatedAt,
     details: details,
   ),
 );

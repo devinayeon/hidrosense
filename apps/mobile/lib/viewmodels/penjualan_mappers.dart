@@ -92,12 +92,16 @@ PenjualanItem toPenjualanItem(SaleRecord record) {
     catatan: record.note,
     batchPanenId: lines.length == 1 ? lines.first.idPanen : null,
     version: record.version,
+    updatedAt: record.updatedAt,
     details: lines,
   );
 }
 
-/// Urutan daftar: tanggal terbaru dulu, lalu id terbesar.
+/// Urutan daftar: yang paling baru diubah dulu, lalu tanggal terbaru, lalu id
+/// terbesar. Waktu ubah berasal dari server sehingga koreksi langsung naik ke atas.
 int comparePenjualanItems(PenjualanItem a, PenjualanItem b) {
+  final byChange = (b.updatedAt ?? 0).compareTo(a.updatedAt ?? 0);
+  if (byChange != 0) return byChange;
   final aDate = a.tanggalIso, bDate = b.tanggalIso;
   if (aDate != null && bDate != null) {
     final byDate = bDate.compareTo(aDate);

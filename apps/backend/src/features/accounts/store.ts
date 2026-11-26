@@ -4,7 +4,7 @@ import type { AccountChanges } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
 export const accountColumns = `CAST(u.id_user AS TEXT) AS id_user,u.nama,u.username,
-  u.email,u.no_telepon,u.alamat,u.status_aktif,r.nama_role`;
+  u.email,u.no_telepon,u.alamat,u.status_aktif,r.nama_role,u.updated_at`;
 
 export function accountResponse(row: Row) {
   return {
@@ -13,6 +13,7 @@ export function accountResponse(row: Row) {
     no_telepon: row.no_telepon === null ? null : String(row.no_telepon),
     alamat: row.alamat === null ? null : String(row.alamat),
     status_aktif: Number(row.status_aktif), role: String(row.nama_role),
+    updated_at: row.updated_at === null ? null : Number(row.updated_at),
   };
 }
 
@@ -43,15 +44,15 @@ export async function assertEmailAvailable(db: Executor, email: string | null | 
   if (result.rows.length) throw new ApiError(409, 'EMAIL_TAKEN', 'Email sudah digunakan.');
 }
 
-export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash?: string) {
+export async function updateAccount(tx: Transaction, id: string, changes: AccountChanges, passwordHash: string | undefined, now: number) {
   // Baca username lama sebelum UPDATE. Formulir mengirim ulang semua field, jadi field yang
   // ikut terkirim belum tentu berubah; sesi hanya dicabut bila username benar-benar lain.
   const stored = changes.username === undefined ? undefined : (await tx.execute({
     sql: 'SELECT username FROM users WHERE id_user=?', args: [id],
   })).rows[0]?.username;
   const usernameChanged = changes.username !== undefined && changes.username !== stored;
-  const assignments: string[] = [];
-  const args: InValue[] = [];
+  const assignments: string[] = ['updated_at=?'];
+  const args: InValue[] = [now];
   // Only server-owned column names enter SQL; all values are bound parameters.
   for (const field of ['nama', 'username', 'email', 'no_telepon', 'alamat'] as const) {
     if (changes[field] !== undefined) { assignments.push(`${field}=?`); args.push(changes[field]); }

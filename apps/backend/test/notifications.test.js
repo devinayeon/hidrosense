@@ -102,11 +102,13 @@ test('notifications returns ready seedlings, low stock, and harvest-ready items 
 test('migration 0022 notification_reads rolls back and re-applies cleanly', async (t) => {
   const db = await openDatabase({ url: ':memory:' });
   t.after(() => db.close());
-  await migrate(db, migrations);
-  await migrate(db, migrations, { direction: 'down', allowDataLoss: true });
+  // 0022 is the last migration in this scope, so one rollback step targets it directly.
+  const upTo0022 = migrations.slice(0, 22);
+  await migrate(db, upTo0022);
+  await migrate(db, upTo0022, { direction: 'down', allowDataLoss: true });
   const afterDown = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notification_reads'");
   assert.equal(afterDown.rows.length, 0);
-  await migrate(db, migrations);
+  await migrate(db, upTo0022);
   const afterUp = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notification_reads'");
   assert.equal(afterUp.rows.length, 1);
 });
