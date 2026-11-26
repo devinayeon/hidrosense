@@ -162,43 +162,52 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
   /// Sheet "Ubah status meja" (frame 6.12): Tersedia, Perawatan, dan Penuh
   /// otomatis yang tidak bisa dipilih.
   ///
+  /// Pilihan ditahan di dalam sheet dan baru dipakai setelah "Simpan"; menutup
+  /// sheet membatalkan perubahan. Konfirmasi muncul setelah "Simpan", bukan
+  /// saat opsi diketuk (BUG-FE alur ubah status).
+  ///
   /// Scrim 60% mengikuti frame 6.12; helper bersama `showV2BottomSheet` masih
   /// memakai 35% sehingga sheet ini memanggil `showModalBottomSheet` sendiri.
   Future<void> _ubahStatus() async {
+    var pilihan = _item.status;
     final result = await showModalBottomSheet<V2MejaStatus>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: V2Colors.ink.withValues(alpha: 0.6),
       isScrollControlled: true,
-      builder: (_) => V2BottomSheet(
-        title: 'Ubah status meja',
-        actions: V2Button(
-          label: 'Simpan',
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        child: Column(
-          children: [
-            V2OptionRow(
-              label: 'Tersedia',
-              state: _item.status == V2MejaStatus.tersedia
-                  ? V2OptionState.selected
-                  : V2OptionState.normal,
-              onTap: () => Navigator.of(context).pop(V2MejaStatus.tersedia),
-            ),
-            const SizedBox(height: V2Space.lg),
-            V2OptionRow(
-              label: 'Perawatan',
-              state: _item.status == V2MejaStatus.perawatan
-                  ? V2OptionState.selected
-                  : V2OptionState.normal,
-              onTap: () => Navigator.of(context).pop(V2MejaStatus.perawatan),
-            ),
-            const SizedBox(height: V2Space.lg),
-            const V2OptionRow(
-              label: 'Penuh, otomatis',
-              state: V2OptionState.disabled,
-            ),
-          ],
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => V2BottomSheet(
+          title: 'Ubah status meja',
+          actions: V2Button(
+            label: 'Simpan',
+            onPressed: () => Navigator.of(sheetContext).pop(pilihan),
+          ),
+          child: Column(
+            children: [
+              V2OptionRow(
+                label: 'Tersedia',
+                state: pilihan == V2MejaStatus.tersedia
+                    ? V2OptionState.selected
+                    : V2OptionState.normal,
+                onTap: () =>
+                    setSheetState(() => pilihan = V2MejaStatus.tersedia),
+              ),
+              const SizedBox(height: V2Space.lg),
+              V2OptionRow(
+                label: 'Perawatan',
+                state: pilihan == V2MejaStatus.perawatan
+                    ? V2OptionState.selected
+                    : V2OptionState.normal,
+                onTap: () =>
+                    setSheetState(() => pilihan = V2MejaStatus.perawatan),
+              ),
+              const SizedBox(height: V2Space.lg),
+              const V2OptionRow(
+                label: 'Penuh, otomatis',
+                state: V2OptionState.disabled,
+              ),
+            ],
+          ),
         ),
       ),
     );
