@@ -8,10 +8,16 @@ abstract class ProfileRepository {
 
   Future<ProfileModel> updateProfile({
     required String nama,
+    String? username,
+    String? password,
+    String? currentPassword,
     String? email,
     String? noTelepon,
     String? alamat,
   });
+
+  /// Menonaktifkan akun sendiri (hanya pegawai).
+  Future<void> deactivateSelf();
 }
 
 class ProfileRepositoryImpl implements ProfileRepository {
@@ -26,24 +32,38 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<ProfileModel> updateProfile({
     required String nama,
+    String? username,
+    String? password,
+    String? currentPassword,
     String? email,
     String? noTelepon,
     String? alamat,
   }) async {
-    final response = await _api.patch(
-      'profile',
-      body: {
-        'nama': nama.trim(),
-        'email': _nullable(email),
-        'no_telepon': _nullable(noTelepon),
-        'alamat': _nullable(alamat),
-      },
-    );
+    final body = <String, dynamic>{
+      'nama': nama.trim(),
+      'email': _nullable(email),
+      'no_telepon': _nullable(noTelepon),
+      'alamat': _nullable(alamat),
+    };
+    final nextUsername = username?.trim();
+    final usernameChanged = nextUsername != null && nextUsername.isNotEmpty;
+    if (usernameChanged) body['username'] = nextUsername;
+    final passwordChanged = password != null && password.isNotEmpty;
+    if (passwordChanged) body['password'] = password;
+    if (usernameChanged || passwordChanged) {
+      body['current_password'] = currentPassword ?? '';
+    }
+    final response = await _api.patch('profile', body: body);
     final updated = _profile(response);
     if (updated.nama != nama.trim()) {
       throw const FormatException('Respons profil tidak sesuai isian.');
     }
     return updated;
+  }
+
+  @override
+  Future<void> deactivateSelf() async {
+    await _api.post('profile/deactivate');
   }
 
   String? _nullable(String? value) {

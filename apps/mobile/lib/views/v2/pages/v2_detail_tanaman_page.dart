@@ -418,6 +418,10 @@ class _V2UbahCatatanTanamanPageState extends State<V2UbahCatatanTanamanPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Tombol Simpan dipaku di dasar layar; keyboard tidak menggesernya.
+        bottomNavigationBar: V2ActionBar(
+          actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
+        ),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -451,9 +455,6 @@ class _V2UbahCatatanTanamanPageState extends State<V2UbahCatatanTanamanPage> {
                     ],
                   ),
                 ),
-              ),
-              V2ActionBar(
-                actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
               ),
             ],
           ),

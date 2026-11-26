@@ -154,6 +154,8 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
 
   final ScrollController _scroll = ScrollController();
 
+  /// Kartu tint stok disembunyikan baik saat keyboard nyata terbuka maupun
+  /// saat galeri mensimulasikan keyboard (frame 5.9).
   bool get _keyboard =>
       widget.previewKeyboard || MediaQuery.viewInsetsOf(context).bottom > 0;
 
@@ -350,12 +352,19 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardOpen = _keyboard;
+    final preview = widget.previewKeyboard;
+    final footer = V2ActionBar(
+      actions: [V2Button(label: 'Simpan', onPressed: _save)],
+    );
 
     return Theme(
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Pratinjau galeri tetap menaruh footer di dalam body untuk
+        // mensimulasikan frame keyboard; alur nyata memakai footer yang
+        // dipaku di dasar layar.
+        bottomNavigationBar: preview ? null : footer,
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -373,7 +382,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
                     V2Space.xl,
                     V2Space.sm,
                     V2Space.xl,
-                    keyboardOpen ? _keyboardBottomSpace : V2Space.lg,
+                    preview ? _keyboardBottomSpace : V2Space.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -381,13 +390,14 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
                   ),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.only(bottom: keyboardOpen ? V2Space.sm : 0),
-                child: V2ActionBar(
-                  safeBottom: !keyboardOpen,
-                  actions: [V2Button(label: 'Simpan', onPressed: _save)],
+              if (preview)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: V2Space.sm),
+                  child: V2ActionBar(
+                    safeBottom: false,
+                    actions: [V2Button(label: 'Simpan', onPressed: _save)],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

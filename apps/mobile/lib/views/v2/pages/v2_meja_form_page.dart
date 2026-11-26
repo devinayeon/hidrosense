@@ -270,6 +270,13 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Footer dipaku di dasar layar; overlay konflik menyembunyikannya
+        // sementara supaya scrim menutup seluruh layar.
+        bottomNavigationBar: _showKonflik
+            ? null
+            : V2ActionBar(
+                actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
+              ),
         body: SafeArea(
           bottom: false,
           child: Stack(
@@ -328,9 +335,6 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
                         ],
                       ),
                     ),
-                  ),
-                  V2ActionBar(
-                    actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
                   ),
                 ],
               ),

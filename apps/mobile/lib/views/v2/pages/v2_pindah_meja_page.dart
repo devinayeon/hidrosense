@@ -333,6 +333,16 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Tombol Pindahkan dipaku di dasar layar; keyboard tidak menggesernya.
+        bottomNavigationBar: V2ActionBar(
+          actions: [
+            V2Button(
+              label: 'Pindahkan',
+              loading: _submitting,
+              onPressed: _submitting ? null : _pindahkan,
+            ),
+          ],
+        ),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -372,15 +382,6 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
                     ],
                   ),
                 ),
-              ),
-              V2ActionBar(
-                actions: [
-                  V2Button(
-                    label: 'Pindahkan',
-                    loading: _submitting,
-                    onPressed: _submitting ? null : _pindahkan,
-                  ),
-                ],
               ),
             ],
           ),

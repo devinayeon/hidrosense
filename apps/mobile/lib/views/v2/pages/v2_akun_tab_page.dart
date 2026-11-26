@@ -33,6 +33,7 @@ class V2AkunTabView extends StatelessWidget {
     this.syncLabel = 'Terakhir 09.40',
     this.syncBadge,
     this.onOpenEmployees,
+    this.onOpenProfile,
     this.onOpenSales,
     this.onOpenSync,
     this.onLogOut,
@@ -48,6 +49,7 @@ class V2AkunTabView extends StatelessWidget {
   /// Lencana jumlah data yang menunggu; null berarti tanpa lencana.
   final String? syncBadge;
   final VoidCallback? onOpenEmployees;
+  final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenSales;
   final VoidCallback? onOpenSync;
   final VoidCallback? onLogOut;
@@ -79,6 +81,12 @@ class V2AkunTabView extends StatelessWidget {
                 if (petani)
                   V2AkunMenuGroup(
                     children: [
+                      V2ListItem(
+                        icon: V2IconName.user,
+                        title: 'Akun saya',
+                        subtitle: 'Lihat & ubah profil',
+                        onTap: onOpenProfile,
+                      ),
                       V2ListItem(
                         icon: V2IconName.user,
                         title: 'Akun pegawai',
@@ -117,6 +125,12 @@ class V2AkunTabView extends StatelessWidget {
                   V2AkunMenuGroup(
                     elevated: false,
                     children: [
+                      V2ListItem(
+                        icon: V2IconName.user,
+                        title: 'Akun saya',
+                        subtitle: 'Lihat & ubah profil',
+                        onTap: onOpenProfile,
+                      ),
                       V2ListItem(
                         icon: V2IconName.sync,
                         title: 'Sinkron',

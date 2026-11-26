@@ -203,6 +203,13 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Footer dipaku di dasar layar; overlay konflik menyembunyikannya
+        // sementara supaya scrim menutup seluruh layar.
+        bottomNavigationBar: _showKonflik
+            ? null
+            : V2ActionBar(
+                actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
+              ),
         body: Stack(
           children: [
             SafeArea(
@@ -271,9 +278,6 @@ class _V2PanenEditPageState extends State<V2PanenEditPage> {
                         ],
                       ),
                     ),
-                  ),
-                  V2ActionBar(
-                    actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
                   ),
                 ],
               ),

@@ -21,6 +21,7 @@ import '../connected/v2_rawat_connected.dart';
 import '../connected/v2_tanam_connected.dart';
 import 'v2_beranda_page.dart';
 import 'v2_notifications_page.dart';
+import 'v2_profile_detail_page.dart';
 
 /// Beranda v2 yang diisi data nyata (frame 2.1–2.6).
 ///
@@ -63,6 +64,44 @@ class _V2BerandaConnectedPageState
         ref.read(profileViewModelProvider.notifier).load();
       }
     });
+  }
+
+  /// Membuka detail profil sendiri lalu menyegarkan kartu profil di beranda.
+  /// Setelah username/password diubah, `clearLocalSession` melepas halaman ini
+  /// sebelum push selesai, jadi pemeriksaan `mounted` penting.
+  Future<void> _openProfile() async {
+    var profile = ref.read(profileViewModelProvider).profile;
+    if (profile == null) {
+      // Sesi lama bisa belum memuat profil (mis. izin baru setelah layanan
+      // diperbarui); coba muat sekali lagi sebelum menyerah.
+      await ref.read(profileViewModelProvider.notifier).load();
+      if (!mounted) return;
+      profile = ref.read(profileViewModelProvider).profile;
+      if (profile == null) {
+        final message =
+            ref.read(profileViewModelProvider).errorMessage ??
+            'Profil belum termuat. Coba lagi.';
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(message)));
+        return;
+      }
+    }
+    final canDeactivate =
+        ref
+            .read(sessionProvider)
+            .user
+            ?.permissions
+            .contains('profil:deactivate') ??
+        false;
+    await Navigator.of(context).push<void>(
+      V2ProfileDetailPage.route(
+        profile: profile,
+        canDeactivate: canDeactivate,
+      ),
+    );
+    if (!mounted) return;
+    await ref.read(profileViewModelProvider.notifier).load();
   }
 
   @override
@@ -172,6 +211,7 @@ class _V2BerandaConnectedPageState
           ? 'Gagal $gagal'
           : 'Antrean $menunggu',
       onLogOut: widget.onLogOut,
+      onOpenProfile: _openProfile,
     );
   }
 }

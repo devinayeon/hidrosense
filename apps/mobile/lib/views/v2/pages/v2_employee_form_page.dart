@@ -357,6 +357,13 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
       Navigator.of(context).pop(hasil);
     } on V2EmployeeStoreException catch (error) {
       if (!mounted) return;
+      if (error.code == 'PASSWORD_UNCHANGED') {
+        setState(
+          () => _passwordError =
+              'Password baru tidak boleh sama dengan password lama',
+        );
+        return;
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(error.message)));
@@ -375,6 +382,15 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
         },
         child: Scaffold(
           backgroundColor: V2Colors.canvas,
+          bottomNavigationBar: V2AkunActionBar(
+            safeBottom: true,
+            actions: [
+              V2Button(
+                label: 'Simpan',
+                onPressed: _save,
+              ),
+            ],
+          ),
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -438,15 +454,6 @@ class _V2EmployeeFormPageState extends State<V2EmployeeFormPage> {
                       ],
                     ),
                   ),
-                ),
-                V2AkunActionBar(
-                  safeBottom: true,
-                  actions: [
-                    V2Button(
-                      label: 'Simpan',
-                      onPressed: _save,
-                    ),
-                  ],
                 ),
               ],
             ),

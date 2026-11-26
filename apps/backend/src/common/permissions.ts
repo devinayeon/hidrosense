@@ -11,6 +11,7 @@ export const rolePermissions: Readonly<Record<string, readonly string[]>> = Obje
   ]),
   pegawai: Object.freeze([
     ...commonReads, 'inventaris:write', 'penyemaian:write', 'budidaya:write', 'panen:write',
+    'profil:read', 'profil:write', 'profil:deactivate',
   ]),
 });
 

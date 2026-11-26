@@ -407,10 +407,6 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
             V2ActionBar(
               safeBottom: false,
               actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
-            )
-          else
-            V2ActionBar(
-              actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
             ),
         ],
       ),
@@ -420,6 +416,14 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
       data: V2Theme.light,
       child: Scaffold(
         backgroundColor: V2Colors.canvas,
+        // Alur nyata memaku tombol Simpan di dasar layar supaya keyboard tidak
+        // menggesernya; pratinjau galeri tetap menaruhnya di dalam body. Saat
+        // dialog buang muncul, footer disembunyikan agar scrim menutup layar.
+        bottomNavigationBar: widget.previewKeyboard || _showBuang
+            ? null
+            : V2ActionBar(
+                actions: [V2Button(label: 'Simpan', onPressed: _simpan)],
+              ),
         body: Stack(
           children: [
             Padding(

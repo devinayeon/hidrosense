@@ -39,9 +39,13 @@ abstract interface class V2EmployeeStore {
 
 /// Galat store yang pesannya sudah siap ditampilkan ke pengguna.
 class V2EmployeeStoreException implements Exception {
-  const V2EmployeeStoreException(this.message);
+  const V2EmployeeStoreException(this.message, {this.code});
 
   final String message;
+
+  /// Kode galat server bila ada, mis. `PASSWORD_UNCHANGED`, supaya form bisa
+  /// menaruh pesannya di isian yang tepat, bukan hanya snackbar.
+  final String? code;
 
   @override
   String toString() => message;

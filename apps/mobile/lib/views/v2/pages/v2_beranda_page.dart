@@ -111,6 +111,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onSiapPindah,
     this.onOpenCycleTable,
     this.onOpenWeather,
+    this.onOpenProfile,
     this.onLogOut,
   });
 
@@ -130,6 +131,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onNotificationRead,
     this.onNotificationMarkAllRead,
     this.onOpenWeather,
+    this.onOpenProfile,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -172,6 +174,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onNotificationRead,
     this.onNotificationMarkAllRead,
     this.onOpenWeather,
+    this.onOpenProfile,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -214,6 +217,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onNotificationRead,
     this.onNotificationMarkAllRead,
     this.onOpenWeather,
+    this.onOpenProfile,
     this.onLogOut,
   }) : employeeStore = null,
        penjualanStore = null,
@@ -332,6 +336,9 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Membuka halaman cuaca; null berarti halaman contoh galeri.
   final VoidCallback? onOpenWeather;
+
+  /// Membuka detail profil sendiri dari menu "Akun saya".
+  final VoidCallback? onOpenProfile;
 
   /// Menutup sesi (frame 3.3); diisi oleh `AppGate`.
   final Future<void> Function()? onLogOut;
@@ -687,6 +694,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         syncLabel: widget.syncLabel,
                         syncBadge: widget.syncBadge,
                         onOpenEmployees: _petani ? _openEmployees : null,
+                        onOpenProfile: widget.onOpenProfile,
                         onOpenSales: _petani ? _openSales : null,
                         onOpenSync: _openSync,
                         onLogOut: _confirmLogOut,

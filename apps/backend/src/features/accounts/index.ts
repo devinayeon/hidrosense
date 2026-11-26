@@ -6,7 +6,7 @@ import { registerReadEmployees } from './read-employees.js';
 import { registerUpdateEmployee } from './update-employee.js';
 import { registerDeactivateEmployee } from './deactivate-employee.js';
 import { registerActivateEmployee } from './activate-employee.js';
-import { registerProfile } from './profile.js';
+import { registerProfile, registerDeactivateSelf } from './profile.js';
 
 export function registerAccounts(app: FastifyInstance, db: Client, clock: () => number) {
   registerCreateEmployee(app, db, clock);
@@ -24,6 +24,7 @@ export function registerAccounts(app: FastifyInstance, db: Client, clock: () => 
     });
     registerDeactivateEmployee(scope, db, clock);
     registerActivateEmployee(scope, db, clock);
+    registerDeactivateSelf(scope, db, clock);
   });
   registerProfile(app, db, clock);
 }

@@ -26,6 +26,17 @@ export async function getAccount(db: Executor, id: string, role: 'pegawai' | 'pe
   return accountResponse(row);
 }
 
+/** Akun milik pemilik sesi sendiri; peran tidak difilter karena siapa pun
+ *  berhak membaca profilnya sendiri (petani maupun pegawai). */
+export async function getAccountById(db: Executor, id: string) {
+  const row = (await db.execute({
+    sql: `SELECT ${accountColumns} FROM users u JOIN roles r ON r.id_role=u.id_role
+      WHERE u.id_user=?`, args: [id],
+  })).rows[0];
+  if (!row) throw new ApiError(404, 'ACCOUNT_NOT_FOUND', 'Akun tidak ditemukan.');
+  return accountResponse(row);
+}
+
 export async function assertUsernameAvailable(db: Executor, username: string, exceptId?: string) {
   const result = await db.execute({
     sql: 'SELECT 1 FROM users WHERE username=? AND (? IS NULL OR id_user<>?)',

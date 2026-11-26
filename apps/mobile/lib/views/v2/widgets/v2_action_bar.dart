@@ -16,6 +16,12 @@ import 'v2_banner.dart';
 /// tempat lain, mis. saat keyboard terbuka (frame 8.10). Satu tombol diberi
 /// sisa 8 di bawah sesuai desain; dua tombol atau lebih menempel tepat di atas
 /// home indicator.
+///
+/// Di halaman form, pasang bilah ini sebagai `Scaffold.bottomNavigationBar`,
+/// bukan sebagai anak terakhir `Column` di dalam body. Bedanya: body tetap
+/// mengecil di atas keyboard (isian yang difokus bisa digulir), sedangkan
+/// bilah aksi tetap diam di dasar layar dan tertutup keyboard. Tanpa itu
+/// tombol proses ikut naik setiap keyboard terbuka.
 class V2ActionBar extends StatelessWidget {
   const V2ActionBar({
     super.key,
