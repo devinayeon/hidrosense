@@ -513,3 +513,24 @@ Status implementasi: `mcdocs/qa-sesi7-tasks.md`; permintaan backend:
 - **Bukti:** `apps/backend/migrations/0023_list_last_changed.{up,down}.sql`;
   `test/list_last_changed_test.dart` (FE), `accounts.test.js`/`tables.test.js`/
   `inventory-read-model.test.js` (backend).
+
+## D-52 — Pop-up konfirmasi ulang + loading pada setiap tombol proses (27 Nov 2026)
+- **Konteks:** client meminta setiap tombol proses tulis memunculkan pop-up konfirmasi
+  ulang dengan spinner di tombolnya, dan layar baru kembali ke menu setelah proses selesai.
+- **Keputusan:** satu primitif bersama `showV2ActionDialog`
+  (`lib/views/v2/widgets/v2_dialog.dart`) dengan `V2Dialog.primaryLoading`: spinner di
+  tombol utama selama `onConfirm` berjalan, barrier mati, `PopScope` menahan tombol
+  kembali, dan galat `onConfirm` dilempar ke pemanggil (ditampilkan sebagai snackbar;
+  form tetap terbuka).
+- **Pola tulis:** form/halaman menerima callback `onSubmit`/`onXxx` dan menjalankan
+  tulisnya **di dalam** pop-up; baru setelah selesai layar berpindah. Tidak lagi menutup
+  form dulu lalu menulis di belakang, dan tidak lagi menulis tanpa konfirmasi.
+- **Pengecualian:** tombol navigasi murni (mis. "Lihat meja"/"Pindahkan sisa" di halaman
+  hasil pindah) hanya memakai loading, tanpa pop-up.
+- **Pratinjau/galeri:** callback null tetap seperti semula (ubah boleh konfirmasi polos,
+  tambah langsung menutup, data dirakit di memori).
+- **Batas:** FE saja; tidak ada perubahan kontrak backend.
+- **Bukti:** `test/v2_confirm_loading_sesi9_test.dart`; tes alur lama disesuaikan
+  (`v2_employee_d36`, `v2_stock_refresh_after_accept`, `v2_pindah_stale_bug34`,
+  `v2_tambah_tanaman_bug35`, `v2_panen_jual_bug42_43`, `v2_penjualan_d39`).
+- **Status:** FIXED di kode, belum diuji ulang di HP (MC-FIX-69a..j).

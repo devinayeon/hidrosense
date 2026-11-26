@@ -26,6 +26,7 @@ class V2SemaianEditPage extends StatefulWidget {
     required this.item,
     this.previewTandaiSelesai = false,
     this.previewKonflik = false,
+    this.onSubmit,
   });
 
   /// Frame `5.25 Ubah semaian (Butterhead)`: 150 benih, Rak 2, Aktif.
@@ -52,6 +53,12 @@ class V2SemaianEditPage extends StatefulWidget {
 
   /// Membuka dialog "Data sudah berubah" begitu halaman tampil (frame 5.31).
   final bool previewKonflik;
+
+  /// Simpan perubahan semaian ke backend. Bila diisi, tombol "Simpan" membuka
+  /// pop-up konfirmasi ulang dan menampilkan spinner sampai proses selesai,
+  /// baru form menutup; galat server tampil sebagai pesan dan form tetap
+  /// terbuka.
+  final Future<void> Function(V2SemaianItem hasil)? onSubmit;
 
   @override
   State<V2SemaianEditPage> createState() => _V2SemaianEditPageState();
@@ -164,13 +171,42 @@ class _V2SemaianEditPageState extends State<V2SemaianEditPage> {
       setState(() => _jumlahError = 'Isi jumlah benih');
       return;
     }
-    Navigator.of(context).pop(
+    _kirim(
       widget.item.copyWith(
         jumlahBenih: jumlah,
         keterangan: _keterangan.text.trim(),
         selesai: _selesai,
       ),
     );
+  }
+
+  /// Kirim perubahan semaian ke backend setelah konfirmasi ulang (Sesi 9).
+  ///
+  /// Bila [V2SemaianEditPage.onSubmit] diisi (alur nyata), pop-up konfirmasi
+  /// menampilkan spinner di tombolnya sampai proses selesai, baru form menutup.
+  /// Galat server tampil sebagai pesan dan form tetap terbuka.
+  Future<void> _kirim(V2SemaianItem hasil) async {
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Simpan perubahan semaian?',
+        body: 'Perubahan semaian akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        onConfirm: () => submit(hasil),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

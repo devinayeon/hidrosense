@@ -10,6 +10,7 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_chip.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
@@ -137,24 +138,12 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
       V2CatatRusakPage.route(
         meja: widget.item,
         transferId: widget.transferId,
+        onSubmit: widget.onCatat,
       ),
     );
     if (!mounted || hasil == null) return;
-    final simpan = widget.onCatat;
-    if (simpan == null) {
-      setState(() => _rusak = [hasil, ..._rusak]);
-      _showToast('Kerusakan dicatat');
-      return;
-    }
-    try {
-      final tersimpan = await simpan(hasil);
-      if (!mounted) return;
-      setState(() => _rusak = [tersimpan, ..._rusak]);
-      _showToast('Kerusakan dicatat');
-    } catch (error) {
-      if (!mounted) return;
-      _pesan('$error');
-    }
+    setState(() => _rusak = [hasil, ..._rusak]);
+    _showToast('Kerusakan dicatat');
   }
 
   Future<void> _ubah(V2KerusakanItem rusak) async {
@@ -163,22 +152,10 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
         meja: widget.item,
         kerusakan: rusak,
         transferId: widget.transferId,
+        onSubmit: widget.onUbah,
       ),
     );
     if (!mounted || hasil == null) return;
-    final simpan = widget.onUbah;
-    if (simpan != null) {
-      try {
-        final tersimpan = await simpan(hasil);
-        if (!mounted) return;
-        setState(() => _rusak = _ganti(rusak, tersimpan));
-        _showToast('Perubahan tersimpan');
-      } catch (error) {
-        if (!mounted) return;
-        _pesan('$error');
-      }
-      return;
-    }
     setState(() => _rusak = _ganti(rusak, hasil));
     _showToast('Perubahan tersimpan');
   }
@@ -190,12 +167,6 @@ class _V2TanamanRusakPageState extends State<V2TanamanRusakPage> {
     for (final baris in _rusak)
       if (identical(baris, lama)) baru else baris,
   ];
-
-  void _pesan(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
 
   V2ListItem _row(V2KerusakanItem rusak) {
     return V2ListItem(
@@ -267,6 +238,7 @@ class V2CatatRusakPage extends StatefulWidget {
     this.previewValidation = false,
     this.transferId,
     this.clock = _v2CatatRusakSekarang,
+    this.onSubmit,
   });
 
   /// Frame `6.25 Catat rusak`.
@@ -296,16 +268,23 @@ class V2CatatRusakPage extends StatefulWidget {
   /// supaya form tanggal tidak memaku 15 Nov (BUG-27).
   final DateTime Function() clock;
 
+  /// Simpan kerusakan ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onSubmit;
+
   static Route<V2KerusakanItem> route({
     V2MejaItem? meja,
     V2KerusakanItem? kerusakan,
     String? transferId,
+    Future<V2KerusakanItem> Function(V2KerusakanItem draft)? onSubmit,
   }) {
     return MaterialPageRoute<V2KerusakanItem>(
       builder: (_) => V2CatatRusakPage(
         meja: meja,
         kerusakan: kerusakan,
         transferId: transferId,
+        onSubmit: onSubmit,
       ),
     );
   }
@@ -380,7 +359,7 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
     });
   }
 
-  void _simpan() {
+  Future<void> _simpan() async {
     setState(() {
       _jumlahError = _jumlah > _aktif ? 'Tanaman aktif hanya $_aktif' : null;
       _jenisError = _jenisDipilih == null ? 'Pilih jenis kerusakan' : null;
@@ -399,15 +378,42 @@ class _V2CatatRusakPageState extends State<V2CatatRusakPage> {
           meja: widget.meja?.kode ?? 'A2',
           transferId: widget.transferId,
         );
-    Navigator.of(context).pop(
-      dasar.copyWith(
-        jumlah: _jumlah,
-        jenis: _jenisDipilih,
-        tanggal: _tanggal,
-        keterangan: _keterangan.text.trim(),
-        transferId: lama?.transferId ?? widget.transferId,
-      ),
+    final hasil = dasar.copyWith(
+      jumlah: _jumlah,
+      jenis: _jenisDipilih,
+      tanggal: _tanggal,
+      keterangan: _keterangan.text.trim(),
+      transferId: lama?.transferId ?? widget.transferId,
     );
+
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+
+    V2KerusakanItem? tersimpan;
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: _ubah ? 'Simpan perubahan kerusakan?' : 'Catat kerusakan?',
+        body: _ubah
+            ? 'Perubahan laporan kerusakan akan dikirim ke server.'
+            : 'Laporan kerusakan akan dikirim ke server.',
+        primaryLabel: _ubah ? 'Simpan' : 'Catat',
+        type: _ubah ? V2DialogType.confirm : V2DialogType.destructive,
+        onConfirm: () async {
+          tersimpan = await submit(hasil);
+        },
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(tersimpan ?? hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

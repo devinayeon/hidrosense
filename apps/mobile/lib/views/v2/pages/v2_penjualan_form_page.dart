@@ -303,9 +303,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
   String? _panenPreview;
   int _pembayaran = 0;
 
-  /// Sedang mengirim ke backend.
-  bool _saving = false;
-
   /// Salinan terbaru dari server setelah konflik versi (frame 8.24).
   V2Penjualan? _server;
 
@@ -698,7 +695,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       return;
     }
 
-    setState(() => _saving = true);
     final catatan = _keterangan.text.trim();
     final draft = V2PenjualanDraft(
       tanggal: _tanggal,
@@ -711,24 +707,40 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           : V2PenjualanBayar.belumLunas,
       keterangan: catatan.isEmpty ? null : catatan,
     );
+    final aksi = widget.fixing
+        ? 'Kirim ulang'
+        : widget.isEdit
+        ? 'Simpan'
+        : 'Catat';
+    V2Penjualan? hasil;
     try {
-      final result = widget.isEdit
-          ? await store.update(_base!, draft)
-          : await store.create(draft);
-      if (!mounted) return;
+      final done = await showV2ActionDialog(
+        context,
+        title: widget.isEdit
+            ? 'Simpan perubahan penjualan?'
+            : 'Catat penjualan?',
+        body: widget.isEdit
+            ? 'Perubahan penjualan akan dikirim ke server.'
+            : 'Penjualan baru akan dikirim ke server.',
+        primaryLabel: aksi,
+        onConfirm: () async {
+          hasil = widget.isEdit
+              ? await store.update(_base!, draft)
+              : await store.create(draft);
+        },
+      );
+      if (!mounted || !done) return;
       _dirty = false;
-      Navigator.of(context).pop(result);
+      Navigator.of(context).pop(hasil);
     } on V2PenjualanConflictException {
       // Server menolak karena versi berubah: tawarkan muat ulang (frame 8.24).
       if (!mounted) return;
-      setState(() => _saving = false);
       await _showConflict();
     } on V2PenjualanStoreException catch (error) {
       if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -770,7 +782,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
     return Theme(
       data: V2Theme.light,
       child: PopScope<V2Penjualan>(
-        canPop: !_dirty && !_saving,
+        canPop: !_dirty,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
           _back();
@@ -810,8 +822,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
                     actions: [
                       V2Button(
                         label: _actionLabel,
-                        loading: _saving,
-                        onPressed: _saving ? null : _save,
+                        onPressed: _save,
                       ),
                     ],
                   ),

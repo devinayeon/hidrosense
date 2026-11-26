@@ -897,3 +897,43 @@ paling baru **dibuat** atau tanggal transaksinya.
   `test/accounts.test.js`, `test/tables.test.js`, `test/inventory-read-model.test.js`.
 - Catatan: server sesi ini **boleh** berubah (berbeda dari batas Sesi 7) karena
   urutan "perubahan terakhir" hanya benar bila waktu ubah berasal dari server.
+
+## Sesi 9 (27 Nov 2026) — pop-up konfirmasi ulang + loading pada tombol proses
+
+Permintaan client: setiap tombol yang menjalankan proses tulis membuka **pop-up konfirmasi
+ulang** dengan **spinner di tombol konfirmasinya**, dan layar baru kembali ke menu setelah
+proses selesai. Tombol navigasi murni (mis. "Lihat meja") hanya butuh loading. **FE saja**
+(tidak ada perubahan backend).
+
+## BUG-69 [S3] Tombol proses kembali ke layar sebelumnya sebelum proses selesai
+- Area/PB: lintas fitur — Semaian, Meja, Panen, Penjualan, Stok, Akun/pegawai, Rusak,
+  Rekomendasi obat.
+- Langkah: 1) jalankan proses tulis dari layar mana pun (tambah/ubah/catat/arsip/terima/
+  tolak/aktif-nonaktif) saat jaringan lambat; 2) amati layar sebelum server menjawab.
+- Ekspektasi (permintaan client Sesi 9, D-52): muncul pop-up konfirmasi ulang; saat
+  ditekan, tombol konfirmasi berputar sampai proses selesai; layar baru berpindah setelah
+  itu. Kalau server menolak, pop-up menutup dan galat tampil sebagai pesan sementara form
+  tetap terbuka (isian tidak hilang).
+- Aktual (sebelum): sebagian form menutup/menavigasi lebih dulu lalu menulis di belakang
+  (mis. "Tambah meja", "Catat panen", "Catat stok", "Arsipkan", "Catat penjualan"),
+  sebagian lagi hanya punya spinner tanpa konfirmasi ulang ("Simpan" penjualan, "Tandai
+  lunas"), dan beberapa proses (rekomendasi obat, aktif/nonaktif pegawai) berjalan tanpa
+  pop-up sama sekali. Tidak ada satu pola.
+- Status: **FIXED di kode (FE), belum diuji ulang di HP.**
+  - Primitif: `showV2ActionDialog` di `lib/views/v2/widgets/v2_dialog.dart`
+    (`V2Dialog.primaryLoading`, `barrierDismissible:false`, `PopScope(canPop:!running)`,
+    galat dilempar ke pemanggil).
+  - Pola: form/halaman menerima callback `onSubmit`/`onXxx` dan menjalankan tulisnya **di
+    dalam** pop-up; baru setelah `done` layar berpindah. Jalur pratinjau/galeri (callback
+    null) tidak berubah.
+  - Cakupan: tambah/ubah semaian; pindah semaian ke meja; tambah/ubah meja & ubah status
+    meja; tambah tanaman ke meja; catat/ubah rusak; ubah catatan tanaman; catat/ubah panen;
+    catat/ubah/kirim ulang penjualan & tandai lunas; tambah/ubah barang, catat stok,
+    arsipkan; terima/tolak rekomendasi obat; tambah/ubah/nonaktifkan/aktifkan pegawai.
+    Halaman hasil pindah meja ("Lihat meja"/"Pindahkan sisa") = loading tanpa pop-up.
+- Regression test: `test/v2_confirm_loading_sesi9_test.dart` (primitif + tambah pegawai +
+  form meja); tes alur lama disesuaikan agar melewati pop-up:
+  `test/v2_employee_d36_test.dart`, `test/v2_stock_refresh_after_accept_test.dart`,
+  `test/v2_pindah_stale_bug34_test.dart`, `test/v2_tambah_tanaman_bug35_test.dart`,
+  `test/v2_panen_jual_bug42_43_test.dart`, `test/v2_penjualan_d39_test.dart`.
+

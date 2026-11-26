@@ -16,6 +16,7 @@ class V2Dialog extends StatelessWidget {
     this.type = V2DialogType.confirm,
     this.primaryLabel = 'Simpan',
     this.onPrimary,
+    this.primaryLoading = false,
     this.secondaryLabel,
     this.onSecondary,
     this.child,
@@ -26,6 +27,9 @@ class V2Dialog extends StatelessWidget {
   final V2DialogType type;
   final String primaryLabel;
   final VoidCallback? onPrimary;
+
+  /// Tampilkan spinner di tombol utama selama proses berjalan.
+  final bool primaryLoading;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
   final Widget? child;
@@ -57,6 +61,7 @@ class V2Dialog extends StatelessWidget {
                   ? V2ButtonType.destructive
                   : V2ButtonType.primary,
               onPressed: onPrimary,
+              loading: primaryLoading,
             ),
             if (secondaryLabel != null) ...[
               const SizedBox(height: V2Space.lg),
@@ -105,4 +110,119 @@ Future<bool?> showV2Dialog(
       ),
     ),
   );
+}
+
+/// Tampilkan [V2Dialog] sebagai modal, jalankan [onConfirm] saat tombol utama
+/// ditekan, dan kembalikan `true` hanya bila [onConfirm] selesai tanpa galat.
+///
+/// Selama [onConfirm] berjalan tombol utama menampilkan spinner, tombol batal
+/// dan tombol kembali dimatikan, dan dialog tidak bisa ditutup lewat barrier.
+/// Dialog baru menutup setelah proses selesai, jadi layar pemanggil tidak
+/// kembali ke menu sebelumnya sebelum prosesnya beres. Galat dari [onConfirm]
+/// dilempar ke pemanggil supaya bisa ditampilkan sebagai pesan di layar asal.
+Future<bool> showV2ActionDialog(
+  BuildContext context, {
+  required String title,
+  String? body,
+  V2DialogType type = V2DialogType.confirm,
+  String primaryLabel = 'Simpan',
+  String secondaryLabel = 'Batal',
+  Widget? child,
+  required Future<void> Function() onConfirm,
+}) async {
+  final outcome = await showDialog<_V2ActionOutcome>(
+    context: context,
+    // Barrier mati supaya proses yang sedang berjalan tidak bisa ditinggalkan.
+    barrierDismissible: false,
+    barrierColor: V2Colors.ink.withValues(alpha: 0.6),
+    useSafeArea: false,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.all(V2Space.xl),
+      child: _V2ActionDialogBody(
+        title: title,
+        body: body,
+        type: type,
+        primaryLabel: primaryLabel,
+        secondaryLabel: secondaryLabel,
+        onConfirm: onConfirm,
+        child: child,
+      ),
+    ),
+  );
+  final error = outcome?.error;
+  if (error != null) throw error;
+  return outcome?.done ?? false;
+}
+
+/// Hasil dialog aksi: selesai, dibatalkan, atau gagal membawa galatnya.
+class _V2ActionOutcome {
+  const _V2ActionOutcome.done()
+    : done = true,
+      error = null;
+  const _V2ActionOutcome.cancelled()
+    : done = false,
+      error = null;
+  const _V2ActionOutcome.failed(this.error) : done = false;
+
+  final bool done;
+  final Object? error;
+}
+
+class _V2ActionDialogBody extends StatefulWidget {
+  const _V2ActionDialogBody({
+    required this.title,
+    required this.body,
+    required this.type,
+    required this.primaryLabel,
+    required this.secondaryLabel,
+    required this.onConfirm,
+    this.child,
+  });
+
+  final String title;
+  final String? body;
+  final V2DialogType type;
+  final String primaryLabel;
+  final String? secondaryLabel;
+  final Widget? child;
+  final Future<void> Function() onConfirm;
+
+  @override
+  State<_V2ActionDialogBody> createState() => _V2ActionDialogBodyState();
+}
+
+class _V2ActionDialogBodyState extends State<_V2ActionDialogBody> {
+  bool _running = false;
+
+  Future<void> _run() async {
+    setState(() => _running = true);
+    try {
+      await widget.onConfirm();
+      if (mounted) Navigator.of(context).pop(const _V2ActionOutcome.done());
+    } catch (error) {
+      if (mounted) Navigator.of(context).pop(_V2ActionOutcome.failed(error));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_running,
+      child: V2Dialog(
+        title: widget.title,
+        body: widget.body,
+        type: widget.type,
+        primaryLabel: widget.primaryLabel,
+        primaryLoading: _running,
+        onPrimary: _running ? null : _run,
+        secondaryLabel: widget.secondaryLabel,
+        onSecondary: _running
+            ? null
+            : () => Navigator.of(context).pop(const _V2ActionOutcome.cancelled()),
+        child: widget.child,
+      ),
+    );
+  }
 }

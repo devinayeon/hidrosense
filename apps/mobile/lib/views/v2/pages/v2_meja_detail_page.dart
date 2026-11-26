@@ -10,6 +10,7 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_bottom_sheet.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_option_row.dart';
 import 'v2_detail_tanaman_page.dart';
 import 'v2_meja_form_page.dart';
@@ -204,8 +205,20 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
     if (!mounted || result == null) return;
     final simpan = widget.onUbahStatus;
     if (simpan != null) {
+      final label = switch (result) {
+        V2MejaStatus.tersedia => 'Tersedia',
+        V2MejaStatus.perawatan => 'Perawatan',
+        V2MejaStatus.penuh => 'Penuh',
+      };
       try {
-        await simpan(result);
+        final done = await showV2ActionDialog(
+          context,
+          title: 'Ubah status meja?',
+          body: 'Status ${_item.nama} akan diubah menjadi $label.',
+          primaryLabel: 'Simpan',
+          onConfirm: () => simpan(result),
+        );
+        if (!mounted || !done) return;
       } catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context)
@@ -221,25 +234,14 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
   }
 
   /// Form "Ubah meja" (frame 6.18/6.19); hasilnya menggantikan meja di sini.
+  ///
+  /// Alur nyata menulis lewat [V2MejaFormPage.onSubmit] sehingga pop-up
+  /// konfirmasi di form menahan layar sampai proses selesai (Sesi 9).
   Future<void> _ubahMeja() async {
-    final result = await Navigator.of(
-      context,
-    ).push<V2MejaItem>(V2MejaFormPage.route(meja: _item));
+    final result = await Navigator.of(context).push<V2MejaItem>(
+      V2MejaFormPage.route(meja: _item, onSubmit: widget.onUbahMeja),
+    );
     if (!mounted || result == null) return;
-    final simpan = widget.onUbahMeja;
-    if (simpan != null) {
-      try {
-        await simpan(result);
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text('$error')));
-        }
-        return;
-      }
-    }
-    if (!mounted) return;
     setState(() => _item = result);
     _showToast('Perubahan tersimpan');
   }

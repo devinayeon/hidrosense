@@ -180,6 +180,9 @@ void main() {
 
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
+    // Pop-up konfirmasi ulang (Sesi 9) muncul sebelum menulis ke store.
+    await tester.tap(find.text('Catat'));
+    await tester.pumpAndSettle();
 
     expect(
       data.sales.drafts,

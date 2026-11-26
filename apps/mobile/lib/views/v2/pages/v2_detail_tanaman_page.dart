@@ -7,6 +7,7 @@ import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
 import '../widgets/v2_text_field.dart';
@@ -101,21 +102,13 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
   }
 
   Future<void> _ubahCatatan() async {
-    final catatan = await Navigator.of(
-      context,
-    ).push<String>(V2UbahCatatanTanamanPage.route(_tanaman.keterangan));
+    final catatan = await Navigator.of(context).push<String>(
+      V2UbahCatatanTanamanPage.route(
+        _tanaman.keterangan,
+        onSubmit: widget.onSimpanCatatan,
+      ),
+    );
     if (!mounted || catatan == null) return;
-    final simpan = widget.onSimpanCatatan;
-    if (simpan != null) {
-      try {
-        await simpan(catatan);
-        if (!mounted) return;
-      } catch (error) {
-        if (!mounted) return;
-        _pesan('$error');
-        return;
-      }
-    }
     setState(() => _tanaman = _tanaman.copyWith(keterangan: catatan));
     widget.onUbah?.call(catatan);
     _showToast('Perubahan tersimpan');
@@ -140,26 +133,11 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
       V2CatatRusakPage.route(
         meja: widget.meja,
         transferId: _tanaman.transferId,
+        onSubmit: widget.onCatatRusak,
       ),
     );
     if (!mounted || hasil == null) return;
-    final simpan = widget.onCatatRusak;
-    if (simpan == null) {
-      _showToast('Kerusakan dicatat');
-      return;
-    }
-    try {
-      await simpan(hasil);
-      if (mounted) _showToast('Kerusakan dicatat');
-    } catch (error) {
-      if (mounted) _pesan('$error');
-    }
-  }
-
-  void _pesan(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    _showToast('Kerusakan dicatat');
   }
 
   @override
@@ -369,16 +347,27 @@ class _InfoRow extends StatelessWidget {
 /// Hanya keterangan yang bisa diubah; jumlah dan tanggal pindah dikunci dengan
 /// catatan di bawah field. Halaman mengembalikan keterangan baru lewat `pop`.
 class V2UbahCatatanTanamanPage extends StatefulWidget {
-  const V2UbahCatatanTanamanPage({super.key, this.keterangan});
+  const V2UbahCatatanTanamanPage({super.key, this.keterangan, this.onSubmit});
 
   /// Frame `6.22 Ubah catatan tanaman`.
-  const V2UbahCatatanTanamanPage.biasa({super.key}) : keterangan = 'Rak bawah';
+  const V2UbahCatatanTanamanPage.biasa({super.key})
+    : keterangan = 'Rak bawah',
+      onSubmit = null;
 
   final String? keterangan;
 
-  static Route<String> route(String? keterangan) {
+  /// Simpan catatan ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<void> Function(String? catatan)? onSubmit;
+
+  static Route<String> route(
+    String? keterangan, {
+    Future<void> Function(String? catatan)? onSubmit,
+  }) {
     return MaterialPageRoute<String>(
-      builder: (_) => V2UbahCatatanTanamanPage(keterangan: keterangan),
+      builder: (_) =>
+          V2UbahCatatanTanamanPage(keterangan: keterangan, onSubmit: onSubmit),
     );
   }
 
@@ -398,7 +387,30 @@ class _V2UbahCatatanTanamanPageState extends State<V2UbahCatatanTanamanPage> {
     super.dispose();
   }
 
-  void _simpan() => Navigator.of(context).pop(_keterangan.text.trim());
+  Future<void> _simpan() async {
+    final catatan = _keterangan.text.trim();
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(catatan);
+      return;
+    }
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Simpan catatan tanaman?',
+        body: 'Catatan tanaman akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        onConfirm: () => submit(catatan),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(catatan);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -9,6 +9,7 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_bottom_sheet.dart';
 import '../widgets/v2_button.dart';
+import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_option_row.dart';
 import '../widgets/v2_select_field.dart';
@@ -35,6 +36,7 @@ class V2SemaianFormPage extends StatefulWidget {
     this.previewStokKurang = false,
     this.bahanList,
     this.initialDate,
+    this.onSubmit,
   });
 
   /// Frame `5.7 Tambah semaian`.
@@ -44,7 +46,8 @@ class V2SemaianFormPage extends StatefulWidget {
       previewValidation = false,
       previewStokKurang = false,
       bahanList = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `5.8 Pilih tanggal`.
   const V2SemaianFormPage.pilihTanggal({super.key})
@@ -53,7 +56,8 @@ class V2SemaianFormPage extends StatefulWidget {
       previewValidation = false,
       previewStokKurang = false,
       bahanList = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `5.9 Tambah semaian, keyboard`.
   const V2SemaianFormPage.keyboard({super.key})
@@ -62,7 +66,8 @@ class V2SemaianFormPage extends StatefulWidget {
       previewValidation = false,
       previewStokKurang = false,
       bahanList = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `5.10 Tambah semaian, validasi`.
   const V2SemaianFormPage.validation({super.key})
@@ -71,7 +76,8 @@ class V2SemaianFormPage extends StatefulWidget {
       previewValidation = true,
       previewStokKurang = false,
       bahanList = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `5.11 Stok tidak cukup`.
   const V2SemaianFormPage.stokKurang({super.key})
@@ -80,7 +86,8 @@ class V2SemaianFormPage extends StatefulWidget {
       previewValidation = false,
       previewStokKurang = true,
       bahanList = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Membuka sheet tanggal begitu form tampil (frame 5.8).
   final bool previewDateSheet;
@@ -101,13 +108,22 @@ class V2SemaianFormPage extends StatefulWidget {
   /// Tanggal semai awal; null berarti tanggal acuan galeri.
   final DateTime? initialDate;
 
+  /// Simpan semaian ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<void> Function(V2SemaianItem hasil)? onSubmit;
+
   static Route<V2SemaianItem> route({
     List<V2SemaianBahan>? bahanList,
     DateTime? initialDate,
+    Future<void> Function(V2SemaianItem hasil)? onSubmit,
   }) {
     return MaterialPageRoute<V2SemaianItem>(
-      builder: (_) =>
-          V2SemaianFormPage(bahanList: bahanList, initialDate: initialDate),
+      builder: (_) => V2SemaianFormPage(
+        bahanList: bahanList,
+        initialDate: initialDate,
+        onSubmit: onSubmit,
+      ),
     );
   }
 
@@ -287,7 +303,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         ),
     ];
     final utama = pakai.first;
-    Navigator.of(context).pop(
+    _kirim(
       V2SemaianItem(
         id: 'semaian-${_tanggal.millisecondsSinceEpoch}',
         nama: utama.nama,
@@ -300,6 +316,36 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         bahanList: pakai,
       ),
     );
+  }
+
+  /// Kirim semaian ke backend setelah konfirmasi ulang (Sesi 9).
+  ///
+  /// Bila [V2SemaianFormPage.onSubmit] diisi (alur nyata), pop-up konfirmasi
+  /// menampilkan spinner di tombolnya sampai proses selesai, baru form menutup.
+  /// Galat server tampil sebagai pesan dan form tetap terbuka supaya isian tidak
+  /// hilang. Mode galeri tanpa callback langsung menutup form seperti semula.
+  Future<void> _kirim(V2SemaianItem hasil) async {
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Simpan semaian?',
+        body: 'Semaian baru akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        onConfirm: () => submit(hasil),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

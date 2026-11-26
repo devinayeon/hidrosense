@@ -39,6 +39,7 @@ class V2InventarisFormPage extends StatefulWidget {
     this.previewDiscard = false,
     this.previewConflict = false,
     this.obatPilihan = designObatPilihan,
+    this.onSubmit,
   });
 
   /// Frame `4.10 Tambah barang`.
@@ -50,7 +51,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.11 Tambah barang, jenis Obat`.
   const V2InventarisFormPage.obat({super.key})
@@ -61,7 +63,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.12 Pilih obat`.
   const V2InventarisFormPage.pilihObat({super.key})
@@ -72,7 +75,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.13 Tambah barang, keyboard`.
   const V2InventarisFormPage.keyboard({super.key})
@@ -83,7 +87,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.14 Tambah barang, validasi`.
   const V2InventarisFormPage.validation({super.key})
@@ -94,7 +99,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = true,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.24 Ubah barang`.
   const V2InventarisFormPage.ubah({super.key})
@@ -105,7 +111,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.30 Buang perubahan`.
   const V2InventarisFormPage.buangPerubahan({super.key})
@@ -116,7 +123,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = true,
       previewConflict = false,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Frame `4.31 Data sudah berubah`.
   const V2InventarisFormPage.dataBerubah({super.key})
@@ -127,7 +135,8 @@ class V2InventarisFormPage extends StatefulWidget {
       previewValidation = false,
       previewDiscard = false,
       previewConflict = true,
-      obatPilihan = designObatPilihan;
+      obatPilihan = designObatPilihan,
+      onSubmit = null;
 
   /// Jenis terpilih saat form dibuka.
   final V2JenisBarang initialJenis;
@@ -155,17 +164,24 @@ class V2InventarisFormPage extends StatefulWidget {
   /// saat tersambung, atau data contoh di galeri.
   final List<V2ObatPilihan> obatPilihan;
 
+  /// Simpan barang ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<void> Function(V2InventarisItem hasil)? onSubmit;
+
   /// Form sedang mengubah barang yang sudah ada (frame 4.24).
   bool get isEdit => initialItem != null;
 
   static Route<V2InventarisItem> route({
     V2JenisBarang initialJenis = V2JenisBarang.benih,
     List<V2ObatPilihan> obatPilihan = designObatPilihan,
+    Future<void> Function(V2InventarisItem hasil)? onSubmit,
   }) {
     return MaterialPageRoute<V2InventarisItem>(
       builder: (_) => V2InventarisFormPage(
         initialJenis: initialJenis,
         obatPilihan: obatPilihan,
+        onSubmit: onSubmit,
       ),
     );
   }
@@ -174,10 +190,14 @@ class V2InventarisFormPage extends StatefulWidget {
   static Route<V2InventarisItem> routeUbah(
     V2InventarisItem item, {
     List<V2ObatPilihan> obatPilihan = designObatPilihan,
+    Future<void> Function(V2InventarisItem hasil)? onSubmit,
   }) {
     return MaterialPageRoute<V2InventarisItem>(
-      builder: (_) =>
-          V2InventarisFormPage(initialItem: item, obatPilihan: obatPilihan),
+      builder: (_) => V2InventarisFormPage(
+        initialItem: item,
+        obatPilihan: obatPilihan,
+        onSubmit: onSubmit,
+      ),
     );
   }
 
@@ -438,18 +458,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       });
       if (_hasError) return;
 
-      // Konfirmasi ulang sebelum menyimpan perubahan (K-03/K-18, D-35), sama
-      // seperti form akun dan meja.
-      final confirmed = await showV2Dialog(
-        context,
-        title: 'Simpan perubahan barang?',
-        body: 'Perubahan barang akan dikirim ke server.',
-        primaryLabel: 'Simpan',
-        secondaryLabel: 'Batal',
-      );
-      if (confirmed != true || !mounted) return;
-      _dirty = false;
-      Navigator.of(context).pop(
+      await _kirim(
         V2InventarisItem(
           id: item.id,
           nama: nama,
@@ -464,6 +473,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           medicineId: _obatId,
           medicineName: _obatNama,
         ),
+        ubah: true,
       );
       return;
     }
@@ -481,9 +491,8 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           : null;
     });
     if (_hasError) return;
-    _dirty = false;
 
-    Navigator.of(context).pop(
+    await _kirim(
       V2InventarisItem(
         id: 'stok-${nama.toLowerCase().replaceAll(' ', '-')}',
         nama: nama,
@@ -493,7 +502,54 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         medicineId: _obatId,
         medicineName: _obatNama,
       ),
+      ubah: false,
     );
+  }
+
+  /// Kirim barang ke backend setelah konfirmasi ulang (Sesi 9).
+  ///
+  /// Bila [V2InventarisFormPage.onSubmit] diisi (alur nyata), pop-up konfirmasi
+  /// menampilkan spinner di tombolnya sampai proses selesai, baru form menutup.
+  /// Galat server tampil sebagai pesan dan form tetap terbuka supaya isian tidak
+  /// hilang. Mode galeri tanpa callback tetap memakai pop-up lama.
+  Future<void> _kirim(V2InventarisItem hasil, {required bool ubah}) async {
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      if (ubah) {
+        // Konfirmasi ulang sebelum menyimpan perubahan (K-03/K-18, D-35).
+        final confirmed = await showV2Dialog(
+          context,
+          title: 'Simpan perubahan barang?',
+          body: 'Perubahan barang akan dikirim ke server.',
+          primaryLabel: 'Simpan',
+          secondaryLabel: 'Batal',
+        );
+        if (confirmed != true || !mounted) return;
+      }
+      _dirty = false;
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: ubah ? 'Simpan perubahan barang?' : 'Tambah barang?',
+        body: ubah
+            ? 'Perubahan barang akan dikirim ke server.'
+            : 'Barang baru akan dikirim ke server.',
+        primaryLabel: ubah ? 'Simpan' : 'Tambah',
+        onConfirm: () => submit(hasil),
+      );
+      if (!mounted || !done) return;
+      _dirty = false;
+      Navigator.of(context).pop(hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

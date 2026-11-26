@@ -172,6 +172,10 @@ void main() {
 
       // 3) Simpan lewat alur pindah; tanpa halaman hasil (konteks Detail meja).
       await tester.tap(find.text('Pindahkan'));
+      // Tombol "Pindahkan" form berputar selama dialog terbuka.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Pindahkan').last);
       await tester.pumpAndSettle();
       expect(postCount, 1, reason: 'penyimpanan harus lewat POST /pemindahan');
       expect(
@@ -225,6 +229,10 @@ void main() {
       await tester.tap(find.text('buka'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pindahkan'));
+      // Tombol "Pindahkan" form berputar selama dialog terbuka.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Pindahkan').last);
       await tester.pumpAndSettle();
 
       expect(kirim, 1);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
+import '../../../../views/v2/widgets/v2_dialog.dart';
 import '../../../../data/models/inventory_record.dart';
 import '../../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../../viewmodels/session_viewmodel.dart';
@@ -212,6 +213,33 @@ class DecidableRecommendationCard extends ConsumerWidget {
   /// Teruskan ke [RecommendationCard]: ringkasan yang bisa dibuka (BUG-32).
   final bool collapsible;
 
+  /// Konfirmasi ulang sebelum menulis keputusan (Sesi 9): pop-up menampilkan
+  /// spinner di tombolnya sampai proses selesai, lalu kartu menampilkan galat
+  /// bila server menolak.
+  Future<String?> _confirm(
+    BuildContext context, {
+    required String title,
+    required String body,
+    required String label,
+    required Future<String?> Function() run,
+  }) async {
+    String? error;
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: title,
+        body: body,
+        primaryLabel: label,
+        onConfirm: () async {
+          error = await run();
+        },
+      );
+      return done ? error : null;
+    } catch (e) {
+      return '$e';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = recommendation.id;
@@ -220,19 +248,35 @@ class DecidableRecommendationCard extends ConsumerWidget {
       collapsible: collapsible,
       onAccept: () async {
         final decision = await showAcceptSheet(context, recommendation, stock: stock);
-        if (decision == null) return null;
+        if (decision == null || !context.mounted) return null;
         final material = decision.material;
-        final error = await onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
-        // Sukses + ada bahan = saldo berkurang di server; muat ulang daftar/saldo.
-        if (error == null && material != null) {
-          ref.invalidate(connectedInventoryProvider);
-        }
-        return error;
+        return _confirm(
+          context,
+          title: 'Terima rekomendasi?',
+          body:
+              'Perawatan dengan ${recommendation.medicine.activeIngredient} '
+              'akan dicatat hari ini dan dipakai untuk rotasi berikutnya.',
+          label: 'Terima',
+          run: () async {
+            final error = await onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+            // Sukses + ada bahan = saldo berkurang di server; muat ulang daftar/saldo.
+            if (error == null && material != null) {
+              ref.invalidate(connectedInventoryProvider);
+            }
+            return error;
+          },
+        );
       },
       onReject: () async {
         final picked = await showRejectSheet(context);
-        if (picked == null) return null;
-        return onReject(id, picked.reason, note: picked.note);
+        if (picked == null || !context.mounted) return null;
+        return _confirm(
+          context,
+          title: 'Tolak rekomendasi?',
+          body: 'Alasan "${picked.reason.label}" akan dicatat.',
+          label: 'Tolak',
+          run: () => onReject(id, picked.reason, note: picked.note),
+        );
       },
     );
   }

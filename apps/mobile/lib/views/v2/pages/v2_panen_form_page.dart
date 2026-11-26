@@ -32,6 +32,7 @@ class V2PanenFormPage extends StatefulWidget {
     this.openTanamanOnStart = false,
     this.pilihan,
     this.initialDate,
+    this.onSubmit,
   });
 
   /// Frame `7.8 Catat panen`: Meja B1, Romaine 240, 270/18 kg.
@@ -45,7 +46,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = false,
       openTanamanOnStart = false,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `7.9 Pilih tanaman`: sheet pilihan terbuka di atas form.
   const V2PanenFormPage.tanamanSheet({super.key})
@@ -58,7 +60,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = false,
       openTanamanOnStart = true,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `7.10 Catat panen, keyboard`: dua isian berat di atas, kartu
   /// "Berat layak" tetap terlihat.
@@ -72,7 +75,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = false,
       openTanamanOnStart = false,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `7.11 Catat panen, validasi`: tanaman belum dipilih, berat total
   /// kosong.
@@ -86,7 +90,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = false,
       openTanamanOnStart = false,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `7.12 Jumlah melebihi tanaman`: 300 dari 240 tanaman aktif.
   const V2PanenFormPage.melebihi({super.key})
@@ -99,7 +104,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = false,
       openTanamanOnStart = false,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Frame `7.22 Buang perubahan`: dialog di atas form yang sudah diisi.
   const V2PanenFormPage.buang({super.key})
@@ -112,7 +118,8 @@ class V2PanenFormPage extends StatefulWidget {
       previewBuang = true,
       openTanamanOnStart = false,
       pilihan = null,
-      initialDate = null;
+      initialDate = null,
+      onSubmit = null;
 
   /// Meja terpilih; null berarti belum ada tanaman.
   final String? meja;
@@ -133,12 +140,18 @@ class V2PanenFormPage extends StatefulWidget {
   /// Tanggal panen awal; null berarti tanggal acuan galeri.
   final DateTime? initialDate;
 
+  /// Simpan panen ke backend. Bila diisi, tombol "Simpan" membuka pop-up
+  /// konfirmasi ulang dan menampilkan spinner sampai proses selesai, baru form
+  /// menutup; galat server tampil sebagai pesan dan form tetap terbuka.
+  final Future<void> Function(V2PanenItem hasil)? onSubmit;
+
   static Route<V2PanenItem> route({
     String? meja,
     String? varietas,
     int? jumlahTanaman,
     List<V2PanenEstimasi>? pilihan,
     DateTime? initialDate,
+    Future<void> Function(V2PanenItem hasil)? onSubmit,
   }) {
     return MaterialPageRoute<V2PanenItem>(
       builder: (_) => V2PanenFormPage(
@@ -147,6 +160,7 @@ class V2PanenFormPage extends StatefulWidget {
         jumlahTanaman: jumlahTanaman,
         pilihan: pilihan,
         initialDate: initialDate,
+        onSubmit: onSubmit,
       ),
     );
   }
@@ -270,7 +284,7 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
     });
   }
 
-  void _simpan() {
+  Future<void> _simpan() async {
     final total = double.tryParse(_beratTotal.text.trim()) ?? 0;
     final reject = double.tryParse(_beratReject.text.trim()) ?? 0;
     final aktif = _tanaman?.jumlahTanaman ?? 0;
@@ -286,18 +300,39 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
       return;
     }
 
-    Navigator.of(context).pop(
-      V2PanenItem(
-        id: 'panen-baru',
-        tanggal: _tanggal,
-        meja: _tanaman!.meja,
-        varietas: _tanaman!.varietas,
-        jumlahTanaman: _jumlah,
-        beratTotal: total,
-        beratReject: reject,
-        transferId: _tanaman!.transferId,
-      ),
+    final hasil = V2PanenItem(
+      id: 'panen-baru',
+      tanggal: _tanggal,
+      meja: _tanaman!.meja,
+      varietas: _tanaman!.varietas,
+      jumlahTanaman: _jumlah,
+      beratTotal: total,
+      beratReject: reject,
+      transferId: _tanaman!.transferId,
     );
+
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(hasil);
+      return;
+    }
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Catat panen?',
+        body:
+            '${hasil.jumlahTanaman} tanaman dari ${hasil.meja} akan dicatat.',
+        primaryLabel: 'Catat',
+        onConfirm: () => submit(hasil),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(hasil);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$error')));
+    }
   }
 
   @override

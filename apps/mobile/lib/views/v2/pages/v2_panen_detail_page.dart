@@ -114,27 +114,12 @@ class _V2PanenDetailPageState extends State<V2PanenDetailPage> {
   }
 
   Future<void> _ubah() async {
-    final updated = await Navigator.of(
-      context,
-    ).push<V2PanenItem>(V2PanenEditPage.route(_item));
+    final updated = await Navigator.of(context).push<V2PanenItem>(
+      V2PanenEditPage.route(_item, onSubmit: widget.onUbah),
+    );
     if (!mounted || updated == null) return;
-    final simpan = widget.onUbah;
-    V2PanenItem hasil = updated;
-    if (simpan != null) {
-      try {
-        hasil = await simpan(updated);
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text('$error')));
-        }
-        return;
-      }
-    }
-    if (!mounted) return;
     setState(() {
-      _item = hasil;
+      _item = updated;
       _toast = 'Perubahan tersimpan';
     });
     _scheduleToastDismiss();
