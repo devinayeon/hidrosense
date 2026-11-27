@@ -14,10 +14,11 @@ from ml.prepare_dataset import CANONICAL_CLASSES
 
 PROMOTION_GATES: dict[str, tuple[str, float]] = {
     "map50": ("min", 0.72),
-    "recall": ("min", 0.68),
+    "recall": ("min", 0.72),
     "f1": ("min", 0.72),
+    "small_scale_recall": ("min", 0.70),
     "tflite_map50_drop": ("max", 0.008),
-    "ood_false_positive_rate": ("max", 0.05),
+    "ood_false_positive_rate": ("max", 0.03),
     "model_size_mb": ("max", 12.0),
 }
 
@@ -588,6 +589,196 @@ def evaluate_tflite_litert(
     }
 
 
+def evaluate_small_scale_recall(
+    tflite_path: Path,
+    data_yaml: Path,
+    *,
+    imgsz: int = 640,
+    scale: float = 0.25,
+    conf_thres: float = 0.35,
+    iou_thres: float = 0.45,
+    match_iou: float = 0.30,
+    max_images: int | None = None,
+) -> dict[str, Any]:
+    """Evaluate phone-distance small-pest recall with localized box matching (IoU >= 0.30) on 0.25x scaled pests."""
+    import cv2
+    import numpy as np
+    from ai_edge_litert.interpreter import Interpreter
+    from ultralytics.data.utils import check_det_dataset
+
+    data_cfg = check_det_dataset(str(data_yaml), split="test")
+    test_img_dir = Path(data_cfg["test"])
+    image_files = sorted(p for p in test_img_dir.iterdir() if p.is_file() and p.suffix.lower() in _IMAGE_SUFFIXES)
+
+    leaf_bgs: list[Any] = []
+    pos_items: list[tuple[Path, list[tuple[int, float, float, float, float]]]] = []
+    for p in image_files:
+        lbl = _image_to_label_path(p)
+        lines = [ln.strip() for ln in lbl.read_text(encoding="utf-8").splitlines() if ln.strip()] if lbl.is_file() else []
+        if not lines:
+            if "neg__ood_" not in p.stem and len(leaf_bgs) < 8:
+                bg_im = cv2.imread(str(p))
+                if bg_im is not None:
+                    leaf_bgs.append(cv2.resize(bg_im, (imgsz, imgsz), interpolation=cv2.INTER_AREA))
+            continue
+        parsed_gts: list[tuple[int, float, float, float, float]] = []
+        for ln in lines:
+            ps = ln.split()
+            if len(ps) >= 5 and int(float(ps[0])) in (0, 1):
+                parsed_gts.append((int(float(ps[0])), float(ps[1]), float(ps[2]), float(ps[3]), float(ps[4])))
+        if parsed_gts:
+            pos_items.append((p, parsed_gts))
+
+    if not pos_items:
+        return {
+            "scale": scale,
+            "conf_threshold": conf_thres,
+            "match_iou": match_iou,
+            "images_evaluated": 0,
+            "hits": 0,
+            "overall_recall": 0.0,
+            "box_level_recall": 0.0,
+            "per_class_recall": {"whitefly": 0.0, "aphids": 0.0},
+            "per_class_counts": {"whitefly": {"hits": 0, "total": 0}, "aphids": {"hits": 0, "total": 0}},
+        }
+
+    # If a cap is explicitly requested, interleave across classes rather than truncating alphabetically.
+    if max_images is not None and len(pos_items) > max_images:
+        by_cls: dict[int, list[tuple[Path, list[tuple[int, float, float, float, float]]]]] = {0: [], 1: []}
+        for item in pos_items:
+            primary_cls = 0 if any(c == 0 for c, *_ in item[1]) else 1
+            by_cls[primary_cls].append(item)
+        selected_items: list[tuple[Path, list[tuple[int, float, float, float, float]]]] = []
+        i0 = i1 = 0
+        while len(selected_items) < max_images and (i0 < len(by_cls[0]) or i1 < len(by_cls[1])):
+            if i0 < len(by_cls[0]) and len(selected_items) < max_images:
+                selected_items.append(by_cls[0][i0])
+                i0 += 1
+            if i1 < len(by_cls[1]) and len(selected_items) < max_images:
+                selected_items.append(by_cls[1][i1])
+                i1 += 1
+        eval_items = selected_items
+    else:
+        eval_items = pos_items
+
+    interp = Interpreter(model_path=str(tflite_path), num_threads=4)
+    interp.allocate_tensors()
+    in_det = interp.get_input_details()[0]
+    out_det = interp.get_output_details()[0]
+
+    # Filter leaf backgrounds to those that produce zero background detections on their own
+    clean_bgs: list[Any] = []
+    for bg_im in leaf_bgs:
+        rgb_bg, _, _ = _letterbox_bgr_to_rgb_float(bg_im, imgsz, imgsz, pad_value=114)
+        interp.set_tensor(in_det["index"], np.ascontiguousarray(rgb_bg[None].astype(np.float32)))
+        interp.invoke()
+        bg_dets = decode_yolov11_output(
+            interp.get_tensor(out_det["index"])[0].tolist(),
+            img_size=imgsz,
+            conf_threshold=conf_thres,
+            iou_threshold=iou_thres,
+        )
+        if not bg_dets:
+            clean_bgs.append(bg_im)
+    bgs = clean_bgs or [np.full((imgsz, imgsz, 3), (42, 118, 48), dtype=np.uint8)]
+
+    def _box_iou_norm(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> float:
+        xx1, yy1 = max(a[0], b[0]), max(a[1], b[1])
+        xx2, yy2 = min(a[2], b[2]), min(a[3], b[3])
+        inter = max(0.0, xx2 - xx1) * max(0.0, yy2 - yy1)
+        if inter <= 0.0:
+            return 0.0
+        aa = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+        ba = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+        return inter / max(1e-8, aa + ba - inter)
+
+    hits_total = 0
+    matched_boxes_total = 0
+    gt_boxes_total = 0
+    per_cls_hits = {0: 0, 1: 0}
+    per_cls_total = {0: 0, 1: 0}
+    evaluated = 0
+
+    for idx, (img_path, parsed_gts) in enumerate(eval_items):
+        im = cv2.imread(str(img_path))
+        if im is None:
+            continue
+        nh = max(32, int(round(imgsz * scale)))
+        nw = max(32, int(round(imgsz * scale)))
+        small = cv2.resize(im, (nw, nh), interpolation=cv2.INTER_AREA)
+        canvas = bgs[idx % len(bgs)].copy()
+        y0 = (imgsz - nh) // 2
+        x0 = (imgsz - nw) // 2
+        canvas[y0 : y0 + nh, x0 : x0 + nw] = small
+
+        scaled_gts: list[tuple[int, tuple[float, float, float, float]]] = []
+        for cid, cx, cy, bw, bh in parsed_gts:
+            gx1 = max(0.0, (x0 + (cx - bw / 2.0) * nw) / imgsz)
+            gy1 = max(0.0, (y0 + (cy - bh / 2.0) * nh) / imgsz)
+            gx2 = min(1.0, (x0 + (cx + bw / 2.0) * nw) / imgsz)
+            gy2 = min(1.0, (y0 + (cy + bh / 2.0) * nh) / imgsz)
+            if gx2 > gx1 and gy2 > gy1:
+                scaled_gts.append((cid, (gx1, gy1, gx2, gy2)))
+        if not scaled_gts:
+            continue
+
+        rgb_hwc, _, _ = _letterbox_bgr_to_rgb_float(canvas, imgsz, imgsz, pad_value=114)
+        interp.set_tensor(in_det["index"], np.ascontiguousarray(rgb_hwc[None].astype(np.float32)))
+        interp.invoke()
+        raw_out = interp.get_tensor(out_det["index"])[0]
+        dets = decode_yolov11_output(raw_out.tolist(), img_size=imgsz, conf_threshold=conf_thres, iou_threshold=iou_thres)
+
+        matched_classes: set[int] = set()
+        matched_gt_indices: set[int] = set()
+        for det in dets:
+            p_cls = int(det["class_id"])
+            p_box = tuple(float(v) for v in det["box"])
+            best_gi = -1
+            best_ov = 0.0
+            for gi, (g_cls, g_box) in enumerate(scaled_gts):
+                if gi in matched_gt_indices or g_cls != p_cls:
+                    continue
+                ov = _box_iou_norm(p_box, g_box)
+                if ov >= match_iou and ov > best_ov:
+                    best_ov, best_gi = ov, gi
+            if best_gi >= 0:
+                matched_gt_indices.add(best_gi)
+                matched_classes.add(p_cls)
+
+        gt_boxes_total += len(scaled_gts)
+        matched_boxes_total += len(matched_gt_indices)
+        gt_classes = {g_cls for g_cls, _ in scaled_gts}
+        evaluated += 1
+        if matched_classes & gt_classes:
+            hits_total += 1
+        for cid in gt_classes:
+            per_cls_total[cid] += 1
+            if cid in matched_classes:
+                per_cls_hits[cid] += 1
+
+    overall = hits_total / max(1, evaluated)
+    box_recall = matched_boxes_total / max(1, gt_boxes_total)
+    return {
+        "scale": scale,
+        "conf_threshold": conf_thres,
+        "match_iou": match_iou,
+        "images_evaluated": evaluated,
+        "hits": hits_total,
+        "overall_recall": round(overall, 4),
+        "box_level_recall": round(box_recall, 4),
+        "gt_boxes_total": gt_boxes_total,
+        "gt_boxes_matched": matched_boxes_total,
+        "per_class_recall": {
+            "whitefly": round(per_cls_hits[0] / max(1, per_cls_total[0]), 4) if per_cls_total[0] else None,
+            "aphids": round(per_cls_hits[1] / max(1, per_cls_total[1]), 4) if per_cls_total[1] else None,
+        },
+        "per_class_counts": {
+            "whitefly": {"hits": per_cls_hits[0], "total": per_cls_total[0]},
+            "aphids": {"hits": per_cls_hits[1], "total": per_cls_total[1]},
+        },
+    }
+
+
 def _repo_safe_path(path: Path) -> str:
     repo_root = Path(__file__).resolve().parents[1]
     try:
@@ -713,6 +904,30 @@ def write_evaluation_markdown(report: dict[str, Any], md_path: Path) -> None:
                     f"| `{grp_name}` | `{grp_vals.get('images', 0)}` | `{grp_vals.get('true_negatives', 0)}` | `{grp_vals.get('false_positives', 0)}` | `{grp_vals.get('specificity_tnr', 0):.4f}` | `{grp_vals.get('false_positive_rate', 0):.4f}` |"
                 )
 
+    small_ev = tf_ev.get("small_scale_eval", {}) if tf_ev else {}
+    kaggle_ood = gpu_bench.get("kaggle_test_ood_and_small_scale", {}) if gpu_bench else {}
+    if small_ev or kaggle_ood:
+        lines.extend(["", "## 2b. Multi-Scale Phone-Distance Recall & Extended COCO val2017 OOD Audit", ""])
+        if small_ev:
+            pcr = small_ev.get("per_class_recall", {})
+            lines.append(
+                f"- **Local TFLite `0.25x` Phone-Distance Localized Recall (`IoU >= {small_ev.get('match_iou', 0.30)}`)**: "
+                f"**`{small_ev.get('overall_recall', 0):.4f}`** (`{small_ev.get('hits', 0)}` / `{small_ev.get('images_evaluated', 0)}` | "
+                f"`whitefly = {pcr.get('whitefly')}`, `aphids = {pcr.get('aphids')}`)"
+            )
+        if kaggle_ood and "ood_total_images" in kaggle_ood:
+            lines.append(
+                f"- **Kaggle Extended COCO `val2017` + `coco128` OOD False Positive Rate**: "
+                f"**`{kaggle_ood.get('ood_false_positive_rate', 0):.4f}`** "
+                f"(`{kaggle_ood.get('ood_false_positives', 0)}` / `{kaggle_ood.get('ood_total_images', 0)}` held-out real-world OOD photos)"
+            )
+            ks_small = kaggle_ood.get("small_scale_025x", {})
+            if ks_small:
+                lines.append(
+                    f"- **Kaggle PyTorch `0.25x` Small-Scale Recall**: `{ks_small.get('overall_recall', 0):.4f}` "
+                    f"(`whitefly = {ks_small.get('whitefly_recall')}`, `aphids = {ks_small.get('aphids_recall')}`)"
+                )
+
     if loss_sum:
         lines.extend(
             [
@@ -765,6 +980,8 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
                 "improved_test": ks["improved"].get("test"),
                 "improved_per_class": ks["improved"].get("per_class"),
             }
+            if isinstance(ks.get("kaggle_test_ood_and_small_scale"), dict):
+                kaggle_gpu_benchmark["kaggle_test_ood_and_small_scale"] = ks["kaggle_test_ood_and_small_scale"]
     if args.conf_threshold is not None:
         calibrated_threshold = float(args.conf_threshold)
 
@@ -780,6 +997,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
 
     tflite_drop = 0.0
     ood_fpr = 0.0
+    small_scale_recall = 1.0
     model_size_mb = round(args.weights.stat().st_size / (1024 * 1024), 3)
     tflite_eval: dict[str, Any] | None = None
 
@@ -798,6 +1016,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         is_valid_flatbuffer = len(raw_bytes) >= 8 and raw_bytes[4:8] == b"TFL3"
         litert_eval: dict[str, Any] | None = None
         tensor_parity: dict[str, float] | None = None
+        small_scale_eval: dict[str, Any] | None = None
         if is_valid_flatbuffer and args.data.exists():
             litert_eval = evaluate_tflite_litert(
                 args.tflite,
@@ -810,6 +1029,15 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
             out_shape, out_dtype = inspected["output_shape"], inspected["output_dtype"]
             ood_fpr = float(litert_eval["classification_and_ood"]["ood_false_positive_rate"])
             tensor_parity = compute_pytorch_tflite_tensor_parity(args.weights, args.tflite, imgsz=int(args.imgsz))
+            if int(litert_eval["images_evaluated"]) >= 10:
+                small_scale_eval = evaluate_small_scale_recall(
+                    args.tflite,
+                    args.data,
+                    imgsz=int(args.imgsz),
+                    scale=0.25,
+                    conf_thres=calibrated_threshold,
+                )
+                small_scale_recall = float(small_scale_eval["overall_recall"])
         else:
             in_shape, in_dtype = [1, int(args.imgsz), int(args.imgsz), 3], "float32"
             out_shape, out_dtype = [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(int(args.imgsz))], "float32"
@@ -829,6 +1057,8 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         }
         if tensor_parity is not None:
             tflite_eval["tensor_parity"] = tensor_parity
+        if small_scale_eval is not None:
+            tflite_eval["small_scale_eval"] = small_scale_eval
         if litert_eval is not None:
             tflite_eval["metrics"] = litert_eval["aggregate"]
             tflite_eval["per_class"] = litert_eval["per_class"]
@@ -844,10 +1074,16 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
             if tflite_ultralytics_per_class is not None:
                 tflite_eval["per_class"] = tflite_ultralytics_per_class
 
+    kaggle_ood_info = kaggle_gpu_benchmark.get("kaggle_test_ood_and_small_scale", {})
+    if isinstance(kaggle_ood_info, dict) and int(kaggle_ood_info.get("ood_total_images", 0)) >= 100:
+        kaggle_ood_fpr = float(kaggle_ood_info.get("ood_false_positive_rate", 0.0))
+        ood_fpr = max(ood_fpr, kaggle_ood_fpr)
+
     gate_payload = {
         "map50": finetuned_metrics["map50"],
         "recall": finetuned_metrics["recall"],
         "f1": finetuned_metrics["f1"],
+        "small_scale_recall": small_scale_recall,
         "tflite_map50_drop": tflite_drop,
         "ood_false_positive_rate": ood_fpr,
         "model_size_mb": model_size_mb,

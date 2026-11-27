@@ -207,6 +207,12 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     parser.add_argument("--kaggle-bundle-dir", type=Path, default=Path("ml/kaggle_work"))
     parser.add_argument("--kaggle-output-dir", type=Path, default=Path("ml/kaggle_remote_output"))
     parser.add_argument("--kaggle-dataset", type=str, default=DEFAULT_KAGGLE_DATASET)
+    parser.add_argument(
+        "--extra-kaggle-datasets",
+        type=str,
+        nargs="*",
+        default=["xthink/coco-2017-val-images", "minhtngbi/instances-val2017"],
+    )
     parser.add_argument("--accelerator", type=str, default="NvidiaTeslaT4")
     parser.add_argument("--poll", action="store_true")
     parser.add_argument("--timeout-minutes", type=int, default=90)
@@ -215,11 +221,16 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     sibling_kaggle = Path(sys.executable).with_name("kaggle.exe" if sys.platform.startswith("win") else "kaggle")
     resolved_kaggle = str(sibling_kaggle) if sibling_kaggle.is_file() else (shutil.which("kaggle") or "kaggle")
 
+    ds_sources = [args.kaggle_dataset] if args.kaggle_dataset else []
+    for extra_ds in args.extra_kaggle_datasets or []:
+        if extra_ds and extra_ds not in ds_sources:
+            ds_sources.append(extra_ds)
+
     bundle_meta = write_kaggle_kernel_bundle(
         kernel_dir=args.kaggle_bundle_dir,
         kaggle_username=args.kaggle_username,
         kernel_slug=args.kaggle_slug,
-        dataset_sources=[args.kaggle_dataset] if args.kaggle_dataset else [],
+        dataset_sources=ds_sources,
     )
     push_out = push_kaggle_kernel(
         kernel_dir=args.kaggle_bundle_dir,

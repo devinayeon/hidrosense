@@ -75,13 +75,14 @@ def test_t5_build_model_metadata_scales_anchors_with_img_size(img_size: int, exp
 @pytest.mark.parametrize("bad_value", [float("nan"), float("inf"), float("-inf"), True, False, "0.9"])
 @pytest.mark.parametrize(
     "gate_key",
-    ["map50", "recall", "f1", "tflite_map50_drop", "ood_false_positive_rate", "model_size_mb"],
+    ["map50", "recall", "f1", "small_scale_recall", "tflite_map50_drop", "ood_false_positive_rate", "model_size_mb"],
 )
 def test_t5_assert_promotion_ready_rejects_nan_inf_and_bool(gate_key: str, bad_value: Any) -> None:
     valid = {
         "map50": 0.85,
         "recall": 0.80,
         "f1": 0.82,
+        "small_scale_recall": 0.80,
         "tflite_map50_drop": 0.003,
         "ood_false_positive_rate": 0.0,
         "model_size_mb": 5.0,

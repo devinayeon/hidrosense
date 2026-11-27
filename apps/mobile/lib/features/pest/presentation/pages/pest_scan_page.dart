@@ -13,6 +13,7 @@ import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_card.dart';
 import '../../../../views/v2/widgets/v2_segmented.dart';
 import '../../domain/pest_summary.dart';
+import '../../domain/yolo_decoder.dart';
 import '../viewmodels/pest_scan_viewmodel.dart';
 import '../widgets/decision_sheets.dart';
 import 'rotation_history_page.dart';
@@ -88,7 +89,7 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
               padding: const EdgeInsets.all(V2Space.lg),
               children: [
                 const V2Banner(
-                  message: 'Deteksi berjalan di HP dan hanya saran. Anda yang memutuskan.',
+                  message: 'Foto daun dari dekat (10–25 cm) agar hama jelas. Deteksi di HP hanya saran.',
                   tone: V2BannerTone.ai,
                 ),
                 const SizedBox(height: V2Space.lg),
@@ -123,15 +124,13 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
                 if (_pickError != null) _ErrorText(_pickError!),
                 if (state.photo != null) ...[
                   const SizedBox(height: V2Space.lg),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(V2Radius.iconBox),
-                    child: Image.memory(
-                      state.photo!,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      semanticLabel: 'Foto tanaman yang dianalisis',
-                    ),
+                  _PhotoPreviewWithDetections(
+                    bytes: state.photo!,
+                    detections: state.phase == ScanPhase.analyzing
+                        ? const []
+                        : (state.result?.detections ?? const []),
+                    imageWidth: state.result?.imageWidth,
+                    imageHeight: state.result?.imageHeight,
                   ),
                 ],
                 if (state.phase == ScanPhase.analyzing) ...[
@@ -223,6 +222,170 @@ class _PestScanPageState extends ConsumerState<PestScanPage> {
       ],
     ];
   }
+}
+
+class _PhotoPreviewWithDetections extends StatelessWidget {
+  const _PhotoPreviewWithDetections({
+    required this.bytes,
+    required this.detections,
+    this.imageWidth,
+    this.imageHeight,
+  });
+
+  final Uint8List bytes;
+  final List<YoloDetection> detections;
+  final int? imageWidth;
+  final int? imageHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBoxes = detections.isNotEmpty;
+    final imgW = imageWidth;
+    final imgH = imageHeight;
+    final aspect = (imgW != null && imgH != null && imgW > 0 && imgH > 0)
+        ? (imgW / imgH).clamp(0.6, 2.0)
+        : 4 / 3;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(V2Radius.iconBox),
+      child: Container(
+        color: V2Colors.charcoal900,
+        constraints: const BoxConstraints(maxHeight: 280),
+        width: double.infinity,
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: aspect,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  semanticLabel: hasBoxes
+                      ? 'Foto tanaman dengan ${detections.length} kotak deteksi hama'
+                      : 'Foto tanaman yang dianalisis',
+                ),
+                if (hasBoxes)
+                  IgnorePointer(
+                    child: CustomPaint(
+                      key: const ValueKey('pest-detection-overlay'),
+                      painter: _DetectionBoxesPainter(
+                        detections: detections,
+                        imageWidth: imgW,
+                        imageHeight: imgH,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Memetakan satu deteksi YOLO (ruang letterbox 640x640 ternormalisasi) ke koordinat piksel
+/// kanvas yang menampilkan foto dengan [BoxFit.contain], termasuk saat rasio aspek dijepit.
+@visibleForTesting
+Rect projectDetectionToCanvas(
+  YoloDetection d,
+  Size canvasSize, {
+  int? imageWidth,
+  int? imageHeight,
+}) {
+  if (imageWidth != null && imageHeight != null && imageWidth > 0 && imageHeight > 0) {
+    final lb = computeLetterbox(imageWidth, imageHeight);
+    final inOrig = lb.toOriginal(d);
+    final fitted = applyBoxFit(
+      BoxFit.contain,
+      Size(imageWidth.toDouble(), imageHeight.toDouble()),
+      canvasSize,
+    );
+    final dest = Alignment.center.inscribe(fitted.destination, Offset.zero & canvasSize);
+    final sx = dest.width / imageWidth;
+    final sy = dest.height / imageHeight;
+    return Rect.fromLTRB(
+      (dest.left + inOrig.left * sx).clamp(dest.left, dest.right),
+      (dest.top + inOrig.top * sy).clamp(dest.top, dest.bottom),
+      (dest.left + inOrig.right * sx).clamp(dest.left, dest.right),
+      (dest.top + inOrig.bottom * sy).clamp(dest.top, dest.bottom),
+    );
+  }
+  return Rect.fromLTRB(
+    (d.x1 * canvasSize.width).clamp(0.0, canvasSize.width),
+    (d.y1 * canvasSize.height).clamp(0.0, canvasSize.height),
+    (d.x2 * canvasSize.width).clamp(0.0, canvasSize.width),
+    (d.y2 * canvasSize.height).clamp(0.0, canvasSize.height),
+  );
+}
+
+class _DetectionBoxesPainter extends CustomPainter {
+  const _DetectionBoxesPainter({
+    required this.detections,
+    this.imageWidth,
+    this.imageHeight,
+  });
+
+  final List<YoloDetection> detections;
+  final int? imageWidth;
+  final int? imageHeight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final d in detections) {
+      final rect = projectDetectionToCanvas(
+        d,
+        size,
+        imageWidth: imageWidth,
+        imageHeight: imageHeight,
+      );
+      if (rect.width < 2 || rect.height < 2) continue;
+
+      final strokeColor = d.classId == 0 ? V2Colors.blue600 : V2Colors.amber800;
+      final borderPaint = Paint()
+        ..color = strokeColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        borderPaint,
+      );
+
+      final kindLabel = (d.classId >= 0 && d.classId < PestKind.modelClasses.length)
+          ? PestKind.modelClasses[d.classId].label
+          : 'Hama';
+      final label = '$kindLabel ${(d.confidence * 100).round()}%';
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: V2Type.caption.copyWith(
+            color: V2Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: size.width);
+
+      final pillW = tp.width + 8;
+      final pillH = tp.height + 4;
+      final pillLeft = rect.left.clamp(0.0, (size.width - pillW).clamp(0.0, size.width));
+      final pillTop = (rect.top - pillH >= 0) ? rect.top - pillH : rect.top;
+      final pillRect = Rect.fromLTWH(pillLeft, pillTop, pillW, pillH);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(pillRect, const Radius.circular(4)),
+        Paint()..color = strokeColor,
+      );
+      tp.paint(canvas, Offset(pillLeft + 4, pillTop + 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DetectionBoxesPainter oldDelegate) =>
+      oldDelegate.detections != detections ||
+      oldDelegate.imageWidth != imageWidth ||
+      oldDelegate.imageHeight != imageHeight;
 }
 
 class _ErrorText extends StatelessWidget {

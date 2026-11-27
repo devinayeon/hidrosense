@@ -179,4 +179,51 @@ void main() {
     expect(find.text('Kutu kebul: 2 terdeteksi'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('overlay kotak deteksi tampil saat ada hama', (tester) async {
+    await pumpPage(tester, whiteflies: 2);
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('pest-detection-overlay')), findsOneWidget);
+    expect(
+      tester.widget<Image>(find.byType(Image)).semanticLabel,
+      'Foto tanaman dengan 2 kotak deteksi hama',
+    );
+  });
+
+  testWidgets('overlay kotak deteksi tidak tampil saat nol deteksi', (tester) async {
+    await pumpPage(tester, whiteflies: 0);
+    await tester.tap(find.text('Kamera'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('pest-detection-overlay')), findsNothing);
+    expect(
+      tester.widget<Image>(find.byType(Image)).semanticLabel,
+      'Foto tanaman yang dianalisis',
+    );
+  });
+
+  test('projectDetectionToCanvas sejajar dengan area BoxFit.contain pada foto potret 20:9 yang dijepit', () {
+    // Foto potret 900x2000 (rasio 0.45) dalam wadah terjepit 168x280 (rasio 0.6):
+    // BoxFit.contain merender gambar 126x280 terpusat dengan bilah letterbox 21 px di kiri dan kanan.
+    const canvasSize = Size(168, 280);
+    final lb = computeLetterbox(900, 2000);
+    final fullImgDet = YoloDetection(
+      classId: 0,
+      confidence: 0.9,
+      x1: lb.left / lb.target,
+      y1: lb.top / lb.target,
+      x2: (lb.left + lb.newWidth) / lb.target,
+      y2: (lb.top + lb.newHeight) / lb.target,
+    );
+    final rect = projectDetectionToCanvas(
+      fullImgDet,
+      canvasSize,
+      imageWidth: 900,
+      imageHeight: 2000,
+    );
+    expect(rect.left, closeTo(21.0, 0.5));
+    expect(rect.right, closeTo(147.0, 0.5));
+    expect(rect.top, closeTo(0.0, 0.5));
+    expect(rect.bottom, closeTo(280.0, 0.5));
+  });
 }
