@@ -104,6 +104,8 @@ class V2InventorySender implements V2SyncSender {
     if (item.target == inventoryCreateTarget) {
       await _repository.createItem(
         categoryId: '${body['id_jenis_inventaris']}',
+        medicineId: body['id_obat'] as String?,
+        katalogId: body['id_katalog'] as String?,
         name: '${body['nama_barang']}',
         unit: '${body['satuan']}',
         minimum: body['stok_minimum'] as String?,
@@ -115,6 +117,8 @@ class V2InventorySender implements V2SyncSender {
       await _repository.updateItem(
         item.target.substring(inventoryUpdatePrefix.length),
         categoryId: '${body['id_jenis_inventaris']}',
+        medicineId: body['id_obat'] as String?,
+        katalogId: body['id_katalog'] as String?,
         name: '${body['nama_barang']}',
         unit: '${body['satuan']}',
         minimum: body['stok_minimum'] as String?,

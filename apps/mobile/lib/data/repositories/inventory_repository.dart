@@ -1,6 +1,7 @@
 import '../../core/uuid.dart';
 import '../models/inventory_record.dart';
 import '../models/jenis_inventaris_record.dart';
+import '../models/obat_katalog_record.dart';
 import '../models/obat_record.dart';
 import '../models/stock_movement_record.dart';
 import '../services/api_client.dart';
@@ -22,6 +23,7 @@ class InventoryRepository {
   Future<InventoryRecord> createItem({
     required String categoryId,
     String? medicineId,
+    String? katalogId,
     required String name,
     required String unit,
     String? minimum,
@@ -33,6 +35,7 @@ class InventoryRepository {
       body: {
         'id_jenis_inventaris': categoryId,
         'id_obat': ?medicineId,
+        'id_katalog': ?katalogId,
         'nama_barang': name,
         'satuan': unit,
         if (minimum != null && minimum.isNotEmpty) 'stok_minimum': minimum,
@@ -49,6 +52,7 @@ class InventoryRepository {
     String id, {
     String? categoryId,
     String? medicineId,
+    String? katalogId,
     String? name,
     String? unit,
     String? minimum,
@@ -57,6 +61,7 @@ class InventoryRepository {
     final body = <String, dynamic>{};
     if (categoryId != null) body['id_jenis_inventaris'] = categoryId;
     if (medicineId != null) body['id_obat'] = medicineId;
+    if (katalogId != null) body['id_katalog'] = katalogId;
     if (name != null) body['nama_barang'] = name;
     if (unit != null) body['satuan'] = unit;
     if (minimum != null) {
@@ -78,6 +83,14 @@ class InventoryRepository {
   Future<void> deactivateItem(String id) async {
     await _api.post(
       'inventaris/$id/deactivate',
+      headers: {'Idempotency-Key': generateUuidV4()},
+    );
+  }
+
+  /// Mengaktifkan kembali barang yang diarsipkan.
+  Future<void> activateItem(String id) async {
+    await _api.post(
+      'inventaris/$id/activate',
       headers: {'Idempotency-Key': generateUuidV4()},
     );
   }
@@ -213,5 +226,17 @@ Future<List<ObatRecord>> fetchMedicines(ApiClient api) async {
   if (data is! List) throw const FormatException('Daftar obat tidak valid.');
   return data
       .map((json) => ObatRecord.fromJson(json as Map<String, dynamic>))
+      .toList();
+}
+
+/// Katalog obat bawaan (`obat_katalog`) untuk dropdown barang jenis Obat.
+Future<List<ObatKatalogRecord>> fetchObatKatalog(ApiClient api) async {
+  final response = await api.get('obat-katalog', query: {'limit': '100'});
+  final data = response['data'];
+  if (data is! List) {
+    throw const FormatException('Daftar katalog obat tidak valid.');
+  }
+  return data
+      .map((json) => ObatKatalogRecord.fromJson(json as Map<String, dynamic>))
       .toList();
 }

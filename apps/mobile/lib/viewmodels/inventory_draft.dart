@@ -10,11 +10,17 @@ class InventoryDraft {
     required this.minimum,
     required this.initialStock,
     this.medicineId,
+    this.katalogId,
   });
   final String? id;
 
-  /// `id_obat` saat jenis barang Obat; null untuk jenis lain (frame 4.11/4.12).
+  /// `id_obat` saat jenis barang Obat tertaut ke master pengguna; null bila
+  /// jenis lain atau tertaut ke katalog (frame 4.11/4.12).
   final String? medicineId;
+
+  /// `id_katalog` saat jenis barang Obat tertaut ke katalog bawaan. Terpisah
+  /// dari [medicineId] karena server menolak keduanya terisi bersamaan.
+  final String? katalogId;
 
   final String name, categoryId, unit, minimum, initialStock;
 

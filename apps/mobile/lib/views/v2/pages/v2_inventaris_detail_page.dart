@@ -37,6 +37,7 @@ class V2InventarisDetailPage extends StatefulWidget {
     this.onCatatStok,
     this.onUbah,
     this.onArsipkan,
+    this.onAktifkan,
     this.toast,
     this.openCatatOnStart = false,
     this.catatJumlah,
@@ -126,6 +127,10 @@ class V2InventarisDetailPage extends StatefulWidget {
   final VoidCallback? onCatatStok;
   final VoidCallback? onUbah;
   final VoidCallback? onArsipkan;
+
+  /// Ketukan tombol "Aktifkan kembali" barang arsip (frame 4.29 dirancang tanpa
+  /// footer, jadi tombol ini hanya muncul di alur nyata yang mengisinya).
+  final VoidCallback? onAktifkan;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 4.23).
   final String? toast;
@@ -270,6 +275,16 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     _scheduleToastDismiss();
   }
 
+  /// Aktifkan kembali barang arsip. Hanya dipakai alur nyata yang mengisi
+  /// [onAktifkan]; halaman menutup sambil membawa barang aktif supaya baris di
+  /// daftar ikut berubah.
+  Future<void> _aktifkan() async {
+    if (widget.onAktifkan != null) {
+      widget.onAktifkan!();
+      return;
+    }
+  }
+
   /// Minta konfirmasi arsip (frame 4.26); bila setuju, halaman ditutup sambil
   /// membawa barang yang sudah ditandai arsip supaya hilang dari daftar.
   Future<void> _arsipkan() async {
@@ -351,11 +366,21 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                   ),
                 ),
               ),
-              if (widget.footerLabel != null)
+              if (widget.footerLabel != null ||
+                  (_item.arsip && widget.onAktifkan != null))
                 V2ActionBar(
                   toast: _toast,
                   actions: [
-                    V2Button(label: widget.footerLabel!, onPressed: _catatStok),
+                    if (_item.arsip && widget.onAktifkan != null)
+                      V2Button(
+                        label: 'Aktifkan kembali',
+                        onPressed: _aktifkan,
+                      )
+                    else
+                      V2Button(
+                        label: widget.footerLabel!,
+                        onPressed: _catatStok,
+                      ),
                   ],
                 ),
             ],

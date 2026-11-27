@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/inventory_record.dart';
 import '../data/models/jenis_inventaris_record.dart';
+import '../data/models/obat_katalog_record.dart';
 import '../data/models/obat_record.dart';
 import '../data/repositories/inventory_repository.dart';
 import '../data/services/api_client.dart';
@@ -219,6 +220,7 @@ class ConnectedInventoryViewModel
             ? await _repository.createItem(
                 categoryId: input.categoryId,
                 medicineId: input.medicineId,
+                katalogId: input.katalogId,
                 name: input.name,
                 unit: input.unit,
                 minimum: input.minimum.isEmpty ? null : input.minimum,
@@ -228,6 +230,7 @@ class ConnectedInventoryViewModel
                 input.id!,
                 categoryId: input.categoryId,
                 medicineId: input.medicineId,
+                katalogId: input.katalogId,
                 name: input.name,
                 unit: input.unit,
                 minimum: input.minimum,
@@ -301,12 +304,16 @@ class ConnectedInventoryViewModel
   Map<String, dynamic> _itemBody(InventoryDraft input) => input.id == null
       ? {
           'id_jenis_inventaris': input.categoryId,
+          'id_obat': input.medicineId,
+          'id_katalog': input.katalogId,
           'nama_barang': input.name,
           'satuan': input.unit,
           if (input.minimum.isNotEmpty) 'stok_minimum': input.minimum,
         }
       : {
           'id_jenis_inventaris': input.categoryId,
+          'id_obat': input.medicineId,
+          'id_katalog': input.katalogId,
           'nama_barang': input.name,
           'satuan': input.unit,
           'stok_minimum': input.minimum.isEmpty ? null : input.minimum,
@@ -424,6 +431,13 @@ class ConnectedInventoryViewModel
     await _refreshTask;
     if (mounted) await refresh();
   }
+
+  Future<void> activateItem(String id) async {
+    await _repository.activateItem(id);
+    await _initialLoad;
+    await _refreshTask;
+    if (mounted) await refresh();
+  }
 }
 
 final connectedInventoryProvider =
@@ -462,5 +476,16 @@ final inventoryMedicinesProvider = FutureProvider.autoDispose<List<ObatRecord>>(
       throw StateError('Daftar obat memerlukan sesi.');
     }
     return fetchMedicines(ref.watch(apiClientProvider));
+  },
+);
+
+/// Katalog obat bawaan (`obat_katalog`) untuk dropdown barang jenis Obat.
+final obatKatalogProvider = FutureProvider.autoDispose<List<ObatKatalogRecord>>(
+  (ref) async {
+    final user = ref.watch(sessionProvider.select((state) => state.user));
+    if (user == null) {
+      throw StateError('Katalog obat memerlukan sesi.');
+    }
+    return fetchObatKatalog(ref.watch(apiClientProvider));
   },
 );

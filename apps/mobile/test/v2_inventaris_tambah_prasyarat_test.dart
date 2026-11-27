@@ -49,7 +49,7 @@ Future<List<String>> _pumpTab(
       final path = request.url.path;
       paths.add(path);
       if (path.endsWith('/inventaris')) return _json(_page(const []));
-      if (path.endsWith('/obat')) return _json(_page(const []));
+      if (path.endsWith('/obat-katalog')) return _json(_page(const []));
       if (path.endsWith('/jenis-inventaris')) {
         return _json(
           kategoriKosong
@@ -111,9 +111,9 @@ void main() {
       reason: 'Kategori belum dimuat sebelum tombol Tambah ditekan',
     );
     expect(
-      paths.any((path) => path.endsWith('/obat')),
+      paths.any((path) => path.endsWith('/obat-katalog')),
       isTrue,
-      reason: 'Daftar obat belum dimuat sebelum tombol Tambah ditekan',
+      reason: 'Katalog obat belum dimuat sebelum tombol Tambah ditekan',
     );
 
     await tester.tap(find.text('Tambah barang'));

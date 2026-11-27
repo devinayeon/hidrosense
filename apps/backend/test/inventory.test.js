@@ -292,3 +292,131 @@ test('inventory PATCH rejects empty jenis, unknown fields and null required fiel
   assert.deepEqual((await app.inject({ url: jenis.headers.location, headers })).json().data, jenis.json().data);
   assert.deepEqual((await app.inject({ url: item.headers.location, headers })).json().data, item.json().data);
 });
+
+test('inventaris name is unique across active and archived items', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Unik' } })).json().data;
+  const create = (nama_barang) => app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang, satuan: 'kg',
+  } });
+
+  const first = await create('Pupuk A');
+  assert.equal(first.statusCode, 201, first.body);
+  // Spasi tepi dan huruf besar/kecil tidak membedakan nama.
+  const duplicate = await create('  pupuk a ');
+  assert.equal(duplicate.statusCode, 409, duplicate.body);
+  assert.equal(duplicate.json().error.code, 'INVENTARIS_NAME_TAKEN');
+
+  // Barang arsip tetap memegang namanya, jadi pengaktifan kembali tidak bentrok.
+  await app.inject({ method: 'POST', url: `${first.headers.location}/deactivate`, headers });
+  const archivedDuplicate = await create('Pupuk A');
+  assert.equal(archivedDuplicate.statusCode, 409, archivedDuplicate.body);
+
+  const second = await create('Pupuk B');
+  assert.equal(second.statusCode, 201, second.body);
+  const rename = await app.inject({ method: 'PATCH', url: second.headers.location, headers, payload: { nama_barang: 'PUPUK A' } });
+  assert.equal(rename.statusCode, 409, rename.body);
+  assert.equal(rename.json().error.code, 'INVENTARIS_NAME_TAKEN');
+  // Mengubah ejaan nama sendiri tetap boleh.
+  const ownSpelling = await app.inject({ method: 'PATCH', url: second.headers.location, headers, payload: { nama_barang: 'PUPUK B' } });
+  assert.equal(ownSpelling.statusCode, 200, ownSpelling.body);
+  assert.equal(ownSpelling.json().data.nama_barang, 'PUPUK B');
+});
+
+test('concurrent inventaris creates with the same name keep exactly one row', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Balapan' } })).json().data;
+  const payload = { id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: 'Sekop', satuan: 'unit' };
+  const responses = await Promise.all([
+    app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload }),
+    app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload }),
+  ]);
+  assert.deepEqual(responses.map((response) => response.statusCode).sort(), [201, 409]);
+});
+
+test('obat catalogue supplies the name and rejects two medicine links', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Obat & Pestisida' } })).json().data;
+
+  assert.equal((await app.inject({ url: '/api/v1/obat-katalog' })).statusCode, 401);
+  const catalogue = await app.inject({ url: '/api/v1/obat-katalog?limit=100', headers });
+  assert.equal(catalogue.statusCode, 200, catalogue.body);
+  const entries = catalogue.json().data;
+  assert.ok(entries.length > 0);
+  assert.equal(typeof entries[0].id_katalog, 'string');
+  assert.equal(typeof entries[0].nama, 'string');
+  assert.equal(typeof entries[0].jenis, 'string');
+  assert.equal(catalogue.json().meta.total, entries.length);
+
+  const first = entries[0];
+  const created = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, id_katalog: first.id_katalog, satuan: 'botol',
+  } });
+  assert.equal(created.statusCode, 201, created.body);
+  assert.equal(created.json().data.nama_barang, first.nama);
+  assert.equal(created.json().data.id_katalog, first.id_katalog);
+  assert.equal(created.json().data.nama_katalog, first.nama);
+  assert.equal(created.json().data.id_obat, null);
+
+  // Nama kiriman diabaikan bila katalog dipilih; nama tetap dari katalog.
+  const secondEntry = entries[1];
+  const second = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, id_katalog: secondEntry.id_katalog,
+    nama_barang: 'Nama lain', satuan: 'botol',
+  } });
+  assert.equal(second.statusCode, 201, second.body);
+  assert.equal(second.json().data.nama_barang, secondEntry.nama);
+
+  const obat = (await app.inject({ method: 'POST', url: '/api/v1/obat', headers, payload: { nama_obat: 'Obat Master' } })).json().data;
+  const both = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, id_katalog: first.id_katalog,
+    id_obat: obat.id_obat, nama_barang: 'Dua tautan', satuan: 'botol',
+  } });
+  assert.equal(both.statusCode, 400, both.body);
+  const missingKatalog = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, id_katalog: '999999', satuan: 'botol',
+  } });
+  assert.equal(missingKatalog.statusCode, 422, missingKatalog.body);
+  assert.equal(missingKatalog.json().error.code, 'KATALOG_NOT_FOUND');
+
+  // Pindah tautan ke katalog lain sekaligus mengganti nama barang.
+  const moved = await app.inject({ method: 'PATCH', url: second.headers.location, headers, payload: { id_katalog: first.id_katalog } });
+  assert.equal(moved.statusCode, 409, moved.body);
+  const thirdEntry = entries.find((entry) => entry.id_katalog !== first.id_katalog && entry.nama !== secondEntry.nama);
+  const movedOk = await app.inject({ method: 'PATCH', url: second.headers.location, headers, payload: { id_katalog: thirdEntry.id_katalog } });
+  assert.equal(movedOk.statusCode, 200, movedOk.body);
+  assert.equal(movedOk.json().data.nama_barang, thirdEntry.nama);
+  assert.equal(movedOk.json().data.id_katalog, thirdEntry.id_katalog);
+
+  // Melepas tautan katalog mempertahankan nama bila klien tidak mengirim nama.
+  const unlinked = await app.inject({ method: 'PATCH', url: second.headers.location, headers, payload: { id_katalog: null } });
+  assert.equal(unlinked.statusCode, 200, unlinked.body);
+  assert.equal(unlinked.json().data.id_katalog, null);
+  assert.equal(unlinked.json().data.nama_barang, thirdEntry.nama);
+});
+
+test('archived inventaris can be activated again', async (t) => {
+  const { app, login } = await fixture(t);
+  const headers = await pegawaiHeaders(login);
+  const jenis = (await app.inject({ method: 'POST', url: '/api/v1/jenis-inventaris', headers, payload: { nama_jenis: 'Pulih' } })).json().data;
+  const created = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers, payload: {
+    id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: 'Cangkul', satuan: 'unit',
+  } });
+  const id = created.json().data.id_inventaris;
+
+  const deactivated = await app.inject({ method: 'POST', url: `/api/v1/inventaris/${id}/deactivate`, headers });
+  assert.equal(deactivated.statusCode, 200, deactivated.body);
+  assert.equal(deactivated.json().data.status_aktif, 0);
+
+  const activated = await app.inject({ method: 'POST', url: `/api/v1/inventaris/${id}/activate`, headers });
+  assert.equal(activated.statusCode, 200, activated.body);
+  assert.equal(activated.json().data.status_aktif, 1);
+  // Aman dipanggil berulang.
+  assert.equal((await app.inject({ method: 'POST', url: `/api/v1/inventaris/${id}/activate`, headers })).statusCode, 200);
+
+  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/inventaris/999999/activate', headers })).statusCode, 404);
+  assert.equal((await app.inject({ method: 'POST', url: `/api/v1/inventaris/${id}/activate` })).statusCode, 401);
+});
