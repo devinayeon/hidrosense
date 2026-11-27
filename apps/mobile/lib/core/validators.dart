@@ -46,9 +46,10 @@ String? addressProblem(String address) {
 /// Jumlah benih satu semaian: 1–250 (keputusan SA).
 String? jumlahBenihProblem(String text) {
   final teks = text.trim();
-  if (teks.isEmpty) return 'Isi jumlah benih';
   final jumlah = int.tryParse(teks);
-  if (jumlah == null || jumlah <= 0) return 'Jumlah benih harus angka';
+  if (teks.isEmpty || jumlah == null || jumlah <= 0) {
+    return 'Benih harus angka positif';
+  }
   if (jumlah > 250) return 'Maksimal 250 benih';
   return null;
 }

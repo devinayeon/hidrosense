@@ -69,7 +69,7 @@ class V2InventarisDetailPage extends StatefulWidget {
         showAksi: false,
       );
 
-  /// Frame `4.21 Catat stok`: sheet terbuka dengan jumlah bawaan 2 pak.
+  /// Frame `4.21 Catat stok`: sheet terbuka dengan jumlah bawaan 1 pak.
   const V2InventarisDetailPage.catatSheet({Key? key})
     : this(
         key: key,
@@ -138,7 +138,7 @@ class V2InventarisDetailPage extends StatefulWidget {
   /// Membuka sheet "Catat stok" begitu halaman tampil (frame 4.21/4.22).
   final bool openCatatOnStart;
 
-  /// Jumlah bawaan di sheet; null berarti 2 pak (frame 4.21).
+  /// Jumlah bawaan di sheet; null berarti 1 satuan (frame 4.21).
   final int? catatJumlah;
 
   /// Membuka dialog "Arsipkan barang?" begitu halaman tampil (frame 4.26).
@@ -234,7 +234,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     final hasil = await showV2CatatStokSheet(
       context,
       item: _item,
-      jumlah: widget.catatJumlah ?? 2,
+      jumlah: widget.catatJumlah ?? 1,
     );
     if (!mounted || hasil == null) return;
     final jumlahBaru = hasil.masuk
@@ -372,10 +372,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                   toast: _toast,
                   actions: [
                     if (_item.arsip && widget.onAktifkan != null)
-                      V2Button(
-                        label: 'Aktifkan kembali',
-                        onPressed: _aktifkan,
-                      )
+                      V2Button(label: 'Aktifkan kembali', onPressed: _aktifkan)
                     else
                       V2Button(
                         label: widget.footerLabel!,

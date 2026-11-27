@@ -24,7 +24,7 @@ Future<V2CatatStok?> showV2CatatStokSheet(
   BuildContext context, {
   required V2InventarisItem item,
   bool masuk = false,
-  int jumlah = 2,
+  int jumlah = 1,
 }) {
   return showV2BottomSheet<V2CatatStok>(
     context,
@@ -40,15 +40,19 @@ Future<V2CatatStok?> showV2CatatStokSheet(
 ///
 /// Susunannya sama dengan component `Sheet/CatatStok`: segmented `Pakai`/`Masuk`,
 /// field `Qty`, satu baris keterangan (pratinjau stok atau pesan galat), lalu
-/// tombol `Simpan`. Mode `Pakai` saja yang memeriksa jumlah terhadap stok;
-/// begitu jumlah melebihi stok, field menyala merah dan baris keterangan
-/// berganti jadi pesan galat "Stok hanya N satuan" (frame 4.22).
+/// tombol `Simpan`. Jumlah yang melebihi batas ditolak di sheet ini supaya
+/// pesannya tidak baru muncul di halaman detail:
+///
+/// - `Pakai`: tidak boleh melebihi stok yang ada, pesan "Stok hanya N satuan"
+///   (frame 4.22).
+/// - `Masuk`: tidak boleh membuat saldo melewati batas backend
+///   (`stok_saldo` maksimal 9999999999.99), pesan "Maksimal N satuan".
 class V2CatatStokSheet extends StatefulWidget {
   const V2CatatStokSheet({
     super.key,
     required this.item,
     this.initialMasuk = false,
-    this.initialJumlah = 2,
+    this.initialJumlah = 1,
   });
 
   final V2InventarisItem item;
@@ -72,11 +76,24 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
   /// Stok yang sedang dicatat (jumlahnya selalu bulat di data contoh ini).
   int get _stok => widget.item.jumlah.round();
 
+  /// Batas saldo backend: `stok_saldo.saldo_minor <= 999999999999`, yaitu
+  /// 9999999999.99. Sheet memakai bilangan bulat, jadi batas masuk adalah sisa
+  /// sampai batas tersebut.
+  static const int _batasSaldo = 9999999999;
+
+  /// Jumlah masuk paling besar agar saldo tidak melewati batas backend.
+  int get _maksMasuk => _batasSaldo - _stok < 0 ? 0 : _batasSaldo - _stok;
+
   /// Stok sesudah catatan dipakai.
   int get _stokJadi => _masuk ? _stok + _jumlah : _stok - _jumlah;
 
-  /// Galat hanya muncul di mode `Pakai` saat jumlah melebihi stok.
-  bool get _galat => !_masuk && _jumlah > _stok;
+  /// `Pakai` melebihi stok yang ada.
+  bool get _galatStok => !_masuk && _jumlah > _stok;
+
+  /// `Masuk` membuat saldo melewati batas backend.
+  bool get _galatMaks => _masuk && _jumlah > _maksMasuk;
+
+  bool get _galat => _galatStok || _galatMaks;
 
   /// Keterangan saat tidak ada galat, mis. `Pakai 2 pak. Stok jadi 10 pak.`
   String get _preview =>
@@ -86,6 +103,8 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
   void _ubahJumlah(int delta) {
     final berikutnya = _jumlah + delta;
     if (berikutnya < 1) return;
+    // Tombol plus berhenti di batas masuk supaya tidak melewati saldo backend.
+    if (_masuk && berikutnya > _maksMasuk) return;
     setState(() => _jumlah = berikutnya);
   }
 
@@ -120,7 +139,9 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
             error: _galat,
             onChanged: _setJumlah,
             onMinus: () => _ubahJumlah(-1),
-            onPlus: () => _ubahJumlah(1),
+            onPlus: _masuk && _jumlah >= _maksMasuk
+                ? null
+                : () => _ubahJumlah(1),
           ),
           const SizedBox(height: V2Space.lg),
           if (_galat) _pesanGalat() else _keterangan(),
@@ -137,15 +158,15 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
   /// Baris galat 14/20 red700 dengan ikon 16 (frame 4.22).
   Widget _pesanGalat() {
     final warna = V2Colors.red700;
+    final pesan = _galatStok
+        ? 'Stok hanya $_stok ${widget.item.satuan}'
+        : 'Maksimal $_maksMasuk ${widget.item.satuan}';
     return Row(
       children: [
         V2Icon(V2IconName.error, size: V2Icons.small, color: warna),
         const SizedBox(width: V2Space.sm),
         Expanded(
-          child: Text(
-            'Stok hanya $_stok ${widget.item.satuan}',
-            style: V2Type.label.copyWith(color: warna),
-          ),
+          child: Text(pesan, style: V2Type.label.copyWith(color: warna)),
         ),
       ],
     );

@@ -25,8 +25,8 @@ import '../widgets/v2_text_field.dart';
 /// Jarak antarbagian tetap 16, termasuk saat ada galat (frame 5.10/5.11), dan
 /// bagian "Jumlah bahan" baru muncul setelah bahan dipilih. Dengan keyboard
 /// terbuka (5.9) kartu tint disembunyikan dan tombol berhenti 8 di atas
-/// keyboard. Nomor galat mengikuti desain: "Isi jumlah benih", "Pilih bahan",
-/// dan "Stok hanya 12 pak".
+/// keyboard. Pesan galat yang dipakai: "Benih harus angka positif", "Pilih
+/// bahan", dan "Stok hanya 12 pak".
 class V2SemaianFormPage extends StatefulWidget {
   const V2SemaianFormPage({
     super.key,
@@ -140,12 +140,12 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
       ? widget.bahanList!
       : designBahanSemaian;
   late final TextEditingController _jumlahBenih = TextEditingController(
-    text: widget.previewValidation ? '' : '200',
+    text: widget.previewValidation ? '' : '1',
   );
   late final List<_BarisBahan> _baris = <_BarisBahan>[
     _BarisBahan(
       bahan: widget.previewValidation ? null : _pilihan.first,
-      jumlah: widget.previewStokKurang ? 15 : 2,
+      jumlah: widget.previewStokKurang ? 15 : 1,
     ),
   ];
 
@@ -163,7 +163,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   void initState() {
     super.initState();
     if (widget.previewValidation) {
-      _benihError = 'Isi jumlah benih';
+      _benihError = 'Benih harus angka positif';
       _bahanError = 'Pilih bahan';
     }
     if (widget.previewStokKurang) {
@@ -233,12 +233,12 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
     if (!mounted || result == null) return;
     setState(() {
       if (baris == null) {
-        _baris.add(_BarisBahan(bahan: result, jumlah: 2));
+        _baris.add(_BarisBahan(bahan: result, jumlah: 1));
       } else {
         final ganti = _baris[baris];
         if (ganti.bahan?.nama != result.nama) {
           ganti.bahan = result;
-          ganti.jumlah = 2;
+          ganti.jumlah = 1;
         }
         ganti.error = null;
       }
@@ -439,9 +439,10 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         type: V2ButtonType.ghost,
         onPressed: bisaTambah ? () => _tambahBahan() : null,
       ),
-      // Kartu tint menjelaskan stok yang berkurang; tidak tampil saat galat
-      // (5.11) atau saat keyboard menutup ruangnya (5.9).
-      if (!_keyboard && _baris.any((baris) => baris.error == null)) ...[
+      // Kartu tint menjelaskan stok yang berkurang, termasuk saat hasilnya
+      // minus ("Stok tidak mencukupi"); disembunyikan hanya saat keyboard
+      // menutup ruangnya (5.9).
+      if (!_keyboard && _baris.any((baris) => baris.bahan != null)) ...[
         const SizedBox(height: V2Space.lg),
         _tintCard(),
       ],
@@ -522,10 +523,11 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
   }
 
   /// Kartu `Card Type=Tint` (frame 5.7): judul 20/28 dan isi 16/24.
+  ///
+  /// Baris yang sisanya minus tidak menampilkan angka negatif; kalimatnya
+  /// diganti "Stok tidak mencukupi" supaya penyebabnya jelas di form.
   Widget _tintCard() {
-    final baris = _baris.where(
-      (item) => item.bahan != null && item.error == null,
-    );
+    final baris = _baris.where((item) => item.bahan != null);
     return Container(
       constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.all(V2Space.xl),
@@ -539,14 +541,22 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
         children: [
           Text('Stok berkurang', style: V2Type.h2),
           const SizedBox(height: V2Space.sm),
-          for (final item in baris) ...[
-            Text(
-              '${item.bahan!.nama}: ${item.bahan!.labelStok} jadi '
-              '${item.bahan!.stok - item.jumlah} ${item.bahan!.satuan}',
-              style: V2Type.body.copyWith(color: V2Colors.slate600),
-            ),
-          ],
+          for (final item in baris) ...[_barisStok(item)],
         ],
+      ),
+    );
+  }
+
+  /// Satu baris kartu tint; hasil minus diganti "Stok tidak mencukupi".
+  Widget _barisStok(_BarisBahan item) {
+    final sisa = item.bahan!.stok - item.jumlah;
+    return Text(
+      sisa < 0
+          ? '${item.bahan!.nama}: Stok tidak mencukupi'
+          : '${item.bahan!.nama}: ${item.bahan!.labelStok} jadi '
+                '$sisa ${item.bahan!.satuan}',
+      style: V2Type.body.copyWith(
+        color: sisa < 0 ? V2Colors.red700 : V2Colors.slate600,
       ),
     );
   }
@@ -554,7 +564,7 @@ class _V2SemaianFormPageState extends State<V2SemaianFormPage> {
 
 /// Satu baris bahan di form Tambah semaian.
 class _BarisBahan {
-  _BarisBahan({this.bahan, this.jumlah = 2});
+  _BarisBahan({this.bahan, this.jumlah = 1});
 
   V2SemaianBahan? bahan;
   int jumlah;
