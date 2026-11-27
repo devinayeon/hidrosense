@@ -66,7 +66,7 @@ test('N-02 & N-03: Idempotency replay returns 200 while key reuse with changed p
   assert.equal(saldoRes.json().data.saldo, '495');
 
   // Conflict key with different payload
-  const conflict = await f.post({ ...payload, jumlah_benih: 999 }, { 'idempotency-key': key });
+  const conflict = await f.post({ ...payload, jumlah_benih: 249 }, { 'idempotency-key': key });
   expectError(conflict, 409, 'OPERATION_CONFLICT');
 });
 
@@ -340,4 +340,16 @@ test('sowing without an idempotency key is refused before any write', async (t) 
   assert.equal(res.json().error.message, 'Header sinkronisasi tidak valid.');
   assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM penyemaian')).rows[0].n, 0);
   assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM stok')).rows[0].n, stockBefore);
+});
+
+test('N-14: jumlah_benih is capped at 250 for create and update', async (t) => {
+  const f = await nurseryFixture(t);
+  const max = await f.post({ ...f.defaultPayload(), jumlah_benih: 250 });
+  assert.equal(max.statusCode, 201, max.body);
+  const id = max.json().data.id_penyemaian;
+
+  expectError(await f.post({ ...f.defaultPayload(), jumlah_benih: 251 }), 400, 'VALIDATION_ERROR');
+  const patched = await f.patch(id, { jumlah_benih: 200 });
+  assert.equal(patched.statusCode, 200, patched.body);
+  expectError(await f.patch(id, { jumlah_benih: 251 }), 400, 'VALIDATION_ERROR');
 });

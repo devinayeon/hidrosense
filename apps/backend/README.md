@@ -19,6 +19,12 @@ npm run dev
 
 Seeder mencetak kredensial akun uji. Gunakan data seeder hanya untuk pengembangan dan pengujian.
 
+Untuk memulai database dari nol (hapus semua tabel, migrasi ulang, seed ulang):
+
+```powershell
+npm run db:refresh -- --allow-data-loss
+```
+
 Default API: `http://127.0.0.1:3000`. Server menolak startup jika masih ada migrasi tertunda.
 
 ## Akun petani pertama

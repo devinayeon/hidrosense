@@ -31,13 +31,13 @@ test('tables replay, conflicting keys, reserved identity and patch replay', asyn
   const first = await f.create({}, headers); check(first, 201);
   const again = await f.create({}, headers); check(again, 200);
   assert.equal(again.json().replayed, true); assert.deepEqual(again.json().data, first.json().data);
-  check(await f.create({ jumlah_lubang: 300 }, headers), 409, 'OPERATION_CONFLICT');
+  check(await f.create({ jumlah_lubang: 240 }, headers), 409, 'OPERATION_CONFLICT');
   check(await f.create({}, { 'x-client-id': headers['x-client-id'] }), 409, 'RESOURCE_ALREADY_EXISTS');
   const key = { 'idempotency-key': randomUUID() }, path = `/${first.json().data.id_meja}`;
-  const changed = await f.send('PATCH', path, { jumlah_lubang: 300 }, key);
-  const replay = await f.send('PATCH', path, { jumlah_lubang: 300 }, key);
+  const changed = await f.send('PATCH', path, { jumlah_lubang: 240 }, key);
+  const replay = await f.send('PATCH', path, { jumlah_lubang: 240 }, key);
   assert.deepEqual(replay.json().data, changed.json().data); assert.equal(replay.json().data.version, '2');
-  check(await f.send('PATCH', path, { jumlah_lubang: 301 }, key), 409);
+  check(await f.send('PATCH', path, { jumlah_lubang: 241 }, key), 409);
   assert.equal((await f.db.execute('SELECT COUNT(*) AS n FROM meja_tanam')).rows[0].n, 1);
   assert.equal((await f.db.execute("SELECT COUNT(*) AS n FROM sync_operations WHERE operation_type LIKE 'meja-tanam.%'")).rows[0].n, 2);
 });
@@ -56,12 +56,12 @@ test('tables unique code, pagination and status filter', async (t) => {
 test('tables reject invalid bodies, parameters and headers', async (t) => {
   const f = await setup(t);
   for (const body of [{ jumlah_lubang: 0 }, { jumlah_lubang: -1 }, { jumlah_lubang: 1.5 }, { jumlah_lubang: '250' },
-    { jumlah_lubang: 1001 }, { jumlah_lubang: 9007199254740992 }, { kode_meja: ' ' }, { status_meja: '' }, { kode_meja: 'a'.repeat(31) }, { unknown: 1 }]) check(await f.create(body), 400);
+    { jumlah_lubang: 251 }, { jumlah_lubang: 9007199254740992 }, { kode_meja: ' ' }, { status_meja: '' }, { kode_meja: 'a'.repeat(31) }, { unknown: 1 }]) check(await f.create(body), 400);
   check(await f.create({ status_meja: 'penuh' }), 400, 'TABLE_STATUS_DERIVED');
-  check(await f.create({ kode_meja: 'M-MAX', jumlah_lubang: 1000 }), 201);
+  check(await f.create({ kode_meja: 'M-MAX', jumlah_lubang: 250 }), 201);
   const d = (await f.create()).json().data;
   check(await f.send('PATCH', `/${d.id_meja}`, {}), 400);
-  check(await f.send('PATCH', `/${d.id_meja}`, { jumlah_lubang: 1001 }), 400);
+  check(await f.send('PATCH', `/${d.id_meja}`, { jumlah_lubang: 251 }), 400);
   check(await f.send('PATCH', `/${d.id_meja}`, { status_meja: 'Penuh' }), 400, 'TABLE_STATUS_DERIVED');
   check(await f.send('PATCH', `/${d.id_meja}`, { status_meja: 'rusak' }, { 'x-client-id': randomUUID() }), 400);
   check(await f.create({}, { 'idempotency-key': 'bad' }), 400);
@@ -111,7 +111,7 @@ test('tables reject negative per-batch balance hidden by another batch', async (
 });
 test('tables preserve signed64 legacy IDs and initialize identity on edit', async (t) => {
   const f = await setup(t), id = '9007199254740993';
-  await f.db.execute({ sql: "INSERT INTO meja_tanam(id_meja,kode_meja,jumlah_lubang) VALUES(?,'LEGACY',300)", args: [id] });
+  await f.db.execute({ sql: "INSERT INTO meja_tanam(id_meja,kode_meja,jumlah_lubang) VALUES(?,'LEGACY',240)", args: [id] });
   const d = (await f.send('GET', `/${id}`)).json().data; assert.equal(d.id_meja, id); assert.equal(d.public_id, null);
   const changed = await f.send('PATCH', `/${id}`, { status_meja: 'perbaikan' }); check(changed, 200);
   assert.equal(changed.json().data.id_meja, id); assert.equal(changed.json().data.version, '1');

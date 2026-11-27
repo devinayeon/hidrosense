@@ -24,7 +24,7 @@ const materialLineSchema = z.strictObject({
 
 export const createSowingSchema = z.strictObject({
   tanggal_semai: dateSchema,
-  jumlah_benih: z.number().int().positive().max(1_000_000),
+  jumlah_benih: z.number().int().positive().max(250),
   keterangan: z.string().trim().max(1000).nullable().optional()
     .transform((v) => v ?? null),
   /** Materials consumed from stock. Required: at least one seed material must be recorded. */
@@ -39,7 +39,7 @@ export const createSowingSchema = z.strictObject({
 
 export const updateSowingSchema = z.strictObject({
   expected_version: expectedVersionSchema,
-  jumlah_benih: z.number().int().positive().max(1_000_000).optional(),
+  jumlah_benih: z.number().int().positive().max(250).optional(),
   status_penyemaian: z.enum(['aktif', 'selesai']).optional(),
   keterangan: z.string().trim().max(1000).nullable().optional(),
 }).refine(

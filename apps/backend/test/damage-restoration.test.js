@@ -18,12 +18,12 @@ test('damage restoration respects table capacity and retries a rolled back opera
     INSERT INTO penyemaian (id_user, tanggal_semai, jumlah_benih, status_penyemaian)
     VALUES (2, '2026-09-01', 500, 'aktif');
     INSERT INTO meja_tanam (kode_meja, jumlah_lubang, status_meja)
-    VALUES ('M-01', 250, 'tersedia');
+    VALUES ('M-01', 240, 'tersedia');
   `);
   const transfer = (count) => send('POST', 'pemindahan', {
     id_penyemaian: '1', id_meja: '1', tanggal_pemindahan: '2026-09-16', jumlah_tanaman: count,
   });
-  const initialTransfer = await transfer(250);
+  const initialTransfer = await transfer(240);
   check(initialTransfer, 201);
   const damage = await send('POST', 'kerusakan', {
     id_pemindahan: initialTransfer.json().data.id_pemindahan,
@@ -55,11 +55,11 @@ test('damage restoration respects table capacity and retries a rolled back opera
     const response = await send('GET', tablePath);
     check(response, 200);
     const table = tablePath === 'meja-tanam' ? response.json().data[0] : response.json().data;
-    assert.equal(table.tanaman_aktif, 250);
+    assert.equal(table.tanaman_aktif, 240);
     assert.equal(table.kapasitas_tersedia, 0);
   }
 
-  check(await send('PATCH', 'meja-tanam/1', { jumlah_lubang: 252 }), 200);
+  check(await send('PATCH', 'meja-tanam/1', { jumlah_lubang: 242 }), 200);
   const corrected = await send('PATCH', path, correction, extra);
   check(corrected, 200);
   assert.equal(corrected.json().data.jumlah_tanaman, 3);
@@ -76,6 +76,6 @@ test('damage restoration respects table capacity and retries a rolled back opera
   assert.equal(await version(), '2');
   const table = await send('GET', 'meja-tanam/1');
   check(table, 200);
-  assert.equal(table.json().data.tanaman_aktif, 252);
+  assert.equal(table.json().data.tanaman_aktif, 242);
   assert.equal(table.json().data.kapasitas_tersedia, 0);
 });
