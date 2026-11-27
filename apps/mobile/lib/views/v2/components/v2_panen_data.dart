@@ -11,6 +11,9 @@ final DateTime v2PanenHariIni = DateTime(2026, 11, 15);
 /// Umur panen acuan: tanggal pindah + 45 hari.
 const int v2PanenUmurHst = 45;
 
+/// Umur semai acuan siap panen: 15 hari semai + 45 hari di meja.
+const int v2PanenUmurHss = 60;
+
 const List<String> _bulanSingkat = <String>[
   'Jan',
   'Feb',

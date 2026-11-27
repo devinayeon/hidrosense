@@ -10,16 +10,14 @@ import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
-import '../widgets/v2_dialog.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_penjualan_form_page.dart';
 
 /// Detail satu penjualan: frame 8.15 (baru dicatat), 8.17 (masih antre),
-/// 8.18 (belum lunas), 8.19 (lunas), 8.20 (ditandai lunas), dan 8.22
-/// (perubahan tersimpan).
+/// 8.18, 8.19, 8.20, dan 8.22 (perubahan tersimpan).
 ///
-/// Status lunas bisa ditandai dari sini, kecuali selama penjualan masih di
-/// antrean sinkron (frame 8.17) karena server belum mengenalnya.
+/// Setiap penjualan dianggap lunas, jadi Detail tidak lagi punya penanda atau
+/// aksi status bayar; hanya baris antre yang tetap memakai lencana "Antrean".
 class V2PenjualanDetailPage extends StatefulWidget {
   const V2PenjualanDetailPage({
     super.key,
@@ -135,39 +133,6 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
 
   void _close() => Navigator.of(context).pop(_penjualan);
 
-  Future<void> _markPaid() async {
-    final store = widget.store;
-    if (store == null) {
-      setState(() {
-        _penjualan = _penjualan.copyWith(pembayaran: V2PenjualanBayar.lunas);
-      });
-      _showToast('Ditandai lunas');
-      return;
-    }
-
-    V2Penjualan? updated;
-    try {
-      final done = await showV2ActionDialog(
-        context,
-        title: 'Tandai lunas?',
-        body:
-            'Penjualan ${_penjualan.pembeli} akan ditandai lunas di server.',
-        primaryLabel: 'Tandai lunas',
-        onConfirm: () async {
-          updated = await store.markPaid(_penjualan);
-        },
-      );
-      if (!mounted || !done) return;
-      setState(() => _penjualan = updated!);
-      _showToast('Ditandai lunas');
-    } on V2PenjualanStoreException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(error.message)));
-    }
-  }
-
   Future<void> _edit() async {
     final updated = await Navigator.of(context).push<V2Penjualan>(
       V2PenjualanFormPage.route(
@@ -236,19 +201,8 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
                 ),
                 V2ActionBar(
                   toast: _toast,
-                  note: antrean
-                      ? 'Penjualan belum sinkron. Status bisa diubah setelah '
-                            'sinkron.'
-                      : null,
+                  note: antrean ? 'Penjualan belum sinkron ke server.' : null,
                   actions: [
-                    if (!_penjualan.lunas)
-                      V2Button(
-                        label: 'Tandai lunas',
-                        state: antrean
-                            ? V2ButtonState.disabled
-                            : V2ButtonState.normal,
-                        onPressed: antrean ? null : _markPaid,
-                      ),
                     V2Button(
                       label: 'Ubah',
                       type: V2ButtonType.tertiary,
@@ -264,12 +218,12 @@ class _V2PenjualanDetailPageState extends State<V2PenjualanDetailPage> {
     );
   }
 
-  Widget _badge() {
+  /// Hanya baris antrean yang punya lencana; penjualan yang sudah tercatat
+  /// tidak lagi menampilkan status bayar.
+  Widget? _badge() {
     if (_penjualan.antrean) {
       return const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending);
     }
-    return _penjualan.lunas
-        ? const V2Badge(label: 'Lunas', status: V2BadgeStatus.success)
-        : const V2Badge(label: 'Belum lunas', status: V2BadgeStatus.warning);
+    return null;
   }
 }

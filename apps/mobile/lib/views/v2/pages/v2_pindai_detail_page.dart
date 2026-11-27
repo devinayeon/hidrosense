@@ -56,7 +56,11 @@ class V2PindaiDetailPage extends StatelessWidget {
                         kicker: item.labelKicker,
                         badge: v2PindaiBadge(status),
                         value: item.hama,
-                        meta: 'Keyakinan ${item.labelKeyakinan}',
+                        meta: !item.adaHama
+                            ? item.labelKeyakinan
+                            : item.keyakinan == null
+                            ? 'Tanpa keyakinan'
+                            : 'Keyakinan ${item.labelKeyakinan}',
                         extra: status == null
                             ? 'Belum ada rekomendasi obat untuk foto ini.'
                             : 'Rekomendasi obat: ${status.label}.',
@@ -65,7 +69,9 @@ class V2PindaiDetailPage extends StatelessWidget {
                         const SizedBox(height: V2Space.lg),
                         _RincianCard(rincian: item.rincian),
                       ],
-                      if (onOpenRotasi != null) ...[
+                      // Foto tanpa hama tidak punya rekomendasi untuk dirotasi,
+                      // jadi jalan ke riwayat rotasi tidak perlu ditawarkan.
+                      if (onOpenRotasi != null && item.adaHama) ...[
                         const SizedBox(height: V2Space.lg),
                         V2Button(
                           label: 'Lihat riwayat rotasi obat',

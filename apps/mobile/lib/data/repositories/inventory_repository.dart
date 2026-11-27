@@ -141,6 +141,52 @@ class InventoryRepository {
         .toList();
   }
 
+  /// Riwayat stok terbaru, terbaru lebih dulu.
+  ///
+  /// `GET /stok` mengurutkan dari transaksi terlama, jadi halaman terakhir
+  /// berisi transaksi terbaru. Kartu "Riwayat" hanya menampilkan tiga baris
+  /// pertama, karena itu halaman terakhir (dan halaman sebelumnya bila halaman
+  /// terakhir belum penuh) diambil lalu dibalik. Dengan begitu potongan stok
+  /// dari perawatan yang baru diterima tidak tertutup catatan lama.
+  Future<List<StockMovementRecord>> fetchLatestStockHistory({
+    required String inventoryId,
+    int limit = 20,
+  }) async {
+    final probe = await _api.get(
+      'stok',
+      query: {'page': '1', 'limit': '1', 'id_inventaris': inventoryId},
+    );
+    final total = _metaInt(probe, 'total');
+    if (total <= 0) return const <StockMovementRecord>[];
+    final lastPage = (total + limit - 1) ~/ limit;
+    final lastPageSize = total - (lastPage - 1) * limit;
+    final firstPage = lastPageSize < limit && lastPage > 1
+        ? lastPage - 1
+        : lastPage;
+    final rows = <StockMovementRecord>[];
+    for (var page = firstPage; page <= lastPage; page++) {
+      final response = await _api.get(
+        'stok',
+        query: {
+          'page': '$page',
+          'limit': '$limit',
+          'id_inventaris': inventoryId,
+        },
+      );
+      final data = response['data'];
+      if (data is! List) {
+        throw const FormatException('Riwayat stok tidak valid.');
+      }
+      rows.addAll(
+        data.map(
+          (json) => StockMovementRecord.fromJson(json as Map<String, dynamic>),
+        ),
+      );
+    }
+    // Halaman diambil dari terlama ke terbaru; balik supaya terbaru di atas.
+    return rows.reversed.take(limit).toList();
+  }
+
   Future<InventorySnapshot> refresh() async {
     final sessionGeneration = _api.sessionGeneration;
     final records = <InventoryRecord>[];
@@ -239,4 +285,12 @@ Future<List<ObatKatalogRecord>> fetchObatKatalog(ApiClient api) async {
   return data
       .map((json) => ObatKatalogRecord.fromJson(json as Map<String, dynamic>))
       .toList();
+}
+
+/// Angka `meta` dari respons daftar; 0 bila meta atau kuncinya tidak ada.
+int _metaInt(Map<String, dynamic> response, String key) {
+  final meta = response['meta'];
+  if (meta is! Map) return 0;
+  final value = meta[key];
+  return value is int ? value : int.tryParse('$value') ?? 0;
 }

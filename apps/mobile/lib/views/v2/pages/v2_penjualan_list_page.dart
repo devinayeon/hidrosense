@@ -16,10 +16,8 @@ import '../components/v2_penjualan_store.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
 import '../widgets/v2_app_bar.dart';
-import '../widgets/v2_badge.dart';
 import '../widgets/v2_banner.dart';
 import '../widgets/v2_button.dart';
-import '../widgets/v2_chip.dart';
 import '../widgets/v2_error_state.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_icon.dart';
@@ -51,19 +49,17 @@ enum V2PenjualanListState {
 }
 
 /// Daftar penjualan: frame 8.1 (siap), 8.2 (memuat), 8.3 (gagal memuat),
-/// 8.4 (kosong), 8.6 (saringan belum lunas), 8.14 (penjualan dicatat), dan
-/// 8.16 (tersimpan di HP).
+/// 8.4 (kosong), 8.14 (penjualan dicatat), dan 8.16 (tersimpan di HP).
 ///
-/// Susunan siap: kartu ringkasan bulan, saringan Semua/Belum lunas/Lunas, lalu
-/// `Grup daftar`. Tombol di bawah selalu "Catat penjualan"; ia membuka form
-/// 8.7. Ikon grafik di AppBar membuka ringkasan 8.5.
+/// Susunan siap: kartu ringkasan bulan lalu `Grup daftar`. Tombol di bawah
+/// selalu "Catat penjualan"; ia membuka form 8.7. Ikon grafik di AppBar membuka
+/// ringkasan 8.5.
 class V2PenjualanListPage extends StatefulWidget {
   const V2PenjualanListPage({
     super.key,
     this.initialPenjualan,
     this.ringkasan = designRingkasanPenjualan,
     this.state = V2PenjualanListState.ready,
-    this.filterIndex = 0,
     this.toast,
     this.panen,
     this.store,
@@ -76,7 +72,6 @@ class V2PenjualanListPage extends StatefulWidget {
     : initialPenjualan = designPenjualan,
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.loading,
-      filterIndex = 0,
       toast = null,
       panen = null,
       store = null,
@@ -88,7 +83,6 @@ class V2PenjualanListPage extends StatefulWidget {
     : initialPenjualan = designPenjualan,
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.error,
-      filterIndex = 0,
       toast = null,
       panen = null,
       store = null,
@@ -100,19 +94,6 @@ class V2PenjualanListPage extends StatefulWidget {
     : initialPenjualan = const <V2Penjualan>[],
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.empty,
-      filterIndex = 0,
-      toast = null,
-      panen = null,
-      store = null,
-      syncQueue = null,
-      saleRepairer = null;
-
-  /// Frame `8.6 Penjualan, belum lunas`: saringan "Belum lunas" menyala.
-  V2PenjualanListPage.belumLunas({super.key})
-    : initialPenjualan = designPenjualan,
-      ringkasan = designRingkasanPenjualan,
-      state = V2PenjualanListState.ready,
-      filterIndex = 1,
       toast = null,
       panen = null,
       store = null,
@@ -124,7 +105,6 @@ class V2PenjualanListPage extends StatefulWidget {
     : initialPenjualan = designPenjualanBaru,
       ringkasan = designRingkasanPenjualanBaru,
       state = V2PenjualanListState.created,
-      filterIndex = 0,
       toast = 'Penjualan dicatat',
       panen = null,
       store = null,
@@ -136,7 +116,6 @@ class V2PenjualanListPage extends StatefulWidget {
     : initialPenjualan = designPenjualanOffline,
       ringkasan = designRingkasanPenjualan,
       state = V2PenjualanListState.offline,
-      filterIndex = 0,
       toast = 'Tersimpan di HP',
       panen = null,
       store = null,
@@ -146,7 +125,6 @@ class V2PenjualanListPage extends StatefulWidget {
   final List<V2Penjualan>? initialPenjualan;
   final V2PenjualanRingkasan ringkasan;
   final V2PenjualanListState state;
-  final int filterIndex;
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 8.14/8.16).
   final String? toast;
@@ -192,16 +170,9 @@ class V2PenjualanListPage extends StatefulWidget {
 }
 
 class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
-  static const List<String> _filters = <String>[
-    'Semua',
-    'Belum lunas',
-    'Lunas',
-  ];
-
   late List<V2Penjualan> _items = widget.initialPenjualan ?? designPenjualan;
   late V2PenjualanRingkasan _ringkasan = widget.ringkasan;
   late List<V2PenjualanPanen> _panenOptions = widget.panen ?? designPanen;
-  late int _filter = widget.filterIndex;
   Timer? _toastTimer;
   String? _toast;
 
@@ -249,12 +220,6 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
             : item,
     ];
   }
-
-  List<V2Penjualan> get _filtered => switch (_filter) {
-    1 => _displayItems.where((item) => !item.lunas).toList(),
-    2 => _displayItems.where((item) => item.lunas).toList(),
-    _ => _displayItems,
-  };
 
   @override
   void initState() {
@@ -354,7 +319,6 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     if (created == null || !mounted) return;
     setState(() {
       _items = [created, ..._items];
-      _filter = 0;
       if (widget.store != null) _ringkasan = _ringkasanFor(_displayItems);
     });
     _showToast('Penjualan dicatat');
@@ -531,7 +495,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
       );
     }
 
-    final rows = _filtered;
+    final rows = _displayItems;
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
       padding: _scrollPadding,
@@ -551,8 +515,6 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
               ],
             ),
           ),
-          const SizedBox(height: V2Space.lg),
-          _buildChips(),
           const SizedBox(height: V2Space.lg),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
@@ -579,29 +541,6 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
       kicker: _ringkasan.kicker,
       value: _ringkasan.total,
       meta: _ringkasan.kgTerjual,
-      extra: _ringkasan.belumLunas,
-      badge: _ringkasan.adaBelumLunas
-          ? const V2Badge(label: 'Belum lunas', status: V2BadgeStatus.warning)
-          : null,
-    );
-  }
-
-  Widget _buildChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
-      child: Row(
-        children: [
-          for (var index = 0; index < _filters.length; index++) ...[
-            if (index > 0) const SizedBox(width: V2Space.sm),
-            V2Chip(
-              label: _filters[index],
-              selected: index == _filter,
-              onTap: () => setState(() => _filter = index),
-            ),
-          ],
-        ],
-      ),
     );
   }
 

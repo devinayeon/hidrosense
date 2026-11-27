@@ -13,7 +13,6 @@ import '../widgets/v2_date_sheet.dart';
 import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_option_row.dart';
-import '../widgets/v2_segmented.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_text_field.dart';
 
@@ -296,7 +295,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
 
   /// Label panen untuk pratinjau frame 8.8 (panen yang belum ada di daftar).
   String? _panenPreview;
-  int _pembayaran = 0;
 
   /// Salinan terbaru dari server setelah konflik versi (frame 8.24).
   V2Penjualan? _server;
@@ -430,8 +428,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         _panen = own ?? (prefill ? _options.firstOrNull : null);
       }
     }
-    _pembayaran = (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
-
     for (final controller in _controllers) {
       controller.addListener(_onFieldChanged);
     }
@@ -510,8 +506,6 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
           (prefill ? DateTime(2026, 11, 15) : jakartaToday());
       _panenPreview = null;
       _panen = _ownOption ?? (prefill ? _options.firstOrNull : null);
-      _pembayaran =
-          (initial?.pembayaran == V2PenjualanBayar.belumLunas) ? 1 : 0;
       _tanggalError = null;
       _pembeliError = null;
       _panenError = null;
@@ -697,9 +691,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
       panenId: panen?.id,
       jumlahKg: jumlah,
       hargaPerKg: harga,
-      pembayaran: _pembayaran == 0
-          ? V2PenjualanBayar.lunas
-          : V2PenjualanBayar.belumLunas,
+      pembayaran: V2PenjualanBayar.lunas,
       keterangan: catatan.isEmpty ? null : catatan,
     );
     final aksi = widget.fixing
@@ -752,9 +744,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         tanggal: _tanggal,
         jumlahKg: jumlah,
         hargaPerKg: harga,
-        pembayaran: _pembayaran == 0
-            ? V2PenjualanBayar.lunas
-            : V2PenjualanBayar.belumLunas,
+        pembayaran: V2PenjualanBayar.lunas,
         panen: panen,
         panenAsal: panen.contains('15 Nov')
             ? 'Dari panen 15 Nov, Meja A1'
@@ -872,23 +862,7 @@ class _V2PenjualanFormPageState extends State<V2PenjualanFormPage> {
         ],
       ),
       SizedBox(height: gap),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Pembayaran', style: V2Type.label),
-          const SizedBox(height: V2Space.sm),
-          V2Segmented(
-            labels: const ['Lunas', 'Belum lunas'],
-            selectedIndex: _pembayaran,
-            onChanged: (index) => setState(() {
-              _pembayaran = index;
-              _dirty = true;
-            }),
-          ),
-        ],
-      ),
       // Keterangan penjualan (D-39): catatan bebas opsional, didukung server.
-      SizedBox(height: gap),
       V2TextField(
         label: 'Keterangan (opsional)',
         hint: 'Contoh: diambil besok pagi',

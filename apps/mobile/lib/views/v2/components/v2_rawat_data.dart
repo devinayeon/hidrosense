@@ -41,6 +41,9 @@ enum V2PindaiStatus {
   final String label;
 }
 
+/// Judul baris pindaian saat model tidak menemukan satu pun hama.
+const String v2PindaiTanpaHama = 'Tidak ada hama';
+
 /// Satu baris “Pindaian terbaru” di tab Rawat: foto yang sudah dianalisis model.
 ///
 /// Data ini berasal dari `GET /pindaian`, bukan contoh desain, jadi [hama] dan
@@ -58,7 +61,8 @@ class V2PindaiItem {
 
   final String id;
 
-  /// Nama hama yang terdeteksi, mis. `Thrips, Kutu kebul`; `Tidak ada hama` bila bersih.
+  /// Nama hama yang terdeteksi, mis. `Thrips, Kutu kebul`; [v2PindaiTanpaHama]
+  /// bila foto bersih.
   final String hama;
   final String meja;
   final DateTime tanggal;
@@ -77,9 +81,15 @@ class V2PindaiItem {
   /// `Meja A2, 24 Nov`.
   String get labelKicker => '$meja, $labelTanggal';
 
-  /// `87%` atau `Tanpa keyakinan`.
-  String get labelKeyakinan =>
-      keyakinan == null ? 'Tanpa keyakinan' : '$keyakinan%';
+  /// `true` bila foto ini punya hama yang terdeteksi.
+  bool get adaHama => hama != v2PindaiTanpaHama;
+
+  /// `87%`; `Tidak terdeteksi` bila foto bersih; `Tanpa keyakinan` bila hama
+  /// terdeteksi tetapi server tidak menyimpan skornya.
+  String get labelKeyakinan {
+    if (!adaHama) return 'Tidak terdeteksi';
+    return keyakinan == null ? 'Tanpa keyakinan' : '$keyakinan%';
+  }
 }
 
 /// Status satu catatan perawatan.

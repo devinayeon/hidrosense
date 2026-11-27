@@ -53,6 +53,8 @@ class V2PanenTabView extends StatefulWidget {
     this.riwayat,
     this.state = V2PanenState.ready,
     this.initialChipIndex = 0,
+    this.estimasiLoading = false,
+    this.riwayatLoading = false,
     this.toast,
     this.toastTone = V2ToastTone.info,
     this.offline = false,
@@ -73,6 +75,13 @@ class V2PanenTabView extends StatefulWidget {
 
   /// 0 Estimasi, 1 Riwayat.
   final int initialChipIndex;
+
+  /// Estimasi belum bisa dinilai karena daftar batch masih dimuat; tampilkan
+  /// kerangka di chip Estimasi, bukan pesan "belum ada tanaman".
+  final bool estimasiLoading;
+
+  /// Riwayat panen masih dimuat; tampilkan kerangka di chip Riwayat.
+  final bool riwayatLoading;
 
   /// Toast yang melayang di atas tombol footer.
   final String? toast;
@@ -105,7 +114,9 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
   List<V2PanenItem> get _riwayat => widget.riwayat ?? designPanenRiwayat;
 
   /// Frame 7.5 tidak menampilkan chip sama sekali saat belum ada tanaman.
-  bool get _tanpaChip => _estimasi.isEmpty && _chip == 0;
+  /// Selama daftar batch masih dimuat, estimasi belum bisa dinilai.
+  bool get _tanpaChip =>
+      _estimasi.isEmpty && _chip == 0 && !widget.estimasiLoading;
 
   bool get _showFooter => !_loading && !_error;
 
@@ -120,7 +131,12 @@ class _V2PanenTabViewState extends State<V2PanenTabView> {
   }
 
   Widget _buildContent() {
-    if (_loading) {
+    final kosongChip = _chip == 0 ? _estimasi.isEmpty : _riwayat.isEmpty;
+    final menungguChip = _chip == 0
+        ? widget.estimasiLoading
+        : widget.riwayatLoading;
+
+    if (_loading || (menungguChip && kosongChip)) {
       return _scroll(
         children: [
           _header(),

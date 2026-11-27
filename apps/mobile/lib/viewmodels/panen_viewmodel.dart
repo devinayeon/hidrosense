@@ -33,6 +33,8 @@ class PanenState {
     this.records = const [],
     this.transfers = const [],
     this.loading = false,
+    this.recordsLoaded = false,
+    this.transfersLoaded = false,
     this.submitting = false,
     this.error,
     this.refreshWarning,
@@ -43,6 +45,12 @@ class PanenState {
   final List<HarvestRecord> records;
   final List<TransferRecord> transfers;
   final bool loading, submitting;
+
+  /// Riwayat panen sudah pernah termuat (termasuk kosong) pada sesi ini.
+  final bool recordsLoaded;
+
+  /// Daftar batch pemindahan sudah pernah termuat (termasuk kosong).
+  final bool transfersLoaded;
   final String? error, refreshWarning, conflictId;
   List<TransferRecord> get upcoming =>
       transfers.where((t) => t.activePlants > 0).toList();
@@ -120,6 +128,8 @@ class PanenViewModel extends StateNotifier<PanenState> {
     List<HarvestRecord>? records,
     List<TransferRecord>? transfers,
     bool loading = false,
+    bool? recordsLoaded,
+    bool? transfersLoaded,
     bool? submitting,
     String? error,
     String? warning,
@@ -131,6 +141,8 @@ class PanenViewModel extends StateNotifier<PanenState> {
       records: records ?? state.records,
       transfers: transfers ?? state.transfers,
       loading: loading,
+      recordsLoaded: recordsLoaded ?? state.recordsLoaded,
+      transfersLoaded: transfersLoaded ?? state.transfersLoaded,
       submitting: submitting ?? state.submitting,
       error: error,
       refreshWarning: warning,
@@ -163,24 +175,34 @@ class PanenViewModel extends StateNotifier<PanenState> {
     if (!mounted) return;
     final generation = ++_generation;
     _set(loading: true, warning: state.refreshWarning);
-    try {
-      final loaded = await Future.wait<Object>([
-        repository.listHarvests(),
-        canReadBatches
-            ? repository.listTransfers()
-            : Future.value(<TransferRecord>[]),
-      ]);
-      final records = loaded[0] as List<HarvestRecord>;
-      final transfers = loaded[1] as List<TransferRecord>;
+    // Riwayat dan batch diterbitkan terpisah: daftar panen bisa tampil begitu
+    // panen selesai dimuat tanpa menunggu daftar pemindahan yang lebih berat.
+    final harvests = repository.listHarvests().then((records) {
       if (mounted && generation == _generation) {
-        _set(records: _merge(records), transfers: transfers);
+        _set(records: _merge(records), recordsLoaded: true);
       }
+      return records;
+    });
+    final transfers =
+        (canReadBatches
+                ? repository.listTransfers()
+                : Future.value(<TransferRecord>[]))
+            .then((rows) {
+              if (mounted && generation == _generation) {
+                _set(transfers: rows, transfersLoaded: true);
+              }
+              return rows;
+            });
+    try {
+      await Future.wait<Object>([harvests, transfers]);
     } catch (e) {
       if (mounted && generation == _generation) {
         final denied = e is ApiException && [401, 403].contains(e.status);
         _set(
           records: denied ? [] : null,
           transfers: denied ? [] : null,
+          recordsLoaded: true,
+          transfersLoaded: true,
           error: serviceError(e),
           warning: state.refreshWarning,
         );
@@ -297,6 +319,8 @@ class PanenViewModel extends StateNotifier<PanenState> {
     state = PanenState(
       records: state.records,
       transfers: state.transfers,
+      recordsLoaded: state.recordsLoaded,
+      transfersLoaded: state.transfersLoaded,
       detailReads: state.detailReads,
     );
   }

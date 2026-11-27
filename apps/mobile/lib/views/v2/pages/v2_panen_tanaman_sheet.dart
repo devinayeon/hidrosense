@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/business_date.dart';
 import '../components/v2_panen_data.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_bottom_sheet.dart';
@@ -7,6 +8,27 @@ import '../widgets/v2_button.dart';
 import '../widgets/v2_chip.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_text_field.dart';
+
+/// Batch siap dipilih untuk dipanen: HST ≥ 45 hari atau HSS ≥ 60 hari.
+///
+/// Baris galeri yang tidak punya tanggal pindah maupun HSS tetap ditampilkan
+/// karena kesiapannya tidak bisa dinilai; penyaringan hanya membuang batch yang
+/// jelas belum cukup umur.
+bool v2TanamanSiapDipanen(V2PanenEstimasi item, {DateTime? hariIni}) {
+  final transferDate = item.transferDate;
+  final hss = item.hss;
+  if (transferDate == null && hss == null) return true;
+  final today = hariIni ?? jakartaToday();
+  final hst = transferDate == null
+      ? null
+      : DateTime(today.year, today.month, today.day)
+            .difference(
+              DateTime(transferDate.year, transferDate.month, transferDate.day),
+            )
+            .inDays;
+  return (hst != null && hst >= v2PanenUmurHst) ||
+      (hss != null && hss >= v2PanenUmurHss);
+}
 
 /// Buang baris ganda (id pemindahan sama) lalu saring daftar tanaman pemilih
 /// "Catat panen" (BUG-33): hanya yang cocok pencarian teks dan (opsional)
@@ -77,11 +99,15 @@ class _V2PanenTanamanSheetState extends State<V2PanenTanamanSheet> {
   @override
   void initState() {
     super.initState();
-    _draft =
-        widget.terpilih ??
-        (widget.pilihan.isEmpty ? null : widget.pilihan.first);
+    _draft = widget.terpilih ?? (_siap.isEmpty ? null : _siap.first);
     _cari.addListener(_onCariChanged);
   }
+
+  /// Batch yang sudah cukup umur untuk dipanen (HST 45 / HSS 60).
+  List<V2PanenEstimasi> get _siap => [
+    for (final item in widget.pilihan)
+      if (v2TanamanSiapDipanen(item)) item,
+  ];
 
   void _onCariChanged() => setState(() => _kueri = _cari.text);
 
@@ -95,15 +121,12 @@ class _V2PanenTanamanSheetState extends State<V2PanenTanamanSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final siap = _siap;
     final mejaTersedia = <String>[];
-    for (final item in widget.pilihan) {
+    for (final item in siap) {
       if (!mejaTersedia.contains(item.meja)) mejaTersedia.add(item.meja);
     }
-    final hasil = saringPilihanTanamanPanen(
-      widget.pilihan,
-      cari: _kueri,
-      meja: _meja,
-    );
+    final hasil = saringPilihanTanamanPanen(siap, cari: _kueri, meja: _meja);
     final tinggiSheet = MediaQuery.sizeOf(context).height * 0.9;
 
     return ConstrainedBox(
@@ -154,7 +177,11 @@ class _V2PanenTanamanSheetState extends State<V2PanenTanamanSheet> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: V2Space.lg),
                 child: Text(
-                  'Tidak ada tanaman yang cocok. Ubah pencarian atau filter meja.',
+                  siap.isEmpty
+                      ? 'Belum ada tanaman yang siap dipanen. '
+                            'Tunggu sampai HST 45 hari atau HSS 60 hari.'
+                      : 'Tidak ada tanaman yang cocok. Ubah pencarian atau '
+                            'filter meja.',
                   style: V2Type.body.copyWith(color: V2Colors.muted),
                 ),
               )

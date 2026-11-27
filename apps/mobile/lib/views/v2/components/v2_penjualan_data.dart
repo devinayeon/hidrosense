@@ -133,20 +133,12 @@ class V2PenjualanRingkasan {
     required this.kicker,
     required this.total,
     required this.kgTerjual,
-    required this.belumLunas,
-    this.adaBelumLunas = true,
   });
 
   /// Judul kecil di kiri, mis. "November 2026".
   final String kicker;
   final String total;
   final String kgTerjual;
-
-  /// Baris kecil terbawah, mis. "Belum lunas Rp 2.400.000".
-  final String belumLunas;
-
-  /// Menyalakan badge kuning "Belum lunas" di kanan judul.
-  final bool adaBelumLunas;
 }
 
 /// Ringkasan yang dihitung dari [items]; dipakai saat data sudah nyata.
@@ -156,18 +148,14 @@ V2PenjualanRingkasan ringkasanPenjualan(
 }) {
   var total = 0.0;
   var kg = 0.0;
-  var belumLunas = 0.0;
   for (final item in items) {
     total += item.total;
     kg += item.jumlahKg;
-    if (!item.lunas) belumLunas += item.total;
   }
   return V2PenjualanRingkasan(
     kicker: kicker,
     total: formatRupiahPenuh(total),
     kgTerjual: '${formatKg(kg)} terjual',
-    belumLunas: 'Belum lunas ${formatRupiahPenuh(belumLunas)}',
-    adaBelumLunas: belumLunas > 0,
   );
 }
 
@@ -197,7 +185,6 @@ class V2PenjualanRingkasanBulanan {
     required this.bulan,
     required this.totalTigaBulan,
     required this.rataRataPerKg,
-    required this.belumLunas,
   });
 
   /// Tiga bulan berurutan, paling lama di depan (Sep, Okt, Nov).
@@ -206,9 +193,6 @@ class V2PenjualanRingkasanBulanan {
 
   /// Rata-rata rupiah per kg seluruh tiga bulan; 0 bila belum ada berat.
   final double rataRataPerKg;
-
-  /// Sisa penjualan yang belum lunas pada tiga bulan itu.
-  final double belumLunas;
 
   /// `Sep 5,2 juta, Okt 6,4 juta, Nov 7,5 juta.`
   String get caption =>
@@ -223,7 +207,6 @@ V2PenjualanRingkasanBulanan ringkasanBulananPenjualan(
   final bulan = <V2PenjualanBulan>[];
   var totalTigaBulan = 0.0;
   var kgTigaBulan = 0.0;
-  var belumLunas = 0.0;
   for (var mundur = 2; mundur >= 0; mundur--) {
     final acuan = DateTime(sekarang.year, sekarang.month - mundur);
     var total = 0.0;
@@ -235,7 +218,6 @@ V2PenjualanRingkasanBulanan ringkasanBulananPenjualan(
       }
       total += item.total;
       kg += item.jumlahKg;
-      if (!item.lunas) belumLunas += item.total;
     }
     totalTigaBulan += total;
     kgTigaBulan += kg;
@@ -251,7 +233,6 @@ V2PenjualanRingkasanBulanan ringkasanBulananPenjualan(
     bulan: List.unmodifiable(bulan),
     totalTigaBulan: totalTigaBulan,
     rataRataPerKg: kgTigaBulan == 0 ? 0 : totalTigaBulan / kgTigaBulan,
-    belumLunas: belumLunas,
   );
 }
 
@@ -448,12 +429,11 @@ final List<V2Penjualan> designPenjualanOffline = <V2Penjualan>[
   penjualanTokoSegar,
 ];
 
-/// Isi kartu ringkasan frame 8.1/8.6/8.16.
+/// Isi kartu ringkasan frame 8.1/8.16.
 const V2PenjualanRingkasan designRingkasanPenjualan = V2PenjualanRingkasan(
   kicker: 'November 2026',
   total: 'Rp 7.460.000',
   kgTerjual: '190 kg terjual',
-  belumLunas: 'Belum lunas Rp 2.400.000',
 );
 
 /// Isi kartu ringkasan frame 8.14.
@@ -461,7 +441,6 @@ const V2PenjualanRingkasan designRingkasanPenjualanBaru = V2PenjualanRingkasan(
   kicker: 'November 2026',
   total: 'Rp 9.860.000',
   kgTerjual: '250 kg terjual',
-  belumLunas: 'Belum lunas Rp 4.800.000',
 );
 
 /// Pilihan panen di sheet 8.9; yang sisa 0 kg tidak bisa dipilih.

@@ -17,8 +17,9 @@ import 'v2_panen_tanaman_sheet.dart';
 ///
 /// Tanggal dan tanaman duduk di dua `Select` 84, jumlah memakai `QtyField`,
 /// lalu berat total dan reject. Kartu "Berat layak" biru muda 120 di bawahnya
-/// hanya tampil saat isian sudah cukup. Jarak antarbagian 12 pada keadaan
-/// normal, dan 16 saat ada galat (frame 7.11/7.12).
+/// selalu tampil, termasuk saat ada galat, supaya hasil hitung tetap terlihat.
+/// Jarak antarbagian 12 pada keadaan normal, dan 16 saat ada galat
+/// (frame 7.11/7.12).
 class V2PanenFormPage extends StatefulWidget {
   const V2PanenFormPage({
     super.key,
@@ -395,10 +396,10 @@ class _V2PanenFormPageState extends State<V2PanenFormPage> {
                     controller: _beratReject,
                     keyboardType: TextInputType.number,
                   ),
-                  if (!_adaError) ...[
-                    const SizedBox(height: V2Space.md),
-                    _kartuLayak(),
-                  ],
+                  // Kartu "Berat layak" tetap tampil walau ada galat supaya
+                  // petani melihat hasil hitung saat memperbaiki isian.
+                  const SizedBox(height: V2Space.md),
+                  _kartuLayak(),
                 ],
               ),
             ),
