@@ -55,7 +55,7 @@ V2PindaiItem v2PindaiItemFromScan(ScanEntry entry, String meja) {
   return V2PindaiItem(
     id: entry.scan.id,
     hama: detections.isEmpty
-        ? 'Tidak ada hama'
+        ? v2PindaiTanpaHama
         : detections.map((d) => d.pest.label).join(', '),
     meja: meja,
     tanggal: entry.scan.detectedAt,

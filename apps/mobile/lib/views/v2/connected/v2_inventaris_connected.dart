@@ -75,9 +75,8 @@ final inventoryHistoryProvider = FutureProvider.autoDispose
         ref.watch(inventoryCacheProvider),
         userId: user.id,
       );
-      final rows = await repository.fetchStockHistory(
+      final rows = await repository.fetchLatestStockHistory(
         inventoryId: inventoryId,
-        limit: 20,
       );
       return rows.map(_riwayatFromMovement).toList();
     });

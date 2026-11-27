@@ -339,3 +339,16 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-74f | Tanpa saringan status bayar | Penjualan (daftar); lihat bawah kartu ringkasan | `FIXED di kode, belum diuji ulang di HP` — tidak ada chip Semua/Belum lunas/Lunas, tidak ada baris "Belum lunas" di kartu ringkasan |
 | MC-FIX-74g | Detail penjualan tanpa "Tandai lunas" | Penjualan → ketuk penjualan lama yang dulu belum lunas | `FIXED di kode, belum diuji ulang di HP` — footer hanya "Ubah"; tidak ada lencana Lunas/Belum lunas; penjualan antrean tetap berlencana "Antrean" |
 | MC-FIX-74h | Ringkasan penjualan tanpa "Belum lunas" | Penjualan → ikon grafik (Ringkasan penjualan) | `FIXED di kode, belum diuji ulang di HP` — kartu info hanya "Total 3 bulan" dan "Rata-rata per kg" |
+
+---
+
+> Sesi 10 lanjutan 5 (27 Nov 2026): perbaikan alur Perawatan (deteksi & riwayat
+> stok). Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris
+> baru yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-75a | Foto tanpa hama berlabel "Tidak terdeteksi" | Rawat → bagian "Pindaian terbaru"; lihat foto daun yang bersih | `FIXED di kode, belum diuji ulang di HP` — keterangan kanan baris berbunyi "Tidak terdeteksi", bukan "Tanpa keyakinan" |
+| MC-FIX-75b | Detail deteksi tanpa hama tanpa tombol rotasi | Rawat → ketuk baris foto yang tidak mendeteksi hama | `FIXED di kode, belum diuji ulang di HP` — kartu menampilkan "Tidak ada hama" + "Tidak terdeteksi"; tombol "Lihat riwayat rotasi obat" tidak ada |
+| MC-FIX-75c | Detail deteksi berhama tetap punya tombol rotasi | Rawat → ketuk baris foto yang mendeteksi hama | `FIXED di kode, belum diuji ulang di HP` — meta "Keyakinan NN%", tombol "Lihat riwayat rotasi obat" tetap ada dan membuka riwayat |
+| MC-FIX-75d | Potongan stok perawatan masuk riwayat | Rawat → terima rekomendasi dengan potong stok → Stok → buka barang obat itu → kartu "Riwayat" | `FIXED di kode, belum diuji ulang di HP` — baris "Pakai N ml" terbaru muncul paling atas, walau barang sudah punya banyak catatan |
