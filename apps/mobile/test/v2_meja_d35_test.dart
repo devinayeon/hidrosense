@@ -54,12 +54,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Simpan perubahan meja?'), findsOneWidget);
-    expect(hasil, isNull, reason: 'form belum boleh tertutup sebelum dikonfirmasi');
+    expect(
+      hasil,
+      isNull,
+      reason: 'form belum boleh tertutup sebelum dikonfirmasi',
+    );
     // Isian tetap utuh di belakang dialog.
     expect(find.text('Ubah meja'), findsOneWidget);
   });
 
-  testWidgets('Ubah meja: Batal membatalkan tanpa menutup form', (tester) async {
+  testWidgets('Ubah meja: Batal membatalkan tanpa menutup form', (
+    tester,
+  ) async {
     V2MejaItem? hasil;
     await _pumpHost(
       tester,
@@ -77,7 +83,9 @@ void main() {
     expect(find.text('Ubah meja'), findsOneWidget);
   });
 
-  testWidgets('Ubah meja: konfirmasi menyimpan dan menutup form', (tester) async {
+  testWidgets('Ubah meja: konfirmasi menyimpan dan menutup form', (
+    tester,
+  ) async {
     V2MejaItem? hasil;
     await _pumpHost(
       tester,
@@ -104,13 +112,12 @@ void main() {
       simpan: (r) => hasil = r,
     );
 
-    await tester.enterText(find.byType(TextField).at(0), 'B9');
     await tester.enterText(find.byType(TextField).at(1), '240');
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
     expect(find.text('Simpan perubahan meja?'), findsNothing);
     expect(hasil, isNotNull);
-    expect(hasil!.kode, 'B9');
+    expect(hasil!.kode, 'A1', reason: 'kode dibuat otomatis');
   });
 }

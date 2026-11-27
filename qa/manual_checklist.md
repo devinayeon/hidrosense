@@ -295,3 +295,15 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-71c | Angka bawaan tambah semaian 1 | Penyemaian → Tambah; cek jumlah benih dan jumlah bahan | `FIXED di kode, belum diuji ulang di HP` — keduanya 1 |
 | MC-FIX-71d | Pesan jumlah benih | Tambah semaian → kosongkan/isi `0` jumlah benih → Simpan | `FIXED di kode, belum diuji ulang di HP` — "Benih harus angka positif" di kolom |
 | MC-FIX-71e | Info stok tidak mencukupi | Tambah semaian → jumlah bahan `15` (stok 12) | `FIXED di kode, belum diuji ulang di HP` — info bawah "Benih Romaine: Stok tidak mencukupi", bukan angka minus |
+
+---
+
+> Sesi 10 lanjutan 2 (27 Nov 2026): perbaikan alur Meja. Status **`FIXED di
+> kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-72a | Kode meja tidak bisa diketik (tambah) | Meja → Tambah; coba ketuk/ketik kolom "Kode meja" | `FIXED di kode, belum diuji ulang di HP` — kode terisi otomatis (mis. A1/A3), kolom abu-abu tidak bisa diketik |
+| MC-FIX-72b | Kode meja tidak bisa diketik (ubah) | Detail meja → Ubah meja; coba ketuk/ketik kolom "Kode meja" | `FIXED di kode, belum diuji ulang di HP` — menampilkan kode meja, tidak bisa diubah |
+| MC-FIX-72c | Placeholder jumlah lubang 250 | Meja → Tambah; lihat placeholder kolom "Jumlah lubang" | `FIXED di kode, belum diuji ulang di HP` — "Contoh: 240 (maksimal 250)" |
+| MC-FIX-72d | Tombol tambah tanaman saat Perawatan | Detail meja → Ubah status → Perawatan; lihat footer | `FIXED di kode, belum diuji ulang di HP` — tombol "Tambah tanaman" hilang, hanya catatan "Meja Perawatan tidak menerima tanaman baru." |
