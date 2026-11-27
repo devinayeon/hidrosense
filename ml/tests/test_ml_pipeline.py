@@ -147,11 +147,13 @@ class TestDeduplicationAndStratifiedSplit:
 class TestEvaluationAndExportContracts:
     def test_promotion_gates_enforce_accuracy_f1_ood_size_and_parity(self) -> None:
         assert "map50" in PROMOTION_GATES
+        assert "small_scale_recall" in PROMOTION_GATES
         assert "ood_false_positive_rate" in PROMOTION_GATES
         passing = {
             "map50": 0.85,
             "recall": 0.80,
             "f1": 0.82,
+            "small_scale_recall": 0.80,
             "tflite_map50_drop": 0.003,
             "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
@@ -165,6 +167,10 @@ class TestEvaluationAndExportContracts:
         failing_ood = {**passing, "ood_false_positive_rate": 0.15}
         with pytest.raises(ValueError, match="failed promotion gates"):
             assert_promotion_ready(failing_ood)
+
+        failing_small = {**passing, "small_scale_recall": 0.45}
+        with pytest.raises(ValueError, match="small_scale_recall"):
+            assert_promotion_ready(failing_small)
 
     def test_compare_baseline_vs_finetuned_calculates_deltas(self) -> None:
         baseline = {"map50": 0.21, "map50_95": 0.11, "precision": 0.30, "recall": 0.25, "f1": 0.27}
@@ -476,6 +482,7 @@ class TestTrainingAndKaggleContract:
             tmp_path / "work",
             whitefly_oversample_factor=4,
             negative_oversample_factor=2,
+            zoomout_per_class=0,
         )
         assert views["whitefly_train_images"] == 1
         assert views["negative_train_images"] == 1
@@ -484,3 +491,15 @@ class TestTrainingAndKaggleContract:
         assert len(balanced_train_imgs) == 7
         assert len(list((tmp_path / "work" / "balanced" / "val" / "images").iterdir())) == 2
         assert len(list((tmp_path / "work" / "balanced" / "test" / "images").iterdir())) == 2
+
+        views_zoom = build_isolated_dataset_views(
+            ds,
+            tmp_path / "work_zoom",
+            whitefly_oversample_factor=2,
+            negative_oversample_factor=1,
+            zoomout_per_class=2,
+        )
+        assert views_zoom["zoomout_total"] == 4
+        assert views_zoom["balanced_train_images"] == 8  # 1*2 + 1 + 1 + 4 zoomout
+        assert len(list((tmp_path / "work_zoom" / "balanced" / "val" / "images").iterdir())) == 2
+        assert len(list((tmp_path / "work_zoom" / "balanced" / "test" / "images").iterdir())) == 2

@@ -258,6 +258,7 @@ def test_f3_t1_assert_promotion_ready_accepts_valid_metrics() -> None:
             "map50": 0.85,
             "recall": 0.80,
             "f1": 0.82,
+            "small_scale_recall": 0.80,
             "tflite_map50_drop": 0.004,
             "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
@@ -349,10 +350,11 @@ def test_f3_t1_evaluate_cli_uses_tflite_size_and_drop(
 def test_f3_t1_promotion_gates_contract_keys_and_directions() -> None:
     assert PROMOTION_GATES == {
         "map50": ("min", 0.72),
-        "recall": ("min", 0.68),
+        "recall": ("min", 0.72),
         "f1": ("min", 0.72),
+        "small_scale_recall": ("min", 0.70),
         "tflite_map50_drop": ("max", 0.008),
-        "ood_false_positive_rate": ("max", 0.05),
+        "ood_false_positive_rate": ("max", 0.03),
         "model_size_mb": ("max", 12.0),
     }
 

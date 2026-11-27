@@ -7,6 +7,7 @@ runs/
 kaggle_work/
 kaggle_output/
 kaggle_remote_output/
+kaggle_remote_output*/
 kaggle_local_run/
 kaggle_dataset_stage/
 *.pt

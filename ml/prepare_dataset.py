@@ -128,6 +128,7 @@ _MOLTED_SKIN_LABELS: frozenset[str] = frozenset(
 IMAGE_EXTENSIONS: frozenset[str] = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp"})
 MIN_BOX_DIMENSION: float = 0.002
 _ROBOFLOW_RF_STEM_RE = re.compile(r"^(?P<base>.+?)\.rf\.[A-Za-z0-9_-]+$")
+_ROBOFLOW_AUG_SUFFIX_RE = re.compile(r"(_rot(?:90|180|270)|_flip[a-z0-9]*|_jpg|_jpeg|_png)+$", re.IGNORECASE)
 _DCT_SIGN_1D = np.array([1.0 if i % 2 == 0 else -1.0 for i in range(8)], dtype=np.float64)
 _DCT_SIGN_V = _DCT_SIGN_1D[None, :]
 _DCT_SIGN_U = _DCT_SIGN_1D[:, None]
@@ -150,7 +151,21 @@ def extract_roboflow_base_stem(stem_or_filename: str) -> str | None:
     else:
         stem = stem_or_filename
     match = _ROBOFLOW_RF_STEM_RE.match(stem)
-    return match.group("base") if match else None
+    if not match:
+        return None
+    base = match.group("base")
+    cleaned = _ROBOFLOW_AUG_SUFFIX_RE.sub("", base)
+    return cleaned or base
+
+
+def is_synthetic_collage_image(image_path: Path, img: Image.Image, *, max_pure_white_ratio: float = 0.15) -> bool:
+    """Reject synthetic white-background pest collages (e.g., mosaic_* paste grids) that cause white-object FPs."""
+    stem_low = image_path.stem.lower()
+    if stem_low.startswith("mosaic_") or "_mosaic_" in stem_low:
+        return True
+    arr = np.asarray(img.convert("RGB"), dtype=np.uint8)
+    pure_white_ratio = float(np.mean(np.all(arr >= 250, axis=2)))
+    return pure_white_ratio > max_pure_white_ratio
 
 
 def compute_dihedral_phashes(img: Image.Image) -> tuple[int, ...]:
@@ -558,6 +573,7 @@ def deduplicate_and_merge_sources(
     *,
     group_hamming_distance: int = 4,
     keep_negatives: bool = True,
+    filter_collage_artifacts: bool = False,
     source_details_out: dict[str, Any] | None = None,
 ) -> tuple[list[DatasetRecord], dict[str, int]]:
     effective_group_hamming = max(group_hamming_distance, max_hamming_distance)
@@ -569,6 +585,7 @@ def deduplicate_and_merge_sources(
         "duplicates_removed": 0,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 0,
+        "collages_filtered": 0,
         "empty_or_unmapped_skipped": 0,
         "negative_images_kept": 0,
         "molted_skin_boxes_removed": 0,
@@ -685,6 +702,11 @@ def deduplicate_and_merge_sources(
 
             try:
                 with Image.open(img_path) as img:
+                    if filter_collage_artifacts and boxes and source_dir.name not in OOD_CATEGORIES:
+                        if is_synthetic_collage_image(img_path, img):
+                            stats["collages_filtered"] += 1
+                            src_entry["empty_or_unmapped_skipped"] += 1
+                            continue
                     dihedral_phashes = compute_dihedral_phashes(img)
             except Exception:
                 stats["empty_or_unmapped_skipped"] += 1
@@ -768,12 +790,14 @@ def deduplicate_and_merge_sources(
 
 def _group_stratum(group_recs: list[DatasetRecord]) -> str:
     counts: dict[int, int] = {}
+    is_field = any("lettuce-pests" in r.source_name.lower() for r in group_recs)
     for rec in group_recs:
         for box in rec.boxes:
             counts[box.class_id] = counts.get(box.class_id, 0) + 1
     if counts:
         primary = max(counts.items(), key=lambda item: (item[1], -item[0]))[0]
-        return f"pos_{primary}"
+        domain = "field" if is_field else "macro"
+        return f"pos_{primary}_{domain}"
     neg_counts: dict[str, int] = {}
     for rec in group_recs:
         nk = rec.negative_kind or "leaf_empty"
@@ -811,10 +835,10 @@ def stratified_split_records(
         n = len(ordered_groups)
         if n == 0:
             continue
-        # Give OOD negative strata at least 20% in held-out test when abundant so real-life OOD evaluation is thorough
+        # Give OOD negative strata 25% in held-out test when abundant so real-life OOD evaluation is thorough (>=150 test OOD)
         is_ood = stratum_key.startswith("neg_ood_")
         eff_val_ratio = 0.15 if is_ood and n >= 10 else val_ratio
-        eff_test_ratio = 0.20 if is_ood and n >= 10 else max(0.0, 1.0 - train_ratio - val_ratio)
+        eff_test_ratio = 0.25 if is_ood and n >= 20 else (0.20 if is_ood and n >= 10 else max(0.0, 1.0 - train_ratio - val_ratio))
 
         if n >= 3:
             n_val = max(1, int(round(n * eff_val_ratio)))
@@ -1418,6 +1442,15 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     parser.add_argument("--val-ratio", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-ood", action="store_true")
+    parser.add_argument("--ood-source", choices=("coco_val2017", "coco128"), default="coco128")
+    parser.add_argument("--ood-per-category", type=int, default=150)
+    parser.add_argument(
+        "--extra-source-dirs",
+        type=Path,
+        nargs="*",
+        default=None,
+        help="Optional local field-domain Roboflow datasets (e.g. lettuce-pests v6) merged with collage filtering.",
+    )
     parser.add_argument("--force-download", action="store_true")
     parser.add_argument("--upload-kaggle", action="store_true")
     parser.add_argument("--kaggle-dataset", type=str, default=DEFAULT_KAGGLE_DATASET_SLUG)
@@ -1431,10 +1464,35 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         force_download=args.force_download,
     )
 
+    default_field_dir = Path("ml/data/raw_roboflow/puzzle-piece-detection_lettuce-pests_v6")
+    extra_dirs = list(args.extra_source_dirs) if args.extra_source_dirs is not None else (
+        [default_field_dir] if default_field_dir.is_dir() else []
+    )
+    for extra_dir in extra_dirs:
+        if extra_dir.is_dir() and extra_dir not in source_dirs:
+            source_dirs.append(extra_dir)
+            probe_results.append(
+                {
+                    "name": extra_dir.name,
+                    "slug": "puzzle-piece-detection/lettuce-pests",
+                    "version": 6,
+                    "required": False,
+                    "accessible": True,
+                    "status": "local_field_domain_merged",
+                    "status_code": 200,
+                    "error_type": None,
+                    "error": None,
+                    "raw_class_map": {str(k): v for k, v in sorted(load_source_class_map(extra_dir).items())},
+                }
+            )
+
     ood_manifest: dict[str, Any] | None = None
     if not args.skip_ood:
         ood_dirs, ood_manifest = prepare_coco_ood_negatives(
             raw_root=args.raw_root,
+            source=args.ood_source,
+            target_per_category=int(args.ood_per_category),
+            seed=args.seed,
             force_download=args.force_download,
         )
         source_dirs.extend(ood_dirs)
@@ -1445,6 +1503,7 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         max_hamming_distance=args.max_hamming_distance,
         group_hamming_distance=args.group_hamming_distance,
         keep_negatives=True,
+        filter_collage_artifacts=True,
         source_details_out=source_details,
     )
 

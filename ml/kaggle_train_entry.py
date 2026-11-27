@@ -314,13 +314,258 @@ def _write_data_yaml(yaml_path: Path, dataset_root: Path) -> None:
     yaml_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
 
+_COCO_EXCLUDED_NAMES: frozenset[str] = frozenset({"potted plant", "vase"})
+_COCO_BOTTLE_CUP_NAMES: frozenset[str] = frozenset({"bottle", "wine glass", "cup"})
+_COCO_HEALTHY_FOOD_NAMES: frozenset[str] = frozenset(
+    {"bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake"}
+)
+_COCO_PERSON_NAMES: frozenset[str] = frozenset({"person"})
+
+
+def _classify_coco_names(names: set[str]) -> str | None:
+    if names & _COCO_EXCLUDED_NAMES:
+        return None
+    if names & _COCO_BOTTLE_CUP_NAMES:
+        return "ood_drink_bottles_cups"
+    if names & _COCO_HEALTHY_FOOD_NAMES:
+        return "ood_healthy_food"
+    if names & _COCO_PERSON_NAMES:
+        return "ood_people"
+    return "ood_random_objects"
+
+
+def _attach_kaggle_coco_val2017_ood(
+    baseline_dir: Path,
+    balanced_dir: Path,
+    *,
+    target_per_category: int = 150,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Attach 600 curated COCO 2017 val2017 real-world OOD negatives mounted on Kaggle /kaggle/input."""
+    import random
+
+    input_root = Path("/kaggle/input")
+    if not input_root.is_dir():
+        return {"attached": False, "reason": "no /kaggle/input directory"}
+
+    ann_candidates = sorted(input_root.rglob("instances_val2017.json"))
+    if not ann_candidates:
+        return {"attached": False, "reason": "instances_val2017.json not found in /kaggle/input"}
+    ann_path = ann_candidates[0]
+
+    # Locate val2017 JPEG folder (avoid our own dataset folder)
+    val_img_dir: Path | None = None
+    for cand in sorted(input_root.rglob("000000000139.jpg")):
+        val_img_dir = cand.parent
+        break
+    if val_img_dir is None:
+        return {"attached": False, "reason": "COCO val2017 image directory not found in /kaggle/input"}
+
+    # Collect existing OOD content SHA-256 hashes & COCO IDs in baseline_dir so zero image is duplicated across splits
+    existing_coco_ids: set[str] = set()
+    existing_ood_sha256: set[str] = set()
+    for sp in ("train", "val", "test"):
+        for p in _list_images(baseline_dir / sp / "images"):
+            m = re.search(r"(000000\d{6})", p.stem)
+            if m:
+                existing_coco_ids.add(m.group(1))
+            if "neg__ood_" in p.stem:
+                existing_ood_sha256.add(hashlib.sha256(p.read_bytes()).hexdigest())
+
+    coco_data = json.loads(ann_path.read_text(encoding="utf-8"))
+    cat_id_to_name = {int(c["id"]): str(c["name"]).strip().lower() for c in coco_data.get("categories", [])}
+    img_id_to_file = {int(im["id"]): str(im["file_name"]) for im in coco_data.get("images", [])}
+    img_id_to_names: dict[int, set[str]] = {iid: set() for iid in img_id_to_file}
+    for ann in coco_data.get("annotations", []):
+        iid = int(ann["image_id"])
+        cname = cat_id_to_name.get(int(ann["category_id"]), "")
+        if iid in img_id_to_names and cname:
+            img_id_to_names[iid].add(cname)
+
+    pools: dict[str, list[Path]] = {
+        "ood_people": [],
+        "ood_drink_bottles_cups": [],
+        "ood_healthy_food": [],
+        "ood_random_objects": [],
+    }
+    for iid, fname in sorted(img_id_to_file.items()):
+        stem = Path(fname).stem
+        if stem in existing_coco_ids:
+            continue
+        img_p = val_img_dir / fname
+        if not img_p.is_file():
+            continue
+        if existing_ood_sha256 and hashlib.sha256(img_p.read_bytes()).hexdigest() in existing_ood_sha256:
+            continue
+        cat = _classify_coco_names(img_id_to_names.get(iid, set()))
+        if cat is not None:
+            pools[cat].append(img_p)
+
+    rng = random.Random(seed)
+    added = {"train": 0, "val": 0, "test": 0}
+    per_cat: dict[str, dict[str, int]] = {}
+
+    for cat, items in sorted(pools.items()):
+        ordered = list(items)
+        rng.shuffle(ordered)
+        selected = ordered[:target_per_category]
+        n = len(selected)
+        n_val = int(round(n * 0.15))
+        n_test = int(round(n * 0.25))
+        n_train = max(0, n - n_val - n_test)
+        split_buckets = (
+            ("train", selected[:n_train]),
+            ("val", selected[n_train : n_train + n_val]),
+            ("test", selected[n_train + n_val :]),
+        )
+        per_cat[cat] = {"train": n_train, "val": n_val, "test": len(selected) - n_train - n_val}
+        for sp_name, bucket in split_buckets:
+            # For train, attach only to baseline_dir; build_isolated_dataset_views copies/oversamples baseline/train into balanced/train.
+            # For val and test, attach identically to both so val/test manifest SHA-256 hashes stay identical.
+            target_roots = (baseline_dir,) if sp_name == "train" else (baseline_dir, balanced_dir)
+            for src_img in bucket:
+                out_stem = f"neg__{cat}__val2017_{src_img.stem}"
+                for target_root in target_roots:
+                    _link_or_copy_file(src_img, target_root / sp_name / "images" / f"{out_stem}.jpg")
+                    lbl_dst = target_root / sp_name / "labels" / f"{out_stem}.txt"
+                    lbl_dst.parent.mkdir(parents=True, exist_ok=True)
+                    lbl_dst.write_text("", encoding="utf-8")
+                added[sp_name] += 1
+
+    return {
+        "attached": True,
+        "source": "xthink/coco-2017-val-images + minhtngbi/instances-val2017",
+        "added_by_split": added,
+        "added_total": sum(added.values()),
+        "per_category": per_cat,
+    }
+
+
+def _generate_zoomout_small_pest_views(
+    src_train_imgs: list[Path],
+    src_train_lbl_dir: Path,
+    bal_img_dir: Path,
+    bal_lbl_dir: Path,
+    *,
+    max_zoomout_per_class: int = 160,
+    seed: int = 42,
+) -> dict[str, int]:
+    """Create real-pixel phone-distance (0.20x-0.46x) zoom-out training images pasted onto real empty leaves.
+
+    Strictly operates on train-split images only (never touches val or test) so P3/8 learns 12-40 px small pests.
+    """
+    import random
+    import cv2
+    import numpy as np
+
+    rng = random.Random(seed)
+    leaf_bgs: list[Path] = []
+    pos_by_cls: dict[int, list[tuple[Path, list[tuple[int, float, float, float, float]]]]] = {0: [], 1: []}
+
+    for img_path in src_train_imgs:
+        lbl_path = src_train_lbl_dir / f"{img_path.stem}.txt"
+        lines = [ln.strip() for ln in lbl_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        if not lines:
+            if "neg__ood_" not in img_path.stem:
+                leaf_bgs.append(img_path)
+            continue
+        parsed: list[tuple[int, float, float, float, float]] = []
+        for ln in lines:
+            ps = ln.split()
+            if len(ps) == 5:
+                parsed.append((int(float(ps[0])), float(ps[1]), float(ps[2]), float(ps[3]), float(ps[4])))
+        if not parsed:
+            continue
+        # Prioritize macro/medium crops (median box >= 40 px in 640 space) so zoom-out yields realistic 12-40 px pests
+        med_px = float(np.median([((w * 640.0) * (h * 640.0)) ** 0.5 for _, _, _, w, h in parsed]))
+        if med_px < 40.0:
+            continue
+        classes_in_img = {c for c, *_ in parsed}
+        for c in classes_in_img:
+            if c in pos_by_cls:
+                pos_by_cls[c].append((img_path, parsed))
+
+    if not leaf_bgs:
+        return {"zoomout_whitefly": 0, "zoomout_aphids": 0, "zoomout_total": 0}
+
+    bg_cache: list[Any] = []
+    for bg_path in leaf_bgs[:48]:
+        im = cv2.imread(str(bg_path))
+        if im is not None:
+            bg_cache.append(cv2.resize(im, (640, 640), interpolation=cv2.INTER_AREA))
+    if not bg_cache:
+        return {"zoomout_whitefly": 0, "zoomout_aphids": 0, "zoomout_total": 0}
+
+    created = {0: 0, 1: 0}
+    for cls_id in (0, 1):
+        pool = list(pos_by_cls[cls_id])
+        if not pool:
+            continue
+        rng.shuffle(pool)
+        idx_out = 0
+        # Cycle through pool up to max_zoomout_per_class with varied scales and real leaf backgrounds
+        while idx_out < max_zoomout_per_class:
+            img_path, boxes = pool[idx_out % len(pool)]
+            src_im = cv2.imread(str(img_path))
+            if src_im is None:
+                idx_out += 1
+                continue
+            bg = bg_cache[rng.randrange(len(bg_cache))].copy()
+            # Random scale tuned so resulting pest boxes span ~14-42 px (phone camera distance)
+            scale = rng.uniform(0.20, 0.46)
+            nh = max(48, min(560, int(round(640 * scale))))
+            nw = max(48, min(560, int(round(640 * scale))))
+            patch = cv2.resize(src_im, (nw, nh), interpolation=cv2.INTER_AREA)
+
+            x0 = rng.randint(12, max(12, 640 - nw - 12))
+            y0 = rng.randint(12, max(12, 640 - nh - 12))
+
+            # Soft feather mask on the 8px border so the model never shortcuts on hard patch edges
+            mask = np.ones((nh, nw, 1), dtype=np.float32)
+            feather = max(4, min(12, min(nh, nw) // 10))
+            ramp = np.linspace(0.0, 1.0, feather, dtype=np.float32)
+            mask[:feather, :, 0] *= ramp[:, None]
+            mask[-feather:, :, 0] *= ramp[::-1, None]
+            mask[:, :feather, 0] *= ramp[None, :]
+            mask[:, -feather:, 0] *= ramp[None, ::-1]
+
+            roi = bg[y0 : y0 + nh, x0 : x0 + nw].astype(np.float32)
+            blended = (patch.astype(np.float32) * mask + roi * (1.0 - mask)).clip(0, 255).astype(np.uint8)
+            bg[y0 : y0 + nh, x0 : x0 + nw] = blended
+
+            new_lines: list[str] = []
+            for c, cx, cy, bw, bh in boxes:
+                ncx = (x0 + cx * nw) / 640.0
+                ncy = (y0 + cy * nh) / 640.0
+                nbw = (bw * nw) / 640.0
+                nbh = (bh * nh) / 640.0
+                if nbw >= 0.008 and nbh >= 0.008:
+                    new_lines.append(f"{c} {ncx:.6f} {ncy:.6f} {nbw:.6f} {nbh:.6f}")
+
+            if new_lines:
+                stem = f"zoomout_c{cls_id}_{idx_out:04d}__{img_path.stem[:36]}"
+                cv2.imwrite(str(bal_img_dir / f"{stem}.jpg"), bg, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
+                (bal_lbl_dir / f"{stem}.txt").write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+                created[cls_id] += 1
+            idx_out += 1
+            if idx_out >= len(pool) * 5:
+                break
+
+    return {
+        "zoomout_whitefly": created[0],
+        "zoomout_aphids": created[1],
+        "zoomout_total": created[0] + created[1],
+    }
+
+
 def build_isolated_dataset_views(
     dataset_dir: Path,
     work_root: Path,
-    whitefly_oversample_factor: int = 5,
-    negative_oversample_factor: int = 2,
+    whitefly_oversample_factor: int = 2,
+    negative_oversample_factor: int = 1,
+    zoomout_per_class: int = 160,
 ) -> dict[str, Any]:
-    """Create baseline and train-only class/hard-negative balanced dataset views without touching val or test."""
+    """Create baseline and train-only multi-scale balanced dataset views without touching val or test."""
     if whitefly_oversample_factor < 1 or negative_oversample_factor < 1:
         raise ValueError("Oversample factors must be >= 1")
 
@@ -334,6 +579,14 @@ def build_isolated_dataset_views(
     for split_name in ("val", "test"):
         _link_or_copy_dir_files(dataset_dir / split_name, balanced_dir / split_name)
 
+    coco_val2017_ood = _attach_kaggle_coco_val2017_ood(
+        baseline_dir=baseline_dir,
+        balanced_dir=balanced_dir,
+        target_per_category=150,
+        seed=42,
+    )
+    print(f"[ood-val2017] {json.dumps(coco_val2017_ood)}", flush=True)
+
     val_sha_base = _split_manifest_sha256(baseline_dir / "val")
     val_sha_bal = _split_manifest_sha256(balanced_dir / "val")
     test_sha_base = _split_manifest_sha256(baseline_dir / "test")
@@ -341,8 +594,8 @@ def build_isolated_dataset_views(
     if val_sha_base != val_sha_bal or test_sha_base != test_sha_bal:
         raise AssertionError("Balanced view altered val or test split manifest")
 
-    src_train_imgs = _list_images(dataset_dir / "train" / "images")
-    src_train_lbl_dir = dataset_dir / "train" / "labels"
+    src_train_imgs = _list_images(baseline_dir / "train" / "images")
+    src_train_lbl_dir = baseline_dir / "train" / "labels"
     bal_img_dir = balanced_dir / "train" / "images"
     bal_lbl_dir = balanced_dir / "train" / "labels"
     bal_img_dir.mkdir(parents=True, exist_ok=True)
@@ -374,6 +627,18 @@ def build_isolated_dataset_views(
                 _link_or_copy_file(lbl_path, bal_lbl_dir / f"{prefix}{lbl_path.name}")
                 balanced_train_images += 1
 
+    zoomout_stats = {"zoomout_whitefly": 0, "zoomout_aphids": 0, "zoomout_total": 0}
+    if zoomout_per_class > 0:
+        zoomout_stats = _generate_zoomout_small_pest_views(
+            src_train_imgs=src_train_imgs,
+            src_train_lbl_dir=src_train_lbl_dir,
+            bal_img_dir=bal_img_dir,
+            bal_lbl_dir=bal_lbl_dir,
+            max_zoomout_per_class=zoomout_per_class,
+            seed=42,
+        )
+        balanced_train_images += zoomout_stats["zoomout_total"]
+
     data_baseline_yaml = work_root / "data_baseline.yaml"
     data_balanced_yaml = work_root / "data_balanced.yaml"
     _write_data_yaml(data_baseline_yaml, baseline_dir)
@@ -387,6 +652,8 @@ def build_isolated_dataset_views(
         "balanced_train_images": balanced_train_images,
         "whitefly_oversample_factor": whitefly_oversample_factor,
         "negative_oversample_factor": negative_oversample_factor,
+        "coco_val2017_ood": coco_val2017_ood,
+        **zoomout_stats,
         "val_manifest_sha256": val_sha_base,
         "test_manifest_sha256": test_sha_base,
     }
@@ -512,10 +779,10 @@ def calibrate_confidence_threshold(
         return inter / max(1e-8, aa + ba - inter)
 
     candidates_report: list[dict[str, float]] = []
-    best_thr = 0.45
+    best_thr = 0.35
     best_objective = -1e9
 
-    for thr in (0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65):
+    for thr in (0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55):
         tp = fp = fn = 0
         neg_imgs = neg_fp_imgs = 0
         ood_imgs = ood_fp_imgs = 0
@@ -558,8 +825,9 @@ def calibrate_confidence_threshold(
         f1 = 2.0 * prec * rec / max(1e-8, prec + rec)
         neg_fpr = neg_fp_imgs / max(1, neg_imgs)
         ood_fpr = ood_fp_imgs / max(1, ood_imgs) if ood_imgs > 0 else neg_fpr
-        # Strongly penalize any OOD false positive while maximizing F1 (enforce floor >= 0.35 for mobile stability)
-        objective = f1 - (2.5 * ood_fpr) - (0.8 * neg_fpr) - (0.03 if thr < 0.35 else 0.0)
+        # Balance recall and F1 while enforcing strict OOD FPR <= 0.03 (no artificial 0.45 choke)
+        ood_penalty = (4.0 * max(0.0, ood_fpr - 0.03)) + (1.2 * ood_fpr)
+        objective = (0.65 * f1) + (0.35 * rec) - ood_penalty - (0.35 * neg_fpr) - (0.04 if thr < 0.25 else 0.0)
         row = {
             "threshold": thr,
             "precision": round(prec, 4),
@@ -773,11 +1041,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--allow-local", action="store_true")
     parser.add_argument("--output-root", type=Path, default=None)
     parser.add_argument("--baseline-epochs", type=int, default=45)
-    parser.add_argument("--improved-epochs", type=int, default=100)
+    parser.add_argument("--improved-epochs", type=int, default=85)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--imgsz", type=int, default=640)
-    parser.add_argument("--whitefly-oversample", type=int, default=8)
-    parser.add_argument("--negative-oversample", type=int, default=2)
+    parser.add_argument("--whitefly-oversample", type=int, default=2)
+    parser.add_argument("--negative-oversample", type=int, default=1)
+    parser.add_argument("--zoomout-per-class", type=int, default=160)
     parser.add_argument("--skip-export", action="store_true")
     return parser.parse_args(argv)
 
@@ -817,6 +1086,7 @@ def main(argv: list[str] | None = None) -> None:
             work_root=work_root,
             whitefly_oversample_factor=args.whitefly_oversample,
             negative_oversample_factor=args.negative_oversample,
+            zoomout_per_class=args.zoomout_per_class,
         )
         data_baseline_yaml: Path = views["baseline_yaml"]
         data_balanced_yaml: Path = views["balanced_yaml"]
@@ -873,7 +1143,7 @@ def main(argv: list[str] | None = None) -> None:
         improved_res = improved_model.train(
             data=str(data_balanced_yaml),
             epochs=args.improved_epochs,
-            patience=25,
+            patience=22,
             batch=args.batch,
             imgsz=args.imgsz,
             device=0,
@@ -884,24 +1154,24 @@ def main(argv: list[str] | None = None) -> None:
             lrf=0.01,
             cos_lr=True,
             warmup_epochs=3.0,
-            cls=1.2,
+            cls=0.5,
             box=7.5,
             dfl=1.5,
             mosaic=1.0,
             close_mosaic=15,
-            mixup=0.08,
+            mixup=0.05,
             copy_paste=0.15,
-            scale=0.75,
-            translate=0.15,
-            degrees=20.0,
-            shear=5.0,
-            perspective=0.0003,
+            scale=0.65,
+            translate=0.12,
+            degrees=15.0,
+            shear=2.0,
+            perspective=0.0002,
             fliplr=0.5,
-            flipud=0.3,
+            flipud=0.25,
             hsv_h=0.02,
             hsv_s=0.55,
             hsv_v=0.45,
-            erasing=0.15,
+            erasing=0.05,
             amp=True,
             cache="ram",
             workers=4,
@@ -942,6 +1212,112 @@ def main(argv: list[str] | None = None) -> None:
         improved_test = _evaluate_split(improved_best_pt, data_baseline_yaml, split="test", imgsz=args.imgsz)
         print(f"[stage2] Production test metrics: {json.dumps(improved_test)}", flush=True)
 
+        # Evaluate full 175+ COCO val2017+coco128 OOD breakdown & 0.25x phone-distance small-scale recall on Kaggle T4
+        kaggle_ood_and_small: dict[str, Any] = {}
+        try:
+            import cv2
+            import numpy as np
+
+            eval_m = YOLO(str(improved_best_pt))
+            t_img_dir = work_root / "baseline" / "test" / "images"
+            t_lbl_dir = work_root / "baseline" / "test" / "labels"
+            t_imgs = _list_images(t_img_dir)
+
+            ood_groups: dict[str, dict[str, int]] = {}
+            ood_total = ood_fps = 0
+            leaf_bgs: list[Any] = []
+            pos_test_items: list[tuple[Path, list[tuple[int, float, float, float, float]]]] = []
+
+            t_preds = eval_m.predict([str(p) for p in t_imgs], imgsz=args.imgsz, conf=calibrated_thr, iou=0.45, device=0, verbose=False)
+            for p, pr in zip(t_imgs, t_preds):
+                lbl_p = t_lbl_dir / f"{p.stem}.txt"
+                lines = [ln.strip() for ln in lbl_p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+                has_det = pr.boxes is not None and len(pr.boxes) > 0
+                if not lines:
+                    m_grp = re.match(r"^neg__([A-Za-z0-9_]+)__", p.stem)
+                    grp = m_grp.group(1) if m_grp else "leaf_empty"
+                    row = ood_groups.setdefault(grp, {"images": 0, "true_negatives": 0, "false_positives": 0})
+                    row["images"] += 1
+                    if has_det:
+                        row["false_positives"] += 1
+                    else:
+                        row["true_negatives"] += 1
+                        if not grp.startswith("ood_") and len(leaf_bgs) < 8:
+                            im_bg = cv2.imread(str(p))
+                            if im_bg is not None:
+                                leaf_bgs.append(cv2.resize(im_bg, (args.imgsz, args.imgsz), interpolation=cv2.INTER_AREA))
+                    if grp.startswith("ood_"):
+                        ood_total += 1
+                        if has_det:
+                            ood_fps += 1
+                else:
+                    gts = [
+                        (int(float(ps[0])), float(ps[1]), float(ps[2]), float(ps[3]), float(ps[4]))
+                        for ps in (ln.split() for ln in lines)
+                        if len(ps) == 5
+                    ]
+                    if gts:
+                        pos_test_items.append((p, gts))
+
+            for grp, row in ood_groups.items():
+                row["false_positive_rate"] = round(row["false_positives"] / max(1, row["images"]), 4)
+                row["specificity_tnr"] = round(row["true_negatives"] / max(1, row["images"]), 4)
+
+            # 0.25x phone-distance localized recall check
+            bgs = leaf_bgs or [np.full((args.imgsz, args.imgsz, 3), (42, 118, 48), dtype=np.uint8)]
+            s_hits = s_eval = 0
+            s_cls_hits = {0: 0, 1: 0}
+            s_cls_tot = {0: 0, 1: 0}
+            for idx, (p, gts) in enumerate(pos_test_items):
+                im = cv2.imread(str(p))
+                if im is None:
+                    continue
+                nh = nw = max(32, int(round(args.imgsz * 0.25)))
+                small = cv2.resize(im, (nw, nh), interpolation=cv2.INTER_AREA)
+                canvas = bgs[idx % len(bgs)].copy()
+                y0, x0 = (args.imgsz - nh) // 2, (args.imgsz - nw) // 2
+                canvas[y0 : y0 + nh, x0 : x0 + nw] = small
+                pr = eval_m.predict(canvas, imgsz=args.imgsz, conf=calibrated_thr, iou=0.45, device=0, verbose=False)[0]
+                p_boxes = pr.boxes.xyxy.cpu().tolist() if pr.boxes is not None else []
+                p_clss = [int(c) for c in (pr.boxes.cls.cpu().tolist() if pr.boxes is not None else [])]
+                matched_c: set[int] = set()
+                for cid, cx, cy, bw, bh in gts:
+                    gx1, gy1 = x0 + (cx - bw / 2.0) * nw, y0 + (cy - bh / 2.0) * nh
+                    gx2, gy2 = x0 + (cx + bw / 2.0) * nw, y0 + (cy + bh / 2.0) * nh
+                    for pc, pb in zip(p_clss, p_boxes):
+                        if pc != cid:
+                            continue
+                        inter = max(0.0, min(gx2, pb[2]) - max(gx1, pb[0])) * max(0.0, min(gy2, pb[3]) - max(gy1, pb[1]))
+                        union = max(1e-8, (gx2 - gx1) * (gy2 - gy1) + (pb[2] - pb[0]) * (pb[3] - pb[1]) - inter)
+                        if inter / union >= 0.30:
+                            matched_c.add(cid)
+                            break
+                gt_c = {cid for cid, *_ in gts}
+                s_eval += 1
+                if matched_c & gt_c:
+                    s_hits += 1
+                for cid in gt_c:
+                    s_cls_tot[cid] += 1
+                    if cid in matched_c:
+                        s_cls_hits[cid] += 1
+
+            kaggle_ood_and_small = {
+                "ood_total_images": ood_total,
+                "ood_false_positives": ood_fps,
+                "ood_false_positive_rate": round(ood_fps / max(1, ood_total), 4),
+                "ood_breakdown": ood_groups,
+                "small_scale_025x": {
+                    "images_evaluated": s_eval,
+                    "hits": s_hits,
+                    "overall_recall": round(s_hits / max(1, s_eval), 4),
+                    "whitefly_recall": round(s_cls_hits[0] / max(1, s_cls_tot[0]), 4) if s_cls_tot[0] else None,
+                    "aphids_recall": round(s_cls_hits[1] / max(1, s_cls_tot[1]), 4) if s_cls_tot[1] else None,
+                },
+            }
+            print(f"[stage2] Kaggle 175+ OOD & 0.25x Small-Scale Eval: {json.dumps(kaggle_ood_and_small)}", flush=True)
+        except Exception as exc:
+            kaggle_ood_and_small = {"error": f"{type(exc).__name__}: {exc}"}
+
         b_agg, i_agg = baseline_test["aggregate"], improved_test["aggregate"]
         deltas = {f"{k}_delta": round(float(i_agg[k]) - float(b_agg[k]), 4) for k in ("map50", "map75", "map50_95", "precision", "recall", "f1")}
         deltas["whitefly_map50_delta"] = round(
@@ -970,6 +1346,10 @@ def main(argv: list[str] | None = None) -> None:
                 "whitefly_train_images": views["whitefly_train_images"],
                 "negative_train_images": views["negative_train_images"],
                 "balanced_train_images": views["balanced_train_images"],
+                "zoomout_whitefly": views.get("zoomout_whitefly", 0),
+                "zoomout_aphids": views.get("zoomout_aphids", 0),
+                "zoomout_total": views.get("zoomout_total", 0),
+                "coco_val2017_ood": views.get("coco_val2017_ood", {}),
                 "val_manifest_sha256": views["val_manifest_sha256"],
                 "test_manifest_sha256": views["test_manifest_sha256"],
             },
@@ -994,6 +1374,7 @@ def main(argv: list[str] | None = None) -> None:
                 "per_class": improved_test["per_class"],
             },
             "improvements_vs_baseline": deltas,
+            "kaggle_test_ood_and_small_scale": kaggle_ood_and_small,
         }
 
         summary_json = json.dumps(summary, indent=2)

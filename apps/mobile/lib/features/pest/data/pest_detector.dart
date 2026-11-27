@@ -16,24 +16,43 @@ class PestScanResult {
     required this.findings,
     required this.detections,
     required this.modelVersion,
+    this.imageWidth,
+    this.imageHeight,
   });
 
   final List<PestFinding> findings;
   final List<YoloDetection> detections;
   final String modelVersion;
+  final int? imageWidth;
+  final int? imageHeight;
 
   bool get isEmpty => detections.isEmpty;
 }
 
-/// Dekode, putar sesuai EXIF, lalu letterbox. Dijalankan di isolate: foto ponsel 12 MP
-/// membutuhkan ratusan milidetik dan akan membekukan UI bila di thread utama.
-Float32List _prepare(Uint8List bytes) {
+class _PreparedInput {
+  const _PreparedInput({
+    required this.originalWidth,
+    required this.originalHeight,
+    required this.tensor,
+  });
+
+  final int originalWidth;
+  final int originalHeight;
+  final Float32List tensor;
+}
+
+/// Dekode, putar sesuai EXIF, dan letterbox di isolate agar tidak membekukan UI pada foto 12 MP.
+_PreparedInput _prepare(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) {
     throw const FormatException('Berkas bukan foto yang bisa dibaca.');
   }
   final upright = img.bakeOrientation(decoded);
-  return letterboxToTensor(upright);
+  return _PreparedInput(
+    originalWidth: upright.width,
+    originalHeight: upright.height,
+    tensor: letterboxToTensor(upright),
+  );
 }
 
 /// Model YOLOv11n yang ditanam di aplikasi (`assets/ml/`), berjalan sepenuhnya di perangkat.
@@ -77,7 +96,7 @@ class PestDetector {
       interpreter,
       metadata['model_version'] as String,
       defaultConfThreshold:
-          (metadata['confidence_threshold'] as num?)?.toDouble() ?? 0.45,
+          (metadata['confidence_threshold'] as num?)?.toDouble() ?? 0.40,
       defaultIouThreshold:
           (metadata['iou_threshold'] as num?)?.toDouble() ?? 0.45,
     );
@@ -88,8 +107,11 @@ class PestDetector {
     double? confThreshold,
     double? iouThreshold,
   }) async {
-    final tensor = await compute(_prepare, photoBytes);
-    _interpreter.getInputTensor(0).data = tensor.buffer.asUint8List();
+    final conf = confThreshold ?? defaultConfThreshold;
+    final iou = iouThreshold ?? defaultIouThreshold;
+    final prepared = await compute(_prepare, photoBytes);
+
+    _interpreter.getInputTensor(0).data = prepared.tensor.buffer.asUint8List();
     _interpreter.invoke();
     final raw = _interpreter.getOutputTensor(0).data;
     final output = Float32List.view(
@@ -99,13 +121,15 @@ class PestDetector {
     );
     final detections = decodeYolov11Output(
       output,
-      confThreshold: confThreshold ?? defaultConfThreshold,
-      iouThreshold: iouThreshold ?? defaultIouThreshold,
+      confThreshold: conf,
+      iouThreshold: iou,
     );
     return PestScanResult(
       findings: summarizeDetections(detections),
       detections: detections,
       modelVersion: modelVersion,
+      imageWidth: prepared.originalWidth,
+      imageHeight: prepared.originalHeight,
     );
   }
 
