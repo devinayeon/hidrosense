@@ -22,7 +22,7 @@ import 'v2_pilih_semaian_page.dart';
 /// tersier "Ubah status"/"Ubah meja". Footer mengikuti keadaan meja:
 ///
 /// - tersedia: "Tambah tanaman" aktif (6.10/6.11/6.20);
-/// - perawatan: catatan "tidak menerima tanaman baru" + tombol mati (6.13);
+/// - perawatan: catatan "tidak menerima tanaman baru" tanpa tombol (6.13);
 /// - penuh: catatan "Kosongkan lubang lewat panen atau catat rusak" + tombol
 ///   mati (6.16), kecuali ada tanaman siap panen: footer diganti "Catat panen"
 ///   (6.17).
@@ -421,11 +421,6 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
   }
 
   Widget _footer({required bool siapPanen}) {
-    final tambah = V2Button(
-      label: 'Tambah tanaman',
-      onPressed: _item.bisaTambahTanaman ? _tambahTanaman : null,
-    );
-
     if (siapPanen) {
       return V2ActionBar(
         toast: _toast,
@@ -438,15 +433,26 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
       );
     }
 
+    // Meja Perawatan tidak menerima tanaman baru; tombol "Tambah tanaman"
+    // dihilangkan sepenuhnya, bukan sekadar dimatikan (permintaan client).
+    if (_item.status == V2MejaStatus.perawatan) {
+      return V2ActionBar(
+        toast: _toast,
+        note: 'Meja Perawatan tidak menerima tanaman baru.',
+      );
+    }
+
     return V2ActionBar(
       toast: _toast,
-      note: switch (_item.status) {
-        V2MejaStatus.perawatan => 'Meja Perawatan tidak menerima tanaman baru.',
-        V2MejaStatus.penuh =>
-          'Meja penuh. Kosongkan lubang lewat panen atau catat rusak.',
-        V2MejaStatus.tersedia => null,
-      },
-      actions: [tambah],
+      note: _item.status == V2MejaStatus.penuh
+          ? 'Meja penuh. Kosongkan lubang lewat panen atau catat rusak.'
+          : null,
+      actions: [
+        V2Button(
+          label: 'Tambah tanaman',
+          onPressed: _item.bisaTambahTanaman ? _tambahTanaman : null,
+        ),
+      ],
     );
   }
 }

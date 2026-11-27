@@ -20,7 +20,7 @@ test('a number over the limit names the field and the limit', async (t) => {
   const { error } = response.json();
   assert.equal(error.code, 'VALIDATION_ERROR');
   assert.equal(error.message, 'Input tidak sesuai kontrak API.');
-  assert.deepEqual(detailFor(response, 'jumlah_lubang'), { field: 'jumlah_lubang', message: 'Maksimal 1000.' });
+  assert.deepEqual(detailFor(response, 'jumlah_lubang'), { field: 'jumlah_lubang', message: 'Maksimal 250.' });
 });
 
 test('a text over the limit says how many characters are allowed', async (t) => {

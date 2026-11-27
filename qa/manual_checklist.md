@@ -295,3 +295,30 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-71c | Angka bawaan tambah semaian 1 | Penyemaian → Tambah; cek jumlah benih dan jumlah bahan | `FIXED di kode, belum diuji ulang di HP` — keduanya 1 |
 | MC-FIX-71d | Pesan jumlah benih | Tambah semaian → kosongkan/isi `0` jumlah benih → Simpan | `FIXED di kode, belum diuji ulang di HP` — "Benih harus angka positif" di kolom |
 | MC-FIX-71e | Info stok tidak mencukupi | Tambah semaian → jumlah bahan `15` (stok 12) | `FIXED di kode, belum diuji ulang di HP` — info bawah "Benih Romaine: Stok tidak mencukupi", bukan angka minus |
+
+---
+
+> Sesi 10 lanjutan 2 (27 Nov 2026): perbaikan alur Meja. Status **`FIXED di
+> kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-72a | Kode meja tidak bisa diketik (tambah) | Meja → Tambah; coba ketuk/ketik kolom "Kode meja" | `FIXED di kode, belum diuji ulang di HP` — kode terisi otomatis (mis. A1/A3), kolom abu-abu tidak bisa diketik |
+| MC-FIX-72b | Kode meja tidak bisa diketik (ubah) | Detail meja → Ubah meja; coba ketuk/ketik kolom "Kode meja" | `FIXED di kode, belum diuji ulang di HP` — menampilkan kode meja, tidak bisa diubah |
+| MC-FIX-72c | Placeholder jumlah lubang 250 | Meja → Tambah; lihat placeholder kolom "Jumlah lubang" | `FIXED di kode, belum diuji ulang di HP` — "Contoh: 240 (maksimal 250)" |
+| MC-FIX-72d | Tombol tambah tanaman saat Perawatan | Detail meja → Ubah status → Perawatan; lihat footer | `FIXED di kode, belum diuji ulang di HP` — tombol "Tambah tanaman" hilang, hanya catatan "Meja Perawatan tidak menerima tanaman baru." |
+
+---
+
+> Sesi 10 lanjutan 3 (27 Nov 2026): perbaikan alur Tanaman & Tanaman Rusak.
+> Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru
+> yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-73a | Tombol "Catat rusak" di Detail tanaman | Meja → Detail meja → ketuk salah satu tanaman → lihat footer | `FIXED di kode, belum diuji ulang di HP` — footer hanya "Ubah"; pencatatan dari menu Tanaman rusak |
+| MC-FIX-73b | Laporan baru tetap tampil saat daftar dibuka lagi | Detail tanaman → Tanaman rusak → Catat rusak → Simpan → kembali ke Detail tanaman → buka Tanaman rusak lagi | `FIXED di kode, belum diuji ulang di HP` — baris baru masih ada dan jumlah di subjudul ikut naik |
+| MC-FIX-73c | Detail kerusakan sebelum ubah | Tanaman rusak → ketuk salah satu baris | `FIXED di kode, belum diuji ulang di HP` — halaman "Detail kerusakan" (jumlah, tanggal, keterangan) dengan tombol "Ubah kerusakan" |
+| MC-FIX-73d | Ubah dari halaman detail | Detail kerusakan → Ubah kerusakan → ubah jenis/jumlah → Simpan | `FIXED di kode, belum diuji ulang di HP` — detail menampilkan data baru; kembali ke daftar, baris ikut berubah |
+| MC-FIX-73e | Kategori "Penyakit" | Tanaman rusak → Catat rusak, lalu Ubah kerusakan → lihat chip jenis | `FIXED di kode, belum diuji ulang di HP` — chip "Penyakit" menggantikan "Busuk akar" |
+| MC-FIX-73f | Tombol kembali HP setelah mencatat | Catat rusak → Simpan → tekan tombol kembali HP (bukan panah di layar) sampai Detail tanaman, lalu buka Tanaman rusak lagi | `FIXED di kode, belum diuji ulang di HP` — baris tetap ada walau keluar lewat tombol kembali HP |

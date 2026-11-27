@@ -131,8 +131,8 @@ export async function seed(db: Client, options: { clock?: () => number } = {}) {
     const semai2Date = dateOffset(-5);
     await tx.execute({
       sql: `INSERT INTO penyemaian (id_penyemaian, id_user, tanggal_semai, jumlah_benih, status_penyemaian, keterangan) VALUES
-        (1, 2, ?, 600, 'aktif', 'Semai Selada Romaine Batch A'),
-        (2, 2, ?, 400, 'aktif', 'Semai Butterhead Batch B')
+        (1, 2, ?, 250, 'aktif', 'Semai Selada Romaine Batch A'),
+        (2, 2, ?, 150, 'aktif', 'Semai Butterhead Batch B')
         ON CONFLICT(id_penyemaian) DO NOTHING`,
       args: [semai1Date, semai2Date],
     });

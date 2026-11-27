@@ -127,66 +127,71 @@ void main() {
     expect(find.text('Hapus?'), findsNothing);
   });
 
-  testWidgets('tambah pegawai: loading di pop-up, form baru menutup setelah selesai', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(420, 1200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  testWidgets(
+    'tambah pegawai: loading di pop-up, form baru menutup setelah selesai',
+    (tester) async {
+      tester.view.physicalSize = const Size(420, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
 
-    final store = _SlowStore();
-    V2Employee? hasil;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                hasil = await Navigator.of(context).push<V2Employee>(
-                  MaterialPageRoute<V2Employee>(
-                    builder: (_) => V2EmployeeFormPage.create(store: store),
-                  ),
-                );
-              },
-              child: const Text('buka'),
+      final store = _SlowStore();
+      V2Employee? hasil;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  hasil = await Navigator.of(context).push<V2Employee>(
+                    MaterialPageRoute<V2Employee>(
+                      builder: (_) => V2EmployeeFormPage.create(store: store),
+                    ),
+                  );
+                },
+                child: const Text('buka'),
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.tap(find.text('buka'));
-    await tester.pumpAndSettle();
+      );
+      await tester.tap(find.text('buka'));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField).at(0), 'Budi Santoso');
-    await tester.enterText(find.byType(TextField).at(1), 'budi.s');
-    await tester.enterText(find.byType(TextField).at(2), 'abc123');
-    await tester.enterText(find.byType(TextField).at(3), '0812345678');
-    await tester.enterText(find.byType(TextField).at(4), 'Jl. Mawar 1');
-    await tester.tap(find.text('Simpan'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(0), 'Budi Santoso');
+      await tester.enterText(find.byType(TextField).at(1), 'budi.s');
+      await tester.enterText(find.byType(TextField).at(2), 'abc123');
+      await tester.enterText(find.byType(TextField).at(3), '0812345678');
+      await tester.enterText(find.byType(TextField).at(4), 'Jl. Mawar 1');
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
 
-    // Pop-up konfirmasi ulang muncul.
-    expect(find.text('Tambah pegawai?'), findsOneWidget);
+      // Pop-up konfirmasi ulang muncul.
+      expect(find.text('Tambah pegawai?'), findsOneWidget);
 
-    await tester.tap(find.text('Tambah'));
-    await tester.pump();
-    expect(store.created, isNotNull, reason: 'tulis dimulai setelah konfirmasi');
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(
-      find.text('Tambah pegawai'),
-      findsOneWidget,
-      reason: 'form belum menutup sebelum proses selesai',
-    );
+      await tester.tap(find.text('Tambah'));
+      await tester.pump();
+      expect(
+        store.created,
+        isNotNull,
+        reason: 'tulis dimulai setelah konfirmasi',
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        find.text('Tambah pegawai'),
+        findsOneWidget,
+        reason: 'form belum menutup sebelum proses selesai',
+      );
 
-    store.completer.complete(
-      const V2Employee(id: 'budi', name: 'Budi Santoso', username: 'budi.s'),
-    );
-    await tester.pumpAndSettle();
+      store.completer.complete(
+        const V2Employee(id: 'budi', name: 'Budi Santoso', username: 'budi.s'),
+      );
+      await tester.pumpAndSettle();
 
-    expect(hasil, isNotNull);
-    expect(hasil!.id, 'budi');
-    expect(find.text('Tambah pegawai'), findsNothing);
-  });
+      expect(hasil, isNotNull);
+      expect(hasil!.id, 'budi');
+      expect(find.text('Tambah pegawai'), findsNothing);
+    },
+  );
 
   testWidgets(
     'form meja: tombol Simpan mengirim lewat pop-up konfirmasi lalu menutup',
@@ -214,7 +219,6 @@ void main() {
       await tester.tap(find.text('buka'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).at(0), 'B1');
       await tester.enterText(find.byType(TextField).at(1), '100');
       await tester.tap(find.text('Simpan'));
       await tester.pumpAndSettle();
@@ -224,9 +228,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(terkirim, isNotNull, reason: 'onSubmit dipanggil dari pop-up');
-      expect(terkirim!.kode, 'B1');
+      expect(terkirim!.kode, 'A1', reason: 'kode dibuat otomatis');
       expect(hasil, isNotNull);
-      expect(hasil!.kode, 'B1');
+      expect(hasil!.kode, 'A1');
     },
   );
 }

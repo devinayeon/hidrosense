@@ -20,9 +20,11 @@ import 'v2_tanaman_rusak_page.dart';
 /// tanggal pindah dari semaian. Baris "Tanaman rusak" membuka daftar kerusakan
 /// (frame 6.24).
 ///
-/// Footer: Primary "Catat rusak" dan Tertiary "Ubah" untuk catatan tanaman
-/// (frame 6.22); setelah catatan disimpan muncul toast "Perubahan tersimpan"
-/// (frame 6.23).
+/// Footer hanya Tertiary "Ubah" untuk catatan tanaman (frame 6.22); setelah
+/// catatan disimpan muncul toast "Perubahan tersimpan" (frame 6.23).
+///
+/// Pencatatan kerusakan baru dilakukan di halaman "Tanaman rusak" (frame 6.25),
+/// bukan dari footer halaman ini.
 class V2DetailTanamanPage extends StatefulWidget {
   const V2DetailTanamanPage({
     super.key,
@@ -72,12 +74,19 @@ class V2DetailTanamanPage extends StatefulWidget {
 
 class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
   late V2TanamanItem _tanaman = widget.tanaman;
+
+  /// Daftar rusak batch ini; salinan lokal supaya laporan yang baru dicatat di
+  /// halaman "Tanaman rusak" tetap tampil saat daftar dibuka lagi (BUG-73).
+  late List<V2KerusakanItem> _rusak;
   String? _toast;
   Timer? _toastTimer;
 
   @override
   void initState() {
     super.initState();
+    _rusak = widget.meja.rusak
+        .where((item) => item.transferId == _tanaman.transferId)
+        .toList();
     _toast = widget.toast;
     if (_toast != null) _scheduleToastDismiss();
   }
@@ -115,29 +124,17 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
   }
 
   void _bukaRusak() {
-    final rusak = widget.meja.rusak
-        .where((item) => item.transferId == _tanaman.transferId)
-        .toList();
     Navigator.of(context).push(
       V2TanamanRusakPage.route(
-        item: widget.meja.copyWith(rusak: rusak),
+        item: widget.meja.copyWith(rusak: _rusak),
         transferId: _tanaman.transferId,
         onCatat: widget.onCatatRusak,
         onUbah: widget.onUbahRusak,
+        onChanged: (rusak) {
+          if (mounted) setState(() => _rusak = rusak);
+        },
       ),
     );
-  }
-
-  Future<void> _catatRusak() async {
-    final hasil = await Navigator.of(context).push<V2KerusakanItem>(
-      V2CatatRusakPage.route(
-        meja: widget.meja,
-        transferId: _tanaman.transferId,
-        onSubmit: widget.onCatatRusak,
-      ),
-    );
-    if (!mounted || hasil == null) return;
-    _showToast('Kerusakan dicatat');
   }
 
   @override
@@ -173,7 +170,7 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
                       V2ListItem(
                         title: 'Tanaman rusak',
                         subtitle:
-                            '${widget.meja.rusak.where((item) => item.transferId == _tanaman.transferId).fold<int>(0, (total, rusak) => total + rusak.jumlah)} tanaman. Lihat daftar',
+                            '${_rusak.fold<int>(0, (total, rusak) => total + rusak.jumlah)} tanaman. Lihat daftar',
                         icon: V2IconName.warning,
                         iconTone: V2ListItemIconTone.warning,
                         onTap: _bukaRusak,
@@ -185,10 +182,6 @@ class _V2DetailTanamanPageState extends State<V2DetailTanamanPage> {
               V2ActionBar(
                 toast: _toast,
                 actions: [
-                  V2Button(
-                    label: 'Catat rusak',
-                    onPressed: () => _catatRusak(),
-                  ),
                   V2Button(
                     label: 'Ubah',
                     type: V2ButtonType.tertiary,

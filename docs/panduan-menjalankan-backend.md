@@ -91,6 +91,24 @@ berubah, termasuk tanggal semai. Untuk data uji dengan tanggal baru, hapus dulu
 file database lokal lalu jalankan migrasi dan seeder lagi.
 Jangan menggunakan akun atau data seeder di production.
 
+### Menyetel ulang database (refresh)
+
+Bila database sudah berisi data uji versi lama dan ingin dimulai dari nol,
+gunakan perintah refresh. Perintah ini **menghapus semua tabel**, menjalankan
+ulang seluruh migrasi, lalu mengisi seed:
+
+```powershell
+npm run db:refresh -- --allow-data-loss
+```
+
+- Flag `--allow-data-loss` wajib; tanpa flag itu perintah menolak berjalan.
+- `DATABASE_URL` remote (`libsql://`/`https://`) atau `NODE_ENV=production`
+  hanya diizinkan bila `ALLOW_PROD_SEED=1`, sama seperti seeder.
+- Perintah mencetak `DATABASE_URL` tujuan sebelum menghapus, supaya salah
+  database bisa dibatalkan.
+- Untuk database lokal, buat backup dulu dengan `npm run db:backup -- <nama-file>`
+  bila datanya masih dibutuhkan. Turso menyediakan backup sendiri.
+
 ## 4. Menjalankan backend
 
 ### Mode development

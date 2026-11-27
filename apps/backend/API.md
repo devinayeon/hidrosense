@@ -10,7 +10,7 @@ Kirim `Authorization: Bearer <access_token>`. Tanpa token yang sah, server memba
 ### Format respons
 ```json
 { "data": {}, "meta": { "page": 1, "limit": 20, "total": 1, "total_pages": 1 } }
-{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [{ "field": "jumlah_lubang", "message": "Maksimal 1000." }], "request_id": "..." } }
+{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [{ "field": "jumlah_lubang", "message": "Maksimal 250." }], "request_id": "..." } }
 ```
 `meta` hanya ada pada daftar. Pakai `code` untuk logika klien, dan `message` untuk ditampilkan.
 
@@ -302,7 +302,7 @@ Dihitung dari data semaian, stok, dan panen. Setiap pengguna yang masuk boleh me
 
 ## Batas isian
 
-Meja tanam: `kode_meja` 1–30 karakter, `jumlah_lubang` bilangan bulat 1–1000, `keterangan` paling banyak 1000 karakter. Batas fitur lain ada di `src/features/*/contracts.ts`. Pelanggaran dibalas `400 VALIDATION_ERROR` dengan `details` yang menyebut field dan batasnya.
+Meja tanam: `kode_meja` 1–30 karakter, `jumlah_lubang` bilangan bulat 1–250, `keterangan` paling banyak 1000 karakter. Penyemaian: `jumlah_benih` bilangan bulat 1–250. Batas fitur lain ada di `src/features/*/contracts.ts`. Pelanggaran dibalas `400 VALIDATION_ERROR` dengan `details` yang menyebut field dan batasnya.
 
 ## Belum tersedia
 

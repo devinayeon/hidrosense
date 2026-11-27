@@ -945,7 +945,7 @@ class V2GalleryPage extends StatelessWidget {
                       _FlowRow(
                         icon: V2IconName.warning,
                         title: 'Daftar rusak (6.24)',
-                        subtitle: 'Satu catatan busuk akar',
+                        subtitle: 'Satu catatan penyakit',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2TanamanRusakPage.biasa(),
                         ),
@@ -972,7 +972,7 @@ class V2GalleryPage extends StatelessWidget {
                       _FlowRow(
                         icon: V2IconName.check,
                         title: 'Kerusakan dicatat (6.27)',
-                        subtitle: 'Layu 15 Nov di atas busuk akar',
+                        subtitle: 'Layu 15 Nov di atas penyakit',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2TanamanRusakPage.setelahCatat(),
                         ),
@@ -981,7 +981,7 @@ class V2GalleryPage extends StatelessWidget {
                       _FlowRow(
                         icon: V2IconName.edit,
                         title: 'Ubah kerusakan (6.28)',
-                        subtitle: 'Busuk akar 10 Nov dengan catatan',
+                        subtitle: 'Penyakit 10 Nov dengan catatan',
                         route: () => MaterialPageRoute<void>(
                           builder: (_) => V2CatatRusakPage.ubah(),
                         ),

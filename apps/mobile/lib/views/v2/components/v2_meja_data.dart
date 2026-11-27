@@ -36,7 +36,8 @@ const List<String> _bulanSingkat = <String>[
 DateTime v2PerkiraanPanen(
   DateTime tanggalPindah, {
   int hst = v2MejaUmurPanenHst,
-}) => DateTime(tanggalPindah.year, tanggalPindah.month, tanggalPindah.day + hst);
+}) =>
+    DateTime(tanggalPindah.year, tanggalPindah.month, tanggalPindah.day + hst);
 
 /// Kode berikutnya untuk meja baru, dari kode yang sudah ada.
 ///
@@ -250,7 +251,7 @@ class V2KerusakanItem {
   /// Banyak tanaman yang rusak, mis. `2`.
   final int jumlah;
 
-  /// Jenis kerusakan: `Busuk akar`, `Layu`, `Hama`, atau `Lainnya`.
+  /// Jenis kerusakan: `Penyakit`, `Layu`, `Hama`, atau `Lainnya`.
   final String jenis;
 
   /// Tanggal kejadian (frame 6.25: 15 Nov 2026).
@@ -264,7 +265,7 @@ class V2KerusakanItem {
   /// Catatan bebas, mis. `Akar berlendir` (frame 6.28).
   final String? keterangan;
 
-  /// `2 tanaman, busuk akar` (judul baris).
+  /// `2 tanaman, penyakit` (judul baris).
   String get judul => '$jumlah tanaman, ${jenis.toLowerCase()}';
 
   /// `10 Nov. Romaine, Meja A2` (subjudul baris).
@@ -395,10 +396,10 @@ final V2TanamanItem designTanamanRomaineB1 = V2TanamanItem(
   tanggalPindah: DateTime(2026, 9, 20),
 );
 
-/// Kerusakan di Meja A2: 2 tanaman busuk akar pada 10 Nov (frame 6.24, 6.29).
-final V2KerusakanItem designKerusakanBusukAkar = V2KerusakanItem(
+/// Kerusakan di Meja A2: 2 tanaman penyakit pada 10 Nov (frame 6.24, 6.29).
+final V2KerusakanItem designKerusakanPenyakit = V2KerusakanItem(
   jumlah: 2,
-  jenis: 'Busuk akar',
+  jenis: 'Penyakit',
   tanggal: DateTime(2026, 11, 10),
   varietas: 'Romaine',
   meja: 'A2',
@@ -422,7 +423,7 @@ final V2MejaItem designMejaA2 = V2MejaItem(
   status: V2MejaStatus.tersedia,
   keterangan: 'Dekat pintu',
   tanaman: <V2TanamanItem>[designTanamanRomaineA2],
-  rusak: <V2KerusakanItem>[designKerusakanBusukAkar],
+  rusak: <V2KerusakanItem>[designKerusakanPenyakit],
 );
 
 /// Baris Meja A3 di daftar: 120 dari 240 lubang terisi (frame 6.1/6.2).
@@ -482,13 +483,13 @@ final List<V2MejaItem> designDaftarMejaOffline = <V2MejaItem>[
   designMejaA2,
 ];
 
-/// Daftar rusak 6.24/6.29: satu catatan busuk akar.
+/// Daftar rusak 6.24/6.29: satu catatan penyakit.
 final List<V2KerusakanItem> designDaftarRusak = <V2KerusakanItem>[
-  designKerusakanBusukAkar,
+  designKerusakanPenyakit,
 ];
 
-/// Daftar rusak 6.27: layu 15 Nov di atas busuk akar 10 Nov.
+/// Daftar rusak 6.27: layu 15 Nov di atas penyakit 10 Nov.
 final List<V2KerusakanItem> designDaftarRusakSetelahCatat = <V2KerusakanItem>[
   designKerusakanLayu,
-  designKerusakanBusukAkar,
+  designKerusakanPenyakit,
 ];

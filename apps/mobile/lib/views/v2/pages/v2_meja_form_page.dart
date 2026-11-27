@@ -12,8 +12,9 @@ import '../widgets/v2_text_field.dart';
 /// Form "Tambah meja" (frame 6.6/6.7) dan "Ubah meja" (6.18/6.19), plus
 /// dialog konflik data (6.30).
 ///
-/// Tiga isian tetap: kode meja, jumlah lubang, dan keterangan opsional. Galat
-/// menambah baris pesan 28 di bawah field tanpa mengubah jarak antarbagian
+/// Dua isian tetap, jumlah lubang dan keterangan opsional, plus kode meja yang
+/// dibuat otomatis dan tidak bisa diketik (permintaan client). Galat menambah
+/// baris pesan 28 di bawah field tanpa mengubah jarak antarbagian
 /// (frame 6.7/6.19). Pada mode ubah, catatan "Status diubah lewat Ubah status."
 /// duduk 16 di bawah isian terakhir.
 class V2MejaFormPage extends StatefulWidget {
@@ -148,12 +149,11 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
       );
       _lubangError = 'Minimal ${aktif ?? 40}, ada ${aktif ?? 40} tanaman aktif';
     }
-    // Form tambah mengisi kode berikutnya dari daftar meja yang ada (tanpa
-    // menebak bila belum ada meja), supaya pengguna tidak perlu menghitung
-    // sendiri. Pengguna tetap bisa menimpanya.
-    if (widget.meja == null && widget.takenCodes.isNotEmpty) {
-      final berikut = v2KodeMejaBerikutnya(widget.takenCodes);
-      if (berikut != null) _kode.text = berikut;
+    // Kode meja selalu diisi sistem dan tidak bisa diketik (permintaan client):
+    // lanjutan kode dari daftar meja yang ada, atau `A1` saat belum ada meja
+    // berpola sama sekali. Tanpa fallback, meja pertama tidak akan punya kode.
+    if (widget.meja == null && !widget.previewValidation) {
+      _kode.text = v2KodeMejaBerikutnya(widget.takenCodes) ?? 'A1';
     }
     // Pesan galat hanya berlaku untuk nilai yang barusan dikirim. Begitu
     // pengguna memperbaiki isian, pesan harus hilang tanpa menekan Simpan lagi
@@ -299,16 +299,20 @@ class _V2MejaFormPageState extends State<V2MejaFormPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // Kode dibuat otomatis; pemakai melihatnya tetapi
+                          // tidak bisa mengetik (permintaan client).
                           V2TextField(
                             label: 'Kode meja',
                             hint: 'Contoh: A2',
                             controller: _kode,
                             error: _kodeError,
+                            enabled: false,
+                            helper: 'Kode dibuat otomatis',
                           ),
                           const SizedBox(height: V2Space.lg),
                           V2TextField(
                             label: 'Jumlah lubang',
-                            hint: 'Contoh: 240 (maksimal 1.000)',
+                            hint: 'Contoh: 240 (maksimal 250)',
                             controller: _lubang,
                             keyboardType: TextInputType.number,
                             error: _lubangError,
