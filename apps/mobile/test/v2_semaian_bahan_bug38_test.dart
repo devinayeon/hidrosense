@@ -76,10 +76,7 @@ void main() {
     // Bahan yang sudah dipakai tidak ditawarkan lagi (baris unik).
     await tester.tap(find.text('Tambah bahan'));
     await tester.pumpAndSettle();
-    expect(
-      find.widgetWithText(V2OptionRow, 'Benih Butterhead'),
-      findsNothing,
-    );
+    expect(find.widgetWithText(V2OptionRow, 'Benih Butterhead'), findsNothing);
     expect(find.widgetWithText(V2OptionRow, 'Benih Romaine'), findsNothing);
     await tester.tap(find.text('Benih Lollo Rossa'));
     await tester.pumpAndSettle();
@@ -99,7 +96,7 @@ void main() {
     expect(bahan[1].nama, 'Butterhead');
     expect(bahan[2].nama, 'Lollo Rossa');
     // Kolom tunggal tetap diisi bahan pertama untuk pemakai lama.
-    expect(item.bahanAmount, '2');
+    expect(item.bahanAmount, '1');
     expect(item.bahanUnit, 'pak');
   });
 }

@@ -126,7 +126,9 @@ JenisInventarisRecord? _kategoriCocok(
   if (aktif.isEmpty) return null;
   return switch (jenis) {
     V2JenisBarang.benih =>
-      aktif.where((item) => _samaKata(item.name, ['benih', 'bibit'])).firstOrNull,
+      aktif
+          .where((item) => _samaKata(item.name, ['benih', 'bibit']))
+          .firstOrNull,
     V2JenisBarang.nutrisi =>
       aktif
           .where((item) => _samaKata(item.name, ['nutrisi', 'pupuk']))
@@ -315,7 +317,7 @@ class _V2InventarisConnectedDetailPageState
       .firstOrNull;
 
   Future<void> _catatStok() async {
-    final hasil = await showV2CatatStokSheet(context, item: _item, jumlah: 2);
+    final hasil = await showV2CatatStokSheet(context, item: _item, jumlah: 1);
     if (!mounted || hasil == null) return;
     final record = _record();
     if (record == null) {
@@ -400,8 +402,9 @@ class _V2InventarisConnectedDetailPageState
             '${_item.nama} hilang dari daftar. Riwayat tetap bisa dilihat di '
             'Arsip.',
         primaryLabel: 'Arsipkan',
-        onConfirm: () =>
-            ref.read(connectedInventoryProvider.notifier).deactivateItem(_item.id),
+        onConfirm: () => ref
+            .read(connectedInventoryProvider.notifier)
+            .deactivateItem(_item.id),
       );
       if (!mounted || !done) return;
       Navigator.of(context).pop(_item.copyWith(arsip: true));

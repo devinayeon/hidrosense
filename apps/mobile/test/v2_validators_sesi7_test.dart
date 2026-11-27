@@ -52,8 +52,8 @@ void main() {
 
   group('jumlah benih & lubang', () {
     test('benih 1–250', () {
-      expect(jumlahBenihProblem(''), 'Isi jumlah benih');
-      expect(jumlahBenihProblem('0'), 'Jumlah benih harus angka');
+      expect(jumlahBenihProblem(''), 'Benih harus angka positif');
+      expect(jumlahBenihProblem('0'), 'Benih harus angka positif');
       expect(jumlahBenihProblem('251'), 'Maksimal 250 benih');
       expect(jumlahBenihProblem('250'), isNull);
     });

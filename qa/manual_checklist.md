@@ -281,3 +281,17 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-70c | Obat dari katalog | Tambah barang → pilih jenis Obat | `FIXED di kode, belum diuji ulang di HP` — kolom "Nama barang" hilang, dropdown obat dari `obat_katalog`, nama barang = nama obat |
 | MC-FIX-70d | Galat stok minimum saat Ubah | Ubah barang → isi stok minimum `0` atau `3,555` → Simpan | `FIXED di kode, belum diuji ulang di HP` — pesan tampil di form sesuai penyebab, tidak muncul di halaman detail |
 | MC-FIX-70e | Aktifkan kembali barang arsip | Arsipkan barang → chip "Arsip" → buka barang → "Aktifkan kembali" | `FIXED di kode, belum diuji ulang di HP` — tombol ada, minta konfirmasi, barang kembali ke "Semua" + toast |
+
+---
+
+> Sesi 10 lanjutan (27 Nov 2026): perbaikan alur Catat stok (mode Masuk) dan
+> Tambah semaian. Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak**
+> ada baris baru yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-71a | Angka bawaan catat stok 1 | Detail barang → Catat stok; cek angka awal di `Pakai`, lalu pindah ke `Masuk` | `FIXED di kode, belum diuji ulang di HP` — angka awal 1 di kedua mode |
+| MC-FIX-71b | Batas maksimum stok masuk | Catat stok → `Masuk` → ketik `9999999998` → Simpan | `FIXED di kode, belum diuji ulang di HP` — pesan "Maksimal ... pak" tampil di sheet, sheet tetap terbuka, tombol plus berhenti di batas |
+| MC-FIX-71c | Angka bawaan tambah semaian 1 | Penyemaian → Tambah; cek jumlah benih dan jumlah bahan | `FIXED di kode, belum diuji ulang di HP` — keduanya 1 |
+| MC-FIX-71d | Pesan jumlah benih | Tambah semaian → kosongkan/isi `0` jumlah benih → Simpan | `FIXED di kode, belum diuji ulang di HP` — "Benih harus angka positif" di kolom |
+| MC-FIX-71e | Info stok tidak mencukupi | Tambah semaian → jumlah bahan `15` (stok 12) | `FIXED di kode, belum diuji ulang di HP` — info bawah "Benih Romaine: Stok tidak mencukupi", bukan angka minus |
