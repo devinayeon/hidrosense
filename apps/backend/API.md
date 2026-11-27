@@ -123,8 +123,12 @@ Izin: `inventaris:read` untuk `GET`, `inventaris:write` untuk lainnya. Daftar me
 | `POST /jenis-inventaris/:id/deactivate` | |
 | `GET`, `POST /obat`; `GET`, `PATCH /obat/:id` | `nama_obat`, `jenis_obat?`, `dosis?`, `aturan_penggunaan?`, `deskripsi?` |
 | `POST /obat/:id/deactivate` | |
-| `GET`, `POST /inventaris`; `GET`, `PATCH /inventaris/:id` | `id_jenis_inventaris`, `id_obat?`, `nama_barang`, `satuan`, `stok_minimum?` |
+| `GET /obat-katalog` | Katalog obat bawaan (`obat_katalog`) untuk barang jenis Obat. Query `page`, `limit`; tiap baris: `id_katalog`, `nama`, `jenis`, `kode_moa`, `phi_hari` |
+| `GET`, `POST /inventaris`; `GET`, `PATCH /inventaris/:id` | `id_jenis_inventaris`, `id_obat?`, `id_katalog?`, `nama_barang?`, `satuan`, `stok_minimum?`. Semua baris menyertakan `id_katalog` dan `nama_katalog` |
 | `POST /inventaris/:id/deactivate` | |
+| `POST /inventaris/:id/activate` | Mengaktifkan kembali barang arsip. `200`, aman dipanggil berulang |
+
+`id_obat` dan `id_katalog` tidak boleh terisi bersamaan (`400`). Saat `id_katalog` diisi, `nama_barang` diturunkan server dari `obat_katalog.bahan_aktif` dan nilai kiriman diabaikan. Nama barang unik untuk semua baris (termasuk arsip): `409 INVENTARIS_NAME_TAKEN`.
 
 Satuan yang sudah punya riwayat stok tidak bisa diubah: `409 UNIT_LOCKED`.
 

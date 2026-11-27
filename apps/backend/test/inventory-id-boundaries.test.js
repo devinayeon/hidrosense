@@ -11,7 +11,7 @@ test('inventory reads and writes preserve signed64 own and reference IDs', async
     await db.execute({ sql: 'INSERT INTO jenis_inventaris(id_jenis_inventaris,nama_jenis) VALUES (?,?)', args: [id, `Kind ${id}`] });
     await db.execute({ sql: 'INSERT INTO obat(id_obat,nama_obat) VALUES (?,?)', args: [id, `Medicine ${id}`] });
     const created = await app.inject({ method: 'POST', url: '/api/v1/inventaris', headers,
-      payload: { id_jenis_inventaris: id, id_obat: id, nama_barang: 'Large references', satuan: 'kg' } });
+      payload: { id_jenis_inventaris: id, id_obat: id, nama_barang: `Large references ${id}`, satuan: 'kg' } });
     assert.equal(created.statusCode, 201, created.body);
     assert.equal(created.json().data.id_jenis_inventaris, id);
     assert.equal(created.json().data.id_obat, id);

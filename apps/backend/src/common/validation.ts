@@ -11,10 +11,12 @@ export const emptyQuerySchema = z.strictObject({});
 export const expectedVersionSchema = integerIdSchema.optional();
 /** A PATCH body must change something; the version it was based on is not a change. */
 export const hasChanges = (value: object) => Object.keys(value).some((key) => key !== 'expected_version');
-export const activeListQuerySchema = z.strictObject({
+export const pageQuerySchema = z.strictObject({
   page: z.string().regex(/^[1-9][0-9]{0,5}$(?![\s\S])/).default('1').transform(Number),
   limit: z.string().regex(/^[1-9][0-9]{0,2}$(?![\s\S])/).default('20').transform(Number)
     .refine((value) => value <= 100),
+});
+export const activeListQuerySchema = pageQuerySchema.extend({
   status_aktif: z.enum(['0', '1']).optional(),
 });
 

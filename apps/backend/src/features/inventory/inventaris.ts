@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Client, InValue } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
 import { createInventarisSchema, updateInventarisSchema, emptyQuerySchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
-import { assertJenisExists, assertObatExists, getInventaris, inventarisResponse, inventarisColumns } from './store.js';
+import { assertJenisExists, assertNamaBarangAvailable, assertObatExists, getInventaris, getKatalogNama, inventarisResponse, inventarisColumns } from './store.js';
 import { inventoryWrite } from './write.js';
 import { ApiError } from '../../common/errors.js';
 import { toMinor } from '../../common/quantities.js';
@@ -18,10 +18,19 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     const result = await inventoryWrite(db, request, clock, 'inventaris.create', input, async (tx) => {
       await assertJenisExists(tx, input.id_jenis_inventaris);
       if (input.id_obat != null) await assertObatExists(tx, input.id_obat);
+      // Barang jenis Obat mengambil namanya dari katalog; kolom "Nama barang"
+      // tidak perlu diisi klien dan nilai kiriman diabaikan.
+      const namaBarang = input.id_katalog != null
+        ? await getKatalogNama(tx, input.id_katalog)
+        : input.nama_barang;
+      if (namaBarang === undefined) {
+        throw new ApiError(400, 'VALIDATION_ERROR', 'Nama barang wajib diisi.');
+      }
+      await assertNamaBarangAvailable(tx, namaBarang);
       const inserted = await tx.execute({
-        sql: `INSERT INTO inventaris (id_jenis_inventaris,id_obat,nama_barang,satuan,stok_minimum,stok_minimum_minor)
-          VALUES (?,?,?,?,?,?) RETURNING CAST(id_inventaris AS TEXT) AS id_inventaris`,
-        args: [input.id_jenis_inventaris, input.id_obat ?? null, input.nama_barang, input.satuan,
+        sql: `INSERT INTO inventaris (id_jenis_inventaris,id_obat,id_katalog,nama_barang,satuan,stok_minimum,stok_minimum_minor)
+          VALUES (?,?,?,?,?,?,?) RETURNING CAST(id_inventaris AS TEXT) AS id_inventaris`,
+        args: [input.id_jenis_inventaris, input.id_obat ?? null, input.id_katalog ?? null, namaBarang, input.satuan,
           input.stok_minimum ?? null, input.stok_minimum == null ? null : toMinor(input.stok_minimum)],
       });
       return getInventaris(tx, String(inserted.rows[0].id_inventaris));
@@ -37,6 +46,7 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       { sql: `SELECT COUNT(*) AS total FROM inventaris i WHERE (? IS NULL OR i.status_aktif=?)`, args: [filter, filter] },
       { sql: `SELECT ${inventarisColumns} FROM inventaris i
           JOIN jenis_inventaris j ON j.id_jenis_inventaris=i.id_jenis_inventaris LEFT JOIN obat o ON o.id_obat=i.id_obat
+          LEFT JOIN obat_katalog k ON k.id_katalog=i.id_katalog
           LEFT JOIN stok_saldo b ON b.id_inventaris=i.id_inventaris
           WHERE (? IS NULL OR i.status_aktif=?) ORDER BY COALESCE(updated_at,0) DESC, i.id_inventaris DESC LIMIT ? OFFSET ?`,
         args: [filter, filter, limit, (page - 1) * limit] },
@@ -66,12 +76,27 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       }
       if (input.id_jenis_inventaris !== undefined) await assertJenisExists(tx, input.id_jenis_inventaris);
       if (input.id_obat != null) await assertObatExists(tx, input.id_obat);
+      const derivedName = input.id_katalog != null
+        ? await getKatalogNama(tx, input.id_katalog)
+        : undefined;
+      const nextName = derivedName ?? input.nama_barang ?? current.nama_barang;
+      if (nextName !== current.nama_barang) await assertNamaBarangAvailable(tx, nextName, id);
       const assignments: string[] = [];
       const args: InValue[] = [];
-      for (const field of ['id_jenis_inventaris', 'id_obat', 'nama_barang', 'satuan', 'stok_minimum'] as const) {
+      for (const field of ['id_jenis_inventaris', 'id_obat', 'id_katalog', 'nama_barang', 'satuan', 'stok_minimum'] as const) {
         if (field === 'satuan' && !unitChanged) continue;
+        if (field === 'nama_barang' && derivedName !== undefined) continue;
         if (field in input) { assignments.push(`${field}=?`); args.push(input[field] ?? null); }
       }
+      if (derivedName !== undefined) {
+        assignments.push('nama_barang=?');
+        args.push(derivedName);
+      }
+      // Dua tautan obat tidak boleh terisi bersamaan; tautan yang baru dipilih
+      // menang dan tautan lama dilepas, supaya klien tidak perlu mengirim null
+      // untuk kolom yang tidak dipakainya.
+      if (input.id_katalog != null) { assignments.push('id_obat=?'); args.push(null); }
+      if (input.id_obat != null) { assignments.push('id_katalog=?'); args.push(null); }
       if ('stok_minimum' in input) {
         assignments.push('stok_minimum_minor=?');
         args.push(input.stok_minimum == null ? null : toMinor(input.stok_minimum));
@@ -90,6 +115,18 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     return inventoryWrite(db, request, clock, 'inventaris.deactivate', { id }, async (tx) => {
       const current = await getInventaris(tx, id);
       await tx.execute({ sql: 'UPDATE inventaris SET status_aktif=0 WHERE id_inventaris=?', args: [id] });
+      return keepVersionIfSame(current, await getInventaris(tx, id));
+    });
+  });
+
+  // Mengaktifkan kembali barang yang diarsipkan. Nama barang tetap dipesan
+  // selama arsip, jadi tidak ada bentrok nama saat dipulihkan.
+  app.post('/api/v1/inventaris/:id/activate', { preHandler: writeGuard }, async (request) => {
+    parseInput(emptyQuerySchema, request.query);
+    const { id } = parseInput(idParamSchema, request.params);
+    return inventoryWrite(db, request, clock, 'inventaris.activate', { id }, async (tx) => {
+      const current = await getInventaris(tx, id);
+      await tx.execute({ sql: 'UPDATE inventaris SET status_aktif=1 WHERE id_inventaris=?', args: [id] });
       return keepVersionIfSame(current, await getInventaris(tx, id));
     });
   });

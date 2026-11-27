@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formatting.dart';
+import '../../../data/services/api_client.dart';
+import '../../../viewmodels/session_viewmodel.dart';
 import '../components/v2_inventaris_data.dart';
 import '../theme/v2_tokens.dart';
 import '../widgets/v2_action_bar.dart';
@@ -223,19 +225,32 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
   String? _namaError;
   String? _satuanError;
   String? _stokAwalError;
+  String? _obatError;
+  String? _stokMinError;
 
   /// Menandai isian sudah disentuh, supaya tombol kembali menawarkan "Buang
   /// perubahan?" (frame 4.30).
   bool _dirty = false;
 
   bool get _hasError =>
-      _namaError != null || _satuanError != null || _stokAwalError != null;
+      _namaError != null ||
+      _satuanError != null ||
+      _stokAwalError != null ||
+      _obatError != null ||
+      _stokMinError != null;
 
   bool get _showStokMin => _jenis != V2JenisBarang.obat;
 
-  /// `id_obat`/nama obat yang ikut disimpan; hanya untuk jenis Obat.
-  String? get _obatId => _jenis == V2JenisBarang.obat ? _obat?.id : null;
-  String? get _obatNama => _jenis == V2JenisBarang.obat ? _obat?.nama : null;
+  /// Barang jenis Obat mengambil namanya dari dropdown obat, jadi kolom "Nama
+  /// barang" tidak ditampilkan.
+  bool get _isObat => _jenis == V2JenisBarang.obat;
+
+  /// `true` bila obat terpilih berasal dari katalog bawaan (`obat_katalog`).
+  bool get _obatKatalog => _isObat && (_obat?.katalog ?? false);
+
+  /// `id_obat`/`id_katalog` dan nama obat yang ikut disimpan; hanya jenis Obat.
+  String? get _obatId => _isObat ? _obat?.id : null;
+  String? get _obatNama => _isObat ? _obat?.nama : null;
 
   @override
   void initState() {
@@ -306,15 +321,16 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     final namaBaik = _namaError != null && _nama.text.trim().isNotEmpty;
     final satuanBaik = _satuanError != null && _satuan.text.trim().isNotEmpty;
     final stokBaik =
-        _stokAwalError != null &&
-        _stokAwal.text.trim().isNotEmpty &&
-        _parseAngka(_stokAwal.text) >= 0;
-    if (_dirty && !namaBaik && !satuanBaik && !stokBaik) return;
+        _stokAwalError != null && _stokAwalErrorFor(_stokAwal.text) == null;
+    final stokMinBaik =
+        _stokMinError != null && _stokMinErrorFor(_stokMin.text) == null;
+    if (_dirty && !namaBaik && !satuanBaik && !stokBaik && !stokMinBaik) return;
     setState(() {
       _dirty = true;
       if (namaBaik) _namaError = null;
       if (satuanBaik) _satuanError = null;
       if (stokBaik) _stokAwalError = null;
+      if (stokMinBaik) _stokMinError = null;
     });
   }
 
@@ -373,6 +389,8 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       _namaError = null;
       _satuanError = null;
       _stokAwalError = null;
+      _obatError = null;
+      _stokMinError = null;
     });
   }
 
@@ -385,7 +403,11 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     return widget.obatPilihan
             .where((pilihan) => pilihan.id == medicineId)
             .firstOrNull ??
-        V2ObatPilihan(nama: item?.medicineName ?? '', id: medicineId);
+        V2ObatPilihan(
+          nama: item?.medicineName ?? '',
+          id: medicineId,
+          katalog: item?.medicineKatalog ?? false,
+        );
   }
 
   void _setJenis(V2JenisBarang jenis) {
@@ -394,7 +416,14 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       _jenis = jenis;
       // Obat hanya berlaku untuk jenis Obat; pilihan lama dibuang supaya
       // `id_obat` tidak ikut terkirim untuk jenis lain.
-      if (jenis != V2JenisBarang.obat) _obat = null;
+      if (jenis != V2JenisBarang.obat) {
+        _obat = null;
+        _obatError = null;
+      } else {
+        // Kolom "Nama barang" disembunyikan untuk Obat, jadi galatnya dibuang.
+        _namaError = null;
+      }
+      _stokMinError = null;
     });
   }
 
@@ -431,13 +460,47 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       ),
     );
     if (!mounted || result == null) return;
-    setState(() => _obat = result);
+    setState(() {
+      _obat = result;
+      _obatError = null;
+    });
   }
 
-  /// Angka apa adanya dari isian: `-3` tetap negatif, `1.200` jadi 1200.
-  double _parseAngka(String text) {
-    final cleaned = text.trim().replaceAll('.', '').replaceAll(',', '.');
-    return double.tryParse(cleaned) ?? 0;
+  /// Angka apa adanya dari isian: pemisah desimal `.` atau `,`, tanpa pemisah
+  /// ribuan. Isian yang tidak sah dianggap 0 supaya pembanding tetap aman.
+  double _parseAngka(String text) =>
+      double.tryParse(text.trim().replaceAll(',', '.')) ?? 0;
+
+  /// Bentuk angka yang diterima: maksimal 10 digit dan 2 angka desimal.
+  static final RegExp _polaAngka = RegExp(r'^\d{1,10}([.,]\d{1,2})?$');
+
+  static const String _pesanAngka =
+      'Gunakan maksimal 10 digit dan 2 angka desimal.';
+
+  /// Galat isian stok awal (wajib, tidak negatif, bentuk angka benar).
+  /// Pesan negatif dicek lebih dulu supaya angka seperti `-3` tidak dilaporkan
+  /// sebagai bentuk angka yang salah.
+  String? _stokAwalErrorFor(String text) {
+    final value = text.trim();
+    if (value.isEmpty) return 'Isi stok awal';
+    final angka = double.tryParse(value.replaceAll(',', '.'));
+    if (angka != null && angka < 0) return 'Angka tidak boleh negatif';
+    if (!_polaAngka.hasMatch(value)) return _pesanAngka;
+    return null;
+  }
+
+  /// Galat isian stok minimum: opsional, harus > 0, dan (saat menambah) tidak
+  /// boleh melebihi stok awal. [stokAwal] hanya diisi di mode tambah.
+  String? _stokMinErrorFor(String text, {double? stokAwal}) {
+    final value = text.trim();
+    if (value.isEmpty) return null;
+    final angka = double.tryParse(value.replaceAll(',', '.'));
+    if (angka != null && angka <= 0) return 'Stok minimum harus lebih dari 0.';
+    if (!_polaAngka.hasMatch(value)) return _pesanAngka;
+    if (stokAwal != null && angka! > stokAwal) {
+      return 'Stok minimum tidak boleh melebihi stok awal.';
+    }
+    return null;
   }
 
   Future<void> _save() async {
@@ -451,17 +514,26 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     if (item != null) {
       final minimumText = _stokMin.text.trim();
       final minimum = minimumText.isEmpty ? null : _parseAngka(minimumText);
+      // Stok minimum divalidasi di form supaya galat menempel pada kolomnya,
+      // bukan muncul terlambat di halaman detail.
+      final stokMinError = _showStokMin
+          ? _stokMinErrorFor(minimumText)
+          : null;
       setState(() {
-        _namaError = nama.isEmpty ? 'Isi nama barang' : null;
+        _obatError = _isObat && _obat == null ? 'Pilih obat' : null;
+        _namaError = _isObat
+            ? null
+            : (nama.isEmpty ? 'Isi nama barang' : null);
         _satuanError = satuan.isEmpty ? 'Isi satuan' : null;
         _stokAwalError = null;
+        _stokMinError = stokMinError;
       });
       if (_hasError) return;
 
       await _kirim(
         V2InventarisItem(
           id: item.id,
-          nama: nama,
+          nama: _isObat ? (_obatNama ?? '') : nama,
           jenis: _jenis,
           jumlah: item.jumlah,
           satuan: satuan,
@@ -472,6 +544,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           riwayat: item.riwayat,
           medicineId: _obatId,
           medicineName: _obatNama,
+          medicineKatalog: _obatKatalog,
         ),
         ubah: true,
       );
@@ -480,27 +553,37 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
 
     final stokAwal = _stokAwal.text.trim();
     final jumlah = _parseAngka(stokAwal);
+    final stokAwalError = _stokAwalErrorFor(stokAwal);
+    final stokMinError = stokAwalError == null && _showStokMin
+        ? _stokMinErrorFor(_stokMin.text, stokAwal: jumlah)
+        : null;
+    final minimum = _stokMin.text.trim().isEmpty
+        ? null
+        : _parseAngka(_stokMin.text);
+    final namaBarang = _isObat ? (_obatNama ?? '') : nama;
 
     setState(() {
-      _namaError = nama.isEmpty ? 'Isi nama barang' : null;
+      _obatError = _isObat && _obat == null ? 'Pilih obat' : null;
+      _namaError = _isObat
+          ? null
+          : (nama.isEmpty ? 'Isi nama barang' : null);
       _satuanError = satuan.isEmpty ? 'Isi satuan' : null;
-      _stokAwalError = stokAwal.isEmpty
-          ? 'Isi stok awal'
-          : jumlah < 0
-          ? 'Angka tidak boleh negatif'
-          : null;
+      _stokAwalError = stokAwalError;
+      _stokMinError = stokMinError;
     });
     if (_hasError) return;
 
     await _kirim(
       V2InventarisItem(
-        id: 'stok-${nama.toLowerCase().replaceAll(' ', '-')}',
-        nama: nama,
+        id: 'stok-${namaBarang.toLowerCase().replaceAll(' ', '-')}',
+        nama: namaBarang,
         jenis: _jenis,
         jumlah: jumlah,
         satuan: satuan,
+        minimum: minimum,
         medicineId: _obatId,
         medicineName: _obatNama,
+        medicineKatalog: _obatKatalog,
       ),
       ubah: false,
     );
@@ -546,9 +629,21 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       Navigator.of(context).pop(hasil);
     } catch (error) {
       if (!mounted) return;
+      // Nama barang duplikat ditampilkan di kolomnya sendiri supaya pesan
+      // menempel pada penyebabnya; sisa galat tetap jadi SnackBar.
+      if (error is ApiException && error.code == 'INVENTARIS_NAME_TAKEN') {
+        setState(() {
+          if (_isObat) {
+            _obatError = error.message;
+          } else {
+            _namaError = error.message;
+          }
+        });
+        return;
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('$error')));
+        ..showSnackBar(SnackBar(content: Text(serviceError(error))));
     }
   }
 
@@ -620,23 +715,27 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     return [
       _jenisField(),
       SizedBox(height: gap),
-      if (_jenis == V2JenisBarang.obat) ...[
+      // Jenis Obat mengambil nama dari katalog, jadi kolom "Nama barang"
+      // digantikan pemilih obat (frame 4.11/4.12).
+      if (_isObat) ...[
         V2SelectField(
           label: 'Obat',
           value: _obatNama,
-          hint: 'Pilih obat',
+          hint: _obatError == null ? 'Pilih obat' : '',
           onTap: _pickObat,
+          error: _obatError,
+        ),
+        SizedBox(height: gap),
+      ] else ...[
+        V2TextField(
+          label: 'Nama barang',
+          // Hint disembunyikan saat kolom bergalat (frame 4.14).
+          hint: _namaError == null ? hint.$1 : '',
+          controller: _nama,
+          error: _namaError,
         ),
         SizedBox(height: gap),
       ],
-      V2TextField(
-        label: 'Nama barang',
-        // Hint disembunyikan saat kolom bergalat (frame 4.14).
-        hint: _namaError == null ? hint.$1 : '',
-        controller: _nama,
-        error: _namaError,
-      ),
-      SizedBox(height: gap),
       V2TextField(
         label: 'Satuan',
         hint: _satuanError == null ? hint.$2 : '',
@@ -664,8 +763,9 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         SizedBox(height: gap),
         V2TextField(
           label: 'Stok minimum (opsional)',
-          hint: 'Contoh: 3',
+          hint: _stokMinError == null ? 'Contoh: 3' : '',
           controller: _stokMin,
+          error: _stokMinError,
           keyboardType: TextInputType.number,
         ),
       ],

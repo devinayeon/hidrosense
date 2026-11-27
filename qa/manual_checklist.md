@@ -266,3 +266,18 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-69h | BUG-69 — tambah/ubah pegawai | Tambah pegawai; ubah pegawai (jaringan lambat) | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
 | MC-FIX-69i | BUG-69 — aktif/nonaktif pegawai | Nonaktifkan pegawai; aktifkan kembali pegawai nonaktif | `FIXED di kode, belum diuji ulang di HP` — pop-up konfirmasi + spinner |
 | MC-FIX-69j | BUG-69 — navigasi & galat | Halaman hasil pindah: tekan "Lihat meja"; lalu jalankan proses saat server menolak | `FIXED di kode, belum diuji ulang di HP` — navigasi loading tanpa pop-up; galat server tampil sebagai pesan dan form tetap terbuka |
+
+---
+
+> Sesi 10 (27 Nov 2026): perbaikan alur Inventaris dari uji manual di HP. Backend + FE
+> berubah (nama unik, validasi stok di form, obat dari `obat_katalog`, aktifkan kembali).
+> Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru yang
+> ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-70a | Nama barang unik | Tambah barang "Pupuk A"; lalu tambah lagi "  pupuk a " | `FIXED di kode, belum diuji ulang di HP` — pesan "Nama barang sudah dipakai" tampil di kolom nama, form tetap terbuka; nama barang arsip tetap dipesan |
+| MC-FIX-70b | Batas stok awal & minimum | Tambah barang: stok awal `5`, stok minimum `10`; lalu coba stok awal `1.234` | `FIXED di kode, belum diuji ulang di HP` — "Stok minimum tidak boleh melebihi stok awal." / "Gunakan maksimal 10 digit dan 2 angka desimal." |
+| MC-FIX-70c | Obat dari katalog | Tambah barang → pilih jenis Obat | `FIXED di kode, belum diuji ulang di HP` — kolom "Nama barang" hilang, dropdown obat dari `obat_katalog`, nama barang = nama obat |
+| MC-FIX-70d | Galat stok minimum saat Ubah | Ubah barang → isi stok minimum `0` atau `3,555` → Simpan | `FIXED di kode, belum diuji ulang di HP` — pesan tampil di form sesuai penyebab, tidak muncul di halaman detail |
+| MC-FIX-70e | Aktifkan kembali barang arsip | Arsipkan barang → chip "Arsip" → buka barang → "Aktifkan kembali" | `FIXED di kode, belum diuji ulang di HP` — tombol ada, minta konfirmasi, barang kembali ke "Semua" + toast |

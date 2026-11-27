@@ -46,6 +46,9 @@ V2InventarisItem v2InventarisItemFromRecord(
   final minimum = record.minimum == null
       ? null
       : double.tryParse(record.minimum!);
+  // Barang bisa tertaut ke katalog bawaan (`id_katalog`) atau master pengguna
+  // (`id_obat`); form butuh tahu sumbernya supaya mengirim kolom yang tepat.
+  final katalog = record.katalogId != null;
   return V2InventarisItem(
     id: record.id,
     nama: record.name,
@@ -56,8 +59,9 @@ V2InventarisItem v2InventarisItemFromRecord(
     arsip: !record.active,
     minimum: minimum,
     riwayat: riwayat,
-    medicineId: record.medicineId,
-    medicineName: record.medicineName,
+    medicineId: katalog ? record.katalogId : record.medicineId,
+    medicineName: katalog ? record.katalogName : record.medicineName,
+    medicineKatalog: katalog,
   );
 }
 
@@ -183,7 +187,7 @@ class V2InventarisConnectedTab extends ConsumerWidget {
     // Hangatkan daftar pendukung sejak tab dibuka: tombol Tambah/Ubah tidak
     // perlu menunggu permintaan jaringan sebelum form tampil (K-07).
     ref.watch(inventoryCategoriesProvider);
-    ref.watch(inventoryMedicinesProvider);
+    ref.watch(obatKatalogProvider);
     final data = ref.watch(connectedInventoryProvider);
     final items = data.records
         .map((record) => v2InventarisItemFromRecord(record))
@@ -240,7 +244,8 @@ class V2InventarisConnectedTab extends ConsumerWidget {
                       ? ''
                       : _angkaDraft(hasil.minimum!),
                   initialStock: _angkaDraft(hasil.jumlah),
-                  medicineId: hasil.medicineId,
+                  medicineId: hasil.medicineKatalog ? null : hasil.medicineId,
+                  katalogId: hasil.medicineKatalog ? hasil.medicineId : null,
                 ),
               );
         },
@@ -255,11 +260,16 @@ class V2InventarisConnectedTab extends ConsumerWidget {
     WidgetRef ref,
     V2InventarisItem item,
   ) async {
-    await Navigator.of(context).push<V2InventarisItem>(
+    final hasil = await Navigator.of(context).push<V2InventarisItem>(
       MaterialPageRoute<V2InventarisItem>(
         builder: (_) => V2InventarisConnectedDetailPage(item: item),
       ),
     );
+    if (!context.mounted || hasil == null) return;
+    // Barang arsip yang dipulihkan: beri tahu di daftar.
+    if (item.arsip && !hasil.arsip) {
+      _pesan(context, '${item.nama} diaktifkan kembali.');
+    }
   }
 }
 
@@ -272,11 +282,11 @@ void _pesan(BuildContext context, String pesan) {
 /// Daftar obat untuk sheet "Pilih obat"; kosong bila layanan tidak tersedia
 /// supaya penambahan barang jenis lain tetap jalan.
 Future<List<V2ObatPilihan>> _obatPilihan(WidgetRef ref) async {
-  final cached = ref.read(inventoryMedicinesProvider).valueOrNull;
-  if (cached != null) return v2ObatPilihanDari(cached);
+  final cached = ref.read(obatKatalogProvider).valueOrNull;
+  if (cached != null) return v2ObatPilihanDariKatalog(cached);
   try {
-    final obat = await ref.read(inventoryMedicinesProvider.future);
-    return v2ObatPilihanDari(obat);
+    final katalog = await ref.read(obatKatalogProvider.future);
+    return v2ObatPilihanDariKatalog(katalog);
   } catch (_) {
     return const <V2ObatPilihan>[];
   }
@@ -369,7 +379,8 @@ class _V2InventarisConnectedDetailPageState
                       ? ''
                       : _angkaDraft(hasil.minimum!),
                   initialStock: '',
-                  medicineId: hasil.medicineId,
+                  medicineId: hasil.medicineKatalog ? null : hasil.medicineId,
+                  katalogId: hasil.medicineKatalog ? hasil.medicineId : null,
                 ),
               );
         },
@@ -394,6 +405,27 @@ class _V2InventarisConnectedDetailPageState
       );
       if (!mounted || !done) return;
       Navigator.of(context).pop(_item.copyWith(arsip: true));
+    } catch (error) {
+      if (!mounted) return;
+      _pesan(context, serviceError(error));
+    }
+  }
+
+  /// Aktifkan kembali barang arsip; halaman menutup sambil membawa barang aktif
+  /// supaya daftar menampilkannya lagi.
+  Future<void> _aktifkan() async {
+    try {
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Aktifkan kembali barang?',
+        body: '${_item.nama} kembali muncul di daftar stok.',
+        primaryLabel: 'Aktifkan',
+        onConfirm: () => ref
+            .read(connectedInventoryProvider.notifier)
+            .activateItem(_item.id),
+      );
+      if (!mounted || !done) return;
+      Navigator.of(context).pop(_item.copyWith(arsip: false));
     } catch (error) {
       if (!mounted) return;
       _pesan(context, serviceError(error));
@@ -430,6 +462,7 @@ class _V2InventarisConnectedDetailPageState
       onCatatStok: _catatStok,
       onUbah: _ubah,
       onArsipkan: _arsipkan,
+      onAktifkan: _aktifkan,
     );
   }
 }

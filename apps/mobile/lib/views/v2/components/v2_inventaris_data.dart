@@ -7,6 +7,7 @@
 library;
 
 import '../../../core/formatting.dart';
+import '../../../data/models/obat_katalog_record.dart';
 import '../../../data/models/obat_record.dart';
 
 /// Jenis barang yang bisa disaring di halaman Stok (sheet 4.7).
@@ -78,6 +79,7 @@ class V2InventarisItem {
     this.riwayat = const <V2InventarisRiwayat>[],
     this.medicineId,
     this.medicineName,
+    this.medicineKatalog = false,
   });
 
   final String id;
@@ -85,11 +87,16 @@ class V2InventarisItem {
   final V2JenisBarang jenis;
   final double jumlah;
 
-  /// `id_obat` barang jenis Obat; null untuk jenis lain (frame 4.11/4.12).
+  /// `id_obat` atau `id_katalog` barang jenis Obat; null untuk jenis lain
+  /// (frame 4.11/4.12). Sumbernya ditandai [medicineKatalog].
   final String? medicineId;
 
   /// Nama obat yang tertaut, dipakai untuk menampilkan pilihan di form.
   final String? medicineName;
+
+  /// `true` bila [medicineId] menunjuk ke katalog bawaan (`obat_katalog`),
+  /// `false` bila ke master `obat` milik pengguna.
+  final bool medicineKatalog;
 
   /// Satuan yang ditulis apa adanya, mis. `pak`, `kg`, `lembar`.
   final String satuan;
@@ -131,6 +138,7 @@ class V2InventarisItem {
     List<V2InventarisRiwayat>? riwayat,
     String? medicineId,
     String? medicineName,
+    bool? medicineKatalog,
   }) {
     return V2InventarisItem(
       id: id ?? this.id,
@@ -145,6 +153,7 @@ class V2InventarisItem {
       riwayat: riwayat ?? this.riwayat,
       medicineId: medicineId ?? this.medicineId,
       medicineName: medicineName ?? this.medicineName,
+      medicineKatalog: medicineKatalog ?? this.medicineKatalog,
     );
   }
 }
@@ -177,18 +186,30 @@ const List<V2JenisBarang> urutanJenisForm = <V2JenisBarang>[
 
 /// Pilihan di sheet "Pilih obat" (frame 4.12).
 ///
-/// [id] adalah `id_obat` backend; null hanya untuk data contoh galeri yang
-/// tidak pernah dikirim ke server.
+/// [id] adalah `id_katalog` (katalog bawaan) atau `id_obat` (master pengguna);
+/// [katalog] menandai sumbernya supaya form mengirim kolom yang tepat. `id` null
+/// hanya untuk data contoh galeri yang tidak pernah dikirim ke server.
 class V2ObatPilihan {
-  const V2ObatPilihan({required this.nama, this.id});
+  const V2ObatPilihan({required this.nama, this.id, this.katalog = false});
 
   final String nama;
   final String? id;
+
+  /// `true` bila pilihan berasal dari `obat_katalog`.
+  final bool katalog;
 }
 
 /// Pilihan obat dari data nyata (`GET /api/v1/obat`).
 List<V2ObatPilihan> v2ObatPilihanDari(List<ObatRecord> obat) =>
     obat.map((item) => V2ObatPilihan(nama: item.name, id: item.id)).toList();
+
+/// Pilihan obat dari katalog bawaan (`GET /api/v1/obat-katalog`).
+List<V2ObatPilihan> v2ObatPilihanDariKatalog(List<ObatKatalogRecord> katalog) =>
+    katalog
+        .map(
+          (item) => V2ObatPilihan(nama: item.name, id: item.id, katalog: true),
+        )
+        .toList();
 
 /// Data contoh sheet "Pilih obat" (frame 4.12) tanpa id backend.
 const List<V2ObatPilihan> designObatPilihan = <V2ObatPilihan>[

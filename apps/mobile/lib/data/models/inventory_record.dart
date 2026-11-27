@@ -6,12 +6,14 @@ final class InventoryRecord {
     required this.version,
     required this.categoryId,
     required this.medicineId,
+    required this.katalogId,
     required this.name,
     required this.unit,
     required this.minimum,
     required this.active,
     required this.category,
     required this.medicineName,
+    required this.katalogName,
     required this.balance,
   });
 
@@ -20,12 +22,19 @@ final class InventoryRecord {
   final String? version;
   final String categoryId;
   final String? medicineId;
+
+  /// `id_katalog` saat barang jenis Obat tertaut ke katalog bawaan; null bila
+  /// tidak tertaut katalog. Terpisah dari [medicineId] (`id_obat`).
+  final String? katalogId;
   final String name;
   final String unit;
   final String? minimum;
   final bool active;
   final String category;
   final String? medicineName;
+
+  /// Nama obat dari katalog bila [katalogId] terisi.
+  final String? katalogName;
   final String balance;
 
   BigInt get balanceMinor => _minor(balance);
@@ -103,6 +112,7 @@ final class InventoryRecord {
       version: version == null ? null : _id(version),
       categoryId: _id(json['id_jenis_inventaris']),
       medicineId: json['id_obat'] == null ? null : _id(json['id_obat']),
+      katalogId: json['id_katalog'] == null ? null : _id(json['id_katalog']),
       name: _text(json['nama_barang'], 100),
       unit: _text(json['satuan'], 30),
       minimum: json['stok_minimum'] == null
@@ -113,6 +123,9 @@ final class InventoryRecord {
       medicineName: json['nama_obat'] == null
           ? null
           : _text(json['nama_obat'], 100),
+      katalogName: json['nama_katalog'] == null
+          ? null
+          : _text(json['nama_katalog'], 100),
       balance: _decimal(json['saldo']),
     );
   }
@@ -123,12 +136,14 @@ final class InventoryRecord {
     'version': version,
     'id_jenis_inventaris': categoryId,
     'id_obat': medicineId,
+    'id_katalog': katalogId,
     'nama_barang': name,
     'satuan': unit,
     'stok_minimum': minimum,
     'status_aktif': active ? 1 : 0,
     'nama_jenis': category,
     'nama_obat': medicineName,
+    'nama_katalog': katalogName,
     'saldo': balance,
   };
 

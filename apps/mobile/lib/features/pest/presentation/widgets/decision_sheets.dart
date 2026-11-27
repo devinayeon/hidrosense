@@ -45,10 +45,12 @@ bool bolehPotongStok(String category) => _jenisCocok(category);
 
 /// `true` bila satu baris inventaris boleh dipotong (D-31).
 ///
-/// Barang yang punya `id_obat` dikenali sebagai obat lewat pengenal stabil,
-/// jadi tidak bergantung pada ejaan nama jenis.
+/// Barang yang punya `id_obat` atau `id_katalog` dikenali sebagai obat lewat
+/// pengenal stabil, jadi tidak bergantung pada ejaan nama jenis.
 bool bolehPotongStokRecord(InventoryRecord item) =>
-    item.medicineId != null || _jenisCocok(item.category);
+    item.medicineId != null ||
+    item.katalogId != null ||
+    _jenisCocok(item.category);
 
 /// Daftar stok yang boleh dipilih dari [records] aktif (D-29/D-31).
 List<StockOption> stockOptionsDari(Iterable<InventoryRecord> records) => <StockOption>[
