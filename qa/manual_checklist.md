@@ -322,3 +322,20 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-73d | Ubah dari halaman detail | Detail kerusakan → Ubah kerusakan → ubah jenis/jumlah → Simpan | `FIXED di kode, belum diuji ulang di HP` — detail menampilkan data baru; kembali ke daftar, baris ikut berubah |
 | MC-FIX-73e | Kategori "Penyakit" | Tanaman rusak → Catat rusak, lalu Ubah kerusakan → lihat chip jenis | `FIXED di kode, belum diuji ulang di HP` — chip "Penyakit" menggantikan "Busuk akar" |
 | MC-FIX-73f | Tombol kembali HP setelah mencatat | Catat rusak → Simpan → tekan tombol kembali HP (bukan panah di layar) sampai Detail tanaman, lalu buka Tanaman rusak lagi | `FIXED di kode, belum diuji ulang di HP` — baris tetap ada walau keluar lewat tombol kembali HP |
+
+---
+
+> Sesi 10 lanjutan 4 (27 Nov 2026): perbaikan alur Panen & Penjualan.
+> Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru
+> yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-74a | "Berat layak" tetap tampil saat galat | Panen → Catat panen → kosongkan berat total → Simpan; lihat kartu biru "Berat layak" | `FIXED di kode, belum diuji ulang di HP` — pesan galat muncul, kartu "Berat layak" tetap terlihat dan ikut berubah saat berat diisi |
+| MC-FIX-74b | Pemilih hanya tanaman siap panen | Panen → Catat panen → Pilih tanaman; bandingkan dengan batch yang baru dipindah | `FIXED di kode, belum diuji ulang di HP` — hanya batch HST ≥ 45 atau HSS ≥ 60; batch muda tidak muncul; bila belum ada yang siap muncul penjelasan HST 45/HSS 60 |
+| MC-FIX-74c | Ubah panen: loading dan tetap terbuka saat galat | Detail panen → Ubah → Simpan → konfirmasi; matikan internet tepat setelah konfirmasi | `FIXED di kode, belum diuji ulang di HP` — tombol dialog menampilkan spinner, layar tidak langsung kembali; saat gagal muncul pesan dan form masih terbuka dengan isian utuh |
+| MC-FIX-74d | Muat Panen tidak menunggu daftar batch | Buka tab Tanam → Panen berulang kali dengan riwayat panjang, atau jaringan lambat | `FIXED di kode, belum diuji ulang di HP` — chip Estimasi/Riwayat terisi begitu datanya tiba, kerangka per chip, bukan satu layar tunggu |
+| MC-FIX-74e | Tanpa isian status pembayaran | Penjualan → Catat penjualan; gulir seluruh form | `FIXED di kode, belum diuji ulang di HP` — tidak ada "Pembayaran"/"Lunas"/"Belum lunas"; simpan tetap berhasil |
+| MC-FIX-74f | Tanpa saringan status bayar | Penjualan (daftar); lihat bawah kartu ringkasan | `FIXED di kode, belum diuji ulang di HP` — tidak ada chip Semua/Belum lunas/Lunas, tidak ada baris "Belum lunas" di kartu ringkasan |
+| MC-FIX-74g | Detail penjualan tanpa "Tandai lunas" | Penjualan → ketuk penjualan lama yang dulu belum lunas | `FIXED di kode, belum diuji ulang di HP` — footer hanya "Ubah"; tidak ada lencana Lunas/Belum lunas; penjualan antrean tetap berlencana "Antrean" |
+| MC-FIX-74h | Ringkasan penjualan tanpa "Belum lunas" | Penjualan → ikon grafik (Ringkasan penjualan) | `FIXED di kode, belum diuji ulang di HP` — kartu info hanya "Total 3 bulan" dan "Rata-rata per kg" |

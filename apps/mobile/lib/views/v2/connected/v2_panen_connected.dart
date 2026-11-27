@@ -166,7 +166,6 @@ class V2PanenConnectedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(panenViewModelProvider);
-    final transfers = ref.watch(v2AllTransfersProvider).valueOrNull ?? const [];
     final sowings = ref.watch(v2AllSowingsProvider).valueOrNull ?? const [];
     final inventaris = ref.watch(
       connectedInventoryProvider.select((value) => value.activeRecords),
@@ -182,7 +181,9 @@ class V2PanenConnectedTab extends ConsumerWidget {
         .map(
           (record) => v2PanenItemFromRecord(
             record,
-            transfers: transfers,
+            // Batch sudah dimuat VM panen; tidak perlu mengambil ulang lewat
+            // provider meja (menghindari daftar pemindahan ganda).
+            transfers: state.transfers,
             tables: tables,
             sowings: sowings,
             inventaris: inventaris,
@@ -201,6 +202,8 @@ class V2PanenConnectedTab extends ConsumerWidget {
       riwayat: riwayat,
       state: viewState,
       initialChipIndex: initialChipIndex,
+      estimasiLoading: !state.transfersLoaded,
+      riwayatLoading: !state.recordsLoaded,
       onSegmentChanged: onSegmentChanged,
       onRetry: () => ref.read(panenViewModelProvider.notifier).refresh(),
       onCatatPanen: estimasi.isEmpty
@@ -360,7 +363,7 @@ class _V2PanenConnectedDetailPageState
     final terbaru = _record();
     if (terbaru == null) return edited;
     final tables = ref.read(connectedTableProvider).records;
-    final transfers = ref.read(v2AllTransfersProvider).valueOrNull ?? const [];
+    final transfers = ref.read(panenViewModelProvider).transfers;
     final sowings = ref.read(v2AllSowingsProvider).valueOrNull ?? const [];
     final inventaris = ref
         .read(connectedInventoryProvider)

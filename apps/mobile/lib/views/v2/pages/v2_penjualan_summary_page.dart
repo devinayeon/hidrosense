@@ -42,14 +42,13 @@ class V2PenjualanSummaryPage extends StatelessWidget {
     ];
   }
 
-  /// Kartu info: total tiga bulan, rata-rata per kg, dan sisa belum lunas.
+  /// Kartu info: total tiga bulan dan rata-rata per kg.
   List<V2PenjualanInfoRow> get _rows {
     final bulanan = this.bulanan;
     if (bulanan == null) {
       return const [
         V2PenjualanInfoRow(label: 'Total 3 bulan', value: 'Rp 19,1 jt'),
         V2PenjualanInfoRow(label: 'Rata-rata per kg', value: 'Rp 39.000'),
-        V2PenjualanInfoRow(label: 'Belum lunas', value: 'Rp 2,4 jt'),
       ];
     }
     return [
@@ -60,10 +59,6 @@ class V2PenjualanSummaryPage extends StatelessWidget {
       V2PenjualanInfoRow(
         label: 'Rata-rata per kg',
         value: 'Rp ${formatAngkaRibu(bulanan.rataRataPerKg.round())}',
-      ),
-      V2PenjualanInfoRow(
-        label: 'Belum lunas',
-        value: formatRupiahJuta(bulanan.belumLunas),
       ),
     ];
   }

@@ -5,10 +5,10 @@ import '../widgets/v2_icon.dart';
 import '../widgets/v2_stock_item.dart';
 import 'v2_penjualan_data.dart';
 
-/// Baris penjualan di dalam `Grup daftar` (frame 8.1, 8.6, 8.14, 8.16).
+/// Baris penjualan di dalam `Grup daftar` (frame 8.1, 8.14, 8.16).
 ///
 /// Lead 40 berikon `user`, judul nama pembeli, subjudul tanggal dan berat, lalu
-/// nilai rupiah dengan badge di kanannya.
+/// nilai rupiah; lencana hanya muncul untuk baris antrean.
 class V2PenjualanRow extends StatelessWidget {
   const V2PenjualanRow({super.key, required this.penjualan, this.onTap});
 
@@ -29,14 +29,12 @@ class V2PenjualanRow extends StatelessWidget {
     );
   }
 
-  /// "Antrean" menang atas status pembayaran: selama belum terkirim, status
-  /// lunas belum bisa dipercaya (frame 8.16 dan 8.17).
-  Widget _badge() {
+  /// Hanya baris antrean yang punya lencana; penjualan yang sudah tercatat
+  /// tidak lagi menampilkan status bayar karena semua penjualan dianggap lunas.
+  Widget? _badge() {
     if (penjualan.antrean) {
       return const V2Badge(label: 'Antrean', status: V2BadgeStatus.pending);
     }
-    return penjualan.lunas
-        ? const V2Badge(label: 'Lunas', status: V2BadgeStatus.success)
-        : const V2Badge(label: 'Belum lunas', status: V2BadgeStatus.warning);
+    return null;
   }
 }
