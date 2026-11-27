@@ -67,18 +67,39 @@ DATABASE_URL=file:/tmp/opencode/refresh-e2e.db npm run db:refresh -- --allow-dat
 Verifikasi akhir: 35 tabel, 2 akun, 4 meja, benih maksimum 250, kolom
 `id_katalog` ada.
 
-## Temuan pada database remote (belum di-refresh)
+## Refresh database remote (sudah dijalankan)
 
-Dibaca hanya-baca dari `DATABASE_URL` di `.env`:
+Target: `libsql://hidrosense-riverin.aws-ap-southeast-1.turso.io` (dari `.env`).
 
-- Migrasi baru **23 dari 24** (`0024_inventaris_katalog` belum masuk), sehingga
+Sebelum refresh (dibaca hanya-baca):
+
+- Migrasi **23 dari 24** (`0024_inventaris_katalog` belum masuk), sehingga
   `inventaris.id_katalog` tidak ada.
-- Data lama yang melanggar aturan baru:
-  - meja `M1` = 600 lubang, `M-06` = 999 lubang;
-  - penyemaian 600, 400, 200.000, dan 1.000.000 benih;
-  - akun uji lama: `tesgawai`, `rauda`, `rawl`, `wild`.
-- Perintah refresh **belum dijalankan** ke remote. Menunggu izin eksplisit
-  karena akan menghapus seluruh data tersebut.
+- Meja `M1` = 600 lubang, `M-06` = 999 lubang.
+- Penyemaian 600, 400, 200.000, dan 1.000.000 benih.
+- 6 akun, termasuk `tesgawai`, `rauda`, `rawl`, `wild`.
+
+Perintah yang dijalankan (dengan izin client):
+
+```
+npm run db:refresh -- --allow-data-loss
+```
+
+Hasil dari perintah: **35 tabel lama dihapus, 24 migrasi diterapkan ulang**,
+seed B000-B009 sukses.
+
+Verifikasi setelah refresh (hanya-baca):
+
+| Pemeriksaan | Hasil |
+|---|---|
+| Tabel | 35 |
+| Migrasi | 24 |
+| Akun | 2 (`petani`, `pegawai`); akun uji lama hilang |
+| Meja | 4; tidak ada yang > 250 lubang (`M-01..M-03` 250, `M-04` 200) |
+| Penyemaian | 2; benih maksimum 250 |
+| `inventaris.id_katalog` | ada |
+| Stok / pemindahan | 1 transaksi stok masuk / 1 pemindahan batch |
+| Login API `petani` dan `pegawai` | `200`, token terbit (server lokal + DATABASE_URL remote) |
 
 ## Cara menjalankan refresh
 
