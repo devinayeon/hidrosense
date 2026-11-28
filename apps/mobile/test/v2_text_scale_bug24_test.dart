@@ -113,7 +113,7 @@ void main() {
     );
 
     expect(find.textContaining('Sari Dewi'), findsWidgets);
-    expect(find.text('Aman'), findsOneWidget);
+    expect(find.text('Aktif'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

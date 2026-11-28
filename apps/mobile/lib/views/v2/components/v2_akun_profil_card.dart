@@ -23,7 +23,7 @@ class V2AkunProfilCard extends StatelessWidget {
   /// Teks peran, mis. "Petani" atau "Pegawai".
   final String? role;
 
-  /// Lencana status, mis. `V2Badge(label: 'Aman', status: success)`.
+  /// Lencana status, mis. `V2Badge(label: 'Aktif', status: success)`.
   final Widget? badge;
 
   @override

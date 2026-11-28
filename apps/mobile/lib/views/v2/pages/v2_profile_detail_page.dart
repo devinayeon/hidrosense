@@ -145,11 +145,11 @@ class _V2ProfileDetailPageState extends ConsumerState<V2ProfileDetailPage> {
                         role: _profile.role == 'pegawai' ? 'Pegawai' : 'Petani',
                         badge: active
                             ? const V2Badge(
-                                label: 'Aman',
+                                label: 'Aktif',
                                 status: V2BadgeStatus.success,
                               )
                             : const V2Badge(
-                                label: 'Kosong',
+                                label: 'Nonaktif',
                                 status: V2BadgeStatus.neutral,
                               ),
                       ),

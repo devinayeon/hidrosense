@@ -132,14 +132,15 @@ test('C3/A7: PATCH yang benar-benar mengubah tetap menaikkan versi', async (t) =
   assert.equal(await changeCount(db), before + 1);
 });
 
-test('C3/A7: menonaktifkan dua kali hanya menaikkan versi sekali', async (t) => {
+test('C3/A7: menonaktifkan dua kali menolak panggilan kedua tanpa menaikkan versi', async (t) => {
   const { db, write, item } = await inventoryFixture(t);
   const first = await write('POST', `inventaris/${item.id_inventaris}/deactivate`);
+  assert.equal(first.statusCode, 200);
   assert.equal(first.json().data.version, String(Number(item.version) + 1));
   const before = await changeCount(db);
   const second = await write('POST', `inventaris/${item.id_inventaris}/deactivate`);
-  assert.equal(second.statusCode, 200);
-  assert.equal(second.json().data.version, first.json().data.version);
+  assert.equal(second.statusCode, 409);
+  assert.equal(second.json().error.code, 'INVENTARIS_ARCHIVED');
   assert.equal(await changeCount(db), before);
 });
 

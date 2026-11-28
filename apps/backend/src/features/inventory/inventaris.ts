@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Client, InValue } from '@libsql/client';
 import { requirePermission } from '../../common/authorization.js';
 import { createInventarisSchema, updateInventarisSchema, emptyQuerySchema, idParamSchema, listQuerySchema, parseInput } from './contracts.js';
-import { assertJenisExists, assertNamaBarangAvailable, assertObatExists, getInventaris, getKatalogNama, inventarisResponse, inventarisColumns } from './store.js';
+import { assertInventarisActive, inventarisArchived, assertJenisExists, assertNamaBarangAvailable, assertObatExists, getInventaris, getKatalogNama, inventarisResponse, inventarisColumns } from './store.js';
 import { inventoryWrite } from './write.js';
 import { ApiError } from '../../common/errors.js';
 import { toMinor } from '../../common/quantities.js';
@@ -67,6 +67,10 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     const input = parseInput(updateInventarisSchema, request.body);
     return inventoryWrite(db, request, clock, 'inventaris.update', { id, input }, async (tx) => {
       const current = await getInventaris(tx, id);
+      // Barang arsip hanya boleh dilihat atau diaktifkan kembali; perubahan
+      // data ditolak supaya tidak ada ubahan setelah arsip (balapan arsip vs
+      // ubah oleh dua pegawai).
+      assertInventarisActive(current);
       const normalizeUnit = (value: string) => value.trim().toLowerCase();
       const unitChanged = input.satuan !== undefined
         && normalizeUnit(input.satuan) !== normalizeUnit(current.satuan);
@@ -103,7 +107,13 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
       }
       if (assignments.length) {
         args.push(id);
-        await tx.execute({ sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=?`, args });
+        const updated = await tx.execute({
+          // Syarat `status_aktif=1` menutup balapan baca-lalu-tulis: bila
+          // pegawai lain mengarsipkan di antara baca dan tulis, tidak ada baris
+          // yang berubah dan permintaan ditolak, bukan menimpa data arsip.
+          sql: `UPDATE inventaris SET ${assignments.join(',')} WHERE id_inventaris=? AND status_aktif=1`, args,
+        });
+        if (updated.rowsAffected !== 1) inventarisArchived();
       }
       return keepVersionIfSame(current, await getInventaris(tx, id));
     }, input.expected_version);
@@ -114,6 +124,10 @@ export function registerInventaris(app: FastifyInstance, db: Client, clock: () =
     const { id } = parseInput(idParamSchema, request.params);
     return inventoryWrite(db, request, clock, 'inventaris.deactivate', { id }, async (tx) => {
       const current = await getInventaris(tx, id);
+      // Mengarsipkan barang yang sudah arsip adalah manipulasi tanpa tujuan;
+      // tolak dengan pesan yang jelas. Panggilan ulang dengan kunci idempotensi
+      // yang sama tetap di-replay sebelum efek ini berjalan.
+      assertInventarisActive(current);
       await tx.execute({ sql: 'UPDATE inventaris SET status_aktif=0 WHERE id_inventaris=?', args: [id] });
       return keepVersionIfSame(current, await getInventaris(tx, id));
     });

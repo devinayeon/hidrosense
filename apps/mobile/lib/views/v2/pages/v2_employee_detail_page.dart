@@ -215,11 +215,11 @@ class _V2EmployeeDetailPageState extends State<V2EmployeeDetailPage> {
                         name: _employee.name,
                         badge: _employee.active
                             ? const V2Badge(
-                                label: 'Aman',
+                                label: 'Aktif',
                                 status: V2BadgeStatus.success,
                               )
                             : const V2Badge(
-                                label: 'Kosong',
+                                label: 'Nonaktif',
                                 status: V2BadgeStatus.neutral,
                               ),
                       ),

@@ -161,6 +161,9 @@ test('whole reversal appends opposite lines once, preserves original and locks u
   assert.deepEqual((await f.app.inject({ url: first.headers.location, headers: f.headers })).json().data, original);
   expectError(await f.post({ keterangan: 'Again' }, {}, `${first.headers.location}/reverse`), 409, 'STOK_ALREADY_REVERSED');
   expectError(await f.post({ keterangan: 'Reverse reversal' }, {}, `${reverse.headers.location}/reverse`), 409, 'REVERSAL_NOT_ALLOWED');
+  // Barang arsip menolak PATCH; aktifkan kembali dulu supaya jalur UNIT_LOCKED
+  // tetap diuji (bukan dilewati).
+  await f.app.inject({ method: 'POST', url: `/api/v1/inventaris/${f.items[0].id_inventaris}/activate`, headers: f.headers });
   const patch = await f.app.inject({ method: 'PATCH', url: `/api/v1/inventaris/${f.items[0].id_inventaris}`,
     headers: f.headers, payload: { satuan: 'ml' } });
   expectError(patch, 409, 'UNIT_LOCKED');

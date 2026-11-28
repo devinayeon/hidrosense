@@ -91,6 +91,27 @@ export async function getKatalogNama(db: Executor, id: string) {
 }
 
 /**
+ * Galat seragam untuk barang arsip. Dipakai penjaga baca-lalu-tulis dan juga
+ * pemeriksaan `rowsAffected` saat UPDATE, supaya dua permintaan yang berjalan
+ * bersamaan tetap tidak bisa mengubah barang yang baru saja diarsipkan.
+ */
+export function inventarisArchived(): never {
+  throw new ApiError(409, 'INVENTARIS_ARCHIVED',
+    'Barang sudah diarsipkan. Aktifkan kembali dulu untuk mengubahnya.');
+}
+
+/**
+ * Barang yang sudah diarsipkan menolak semua tulisan pada datanya; yang tetap
+ * boleh hanya `GET` dan `POST /inventaris/:id/activate`. Dipasang di jalur
+ * `PATCH` dan `deactivate` supaya barang tidak bisa berubah setelah diarsipkan,
+ * termasuk saat dua pegawai menyentuhnya bersamaan (satu mengarsipkan, satu
+ * mengubah).
+ */
+export function assertInventarisActive(current: { status_aktif: number }) {
+  if (current.status_aktif !== 1) inventarisArchived();
+}
+
+/**
  * Nama barang unik untuk semua baris, termasuk yang diarsipkan: nama tetap
  * dipesan supaya pengaktifan kembali tidak pernah bentrok. Perbandingan tidak
  * membedakan huruf besar/kecil dan mengabaikan spasi tepi.
