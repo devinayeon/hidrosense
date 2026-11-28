@@ -89,10 +89,10 @@ class FakeRepo extends PestRepository {
   }
 
   @override
-  Future<PestRecommendation> reject(String id, RejectReason reason, {String? note, String? idempotencyKey}) async {
+  Future<PestRecommendation> reject(String id, RejectReason? reason, {String? note, String? idempotencyKey}) async {
     decisionCalls++;
     decisionKeys.add(idempotencyKey);
-    return PestRecommendation.fromJson(recJson(id: id, status: 'ditolak', extra: {'alasan_penolakan': reason.apiCode, 'tanggal_keputusan': '2026-09-30T00:00:00.000Z'}));
+    return PestRecommendation.fromJson(recJson(id: id, status: 'ditolak', extra: {'alasan_penolakan': reason?.apiCode, 'tanggal_keputusan': '2026-09-30T00:00:00.000Z'}));
   }
 }
 

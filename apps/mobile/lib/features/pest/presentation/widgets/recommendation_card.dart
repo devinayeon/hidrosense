@@ -4,6 +4,7 @@ import '../../../../views/v2/theme/v2_tokens.dart';
 import '../../../../views/v2/widgets/v2_button.dart';
 import '../../../../views/v2/widgets/v2_card.dart';
 import '../../data/pest_models.dart';
+import 'rotation_plan_view.dart';
 
 const List<String> _bulan = [
   'Jan',
@@ -31,6 +32,13 @@ String moaLine(Medicine m) {
   if (m.moaCode == null) return 'Tanpa kelompok MoA';
   return 'MoA ${m.moaCode}${m.moaName == null ? '' : ' · ${m.moaName}'}';
 }
+
+/// Peringatan izin pakai; null untuk cara yang bukan pestisida.
+String? registrationWarning(Medicine m) => switch (m.registration) {
+  RegistrationStatus.otherCrop => 'Izin hanya untuk tanaman lain.',
+  RegistrationStatus.notFound => 'Izin untuk selada tidak ditemukan.',
+  RegistrationStatus.notPesticide || RegistrationStatus.unchecked => null,
+};
 
 /// Ringkasan tanggal untuk keadaan kartu tertutup: tanggal pakai bila sudah
 /// diterima, atau tanggal rekomendasi dibuat.
@@ -67,20 +75,30 @@ class RecommendationCard extends StatefulWidget {
 }
 
 class _RecommendationCardState extends State<RecommendationCard> {
-  bool _busy = false;
+  /// Tombol yang aksinya sedang berjalan (true = Terima); null bila diam.
+  /// Spinner hanya muncul di tombol yang ditekan.
+  bool? _running;
   late bool _expanded = !widget.collapsible;
 
-  Future<void> _run(Future<String?> Function() action) async {
-    if (_busy) return;
-    setState(() => _busy = true);
+  Future<void> _run(
+    Future<String?> Function() action, {
+    required bool accept,
+  }) async {
+    if (_running != null) return;
+    setState(() => _running = accept);
     final error = await action();
     if (!mounted) return;
-    setState(() => _busy = false);
+    setState(() => _running = null);
     if (error != null) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(error)));
     }
+  }
+
+  V2ButtonState _stateFor({required bool accept}) {
+    if (_running == null) return V2ButtonState.normal;
+    return _running == accept ? V2ButtonState.loading : V2ButtonState.disabled;
   }
 
   @override
@@ -117,98 +135,115 @@ class _RecommendationCardState extends State<RecommendationCard> {
             Text(ringkasTanggalRekomendasi(r), style: V2Type.caption),
           ],
           if (showDetail) ...[
-          Text(m.activeIngredient, style: V2Type.h2),
-          const SizedBox(height: V2Space.xs),
-          Text(moaLine(m), style: V2Type.caption),
-          const SizedBox(height: V2Space.md),
-          Text(r.reason, style: V2Type.body),
-          if (m.note != null) ...[
-            const SizedBox(height: V2Space.sm),
-            Text(m.note!, style: V2Type.caption),
-          ],
-          if (m.kind == MedicineKind.kimia) ...[
-            const SizedBox(height: V2Space.sm),
-            Text(
-              m.preHarvestDays == null
-                  ? 'Masa tunggu panen: cek label produk.'
-                  : 'Masa tunggu panen minimal ${m.preHarvestDays} hari.',
-              style: V2Type.bodyStrong,
-            ),
-            if (m.preHarvestSource != null)
+            Text(m.activeIngredient, style: V2Type.h2),
+            const SizedBox(height: V2Space.xs),
+            Text(moaLine(m), style: V2Type.caption),
+            const SizedBox(height: V2Space.md),
+            Text(r.reason, style: V2Type.body),
+            if (pending && r.plan != null && r.plan!.steps.length > 1) ...[
+              const SizedBox(height: V2Space.md),
+              RotationPlanView(plan: r.plan!),
+            ],
+            // Semua cara berkode MoA disemprotkan; NFT tidak boleh kemasukan cairan semprot.
+            if (m.moaCode != null) ...[
+              const SizedBox(height: V2Space.sm),
+              const Text(
+                'Semprot daun, jangan ke nutrisi.',
+                style: V2Type.bodyStrong,
+              ),
+            ],
+            if (m.note != null) ...[
+              const SizedBox(height: V2Space.sm),
+              Text(m.note!, style: V2Type.caption),
+            ],
+            if (m.kind == MedicineKind.kimia) ...[
+              const SizedBox(height: V2Space.sm),
               Text(
-                '${m.preHarvestSource}. Ikuti label produk Anda bila berbeda.',
-                style: V2Type.caption,
+                m.preHarvestDays == null
+                    ? 'Masa tunggu panen: cek label produk.'
+                    : 'Masa tunggu panen minimal ${m.preHarvestDays} hari.',
+                style: V2Type.bodyStrong,
               ),
-          ],
-          if (!m.verified) ...[
+              if (m.preHarvestSource != null)
+                Text(
+                  '${m.preHarvestSource}. Ikuti label produk Anda bila berbeda.',
+                  style: V2Type.caption,
+                ),
+            ],
+            if (!m.verified) ...[
+              const SizedBox(height: V2Space.sm),
+              Container(
+                padding: const EdgeInsets.all(V2Space.md),
+                decoration: BoxDecoration(
+                  color: V2Colors.amber100,
+                  borderRadius: BorderRadius.circular(V2Radius.iconBox),
+                ),
+                child: Text(
+                  [
+                    ?registrationWarning(m),
+                    'Data belum diverifikasi pakar. Ikuti label produk.',
+                  ].join(' '),
+                  style: V2Type.caption.copyWith(color: V2Colors.amber800),
+                ),
+              ),
+            ],
+            if (m.registrationNote != null) ...[
+              const SizedBox(height: V2Space.sm),
+              Text(m.registrationNote!, style: V2Type.caption),
+            ],
             const SizedBox(height: V2Space.sm),
-            Container(
-              padding: const EdgeInsets.all(V2Space.md),
-              decoration: BoxDecoration(
-                color: V2Colors.amber100,
-                borderRadius: BorderRadius.circular(V2Radius.iconBox),
-              ),
-              child: Text(
-                'Data obat belum diverifikasi pakar. Pastikan produk terdaftar untuk selada dan ikuti label sebelum memakai.',
-                style: V2Type.caption.copyWith(color: V2Colors.amber800),
-              ),
-            ),
-          ],
-          const SizedBox(height: V2Space.sm),
-          Text('Sumber: ${m.source}', style: V2Type.caption),
-          if (r.status == RecommendationStatus.diterima &&
-              r.appliedOn != null) ...[
-            const SizedBox(height: V2Space.sm),
-            Text(
-              'Dipakai ${formatAppliedDate(r.appliedOn!)}',
-              style: V2Type.bodyStrong,
-            ),
-            for (final m in r.materials)
+            Text('Sumber: ${m.source}', style: V2Type.caption),
+            if (r.status == RecommendationStatus.diterima &&
+                r.appliedOn != null) ...[
+              const SizedBox(height: V2Space.sm),
               Text(
-                'Stok terpakai: ${m.name} ${m.amount} ${m.unit}',
-                style: V2Type.caption,
+                'Dipakai ${formatAppliedDate(r.appliedOn!)}',
+                style: V2Type.bodyStrong,
               ),
-            if (r.careNote != null) Text(r.careNote!, style: V2Type.caption),
-          ],
-          if (r.status == RecommendationStatus.ditolak) ...[
-            const SizedBox(height: V2Space.sm),
-            Text(
-              'Alasan: ${r.rejectionReason?.label ?? 'tidak dicatat'}',
-              style: V2Type.bodyStrong,
-            ),
-            if (r.rejectionNote != null)
-              Text(r.rejectionNote!, style: V2Type.caption),
-          ],
-          if (pending &&
-              (widget.onAccept != null || widget.onReject != null)) ...[
-            const SizedBox(height: V2Space.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: V2Button(
-                    label: 'Tolak',
-                    type: V2ButtonType.secondary,
-                    state: _busy
-                        ? V2ButtonState.disabled
-                        : V2ButtonState.normal,
-                    onPressed: widget.onReject == null
-                        ? null
-                        : () => _run(widget.onReject!),
-                  ),
+              for (final m in r.materials)
+                Text(
+                  'Stok terpakai: ${m.name} ${m.amount} ${m.unit}',
+                  style: V2Type.caption,
                 ),
-                const SizedBox(width: V2Space.md),
-                Expanded(
-                  child: V2Button(
-                    label: 'Terima',
-                    state: _busy ? V2ButtonState.loading : V2ButtonState.normal,
-                    onPressed: widget.onAccept == null
-                        ? null
-                        : () => _run(widget.onAccept!),
+              if (r.careNote != null) Text(r.careNote!, style: V2Type.caption),
+            ],
+            if (r.status == RecommendationStatus.ditolak) ...[
+              const SizedBox(height: V2Space.sm),
+              Text(
+                'Alasan: ${r.rejectionReason?.label ?? 'tidak dicatat'}',
+                style: V2Type.bodyStrong,
+              ),
+              if (r.rejectionNote != null)
+                Text(r.rejectionNote!, style: V2Type.caption),
+            ],
+            if (pending &&
+                (widget.onAccept != null || widget.onReject != null)) ...[
+              const SizedBox(height: V2Space.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: V2Button(
+                      label: 'Tolak',
+                      type: V2ButtonType.secondary,
+                      state: _stateFor(accept: false),
+                      onPressed: widget.onReject == null
+                          ? null
+                          : () => _run(widget.onReject!, accept: false),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: V2Space.md),
+                  Expanded(
+                    child: V2Button(
+                      label: 'Terima',
+                      state: _stateFor(accept: true),
+                      onPressed: widget.onAccept == null
+                          ? null
+                          : () => _run(widget.onAccept!, accept: true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
           if (widget.collapsible)
             _ExpandToggle(

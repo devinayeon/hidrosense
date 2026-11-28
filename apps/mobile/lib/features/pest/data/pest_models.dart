@@ -1,5 +1,6 @@
 import '../domain/pest_summary.dart';
 
+part 'rotation_plan_models.dart';
 part 'scan_upload_models.dart';
 
 /// Status keputusan pengguna atas satu rekomendasi. Kode sama dengan backend.
@@ -95,6 +96,8 @@ class Medicine {
     required this.preHarvestSource,
     required this.source,
     required this.verified,
+    this.registration = RegistrationStatus.unchecked,
+    this.registrationNote,
   });
 
   factory Medicine.fromJson(Object? json) {
@@ -117,6 +120,8 @@ class Medicine {
       preHarvestSource: _strOrNull(m, 'phi_sumber'),
       source: _str(m, 'sumber'),
       verified: m['terverifikasi'] as bool,
+      registration: RegistrationStatus.parse(m['status_registrasi']),
+      registrationNote: _strOrNull(m, 'catatan_registrasi'),
     );
   }
 
@@ -135,6 +140,10 @@ class Medicine {
   final String? preHarvestSource;
   final String source;
   final bool verified;
+  final RegistrationStatus registration;
+
+  /// Rincian pencocokan registrasi, mis. komoditas lain yang tercatat.
+  final String? registrationNote;
 }
 
 /// Jumlah stok yang sah: sama dengan `positiveDecimalSchema` backend (paling banyak 2 desimal).
@@ -213,6 +222,7 @@ class PestRecommendation {
     required this.createdAt,
     required this.decidedAt,
     required this.materials,
+    this.plan,
   });
 
   factory PestRecommendation.fromJson(Object? json) {
@@ -252,6 +262,7 @@ class PestRecommendation {
       createdAt: created,
       decidedAt: decidedRaw == null ? null : DateTime.tryParse(decidedRaw),
       materials: materials.map(MaterialUsed.fromJson).toList(growable: false),
+      plan: RotationPlan.tryFromJson(m['rencana']),
     );
   }
 
@@ -278,6 +289,9 @@ class PestRecommendation {
 
   /// Stok yang terpotong saat diterima; kosong bila tanpa bahan atau belum diterima.
   final List<MaterialUsed> materials;
+
+  /// Rencana rotasi saat saran dibuat.
+  final RotationPlan? plan;
 }
 
 class RecommendationPage {

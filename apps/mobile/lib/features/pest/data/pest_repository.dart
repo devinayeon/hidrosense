@@ -176,14 +176,14 @@ class PestRepository {
   }
 
   /// Daftar foto deteksi tersimpan, terbaru dulu. `id_pemindahan` menyaring satu batch tanam.
-  Future<ScanPage> listScans({String? transferId, int page = 1, int limit = 20}) async {
+  Future<ScanPage> listScans({
+    String? transferId,
+    int page = 1,
+    int limit = 20,
+  }) async {
     final response = await _api.get(
       'pindaian',
-      query: {
-        'page': '$page',
-        'limit': '$limit',
-        'id_pemindahan': ?transferId,
-      },
+      query: {'page': '$page', 'limit': '$limit', 'id_pemindahan': ?transferId},
     );
     final rows = response['data'];
     final meta = response['meta'];
@@ -220,19 +220,21 @@ class PestRepository {
 
   Future<PestRecommendation> reject(
     String id,
-    RejectReason reason, {
+    RejectReason? reason, {
     String? note,
     String? idempotencyKey,
   }) async {
     final trimmed = note?.trim();
-    if (reason.requiresNote && (trimmed == null || trimmed.isEmpty)) {
+    if (reason != null &&
+        reason.requiresNote &&
+        (trimmed == null || trimmed.isEmpty)) {
       throw ArgumentError('Catatan wajib diisi untuk alasan "lainnya".');
     }
     final response = await _api.post(
       'rekomendasi-obat/$id/tolak',
       headers: _key(idempotencyKey),
       body: {
-        'alasan': reason.apiCode,
+        if (reason != null) 'alasan': reason.apiCode,
         if (trimmed != null && trimmed.isNotEmpty) 'catatan': trimmed,
       },
     );

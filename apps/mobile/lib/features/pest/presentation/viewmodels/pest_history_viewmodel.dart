@@ -128,7 +128,7 @@ class PestHistoryNotifier extends StateNotifier<PestHistoryState> {
     List<StockLineDraft> materials = const [],
   }) => _apply(() => _decider.accept(id, note: note, materials: materials));
 
-  Future<String?> reject(String id, RejectReason reason, {String? note}) =>
+  Future<String?> reject(String id, RejectReason? reason, {String? note}) =>
       _apply(() => _decider.reject(id, reason, note: note));
 
   Future<String?> _apply(Future<PestRecommendation?> Function() call) async {

@@ -12,12 +12,29 @@ import 'recommendation_card.dart';
 
 /// Barang inventaris aktif yang bisa dipilih sebagai bahan saat menerima.
 class StockOption {
-  const StockOption({required this.id, required this.name, required this.unit});
+  const StockOption({
+    required this.id,
+    required this.name,
+    required this.unit,
+    this.katalogId,
+  });
 
   final String id;
   final String name;
   final String unit;
+
+  /// Obat katalog yang ditautkan ke barang ini; null untuk nutrisi atau obat tanpa tautan.
+  final String? katalogId;
 }
+
+/// Barang yang tertaut ke obat yang disarankan ditaruh paling atas; urutan lain tetap.
+///
+/// Server menolak bahan ber-MoA lain (`MATERIAL_MISMATCH`), jadi pilihan yang sesuai
+/// sebaiknya yang pertama terlihat.
+List<StockOption> urutkanStok(List<StockOption> stok, String katalogId) => [
+  ...stok.where((o) => o.katalogId == katalogId),
+  ...stok.where((o) => o.katalogId != katalogId),
+];
 
 /// Jenis inventaris yang boleh dipotong saat menerima rekomendasi (D-29).
 ///
@@ -53,18 +70,25 @@ bool bolehPotongStokRecord(InventoryRecord item) =>
     _jenisCocok(item.category);
 
 /// Daftar stok yang boleh dipilih dari [records] aktif (D-29/D-31).
-List<StockOption> stockOptionsDari(Iterable<InventoryRecord> records) => <StockOption>[
+List<StockOption> stockOptionsDari(
+  Iterable<InventoryRecord> records,
+) => <StockOption>[
   for (final r in records)
     if (r.active && bolehPotongStokRecord(r))
-      StockOption(id: r.id, name: r.name, unit: r.unit),
+      StockOption(id: r.id, name: r.name, unit: r.unit, katalogId: r.katalogId),
 ];
 
 /// Barang aktif dari inventaris yang sudah dimuat aplikasi. Kosong bila pengguna tidak boleh
 /// memotong stok (backend mensyaratkan `inventaris:write`) atau belum ada sesi: provider
 /// inventaris melempar galat tanpa sesi, dan itu tidak boleh meruntuhkan halaman rekomendasi.
 List<StockOption> stockOptions(WidgetRef ref) {
-  final permissions = ref.watch(sessionProvider.select((s) => s.user?.permissions)) ?? const <String>[];
-  if (!permissions.contains('inventaris:read') || !permissions.contains('inventaris:write')) return const [];
+  final permissions =
+      ref.watch(sessionProvider.select((s) => s.user?.permissions)) ??
+      const <String>[];
+  if (!permissions.contains('inventaris:read') ||
+      !permissions.contains('inventaris:write')) {
+    return const [];
+  }
   return stockOptionsDari(ref.watch(connectedInventoryProvider).records);
 }
 
@@ -113,7 +137,10 @@ class _AcceptSheetState extends State<_AcceptSheet> {
   @override
   Widget build(BuildContext context) {
     final item = _item;
-    final amountError = item != null && _amount.text.trim().isNotEmpty && normalizeQuantity(_amount.text) == null
+    final amountError =
+        item != null &&
+            _amount.text.trim().isNotEmpty &&
+            normalizeQuantity(_amount.text) == null
         ? 'Isi angka lebih dari 0, paling banyak 2 desimal.'
         : null;
     return Padding(
@@ -127,28 +154,53 @@ class _AcceptSheetState extends State<_AcceptSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pakai ${widget.recommendation.medicine.activeIngredient}?', style: V2Type.h2),
+            Text(
+              'Pakai ${widget.recommendation.medicine.activeIngredient}?',
+              style: V2Type.h2,
+            ),
             const SizedBox(height: V2Space.sm),
-            const Text('Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.', style: V2Type.body),
+            const Text(
+              'Dicatat sebagai perawatan hari ini dan dipakai untuk rotasi berikutnya.',
+              style: V2Type.body,
+            ),
             if (widget.stock.isNotEmpty) ...[
               const SizedBox(height: V2Space.md),
               DropdownButtonFormField<String?>(
                 initialValue: item?.id,
-                decoration: const InputDecoration(labelText: 'Potong dari stok (opsional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Potong dari stok (opsional)',
+                ),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('Tidak memakai stok')),
-                  for (final o in widget.stock) DropdownMenuItem<String?>(value: o.id, child: Text('${o.name} (${o.unit})')),
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Tidak memakai stok'),
+                  ),
+                  for (final o in urutkanStok(
+                    widget.stock,
+                    widget.recommendation.medicine.id,
+                  ))
+                    DropdownMenuItem<String?>(
+                      value: o.id,
+                      child: Text('${o.name} (${o.unit})'),
+                    ),
                 ],
                 onChanged: (id) => setState(() {
-                  _item = id == null ? null : widget.stock.firstWhere((o) => o.id == id);
+                  _item = id == null
+                      ? null
+                      : widget.stock.firstWhere((o) => o.id == id);
                 }),
               ),
               if (item != null)
                 TextField(
                   controller: _amount,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(labelText: 'Jumlah (${item.unit})', errorText: amountError),
+                  decoration: InputDecoration(
+                    labelText: 'Jumlah (${item.unit})',
+                    errorText: amountError,
+                  ),
                 ),
             ] else ...[
               const SizedBox(height: V2Space.md),
@@ -164,7 +216,9 @@ class _AcceptSheetState extends State<_AcceptSheet> {
               maxLength: 500,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+              decoration: const InputDecoration(
+                labelText: 'Catatan (opsional)',
+              ),
             ),
             const SizedBox(height: V2Space.md),
             V2Button(
@@ -179,7 +233,11 @@ class _AcceptSheetState extends State<_AcceptSheet> {
                         note: note.isEmpty ? null : note,
                         material: chosen == null
                             ? null
-                            : StockLineDraft(inventoryId: chosen.id, amount: normalizeQuantity(_amount.text)!, unit: chosen.unit),
+                            : StockLineDraft(
+                                inventoryId: chosen.id,
+                                amount: normalizeQuantity(_amount.text)!,
+                                unit: chosen.unit,
+                              ),
                       ));
                     }
                   : null,
@@ -208,9 +266,19 @@ class DecidableRecommendationCard extends ConsumerWidget {
   });
 
   final PestRecommendation recommendation;
-  final Future<String?> Function(String id, {String? note, List<StockLineDraft> materials}) onAccept;
+  final Future<String?> Function(
+    String id, {
+    String? note,
+    List<StockLineDraft> materials,
+  })
+  onAccept;
   final List<StockOption> stock;
-  final Future<String?> Function(String id, RejectReason reason, {String? note}) onReject;
+  final Future<String?> Function(
+    String id,
+    RejectReason? reason, {
+    String? note,
+  })
+  onReject;
 
   /// Teruskan ke [RecommendationCard]: ringkasan yang bisa dibuka (BUG-32).
   final bool collapsible;
@@ -249,7 +317,11 @@ class DecidableRecommendationCard extends ConsumerWidget {
       recommendation: recommendation,
       collapsible: collapsible,
       onAccept: () async {
-        final decision = await showAcceptSheet(context, recommendation, stock: stock);
+        final decision = await showAcceptSheet(
+          context,
+          recommendation,
+          stock: stock,
+        );
         if (decision == null || !context.mounted) return null;
         final material = decision.material;
         return _confirm(
@@ -260,7 +332,11 @@ class DecidableRecommendationCard extends ConsumerWidget {
               'akan dicatat hari ini dan dipakai untuk rotasi berikutnya.',
           label: 'Terima',
           run: () async {
-            final error = await onAccept(id, note: decision.note, materials: material == null ? const [] : [material]);
+            final error = await onAccept(
+              id,
+              note: decision.note,
+              materials: material == null ? const [] : [material],
+            );
             // Sukses + ada bahan = saldo berkurang di server; muat ulang daftar/saldo.
             if (error == null && material != null) {
               ref.invalidate(connectedInventoryProvider);
@@ -275,7 +351,7 @@ class DecidableRecommendationCard extends ConsumerWidget {
         return _confirm(
           context,
           title: 'Tolak rekomendasi?',
-          body: 'Alasan "${picked.reason.label}" akan dicatat.',
+          body: rejectSummary(picked.reason, picked.note),
           label: 'Tolak',
           run: () => onReject(id, picked.reason, note: picked.note),
         );
@@ -284,9 +360,18 @@ class DecidableRecommendationCard extends ConsumerWidget {
   }
 }
 
-/// Lembar alasan penolakan. Kembali null bila dibatalkan.
-Future<({RejectReason reason, String? note})?> showRejectSheet(BuildContext context) {
-  return showModalBottomSheet<({RejectReason reason, String? note})>(
+/// Kalimat konfirmasi sebelum penolakan dikirim. Catatan tanpa pilihan dicatat sebagai "lainnya".
+String rejectSummary(RejectReason? reason, String? note) {
+  final picked = reason ?? (note == null ? null : RejectReason.lainnya);
+  if (picked == null) return 'Saran ditolak tanpa alasan.';
+  return 'Alasan "${picked.label}" akan dicatat.';
+}
+
+/// Lembar penolakan; alasan boleh dikosongkan. Kembali null bila dibatalkan.
+Future<({RejectReason? reason, String? note})?> showRejectSheet(
+  BuildContext context,
+) {
+  return showModalBottomSheet<({RejectReason? reason, String? note})>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -311,11 +396,9 @@ class _RejectSheetState extends State<_RejectSheet> {
     super.dispose();
   }
 
-  bool get _valid {
-    final reason = _reason;
-    if (reason == null) return false;
-    return !reason.requiresNote || _note.text.trim().isNotEmpty;
-  }
+  /// Hanya "Alasan lain" yang menuntut catatan.
+  bool get _valid =>
+      !(_reason?.requiresNote ?? false) || _note.text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +413,7 @@ class _RejectSheetState extends State<_RejectSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Kenapa ditolak?', style: V2Type.h2),
+            const Text('Alasan menolak (opsional)', style: V2Type.h2),
             const SizedBox(height: V2Space.sm),
             RadioGroup<RejectReason>(
               groupValue: _reason,
@@ -342,6 +425,8 @@ class _RejectSheetState extends State<_RejectSheet> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(reason.label, style: V2Type.body),
                       value: reason,
+                      // Ketuk lagi untuk membatalkan pilihan.
+                      toggleable: true,
                     ),
                 ],
               ),
@@ -353,18 +438,23 @@ class _RejectSheetState extends State<_RejectSheet> {
               maxLines: 3,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: _reason?.requiresNote == true ? 'Catatan (wajib)' : 'Catatan (opsional)',
+                labelText: _reason?.requiresNote == true
+                    ? 'Catatan (wajib)'
+                    : 'Catatan (opsional)',
               ),
             ),
             const SizedBox(height: V2Space.md),
             V2Button(
-              label: 'Kirim alasan',
+              label: 'Tolak saran',
               expand: true,
               state: _valid ? V2ButtonState.normal : V2ButtonState.disabled,
               onPressed: _valid
                   ? () {
                       final note = _note.text.trim();
-                      Navigator.of(context).pop((reason: _reason!, note: note.isEmpty ? null : note));
+                      Navigator.of(context).pop((
+                        reason: _reason,
+                        note: note.isEmpty ? null : note,
+                      ));
                     }
                   : null,
             ),

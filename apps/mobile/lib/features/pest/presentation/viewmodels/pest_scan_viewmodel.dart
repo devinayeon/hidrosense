@@ -202,7 +202,7 @@ class PestScanNotifier extends StateNotifier<PestScanState> {
     List<StockLineDraft> materials = const [],
   }) => _apply(() => _decider.accept(id, note: note, materials: materials));
 
-  Future<String?> reject(String id, RejectReason reason, {String? note}) =>
+  Future<String?> reject(String id, RejectReason? reason, {String? note}) =>
       _apply(() => _decider.reject(id, reason, note: note));
 
   /// Pesan galat, atau null bila berhasil atau diabaikan karena ketuk ganda.

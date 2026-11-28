@@ -38,7 +38,7 @@ class RecommendationDecider {
 
   Future<PestRecommendation?> reject(
     String id,
-    RejectReason reason, {
+    RejectReason? reason, {
     String? note,
   }) => _run(
     id,
@@ -46,7 +46,11 @@ class RecommendationDecider {
       id,
       reason,
       note: note,
-      idempotencyKey: _key(id, 'tolak', '${reason.apiCode}|${note ?? ''}'),
+      idempotencyKey: _key(
+        id,
+        'tolak',
+        '${reason?.apiCode ?? ''}|${note ?? ''}',
+      ),
     ),
   );
 
