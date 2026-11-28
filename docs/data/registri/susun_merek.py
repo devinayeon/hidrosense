@@ -15,6 +15,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bahan import BAHAN  # noqa: E402
 
 JENIS = {'Insektisida', 'Akarisida'}
+# Turso membalas HTTP 502 bila satu INSERT memuat terlalu banyak baris bersubquery: 0026 dengan
+# 100 baris per pernyataan mematikan upstream. Batasi baris per pernyataan, dan tetap di bawah
+# batas 300 baris berkas migrations/.
+ROWS_PER_STATEMENT = 50
 FORMULASI = {
     'AS', 'CB', 'CS', 'D', 'DP', 'EC', 'EO', 'EW', 'F', 'G', 'GR', 'L', 'ME', 'OD', 'P', 'RB', 'SC',
     'SE', 'SG', 'SL', 'SP', 'WDG', 'WG', 'WP', 'WS', 'WSC', 'ZC',
@@ -66,14 +70,15 @@ def main(raw_path):
         f"-- (diambil {raw['fetchedAt'][:10]}). Jangan disunting tangan: ubah skrip lalu buat migrasi baru.",
         f'-- {len(merek)} merek insektisida/akarisida, {len(bahan)} baris bahan aktif.',
     ]
-    # Data, bukan kode: satu pernyataan (100 baris data) per baris berkas supaya migrasi tetap di
-    # bawah batas 300 baris yang berlaku untuk berkas di migrations/.
-    for start in range(0, len(merek), 100):
+    # Data, bukan kode: beberapa baris data per pernyataan per baris berkas. Batas 50 baris menjaga
+    # satu request tetap kecil (Turso 502 untuk INSERT bersubquery yang terlalu besar) sekaligus
+    # berkas tetap di bawah batas 300 baris yang berlaku untuk berkas di migrations/.
+    for start in range(0, len(merek), ROWS_PER_STATEMENT):
         out.append('INSERT INTO merek_obat (id_merek, nama_merek, kunci, kunci_dasar, nomor_pendaftaran, tanggal_berakhir) VALUES '
-                   + ', '.join(merek[start:start + 100]) + ';')
-    for start in range(0, len(bahan), 100):
+                   + ', '.join(merek[start:start + ROWS_PER_STATEMENT]) + ';')
+    for start in range(0, len(bahan), ROWS_PER_STATEMENT):
         out.append('INSERT INTO merek_bahan (id_merek, nama_bahan, id_katalog) VALUES '
-                   + ', '.join(bahan[start:start + 100]) + ';')
+                   + ', '.join(bahan[start:start + ROWS_PER_STATEMENT]) + ';')
     sys.stdout.reconfigure(encoding='utf-8', newline='\n')
     print('\n'.join(out))
 
