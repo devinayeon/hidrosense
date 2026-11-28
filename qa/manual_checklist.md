@@ -352,3 +352,14 @@ yang dicatat dengan status apa adanya.
 | MC-FIX-75b | Detail deteksi tanpa hama tanpa tombol rotasi | Rawat → ketuk baris foto yang tidak mendeteksi hama | `FIXED di kode, belum diuji ulang di HP` — kartu menampilkan "Tidak ada hama" + "Tidak terdeteksi"; tombol "Lihat riwayat rotasi obat" tidak ada |
 | MC-FIX-75c | Detail deteksi berhama tetap punya tombol rotasi | Rawat → ketuk baris foto yang mendeteksi hama | `FIXED di kode, belum diuji ulang di HP` — meta "Keyakinan NN%", tombol "Lihat riwayat rotasi obat" tetap ada dan membuka riwayat |
 | MC-FIX-75d | Potongan stok perawatan masuk riwayat | Rawat → terima rekomendasi dengan potong stok → Stok → buka barang obat itu → kartu "Riwayat" | `FIXED di kode, belum diuji ulang di HP` — baris "Pakai N ml" terbaru muncul paling atas, walau barang sudah punya banyak catatan |
+
+---
+
+> Sesi 10 lanjutan 6 (27 Nov 2026): perbaikan Ubah profil petani & pegawai.
+> Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris baru
+> yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-76a | Ubah profil minta konfirmasi dulu | Akun → Akun saya → Ubah → ubah nama → Simpan | `FIXED di kode, belum diuji ulang di HP` — muncul dialog "Simpan perubahan profil?"; data baru dikirim setelah menekan Simpan di dialog |
+| MC-FIX-76b | Ubah profil menampilkan loading | Dialog konfirmasi → Simpan (jaringan lambat) | `FIXED di kode, belum diuji ulang di HP` — tombol dialog menampilkan spinner, form belum kembali; berhasil → toast "Perubahan tersimpan", gagal → form tetap terbuka dengan isian utuh |

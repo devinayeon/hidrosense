@@ -193,17 +193,28 @@ class _V2ProfileFormPageState extends ConsumerState<V2ProfileFormPage> {
     }
 
     final repository = ref.read(profileRepositoryProvider);
-    ProfileModel updated;
+    ProfileModel? updated;
     try {
-      updated = await repository.updateProfile(
-        nama: name,
-        username: usernameChanged ? username : null,
-        password: passwordChanged ? newPassword : null,
-        currentPassword: currentPassword.isEmpty ? null : currentPassword,
-        email: widget.initial.email,
-        noTelepon: phone,
-        alamat: address,
+      final done = await showV2ActionDialog(
+        context,
+        title: 'Simpan perubahan profil?',
+        body: credentialChange
+            ? 'Username atau password berubah. Kamu akan diminta masuk lagi.'
+            : 'Data profil baru akan dikirim ke server.',
+        primaryLabel: 'Simpan',
+        onConfirm: () async {
+          updated = await repository.updateProfile(
+            nama: name,
+            username: usernameChanged ? username : null,
+            password: passwordChanged ? newPassword : null,
+            currentPassword: currentPassword.isEmpty ? null : currentPassword,
+            email: widget.initial.email,
+            noTelepon: phone,
+            alamat: address,
+          );
+        },
       );
+      if (!mounted || !done) return;
     } on ApiException catch (error) {
       if (!mounted) return;
       _handleApiError(error);
@@ -214,15 +225,16 @@ class _V2ProfileFormPageState extends ConsumerState<V2ProfileFormPage> {
       return;
     }
 
-    if (!mounted) return;
+    final result = updated;
+    if (!mounted || result == null) return;
     if (credentialChange) {
       await _returnToLogin();
       return;
     }
     ref
         .read(sessionProvider.notifier)
-        .updateIdentity(name: updated.nama, username: updated.username);
-    Navigator.of(context).pop(updated);
+        .updateIdentity(name: result.nama, username: result.username);
+    Navigator.of(context).pop(result);
   }
 
   void _handleApiError(ApiException error) {
