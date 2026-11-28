@@ -81,6 +81,13 @@ V2MejaStatus v2StatusMeja(TableRecord record) {
   return V2MejaStatus.tersedia;
 }
 
+/// True saat data belum pernah termuat dan masih dimuat.
+///
+/// Dipakai kartu "Tanaman di meja" supaya tidak menampilkan pesan kosong
+/// selagi pemindahan/penyemaian masih diambil dari server.
+bool _belumSelesaiMemuat(AsyncValue<Object?> value) =>
+    value.isLoading && !value.hasValue;
+
 String? v2NamaVarietasTransfer(
   TransferRecord transfer,
   List<SowingRecord> sowings,
@@ -530,7 +537,7 @@ class _V2MejaConnectedDetailPageState
       MaterialPageRoute<V2SemaianPindah>(
         builder: (_) => V2PindahMejaFormPage(
           item: pilihan,
-          mejaAwal: index < 0 ? 0 : index,
+          mejaAwal: index < 0 ? null : index,
           jumlahAwal: jumlah,
           daftarMeja: meja,
           initialDate: jakartaToday(),
@@ -715,16 +722,23 @@ class _V2MejaConnectedDetailPageState
     // Satu pintu masuk bersama (BUG-39): saat dibuka lewat id, Detail meja
     // selalu dihitung ulang dari provider (kapasitas, tanaman, kerusakan)
     // supaya tidak menampilkan data basi/kosong dari jalur halaman sukses.
+    var memuatTanaman = false;
     if (widget.tableId != null) {
       ref.watch(connectedTableProvider.select((state) => state.records));
-      ref.watch(v2AllTransfersProvider);
-      ref.watch(v2AllSowingsProvider);
+      final transfers = ref.watch(v2AllTransfersProvider);
+      final sowings = ref.watch(v2AllSowingsProvider);
       ref.watch(connectedInventoryProvider);
       final terbaru = _dariBackend();
       if (terbaru != null) _item = terbaru;
+      // Selama pemindahan/penyemaian belum pernah termuat, daftar tanaman
+      // kosong bukan berarti mejanya kosong: minta kartu menampilkan kerangka
+      // pemuatan, bukan pesan "Belum ada tanaman".
+      memuatTanaman =
+          _belumSelesaiMemuat(transfers) || _belumSelesaiMemuat(sowings);
     }
     return V2MejaDetailPage(
       item: _denganRusak(_item),
+      loading: memuatTanaman,
       onUbahStatus: _ubahStatus,
       onUbahMeja: _ubahMeja,
       onTambahTanaman: _tambahTanaman,

@@ -368,3 +368,14 @@ yang dicatat dengan status apa adanya.
 |---|---|---|---|
 | MC-FIX-76a | Ubah profil minta konfirmasi dulu | Akun → Akun saya → Ubah → ubah nama → Simpan | `FIXED di kode, belum diuji ulang di HP` — muncul dialog "Simpan perubahan profil?"; data baru dikirim setelah menekan Simpan di dialog |
 | MC-FIX-76b | Ubah profil menampilkan loading | Dialog konfirmasi → Simpan (jaringan lambat) | `FIXED di kode, belum diuji ulang di HP` — tombol dialog menampilkan spinner, form belum kembali; berhasil → toast "Perubahan tersimpan", gagal → form tetap terbuka dengan isian utuh |
+
+---
+
+> Sesi 11 (28 Nov 2026): default meja "Pindah ke meja" & loading "Tanaman di
+> meja". Status **`FIXED di kode, belum diuji ulang di HP`**. **Tidak** ada baris
+> baru yang ditulis `PASS`.
+
+| Kode | Perbaikan | Langkah uji di HP | Status |
+|---|---|---|---|
+| MC-FIX-77a | Bawaan meja pindah = meja paling atas (lubang kosong terbanyak) | Semaian → buka semaian siap pindah → Pindahkan → lihat meja terpilih tanpa menyentuh daftar | `FIXED di kode, belum diuji ulang di HP` — yang terpilih adalah baris paling atas (lubang kosong terbanyak), bukan M-02 yang kebetulan pertama di data |
+| MC-FIX-77b | Loading pada "Tanaman di meja" | Meja → buka detail meja yang terisi dengan jaringan lambat, atau dari halaman sukses "Lihat meja" | `FIXED di kode, belum diuji ulang di HP` — kartu menampilkan kerangka baris tanaman, bukan "Belum ada tanaman di meja ini."; setelah data tiba, baris tanaman muncul |
