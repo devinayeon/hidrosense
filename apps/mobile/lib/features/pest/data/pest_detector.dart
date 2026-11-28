@@ -96,7 +96,7 @@ class PestDetector {
       interpreter,
       metadata['model_version'] as String,
       defaultConfThreshold:
-          (metadata['confidence_threshold'] as num?)?.toDouble() ?? 0.40,
+          (metadata['confidence_threshold'] as num?)?.toDouble() ?? 0.50,
       defaultIouThreshold:
           (metadata['iou_threshold'] as num?)?.toDouble() ?? 0.45,
     );

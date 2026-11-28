@@ -158,6 +158,47 @@ def extract_roboflow_base_stem(stem_or_filename: str) -> str | None:
     return cleaned or base
 
 
+_TEMPORAL_SESSION_RE = re.compile(r"(20\d{6})[-_](\d{6})")
+_EXPORT_PREFIX_RE = re.compile(r"^(?:pos|neg__[A-Za-z0-9_]+)__")
+_LOOSE_SCENE_FAMILY_RES: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^(aphids_n_\d+)(?:[^0-9]|$)", re.IGNORECASE),
+    re.compile(r"^(whitefly_newer_-?\d+)(?:[^0-9]|$)", re.IGNORECASE),
+    re.compile(r"^(whitefly_-?\d+)(?:[^0-9]|$)", re.IGNORECASE),
+    re.compile(r"^(aphids_\d+)(?:[^0-9]|$)", re.IGNORECASE),
+    re.compile(r"^(null_\d+)(?:[^0-9]|$)", re.IGNORECASE),
+)
+
+
+def extract_temporal_session_key(stem_or_filename: str) -> str | None:
+    """Group burst/same-day lab capture frames (YYYYMMDD-HHMMSS) so zero capture session crosses splits."""
+    name = Path(stem_or_filename).name
+    lowered = name.lower()
+    stem = Path(name).stem if any(lowered.endswith(ext) for ext in (*IMAGE_EXTENSIONS, ".txt")) else name
+    clean = _EXPORT_PREFIX_RE.sub("", stem)
+    match = _TEMPORAL_SESSION_RE.search(clean)
+    if not match:
+        return None
+    return f"session_{match.group(1)}"
+
+
+def extract_loose_scene_family(stem_or_filename: str) -> str | None:
+    """Group multi-shot / multi-crop siblings from the same parent field colony (e.g. aphids_n_11_*, whitefly_newer_09_*)."""
+    lowered = stem_or_filename.lower()
+    if "neg__ood_" in lowered or "ood_" in lowered:
+        return None
+    stem = Path(stem_or_filename).stem if any(lowered.endswith(ext) for ext in (*IMAGE_EXTENSIONS, ".txt")) else stem_or_filename
+    clean = _EXPORT_PREFIX_RE.sub("", stem)
+    if _TEMPORAL_SESSION_RE.search(clean):
+        return None
+    clean = re.sub(r"\.rf\.[0-9a-f]+$", "", clean, flags=re.IGNORECASE)
+    clean = _ROBOFLOW_AUG_SUFFIX_RE.sub("", clean)
+    for pattern in _LOOSE_SCENE_FAMILY_RES:
+        m = pattern.match(clean)
+        if m:
+            return f"fam_{m.group(1).lower()}"
+    return None
+
+
 def is_synthetic_collage_image(image_path: Path, img: Image.Image, *, max_pure_white_ratio: float = 0.15) -> bool:
     """Reject synthetic white-background pest collages (e.g., mosaic_* paste grids) that cause white-object FPs."""
     stem_low = image_path.stem.lower()
@@ -574,6 +615,7 @@ def deduplicate_and_merge_sources(
     group_hamming_distance: int = 4,
     keep_negatives: bool = True,
     filter_collage_artifacts: bool = False,
+    drop_unverified_empty_sources: frozenset[str] = frozenset(),
     source_details_out: dict[str, Any] | None = None,
 ) -> tuple[list[DatasetRecord], dict[str, int]]:
     effective_group_hamming = max(group_hamming_distance, max_hamming_distance)
@@ -612,6 +654,7 @@ def deduplicate_and_merge_sources(
                 "negative_images_kept": 0,
                 "sha256_duplicates_removed": 0,
                 "phash_duplicates_removed": 0,
+                "collages_filtered": 0,
                 "empty_or_unmapped_skipped": 0,
                 "unreadable_images_skipped": 0,
                 "boxes_total_lines": 0,
@@ -675,11 +718,20 @@ def deduplicate_and_merge_sources(
             boxes = tuple(parsed_boxes)
             negative_kind = ""
             if not boxes:
-                if had_invalid_line or had_unmapped_line or not keep_negatives:
+                if (
+                    had_invalid_line
+                    or had_unmapped_line
+                    or not keep_negatives
+                    or (source_dir.name in drop_unverified_empty_sources and not had_molted_line)
+                ):
                     stats["empty_or_unmapped_skipped"] += 1
                     src_entry["empty_or_unmapped_skipped"] += 1
                     continue
                 if had_molted_line:
+                    if source_dir.name in drop_unverified_empty_sources:
+                        stats["empty_or_unmapped_skipped"] += 1
+                        src_entry["empty_or_unmapped_skipped"] += 1
+                        continue
                     negative_kind = "molted_skin_only"
                 elif source_dir.name in OOD_CATEGORIES:
                     negative_kind = source_dir.name
@@ -702,10 +754,10 @@ def deduplicate_and_merge_sources(
 
             try:
                 with Image.open(img_path) as img:
-                    if filter_collage_artifacts and boxes and source_dir.name not in OOD_CATEGORIES:
+                    if filter_collage_artifacts and source_dir.name not in OOD_CATEGORIES:
                         if is_synthetic_collage_image(img_path, img):
                             stats["collages_filtered"] += 1
-                            src_entry["empty_or_unmapped_skipped"] += 1
+                            src_entry["collages_filtered"] += 1
                             continue
                     dihedral_phashes = compute_dihedral_phashes(img)
             except Exception:
@@ -737,6 +789,8 @@ def deduplicate_and_merge_sources(
     uf = _UnionFind(len(candidates))
     group_index = _DihedralHashIndex(effective_group_hamming)
     stem_first_idx: dict[str, int] = {}
+    session_first_idx: dict[str, int] = {}
+    family_first_idx: dict[str, int] = {}
     for idx, cand in enumerate(candidates):
         for match_idx in group_index.find_matches(cand.dihedral_phashes):
             uf.union(idx, match_idx)
@@ -747,6 +801,20 @@ def deduplicate_and_merge_sources(
                 uf.union(idx, existing_idx)
             else:
                 stem_first_idx[cand.base_stem] = idx
+        sess_key = extract_temporal_session_key(cand.image_path.stem)
+        if sess_key:
+            existing_s = session_first_idx.get(sess_key)
+            if existing_s is not None:
+                uf.union(idx, existing_s)
+            else:
+                session_first_idx[sess_key] = idx
+        fam_key = extract_loose_scene_family(cand.image_path.stem)
+        if fam_key:
+            existing_f = family_first_idx.get(fam_key)
+            if existing_f is not None:
+                uf.union(idx, existing_f)
+            else:
+                family_first_idx[fam_key] = idx
 
     merged: list[DatasetRecord] = []
     dedup_index = _DihedralHashIndex(max_hamming_distance)
@@ -840,6 +908,65 @@ def stratified_split_records(
         eff_val_ratio = 0.15 if is_ood and n >= 10 else val_ratio
         eff_test_ratio = 0.25 if is_ood and n >= 20 else (0.20 if is_ood and n >= 10 else max(0.0, 1.0 - train_ratio - val_ratio))
 
+        group_sizes = [len(g) for g in ordered_groups]
+        if n >= 3 and max(group_sizes) > 2 * min(group_sizes):
+            # Size-aware group allocation for unbalanced session/family groups (e.g., 5 capture dates in aphids_new_v1):
+            # pick disjoint groups closest to target test & val image budgets while preserving >= 65% images for train.
+            total_imgs = sum(group_sizes)
+            target_test = max(1.0, total_imgs * eff_test_ratio)
+            target_val = max(1.0, total_imgs * eff_val_ratio)
+            max_holdout = max(2, int(round(total_imgs * 0.35)))
+
+            remaining = list(range(n))
+
+            def _pick_closest_bucket(target_sz: float, budget_left: int, reserve_for_next: int) -> list[int]:
+                chosen: list[int] = []
+                acc = 0
+                # Pick smallest-error group first so we always assign at least 1 group
+                cands_sorted = sorted(
+                    remaining,
+                    key=lambda idx_g: (abs(len(ordered_groups[idx_g]) - target_sz), len(ordered_groups[idx_g]), idx_g),
+                )
+                for idx_g in cands_sorted:
+                    sz = len(ordered_groups[idx_g])
+                    if not chosen:
+                        if sz <= max(budget_left - reserve_for_next, min(len(ordered_groups[r]) for r in remaining)):
+                            chosen.append(idx_g)
+                            acc += sz
+                            remaining.remove(idx_g)
+                            break
+                if not chosen and remaining:
+                    smallest = min(remaining, key=lambda idx_g: (len(ordered_groups[idx_g]), idx_g))
+                    chosen.append(smallest)
+                    acc += len(ordered_groups[smallest])
+                    remaining.remove(smallest)
+                # Greedily add more groups only if strictly closer to target AND leaves >=1 group for next & train
+                while len(remaining) > (1 + (1 if reserve_for_next > 0 else 0)):
+                    best_add = min(
+                        remaining,
+                        key=lambda idx_g: (abs((acc + len(ordered_groups[idx_g])) - target_sz), idx_g),
+                    )
+                    add_sz = len(ordered_groups[best_add])
+                    if acc + add_sz <= budget_left - reserve_for_next and abs((acc + add_sz) - target_sz) < abs(acc - target_sz):
+                        chosen.append(best_add)
+                        acc += add_sz
+                        remaining.remove(best_add)
+                    else:
+                        break
+                return chosen
+
+            min_rem = min(group_sizes)
+            test_indices = _pick_closest_bucket(target_test, max_holdout, min_rem)
+            test_sz = sum(len(ordered_groups[i]) for i in test_indices)
+            val_indices = _pick_closest_bucket(target_val, max(min_rem, max_holdout - test_sz), 0)
+            for i in remaining:
+                splits["train"].extend(ordered_groups[i])
+            for i in val_indices:
+                splits["val"].extend(ordered_groups[i])
+            for i in test_indices:
+                splits["test"].extend(ordered_groups[i])
+            continue
+
         if n >= 3:
             n_val = max(1, int(round(n * eff_val_ratio)))
             n_test = max(1, int(round(n * eff_test_ratio)))
@@ -852,6 +979,8 @@ def stratified_split_records(
                     break
             n_train = n - n_val - n_test
         elif n == 2:
+            # Always keep the larger group in train when only two groups exist in a stratum
+            ordered_groups = sorted(ordered_groups, key=lambda g: len(g), reverse=True)
             n_train, n_val, n_test = 1, 0, 1
         else:
             n_train, n_val, n_test = 1, 0, 0
@@ -1131,6 +1260,8 @@ def verify_exported_dataset(
     split_sha256: dict[str, set[str]] = {}
     split_dihedral_phashes: dict[str, list[tuple[int, ...]]] = {}
     split_base_stems: dict[str, set[str]] = {}
+    split_temporal_sessions: dict[str, set[str]] = {}
+    split_scene_families: dict[str, set[str]] = {}
     split_summaries: dict[str, Any] = {}
     intra_sha256_duplicates = 0
     intra_phash_duplicates = 0
@@ -1164,6 +1295,8 @@ def verify_exported_dataset(
         split_dihedral_list: list[tuple[int, ...]] = []
         intra_index = _DihedralHashIndex(max_hamming_distance)
         seen_base_stems: set[str] = set()
+        seen_temporal_sessions: set[str] = set()
+        seen_scene_families: set[str] = set()
         per_class_instances = {name: 0 for name in CANONICAL_CLASSES.values()}
         total_boxes = 0
         positive_imgs = 0
@@ -1193,6 +1326,12 @@ def verify_exported_dataset(
                 # Strip prefix tag pos__/neg__... before checking raw base stem
                 clean_base = re.sub(r"^(?:pos|neg__[A-Za-z0-9_]+)__", "", base_stem)
                 seen_base_stems.add(clean_base)
+            sess_key = extract_temporal_session_key(img_path.stem)
+            if sess_key:
+                seen_temporal_sessions.add(sess_key)
+            fam_key = extract_loose_scene_family(img_path.stem)
+            if fam_key:
+                seen_scene_families.add(fam_key)
 
             lines = [ln.strip() for ln in lbl_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
             if not lines:
@@ -1231,6 +1370,8 @@ def verify_exported_dataset(
         split_sha256[split_name] = seen_split_sha
         split_dihedral_phashes[split_name] = split_dihedral_list
         split_base_stems[split_name] = seen_base_stems
+        split_temporal_sessions[split_name] = seen_temporal_sessions
+        split_scene_families[split_name] = seen_scene_families
         split_summaries[split_name] = {
             "images": len(img_by_stem),
             "positive_images": positive_imgs,
@@ -1243,6 +1384,8 @@ def verify_exported_dataset(
     cross_split_phash_overlaps = 0
     cross_split_group_phash_overlaps = 0
     cross_split_base_stem_overlaps = 0
+    cross_split_temporal_session_overlaps = 0
+    cross_split_loose_scene_family_overlaps = 0
     for left, right in (("train", "val"), ("train", "test"), ("val", "test")):
         sha_overlap = split_sha256[left] & split_sha256[right]
         if sha_overlap:
@@ -1270,6 +1413,16 @@ def verify_exported_dataset(
             cross_split_base_stem_overlaps += len(stem_overlap)
             violations.append(f"Cross-split base-stem overlap {left}/{right}: {len(stem_overlap)}")
 
+        sess_overlap = split_temporal_sessions[left] & split_temporal_sessions[right]
+        if sess_overlap:
+            cross_split_temporal_session_overlaps += len(sess_overlap)
+            violations.append(f"Cross-split temporal session overlap {left}/{right}: {sorted(sess_overlap)}")
+
+        fam_overlap = split_scene_families[left] & split_scene_families[right]
+        if fam_overlap:
+            cross_split_loose_scene_family_overlaps += len(fam_overlap)
+            violations.append(f"Cross-split loose scene-family overlap {left}/{right}: {len(fam_overlap)}")
+
     if violations:
         raise ValueError("Dataset verification failed:\n- " + "\n- ".join(violations[:20]))
 
@@ -1283,6 +1436,8 @@ def verify_exported_dataset(
         "cross_split_phash_overlaps": cross_split_phash_overlaps,
         "cross_split_group_phash_overlaps": cross_split_group_phash_overlaps,
         "cross_split_base_stem_overlaps": cross_split_base_stem_overlaps,
+        "cross_split_temporal_session_overlaps": cross_split_temporal_session_overlaps,
+        "cross_split_loose_scene_family_overlaps": cross_split_loose_scene_family_overlaps,
         "group_hamming_distance": effective_group_hamming,
         "dihedral_orientations_checked": 8,
         "intra_split_sha256_duplicates": intra_sha256_duplicates,
@@ -1504,6 +1659,9 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         group_hamming_distance=args.group_hamming_distance,
         keep_negatives=True,
         filter_collage_artifacts=True,
+        # Visually audited: empty .txt files in aphids_new_v1 & whitefly_0tong_v1 contain unannotated live pests, not empty leaves.
+        # Genuine clean healthy lettuce leaves come from lettuce-pests v6 null_* (with blown-out white screenshots filtered).
+        drop_unverified_empty_sources=frozenset({"aphids_new_v1", "whitefly_0tong_v1"}),
         source_details_out=source_details,
     )
 

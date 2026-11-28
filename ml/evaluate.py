@@ -14,9 +14,11 @@ from ml.prepare_dataset import CANONICAL_CLASSES
 
 PROMOTION_GATES: dict[str, tuple[str, float]] = {
     "map50": ("min", 0.72),
+    "map75": ("min", 0.72),
     "recall": ("min", 0.72),
     "f1": ("min", 0.72),
     "small_scale_recall": ("min", 0.70),
+    "overexposure_recall": ("min", 0.85),
     "tflite_map50_drop": ("max", 0.008),
     "ood_false_positive_rate": ("max", 0.03),
     "model_size_mb": ("max", 12.0),
@@ -779,6 +781,317 @@ def evaluate_small_scale_recall(
     }
 
 
+def evaluate_calibration_and_tide(
+    tflite_path: Path,
+    data_yaml: Path,
+    *,
+    imgsz: int = 640,
+    conf_thres: float = 0.45,
+    iou_thres: float = 0.45,
+) -> dict[str, Any]:
+    """Compute Expected Calibration Error (ECE), reliability bins, TIDE error decomposition, size recall, and FPPI."""
+    import cv2
+    import numpy as np
+    from ai_edge_litert.interpreter import Interpreter
+    from ultralytics.data.utils import check_det_dataset
+
+    data_cfg = check_det_dataset(str(data_yaml), split="test")
+    test_img_dir = Path(data_cfg["test"])
+    image_files = sorted(p for p in test_img_dir.iterdir() if p.is_file() and p.suffix.lower() in _IMAGE_SUFFIXES)
+
+    interp = Interpreter(model_path=str(tflite_path), num_threads=4)
+    interp.allocate_tensors()
+    in_det = interp.get_input_details()[0]
+    out_det = interp.get_output_details()[0]
+
+    def _box_iou_norm(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> float:
+        xx1, yy1 = max(a[0], b[0]), max(a[1], b[1])
+        xx2, yy2 = min(a[2], b[2]), min(a[3], b[3])
+        inter = max(0.0, xx2 - xx1) * max(0.0, yy2 - yy1)
+        if inter <= 0.0:
+            return 0.0
+        aa = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+        ba = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+        return inter / max(1e-8, aa + ba - inter)
+
+    bin_edges = [
+        (0.0, 0.1),
+        (0.1, 0.2),
+        (0.2, 0.3),
+        (0.3, 0.4),
+        (0.4, 0.5),
+        (0.5, 0.6),
+        (0.6, 0.7),
+        (0.7, 0.8),
+        (0.8, 0.9),
+        (0.9, 1.01),
+    ]
+    bin_confs: dict[tuple[float, float], list[float]] = {b: [] for b in bin_edges}
+    bin_hits: dict[tuple[float, float], list[float]] = {b: [] for b in bin_edges}
+    tide = {
+        "tp": 0,
+        "background_fp": 0,
+        "localization_fp": 0,
+        "duplicate_fp": 0,
+        "class_confusion_fp": 0,
+        "missed_fn": 0,
+    }
+    size_tp = {"small_lt_32px": 0, "medium_32_96px": 0, "large_ge_96px": 0}
+    size_gt = {"small_lt_32px": 0, "medium_32_96px": 0, "large_ge_96px": 0}
+    matched_ious: list[float] = []
+    count_abs_errors: list[int] = []
+    total_fps = 0
+    evaluated = 0
+
+    for img_path in image_files:
+        im = cv2.imread(str(img_path))
+        if im is None:
+            continue
+        evaluated += 1
+        rgb_hwc, (new_w, new_h), (pad_l, pad_t) = _letterbox_bgr_to_rgb_float(im, imgsz, imgsz, pad_value=114)
+        interp.set_tensor(in_det["index"], np.ascontiguousarray(rgb_hwc[None].astype(np.float32)))
+        interp.invoke()
+        raw_out = interp.get_tensor(out_det["index"])[0]
+        dets = decode_yolov11_output(raw_out.tolist(), img_size=imgsz, conf_threshold=conf_thres, iou_threshold=iou_thres)
+
+        lbl_p = _image_to_label_path(img_path)
+        gts: list[tuple[int, tuple[float, float, float, float], str]] = []
+        if lbl_p.is_file():
+            for ln in lbl_p.read_text(encoding="utf-8").splitlines():
+                ps = ln.strip().split()
+                if len(ps) >= 5 and int(float(ps[0])) in (0, 1):
+                    cid = int(float(ps[0]))
+                    cx, cy, bw, bh = float(ps[1]), float(ps[2]), float(ps[3]), float(ps[4])
+                    x1 = (cx - bw / 2.0) * new_w + pad_l
+                    y1 = (cy - bh / 2.0) * new_h + pad_t
+                    x2 = (cx + bw / 2.0) * new_w + pad_l
+                    y2 = (cy + bh / 2.0) * new_h + pad_t
+                    px_sz = math.sqrt(max(1e-6, (x2 - x1) * (y2 - y1)))
+                    bkt = "small_lt_32px" if px_sz < 32.0 else ("medium_32_96px" if px_sz < 96.0 else "large_ge_96px")
+                    gts.append((cid, (x1 / imgsz, y1 / imgsz, x2 / imgsz, y2 / imgsz), bkt))
+                    size_gt[bkt] += 1
+
+        count_abs_errors.append(abs(len(dets) - len(gts)))
+        matched: set[int] = set()
+        for det in dets:
+            p_cls = int(det["class_id"])
+            p_box = tuple(float(v) for v in det["box"])
+            best_unmatched = (-1, 0.0)
+            best_any_same = (-1, 0.0)
+            best_diff = (-1, 0.0)
+            for gi, (gc, gb, _) in enumerate(gts):
+                ov = _box_iou_norm(p_box, gb)
+                if gc == p_cls:
+                    if ov > best_any_same[1]:
+                        best_any_same = (gi, ov)
+                    if gi not in matched and ov > best_unmatched[1]:
+                        best_unmatched = (gi, ov)
+                elif ov > best_diff[1]:
+                    best_diff = (gi, ov)
+
+            is_tp = False
+            if best_unmatched[1] >= 0.50:
+                gi = best_unmatched[0]
+                matched.add(gi)
+                is_tp = True
+                tide["tp"] += 1
+                matched_ious.append(best_unmatched[1])
+                size_tp[gts[gi][2]] += 1
+            else:
+                total_fps += 1
+                if best_any_same[1] >= 0.50:
+                    tide["duplicate_fp"] += 1
+                elif best_unmatched[1] >= 0.10:
+                    tide["localization_fp"] += 1
+                elif best_diff[1] >= 0.50:
+                    tide["class_confusion_fp"] += 1
+                else:
+                    tide["background_fp"] += 1
+
+            cf = float(det["confidence"])
+            for lo, hi in bin_edges:
+                if lo <= cf < hi:
+                    bin_confs[(lo, hi)].append(cf)
+                    bin_hits[(lo, hi)].append(1.0 if is_tp else 0.0)
+                    break
+
+        tide["missed_fn"] += len(gts) - len(matched)
+
+    total_dets = sum(len(v) for v in bin_confs.values())
+    reliability_bins: list[dict[str, Any]] = []
+    ece = 0.0
+    for lo, hi in bin_edges:
+        cs = bin_confs[(lo, hi)]
+        ys = bin_hits[(lo, hi)]
+        if not cs:
+            continue
+        mean_c = float(np.mean(cs))
+        emp_p = float(np.mean(ys))
+        ece += (len(cs) / max(1, total_dets)) * abs(mean_c - emp_p)
+        reliability_bins.append(
+            {
+                "range": f"{lo:.1f}-{min(hi, 1.0):.1f}",
+                "count": len(cs),
+                "mean_confidence": round(mean_c, 4),
+                "empirical_precision": round(emp_p, 4),
+                "gap": round(mean_c - emp_p, 4),
+            }
+        )
+
+    iou_arr = np.asarray(matched_ious, dtype=np.float64) if matched_ious else np.zeros(0, dtype=np.float64)
+    return {
+        "conf_threshold": conf_thres,
+        "images_evaluated": evaluated,
+        "expected_calibration_error": round(ece, 4),
+        "reliability_bins": reliability_bins,
+        "tide_errors": tide,
+        "matched_tp_iou": {
+            "mean": round(float(iou_arr.mean()), 4) if iou_arr.size else 0.0,
+            "median": round(float(np.median(iou_arr)), 4) if iou_arr.size else 0.0,
+            "ge_0_75_ratio": round(float(np.mean(iou_arr >= 0.75)), 4) if iou_arr.size else 0.0,
+        },
+        "size_bucket_recall": {
+            k: round(size_tp[k] / max(1, size_gt[k]), 4) if size_gt[k] else None for k in size_gt
+        },
+        "size_bucket_counts": {k: {"tp": size_tp[k], "gt": size_gt[k]} for k in size_gt},
+        "count_mae": round(float(np.mean(count_abs_errors)), 4) if count_abs_errors else 0.0,
+        "fppi": round(total_fps / max(1, evaluated), 4),
+    }
+
+
+def evaluate_domain_shift_stress(
+    tflite_path: Path,
+    data_yaml: Path,
+    *,
+    imgsz: int = 640,
+    conf_thres: float = 0.45,
+    iou_thres: float = 0.45,
+    max_per_class: int = 20,
+) -> dict[str, Any]:
+    """Stress-test mobile TFLite across real smartphone/greenhouse domain shifts (overexposure, low-light, defocus, JPEG, 9:16 NFT)."""
+    import cv2
+    import numpy as np
+    from ai_edge_litert.interpreter import Interpreter
+    from ultralytics.data.utils import check_det_dataset
+
+    data_cfg = check_det_dataset(str(data_yaml), split="test")
+    test_img_dir = Path(data_cfg["test"])
+    image_files = sorted(p for p in test_img_dir.iterdir() if p.is_file() and p.suffix.lower() in _IMAGE_SUFFIXES)
+
+    by_cls: dict[int, list[tuple[Path, list[tuple[int, float, float, float, float]]]]] = {0: [], 1: []}
+    for p in image_files:
+        lbl = _image_to_label_path(p)
+        if not lbl.is_file():
+            continue
+        parsed_gts: list[tuple[int, float, float, float, float]] = []
+        for ln in lbl.read_text(encoding="utf-8").splitlines():
+            parts = ln.strip().split()
+            if len(parts) >= 5:
+                cid = int(float(parts[0]))
+                if cid in (0, 1):
+                    parsed_gts.append((cid, float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])))
+        if not parsed_gts:
+            continue
+        cids = {gt[0] for gt in parsed_gts}
+        if 0 in cids:
+            by_cls[0].append((p, parsed_gts))
+        elif 1 in cids:
+            by_cls[1].append((p, parsed_gts))
+
+    selected = by_cls[0][:max_per_class] + by_cls[1][:max_per_class]
+    if not selected:
+        return {"images_evaluated": 0, "overexposure_recall": 0.0, "scenarios": {}}
+
+    interp = Interpreter(model_path=str(tflite_path), num_threads=4)
+    interp.allocate_tensors()
+    in_det = interp.get_input_details()[0]
+    out_det = interp.get_output_details()[0]
+
+    def _box_iou_norm(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> float:
+        xx1, yy1 = max(a[0], b[0]), max(a[1], b[1])
+        xx2, yy2 = min(a[2], b[2]), min(a[3], b[3])
+        inter = max(0.0, xx2 - xx1) * max(0.0, yy2 - yy1)
+        if inter <= 0.0:
+            return 0.0
+        aa = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+        ba = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+        return inter / max(1e-8, aa + ba - inter)
+
+    def _has_localized_hit(
+        bgr: np.ndarray,
+        gt_boxes_in_bgr: list[tuple[int, float, float, float, float]],
+        min_iou: float = 0.30,
+    ) -> bool:
+        rgb_hwc, (new_w, new_h), (pad_l, pad_t) = _letterbox_bgr_to_rgb_float(bgr, imgsz, imgsz, pad_value=114)
+        interp.set_tensor(in_det["index"], np.ascontiguousarray(rgb_hwc[None].astype(np.float32)))
+        interp.invoke()
+        raw_out = interp.get_tensor(out_det["index"])[0]
+        dets = decode_yolov11_output(raw_out.tolist(), img_size=imgsz, conf_threshold=conf_thres, iou_threshold=iou_thres)
+        if not dets:
+            return False
+        mapped_gts: list[tuple[int, tuple[float, float, float, float]]] = []
+        for cid, cx, cy, bw, bh in gt_boxes_in_bgr:
+            gx1 = ((cx - bw / 2.0) * new_w + pad_l) / imgsz
+            gy1 = ((cy - bh / 2.0) * new_h + pad_t) / imgsz
+            gx2 = ((cx + bw / 2.0) * new_w + pad_l) / imgsz
+            gy2 = ((cy + bh / 2.0) * new_h + pad_t) / imgsz
+            mapped_gts.append((cid, (gx1, gy1, gx2, gy2)))
+        for det in dets:
+            p_cls = int(det["class_id"])
+            p_box = tuple(float(v) for v in det["box"])
+            for g_cls, g_box in mapped_gts:
+                if p_cls == g_cls and _box_iou_norm(p_box, g_box) >= min_iou:
+                    return True
+        return False
+
+    scenario_names = (
+        "clean_orig",
+        "bright_sunlight_1_55x",
+        "dark_lowlight_0_45x",
+        "blur_9x9_defocus",
+        "jpeg_q25",
+        "portrait_9x16_nft_border",
+    )
+    hits = {k: 0 for k in scenario_names}
+    evaluated = 0
+
+    for img_path, parsed_gts in selected:
+        im = cv2.imread(str(img_path))
+        if im is None:
+            continue
+        evaluated += 1
+        nft_canvas = np.full((1280, 720, 3), (232, 236, 235), dtype=np.uint8)
+        nft_canvas[430:850, 150:570] = cv2.resize(im, (420, 420), interpolation=cv2.INTER_AREA)
+        nft_gts = [
+            (cid, (150.0 + cx * 420.0) / 720.0, (430.0 + cy * 420.0) / 1280.0, (bw * 420.0) / 720.0, (bh * 420.0) / 1280.0)
+            for cid, cx, cy, bw, bh in parsed_gts
+        ]
+        ok_jpg, enc_jpg = cv2.imencode(".jpg", im, [int(cv2.IMWRITE_JPEG_QUALITY), 25])
+        jpeg_im = cv2.imdecode(enc_jpg, cv2.IMREAD_COLOR) if ok_jpg else im
+        variants = {
+            "clean_orig": (im, parsed_gts),
+            "bright_sunlight_1_55x": (np.clip(im.astype(np.float32) * 1.55 + 20.0, 0, 255).astype(np.uint8), parsed_gts),
+            "dark_lowlight_0_45x": (np.clip(im.astype(np.float32) * 0.45, 0, 255).astype(np.uint8), parsed_gts),
+            "blur_9x9_defocus": (cv2.GaussianBlur(im, (9, 9), 2.5), parsed_gts),
+            "jpeg_q25": (jpeg_im, parsed_gts),
+            "portrait_9x16_nft_border": (nft_canvas, nft_gts),
+        }
+        for s_name, (vim, vgts) in variants.items():
+            if _has_localized_hit(vim, vgts):
+                hits[s_name] += 1
+
+    scenarios = {
+        k: {"hits": hits[k], "total": evaluated, "image_recall": round(hits[k] / max(1, evaluated), 4)}
+        for k in scenario_names
+    }
+    return {
+        "conf_threshold": conf_thres,
+        "images_evaluated": evaluated,
+        "overexposure_recall": scenarios["bright_sunlight_1_55x"]["image_recall"],
+        "scenarios": scenarios,
+    }
+
+
 def _repo_safe_path(path: Path) -> str:
     repo_root = Path(__file__).resolve().parents[1]
     try:
@@ -906,14 +1219,16 @@ def write_evaluation_markdown(report: dict[str, Any], md_path: Path) -> None:
 
     small_ev = tf_ev.get("small_scale_eval", {}) if tf_ev else {}
     kaggle_ood = gpu_bench.get("kaggle_test_ood_and_small_scale", {}) if gpu_bench else {}
-    if small_ev or kaggle_ood:
-        lines.extend(["", "## 2b. Multi-Scale Phone-Distance Recall & Extended COCO val2017 OOD Audit", ""])
+    cal_tide = tf_ev.get("calibration_and_tide", {}) if tf_ev else {}
+    stress_ev = tf_ev.get("domain_shift_stress", {}) if tf_ev else {}
+    if small_ev or kaggle_ood or cal_tide or stress_ev:
+        lines.extend(["", "## 2b. Multi-Scale Recall, Calibration (ECE/TIDE), & Smartphone Stress Audit", ""])
         if small_ev:
             pcr = small_ev.get("per_class_recall", {})
             lines.append(
                 f"- **Local TFLite `0.25x` Phone-Distance Localized Recall (`IoU >= {small_ev.get('match_iou', 0.30)}`)**: "
                 f"**`{small_ev.get('overall_recall', 0):.4f}`** (`{small_ev.get('hits', 0)}` / `{small_ev.get('images_evaluated', 0)}` | "
-                f"`whitefly = {pcr.get('whitefly')}`, `aphids = {pcr.get('aphids')}`)"
+                f"`whitefly = {pcr.get('whitefly')}`, `aphids = {pcr.get('aphids')}`, `box_level = {small_ev.get('box_level_recall')}`)"
             )
         if kaggle_ood and "ood_total_images" in kaggle_ood:
             lines.append(
@@ -921,12 +1236,20 @@ def write_evaluation_markdown(report: dict[str, Any], md_path: Path) -> None:
                 f"**`{kaggle_ood.get('ood_false_positive_rate', 0):.4f}`** "
                 f"(`{kaggle_ood.get('ood_false_positives', 0)}` / `{kaggle_ood.get('ood_total_images', 0)}` held-out real-world OOD photos)"
             )
-            ks_small = kaggle_ood.get("small_scale_025x", {})
-            if ks_small:
-                lines.append(
-                    f"- **Kaggle PyTorch `0.25x` Small-Scale Recall**: `{ks_small.get('overall_recall', 0):.4f}` "
-                    f"(`whitefly = {ks_small.get('whitefly_recall')}`, `aphids = {ks_small.get('aphids_recall')}`)"
-                )
+        if cal_tide:
+            sbr = cal_tide.get("size_bucket_recall", {})
+            tide_e = cal_tide.get("tide_errors", {})
+            lines.extend(
+                [
+                    f"- **Calibration (ECE)**: `{cal_tide.get('expected_calibration_error', 0):.4f}` | **FPPI**: `{cal_tide.get('fppi', 0):.4f}` | **Count MAE**: `{cal_tide.get('count_mae', 0):.4f}`",
+                    f"- **TIDE Errors**: `TP={tide_e.get('tp', 0)}`, `Background_FP={tide_e.get('background_fp', 0)}`, `Loc_FP={tide_e.get('localization_fp', 0)}`, `Class_FP={tide_e.get('class_confusion_fp', 0)}`, `Missed_FN={tide_e.get('missed_fn', 0)}`",
+                    f"- **Size-Bucket Box Recall**: `<32px = {sbr.get('small_lt_32px')}`, `32-96px = {sbr.get('medium_32_96px')}`, `>=96px = {sbr.get('large_ge_96px')}`",
+                ]
+            )
+        if stress_ev and stress_ev.get("scenarios"):
+            lines.extend(["", "| Smartphone Domain-Shift Scenario | Hits / Total | Image Recall |", "|---|---:|---:|"])
+            for s_name, s_val in stress_ev["scenarios"].items():
+                lines.append(f"| `{s_name}` | `{s_val.get('hits', 0)} / {s_val.get('total', 0)}` | `{s_val.get('image_recall', 0):.4f}` |")
 
     if loss_sum:
         lines.extend(
@@ -998,6 +1321,8 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
     tflite_drop = 0.0
     ood_fpr = 0.0
     small_scale_recall = 1.0
+    overexposure_recall = 1.0
+    map75_gate_val = float(finetuned_metrics.get("map75", finetuned_metrics.get("map50", 0.0)))
     model_size_mb = round(args.weights.stat().st_size / (1024 * 1024), 3)
     tflite_eval: dict[str, Any] | None = None
 
@@ -1007,6 +1332,8 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         tflite_ultralytics_metrics = _strip_aggregate_metrics(tflite_raw)
         if not math.isfinite(tflite_ultralytics_metrics.get("map50", float("nan"))):
             raise ValueError(f"Non-finite map50 in TFLite evaluation: {tflite_ultralytics_metrics!r}")
+        if "map75" in tflite_ultralytics_metrics:
+            map75_gate_val = float(tflite_ultralytics_metrics["map75"])
 
         raw_bytes = args.tflite.read_bytes()
         size_bytes = len(raw_bytes)
@@ -1017,6 +1344,8 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
         litert_eval: dict[str, Any] | None = None
         tensor_parity: dict[str, float] | None = None
         small_scale_eval: dict[str, Any] | None = None
+        calibration_tide: dict[str, Any] | None = None
+        domain_stress: dict[str, Any] | None = None
         if is_valid_flatbuffer and args.data.exists():
             litert_eval = evaluate_tflite_litert(
                 args.tflite,
@@ -1038,6 +1367,19 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
                     conf_thres=calibrated_threshold,
                 )
                 small_scale_recall = float(small_scale_eval["overall_recall"])
+                calibration_tide = evaluate_calibration_and_tide(
+                    args.tflite,
+                    args.data,
+                    imgsz=int(args.imgsz),
+                    conf_thres=calibrated_threshold,
+                )
+                domain_stress = evaluate_domain_shift_stress(
+                    args.tflite,
+                    args.data,
+                    imgsz=int(args.imgsz),
+                    conf_thres=calibrated_threshold,
+                )
+                overexposure_recall = float(domain_stress["overexposure_recall"])
         else:
             in_shape, in_dtype = [1, int(args.imgsz), int(args.imgsz), 3], "float32"
             out_shape, out_dtype = [1, 4 + len(CANONICAL_CLASSES), _default_yolo_anchors(int(args.imgsz))], "float32"
@@ -1059,6 +1401,10 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
             tflite_eval["tensor_parity"] = tensor_parity
         if small_scale_eval is not None:
             tflite_eval["small_scale_eval"] = small_scale_eval
+        if calibration_tide is not None:
+            tflite_eval["calibration_and_tide"] = calibration_tide
+        if domain_stress is not None:
+            tflite_eval["domain_shift_stress"] = domain_stress
         if litert_eval is not None:
             tflite_eval["metrics"] = litert_eval["aggregate"]
             tflite_eval["per_class"] = litert_eval["per_class"]
@@ -1081,9 +1427,11 @@ def main(argv: list[str] | None = None) -> dict[str, Any]:
 
     gate_payload = {
         "map50": finetuned_metrics["map50"],
+        "map75": map75_gate_val,
         "recall": finetuned_metrics["recall"],
         "f1": finetuned_metrics["f1"],
         "small_scale_recall": small_scale_recall,
+        "overexposure_recall": overexposure_recall,
         "tflite_map50_drop": tflite_drop,
         "ood_false_positive_rate": ood_fpr,
         "model_size_mb": model_size_mb,

@@ -231,6 +231,8 @@ def validate_real_dataset(dataset_dir: Path) -> dict[str, Any]:
         "cross_split_phash_overlaps",
         "cross_split_group_phash_overlaps",
         "cross_split_base_stem_overlaps",
+        "cross_split_temporal_session_overlaps",
+        "cross_split_loose_scene_family_overlaps",
     ):
         if key in verification and int(verification[key]) != 0:
             raise ValueError(f"Integrity violation in {key}: {verification[key]}")
@@ -503,16 +505,24 @@ def _generate_zoomout_small_pest_views(
             continue
         rng.shuffle(pool)
         idx_out = 0
-        # Cycle through pool up to max_zoomout_per_class with varied scales and real leaf backgrounds
+        # 78% pasted onto real empty leaves (0.20x-0.46x), 22% embedded in simulated 9:16 hydroponic NFT bright border frames
+        nft_start = int(round(max_zoomout_per_class * 0.78))
         while idx_out < max_zoomout_per_class:
             img_path, boxes = pool[idx_out % len(pool)]
             src_im = cv2.imread(str(img_path))
             if src_im is None:
                 idx_out += 1
                 continue
-            bg = bg_cache[rng.randrange(len(bg_cache))].copy()
-            # Random scale tuned so resulting pest boxes span ~14-42 px (phone camera distance)
-            scale = rng.uniform(0.20, 0.46)
+
+            is_nft_frame = idx_out >= nft_start
+            if is_nft_frame:
+                tone = rng.randint(205, 242)
+                bg = np.full((640, 640, 3), (tone, min(255, tone + 4), min(255, tone + 2)), dtype=np.uint8)
+                scale = rng.uniform(0.38, 0.64)
+            else:
+                bg = bg_cache[rng.randrange(len(bg_cache))].copy()
+                scale = rng.uniform(0.20, 0.46)
+
             nh = max(48, min(560, int(round(640 * scale))))
             nw = max(48, min(560, int(round(640 * scale))))
             patch = cv2.resize(src_im, (nw, nh), interpolation=cv2.INTER_AREA)
@@ -520,18 +530,20 @@ def _generate_zoomout_small_pest_views(
             x0 = rng.randint(12, max(12, 640 - nw - 12))
             y0 = rng.randint(12, max(12, 640 - nh - 12))
 
-            # Soft feather mask on the 8px border so the model never shortcuts on hard patch edges
-            mask = np.ones((nh, nw, 1), dtype=np.float32)
-            feather = max(4, min(12, min(nh, nw) // 10))
-            ramp = np.linspace(0.0, 1.0, feather, dtype=np.float32)
-            mask[:feather, :, 0] *= ramp[:, None]
-            mask[-feather:, :, 0] *= ramp[::-1, None]
-            mask[:, :feather, 0] *= ramp[None, :]
-            mask[:, -feather:, 0] *= ramp[None, ::-1]
-
-            roi = bg[y0 : y0 + nh, x0 : x0 + nw].astype(np.float32)
-            blended = (patch.astype(np.float32) * mask + roi * (1.0 - mask)).clip(0, 255).astype(np.uint8)
-            bg[y0 : y0 + nh, x0 : x0 + nw] = blended
+            if is_nft_frame:
+                bg[y0 : y0 + nh, x0 : x0 + nw] = patch
+            else:
+                # Soft feather mask on the border so the model never shortcuts on hard patch edges
+                mask = np.ones((nh, nw, 1), dtype=np.float32)
+                feather = max(4, min(12, min(nh, nw) // 10))
+                ramp = np.linspace(0.0, 1.0, feather, dtype=np.float32)
+                mask[:feather, :, 0] *= ramp[:, None]
+                mask[-feather:, :, 0] *= ramp[::-1, None]
+                mask[:, :feather, 0] *= ramp[None, :]
+                mask[:, -feather:, 0] *= ramp[None, ::-1]
+                roi = bg[y0 : y0 + nh, x0 : x0 + nw].astype(np.float32)
+                blended = (patch.astype(np.float32) * mask + roi * (1.0 - mask)).clip(0, 255).astype(np.uint8)
+                bg[y0 : y0 + nh, x0 : x0 + nw] = blended
 
             new_lines: list[str] = []
             for c, cx, cy, bw, bh in boxes:
@@ -543,7 +555,13 @@ def _generate_zoomout_small_pest_views(
                     new_lines.append(f"{c} {ncx:.6f} {ncy:.6f} {nbw:.6f} {nbh:.6f}")
 
             if new_lines:
-                stem = f"zoomout_c{cls_id}_{idx_out:04d}__{img_path.stem[:36]}"
+                # Apply midday greenhouse overexposure glare on 25% of zoom-out views so whitefly & aphids survive harsh sunlight
+                if idx_out % 4 == 0:
+                    gain = rng.uniform(1.30, 1.62)
+                    bias = rng.uniform(8.0, 26.0)
+                    bg = np.clip(bg.astype(np.float32) * gain + bias, 0.0, 255.0).astype(np.uint8)
+                tag = "nftzoom" if is_nft_frame else "zoomout"
+                stem = f"{tag}_c{cls_id}_{idx_out:04d}__{img_path.stem[:36]}"
                 cv2.imwrite(str(bal_img_dir / f"{stem}.jpg"), bg, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
                 (bal_lbl_dir / f"{stem}.txt").write_text("\n".join(new_lines) + "\n", encoding="utf-8")
                 created[cls_id] += 1
@@ -563,10 +581,11 @@ def build_isolated_dataset_views(
     work_root: Path,
     whitefly_oversample_factor: int = 2,
     negative_oversample_factor: int = 1,
-    zoomout_per_class: int = 160,
+    leaf_empty_oversample_factor: int = 1,
+    zoomout_per_class: int = 180,
 ) -> dict[str, Any]:
     """Create baseline and train-only multi-scale balanced dataset views without touching val or test."""
-    if whitefly_oversample_factor < 1 or negative_oversample_factor < 1:
+    if whitefly_oversample_factor < 1 or negative_oversample_factor < 1 or leaf_empty_oversample_factor < 1:
         raise ValueError("Oversample factors must be >= 1")
 
     baseline_dir = work_root / "baseline"
@@ -614,7 +633,9 @@ def build_isolated_dataset_views(
         is_empty = not lbl_path.read_text(encoding="utf-8").strip()
         if is_empty:
             negative_train_images += 1
-            for rep_idx in range(1, negative_oversample_factor):
+            is_ood_neg = "neg__ood_" in img_path.stem
+            rep_factor = negative_oversample_factor if is_ood_neg else max(negative_oversample_factor, leaf_empty_oversample_factor)
+            for rep_idx in range(1, rep_factor):
                 prefix = f"negrep{rep_idx}__"
                 _link_or_copy_file(img_path, bal_img_dir / f"{prefix}{img_path.name}")
                 _link_or_copy_file(lbl_path, bal_lbl_dir / f"{prefix}{lbl_path.name}")
@@ -652,6 +673,7 @@ def build_isolated_dataset_views(
         "balanced_train_images": balanced_train_images,
         "whitefly_oversample_factor": whitefly_oversample_factor,
         "negative_oversample_factor": negative_oversample_factor,
+        "leaf_empty_oversample_factor": leaf_empty_oversample_factor,
         "coco_val2017_ood": coco_val2017_ood,
         **zoomout_stats,
         "val_manifest_sha256": val_sha_base,
@@ -663,25 +685,27 @@ def _build_albumentations_list() -> list[Any]:
     import albumentations as A
 
     try:
-        jpeg_tf = A.ImageCompression(quality_range=(55, 95), p=0.20)
+        jpeg_tf = A.ImageCompression(quality_range=(30, 95), p=0.20)
     except TypeError:
-        jpeg_tf = A.ImageCompression(quality_lower=55, quality_upper=95, p=0.20)
+        jpeg_tf = A.ImageCompression(quality_lower=30, quality_upper=95, p=0.20)
 
     return [
-        A.CLAHE(clip_limit=3.0, tile_grid_size=(8, 8), p=0.25),
-        A.RandomBrightnessContrast(brightness_limit=0.28, contrast_limit=0.28, p=0.30),
-        A.RandomGamma(gamma_limit=(75, 130), p=0.20),
+        A.CLAHE(clip_limit=2.5, tile_grid_size=(8, 8), p=0.15),
+        # Asymmetric brightness upper bound (+0.50) hardens whitefly/aphids against midday greenhouse overexposure glare
+        # without RandomSunFlare fake white-blob artifacts or double-stacked hsv_v clipping.
+        A.RandomBrightnessContrast(brightness_limit=(-0.30, 0.50), contrast_limit=(-0.25, 0.35), p=0.40),
+        A.RandomGamma(gamma_limit=(60, 150), p=0.25),
         A.OneOf(
             [
                 A.GaussianBlur(blur_limit=(3, 5), p=1.0),
                 A.MotionBlur(blur_limit=(3, 5), p=1.0),
             ],
-            p=0.15,
+            p=0.12,
         ),
-        A.Sharpen(alpha=(0.15, 0.35), lightness=(0.8, 1.1), p=0.15),
-        A.GaussNoise(p=0.15),
+        A.Sharpen(alpha=(0.12, 0.28), lightness=(0.85, 1.05), p=0.10),
+        A.GaussNoise(p=0.10),
         jpeg_tf,
-        A.ToGray(p=0.05),
+        A.ToGray(p=0.04),
     ]
 
 
@@ -724,11 +748,17 @@ def extract_eval_metrics(val_res: Any) -> dict[str, Any]:
     return {"aggregate": aggregate, "per_class": per_class}
 
 
-def _evaluate_split(weights_or_model: str | Path, data_yaml: Path, split: str, imgsz: int = 640) -> dict[str, Any]:
+def _evaluate_split(
+    weights_or_model: str | Path,
+    data_yaml: Path,
+    split: str,
+    imgsz: int = 640,
+    rect: bool = True,
+) -> dict[str, Any]:
     from ultralytics import YOLO
 
     model = YOLO(str(weights_or_model))
-    val_res = model.val(data=str(data_yaml), split=split, imgsz=imgsz, device=0, verbose=True)
+    val_res = model.val(data=str(data_yaml), split=split, imgsz=imgsz, rect=rect, device=0, verbose=True)
     return extract_eval_metrics(val_res)
 
 
@@ -779,13 +809,15 @@ def calibrate_confidence_threshold(
         return inter / max(1e-8, aa + ba - inter)
 
     candidates_report: list[dict[str, float]] = []
-    best_thr = 0.35
+    best_thr = 0.45
     best_objective = -1e9
 
-    for thr in (0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55):
+    for thr in (0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60):
         tp = fp = fn = 0
         neg_imgs = neg_fp_imgs = 0
+        leaf_neg_imgs = leaf_neg_fp_imgs = 0
         ood_imgs = ood_fp_imgs = 0
+        pos_imgs = pos_hit_imgs = 0
         for gts, is_ood, pred in zip(gt_per_img, is_ood_per_img, preds):
             boxes_xyxy = pred.boxes.xyxy.cpu().tolist() if pred.boxes is not None else []
             confs = pred.boxes.conf.cpu().tolist() if pred.boxes is not None else []
@@ -800,9 +832,16 @@ def calibrate_confidence_threshold(
                     ood_imgs += 1
                     if kept:
                         ood_fp_imgs += 1
+                else:
+                    leaf_neg_imgs += 1
+                    if kept:
+                        leaf_neg_fp_imgs += 1
                 fp += len(kept)
                 continue
 
+            pos_imgs += 1
+            if kept:
+                pos_hit_imgs += 1
             matched: set[int] = set()
             for p_cls, p_box in kept:
                 best_gi = -1
@@ -823,18 +862,26 @@ def calibrate_confidence_threshold(
         prec = tp / max(1, tp + fp)
         rec = tp / max(1, tp + fn)
         f1 = 2.0 * prec * rec / max(1e-8, prec + rec)
+        img_rec = pos_hit_imgs / max(1, pos_imgs)
         neg_fpr = neg_fp_imgs / max(1, neg_imgs)
+        leaf_fpr = leaf_neg_fp_imgs / max(1, leaf_neg_imgs) if leaf_neg_imgs > 0 else 0.0
         ood_fpr = ood_fp_imgs / max(1, ood_imgs) if ood_imgs > 0 else neg_fpr
-        # Balance recall and F1 while enforcing strict OOD FPR <= 0.03 (no artificial 0.45 choke)
-        ood_penalty = (4.0 * max(0.0, ood_fpr - 0.03)) + (1.2 * ood_fpr)
-        objective = (0.65 * f1) + (0.35 * rec) - ood_penalty - (0.35 * neg_fpr) - (0.04 if thr < 0.25 else 0.0)
+        fppi = fp / max(1, len(img_paths))
+        # Multi-metric operating point: F1 + box/image recall while controlling OOD FPR <= 0.03, leaf_empty FPR, and FPPI
+        ood_penalty = (5.0 * max(0.0, ood_fpr - 0.03)) + (1.5 * ood_fpr)
+        leaf_penalty = 0.40 * leaf_fpr
+        fppi_penalty = 0.12 * fppi
+        objective = (0.50 * f1) + (0.25 * rec) + (0.25 * img_rec) - ood_penalty - leaf_penalty - fppi_penalty
         row = {
             "threshold": thr,
             "precision": round(prec, 4),
             "recall": round(rec, 4),
             "f1": round(f1, 4),
+            "image_recall": round(img_rec, 4),
             "neg_fpr": round(neg_fpr, 4),
+            "leaf_empty_fpr": round(leaf_fpr, 4),
             "ood_fpr": round(ood_fpr, 4),
+            "fppi": round(fppi, 4),
             "objective": round(objective, 4),
         }
         candidates_report.append(row)
@@ -1041,12 +1088,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--allow-local", action="store_true")
     parser.add_argument("--output-root", type=Path, default=None)
     parser.add_argument("--baseline-epochs", type=int, default=45)
-    parser.add_argument("--improved-epochs", type=int, default=85)
+    parser.add_argument("--improved-epochs", type=int, default=90)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--whitefly-oversample", type=int, default=2)
     parser.add_argument("--negative-oversample", type=int, default=1)
-    parser.add_argument("--zoomout-per-class", type=int, default=160)
+    parser.add_argument("--leaf-empty-oversample", type=int, default=1)
+    parser.add_argument("--zoomout-per-class", type=int, default=180)
     parser.add_argument("--skip-export", action="store_true")
     return parser.parse_args(argv)
 
@@ -1086,6 +1134,7 @@ def main(argv: list[str] | None = None) -> None:
             work_root=work_root,
             whitefly_oversample_factor=args.whitefly_oversample,
             negative_oversample_factor=args.negative_oversample,
+            leaf_empty_oversample_factor=args.leaf_empty_oversample,
             zoomout_per_class=args.zoomout_per_class,
         )
         data_baseline_yaml: Path = views["baseline_yaml"]
@@ -1133,17 +1182,20 @@ def main(argv: list[str] | None = None) -> None:
         improved_model = YOLO("yolo11n.pt")
         extra_train_kwargs: dict[str, Any] = {}
         try:
-            from ultralytics.cfg import DEFAULT_CFG_DICT
+            from ultralytics.cfg import get_cfg
 
-            if "augmentations" in DEFAULT_CFG_DICT or "augmentations" in inspect.signature(improved_model.train).parameters:
-                extra_train_kwargs["augmentations"] = _build_albumentations_list()
+            custom_augs = _build_albumentations_list()
+            # Validate directly through Ultralytics get_cfg (DEFAULT_CFG_DICT omits 'augmentations', yet get_cfg accepts it!)
+            get_cfg(overrides={"augmentations": custom_augs})
+            extra_train_kwargs["augmentations"] = custom_augs
+            print(f"[stage2] Active custom Albumentations ({len(custom_augs)} transforms): {[type(t).__name__ for t in custom_augs]}", flush=True)
         except Exception as exc:
-            print(f"[stage2] Custom albumentations kwargs skipped ({exc}); using built-in Albumentations + YOLO hyperparams", flush=True)
+            raise RuntimeError(f"Custom Albumentations failed validation and must not be silently skipped: {exc}") from exc
 
         improved_res = improved_model.train(
             data=str(data_balanced_yaml),
             epochs=args.improved_epochs,
-            patience=22,
+            patience=25,
             batch=args.batch,
             imgsz=args.imgsz,
             device=0,
@@ -1158,19 +1210,21 @@ def main(argv: list[str] | None = None) -> None:
             box=7.5,
             dfl=1.5,
             mosaic=1.0,
-            close_mosaic=15,
+            close_mosaic=20,
             mixup=0.05,
             copy_paste=0.15,
-            scale=0.65,
+            scale=0.60,
             translate=0.12,
-            degrees=15.0,
-            shear=2.0,
-            perspective=0.0002,
+            # Zero non-orthogonal rotation/shear/perspective prevents axis-aligned GT box inflation (+18.7% width in v3)
+            # that degraded mobile 640x640 mAP@75 from 0.90 to 0.63; exact reflections preserve tight IoU >= 0.75.
+            degrees=0.0,
+            shear=0.0,
+            perspective=0.0,
             fliplr=0.5,
             flipud=0.25,
-            hsv_h=0.02,
-            hsv_s=0.55,
-            hsv_v=0.45,
+            hsv_h=0.015,
+            hsv_s=0.45,
+            hsv_v=0.25,
             erasing=0.05,
             amp=True,
             cache="ram",
@@ -1210,7 +1264,11 @@ def main(argv: list[str] | None = None) -> None:
 
         improved_val = _evaluate_split(improved_best_pt, data_baseline_yaml, split="val", imgsz=args.imgsz)
         improved_test = _evaluate_split(improved_best_pt, data_baseline_yaml, split="test", imgsz=args.imgsz)
-        print(f"[stage2] Production test metrics: {json.dumps(improved_test)}", flush=True)
+        improved_test_rect_false = _evaluate_split(
+            improved_best_pt, data_baseline_yaml, split="test", imgsz=args.imgsz, rect=False
+        )
+        print(f"[stage2] Production test metrics (rect=True): {json.dumps(improved_test)}", flush=True)
+        print(f"[stage2] Production test metrics (rect=False mobile 640x640): {json.dumps(improved_test_rect_false)}", flush=True)
 
         # Evaluate full 175+ COCO val2017+coco128 OOD breakdown & 0.25x phone-distance small-scale recall on Kaggle T4
         kaggle_ood_and_small: dict[str, Any] = {}
@@ -1343,6 +1401,7 @@ def main(argv: list[str] | None = None) -> None:
                 "synthetic_images_count": 0,
                 "whitefly_oversample_factor": views["whitefly_oversample_factor"],
                 "negative_oversample_factor": views["negative_oversample_factor"],
+                "leaf_empty_oversample_factor": views.get("leaf_empty_oversample_factor", 1),
                 "whitefly_train_images": views["whitefly_train_images"],
                 "negative_train_images": views["negative_train_images"],
                 "balanced_train_images": views["balanced_train_images"],
@@ -1371,6 +1430,7 @@ def main(argv: list[str] | None = None) -> None:
                 "val": improved_val["aggregate"],
                 "val_per_class": improved_val["per_class"],
                 "test": improved_test["aggregate"],
+                "test_rect_false": improved_test_rect_false["aggregate"],
                 "per_class": improved_test["per_class"],
             },
             "improvements_vs_baseline": deltas,

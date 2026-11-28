@@ -186,9 +186,11 @@ def test_f2_t2_overwrite_stale_kaggle_bundle_cleans_old_keys(tmp_path: Path) -> 
 def test_f3_t2_promotion_gates_exact_inclusive_thresholds() -> None:
     exact_pass = {
         "map50": 0.72,
+        "map75": 0.72,
         "recall": 0.72,
         "f1": 0.72,
         "small_scale_recall": 0.70,
+        "overexposure_recall": 0.85,
         "tflite_map50_drop": 0.008,
         "ood_false_positive_rate": 0.03,
         "model_size_mb": 12.0,
@@ -197,9 +199,11 @@ def test_f3_t2_promotion_gates_exact_inclusive_thresholds() -> None:
 
     for key, bad_val in [
         ("map50", 0.7199),
+        ("map75", 0.7199),
         ("recall", 0.7199),
         ("f1", 0.7199),
         ("small_scale_recall", 0.6999),
+        ("overexposure_recall", 0.8499),
         ("tflite_map50_drop", 0.0081),
         ("ood_false_positive_rate", 0.0301),
         ("model_size_mb", 12.001),
@@ -214,9 +218,11 @@ def test_f3_t2_assert_promotion_ready_missing_keys_raise_value_error() -> None:
 
     complete = {
         "map50": 0.85,
+        "map75": 0.80,
         "recall": 0.80,
         "f1": 0.82,
         "small_scale_recall": 0.80,
+        "overexposure_recall": 0.90,
         "tflite_map50_drop": 0.003,
         "ood_false_positive_rate": 0.0,
         "model_size_mb": 5.0,
@@ -231,9 +237,11 @@ def test_f3_t2_assert_promotion_ready_missing_keys_raise_value_error() -> None:
     ("gate_name", "bad_value"),
     [
         ("map50", 0.55),
+        ("map75", 0.63),
         ("recall", 0.40),
         ("f1", 0.50),
         ("small_scale_recall", 0.45),
+        ("overexposure_recall", 0.75),
         ("tflite_map50_drop", 0.05),
         ("ood_false_positive_rate", 0.20),
         ("model_size_mb", 15.0),
@@ -242,9 +250,11 @@ def test_f3_t2_assert_promotion_ready_missing_keys_raise_value_error() -> None:
 def test_f3_t2_assert_promotion_ready_rejects_each_failing_gate(gate_name: str, bad_value: float) -> None:
     valid = {
         "map50": 0.85,
+        "map75": 0.80,
         "recall": 0.80,
         "f1": 0.82,
         "small_scale_recall": 0.80,
+        "overexposure_recall": 0.90,
         "tflite_map50_drop": 0.003,
         "ood_false_positive_rate": 0.0,
         "model_size_mb": 5.0,

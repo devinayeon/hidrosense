@@ -151,9 +151,11 @@ class TestEvaluationAndExportContracts:
         assert "ood_false_positive_rate" in PROMOTION_GATES
         passing = {
             "map50": 0.85,
+            "map75": 0.80,
             "recall": 0.80,
             "f1": 0.82,
             "small_scale_recall": 0.80,
+            "overexposure_recall": 0.90,
             "tflite_map50_drop": 0.003,
             "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
@@ -482,6 +484,7 @@ class TestTrainingAndKaggleContract:
             tmp_path / "work",
             whitefly_oversample_factor=4,
             negative_oversample_factor=2,
+            leaf_empty_oversample_factor=2,
             zoomout_per_class=0,
         )
         assert views["whitefly_train_images"] == 1
@@ -497,9 +500,10 @@ class TestTrainingAndKaggleContract:
             tmp_path / "work_zoom",
             whitefly_oversample_factor=2,
             negative_oversample_factor=1,
+            leaf_empty_oversample_factor=2,
             zoomout_per_class=2,
         )
         assert views_zoom["zoomout_total"] == 4
-        assert views_zoom["balanced_train_images"] == 8  # 1*2 + 1 + 1 + 4 zoomout
+        assert views_zoom["balanced_train_images"] == 9  # 1*2 + 1 + 1*2(leaf_empty) + 4 zoomout
         assert len(list((tmp_path / "work_zoom" / "balanced" / "val" / "images").iterdir())) == 2
         assert len(list((tmp_path / "work_zoom" / "balanced" / "test" / "images").iterdir())) == 2
