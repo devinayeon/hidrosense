@@ -64,6 +64,8 @@ class V2CuacaConnectedPage extends ConsumerWidget {
       lokasiLabel: location.label,
       onRetry: () =>
           ref.read(weatherViewModelProvider.notifier).fetchWeatherData(),
+      onRefresh: () =>
+          ref.read(weatherViewModelProvider.notifier).fetchWeatherData(),
       onPilihLokasi: (pageContext) => _pilihLokasi(pageContext, ref),
     );
   }

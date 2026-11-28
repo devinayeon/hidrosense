@@ -207,6 +207,11 @@ class V2InventarisConnectedTab extends ConsumerWidget {
       initialStatusIndex: initialStatusIndex,
       openFilterOnStart: openFilterOnStart,
       onRetry: () => ref.read(connectedInventoryProvider.notifier).refresh(),
+      onRefresh: () async {
+        await ref.read(connectedInventoryProvider.notifier).refresh();
+        ref.invalidate(inventoryCategoriesProvider);
+        ref.invalidate(obatKatalogProvider);
+      },
       onAdd: () => _tambah(context, ref),
       onTapItem: (item) => _bukaDetail(context, ref, item),
     );

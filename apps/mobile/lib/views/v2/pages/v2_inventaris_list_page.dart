@@ -17,6 +17,7 @@ import '../widgets/v2_chip.dart';
 import '../widgets/v2_error_state.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_option_row.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_select_field.dart';
 import '../widgets/v2_tab_bar.dart';
 import 'v2_inventaris_detail_page.dart';
@@ -59,6 +60,7 @@ class V2InventarisTabView extends StatefulWidget {
     this.onAdd,
     this.onTapItem,
     this.onRetry,
+    this.onRefresh,
   });
 
   /// Barang yang ditampilkan; null berarti data contoh galeri.
@@ -93,6 +95,9 @@ class V2InventarisTabView extends StatefulWidget {
 
   /// Muat ulang saat daftar gagal; null berarti tombol tidak bereaksi.
   final VoidCallback? onRetry;
+
+  /// Tarik-turun dan tombol "Muat ulang"; null berarti galeri tanpa refresh.
+  final Future<void> Function()? onRefresh;
 
   @override
   State<V2InventarisTabView> createState() => _V2InventarisTabViewState();
@@ -191,10 +196,17 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(child: _buildContent()),
+        Expanded(child: _refreshable(_buildContent())),
         if (_showFooter) _buildFooter(),
       ],
     );
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    final refresh = widget.onRefresh;
+    if (refresh == null) return child;
+    return RefreshIndicator(onRefresh: refresh, child: child);
   }
 
   Widget _buildContent() {
@@ -300,7 +312,7 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
 
   Widget _scroll({required List<Widget> children}) {
     return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: V2Space.lg, bottom: V2Space.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -315,9 +327,14 @@ class _V2InventarisTabViewState extends State<V2InventarisTabView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
-          child: V2ScreenHeader(title: 'Stok'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
+          child: V2ScreenHeader(
+            title: 'Stok',
+            trailing: widget.onRefresh == null
+                ? null
+                : V2RefreshButton(onRefresh: widget.onRefresh),
+          ),
         ),
         if (widget.offline) ...[
           const SizedBox(height: V2Space.lg),

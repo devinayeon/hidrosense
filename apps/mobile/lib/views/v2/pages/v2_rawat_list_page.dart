@@ -18,6 +18,7 @@ import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
 import '../widgets/v2_skeleton.dart';
 import '../widgets/v2_stock_item.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_tab_bar.dart';
 import '../components/v2_akun_action_bar.dart';
 import 'v2_cuaca_page.dart';
@@ -57,6 +58,7 @@ class V2RawatTabView extends StatefulWidget {
     this.showPindaian = false,
     this.onOpenRotasi,
     this.onTapPindai,
+    this.onRefresh,
   });
 
   /// Baris riwayat; null berarti data contoh galeri.
@@ -93,6 +95,9 @@ class V2RawatTabView extends StatefulWidget {
   /// Membuka detail satu pindaian; null berarti baris tidak bisa disentuh.
   final ValueChanged<V2PindaiItem>? onTapPindai;
 
+  /// Tarik-turun dan tombol "Muat ulang"; null berarti galeri tanpa refresh.
+  final Future<void> Function()? onRefresh;
+
   @override
   State<V2RawatTabView> createState() => _V2RawatTabViewState();
 }
@@ -104,9 +109,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
   List<V2RawatItem> get _riwayat => widget.riwayat ?? designRawatRiwayat;
 
   bool get _kosong =>
-      _riwayat.isEmpty &&
-      widget.pindaian.isEmpty &&
-      !widget.offline;
+      _riwayat.isEmpty && widget.pindaian.isEmpty && !widget.offline;
 
   bool get _showFooter => !_loading && !_error;
 
@@ -114,10 +117,17 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(child: _buildContent()),
+        Expanded(child: _refreshable(_buildContent())),
         if (_showFooter) _footer(),
       ],
     );
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    final refresh = widget.onRefresh;
+    if (refresh == null) return child;
+    return RefreshIndicator(onRefresh: refresh, child: child);
   }
 
   Widget _buildContent() {
@@ -243,7 +253,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
 
   Widget _scroll({required List<Widget> children}) {
     return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: V2Space.lg, bottom: V2Space.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,9 +263,14 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
   }
 
   Widget _header() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: V2Space.xl),
-      child: V2ScreenHeader(title: 'Rawat'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
+      child: V2ScreenHeader(
+        title: 'Rawat',
+        trailing: widget.onRefresh == null
+            ? null
+            : V2RefreshButton(onRefresh: widget.onRefresh),
+      ),
     );
   }
 
@@ -269,9 +284,7 @@ class _V2RawatTabViewState extends State<V2RawatTabView> {
           padding: const EdgeInsets.symmetric(horizontal: V2Space.xl),
           child: Row(
             children: [
-              const Expanded(
-                child: Text('Pindaian terbaru', style: V2Type.h2),
-              ),
+              const Expanded(child: Text('Pindaian terbaru', style: V2Type.h2)),
               if (widget.onOpenRotasi != null)
                 V2Button(
                   label: 'Riwayat rotasi',

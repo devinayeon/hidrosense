@@ -6,6 +6,7 @@ import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
+import '../widgets/v2_refresh_button.dart';
 
 /// Tujuan yang dibuka saat sebuah notifikasi ditekan.
 ///
@@ -66,6 +67,7 @@ class V2NotificationsPage extends StatefulWidget {
     this.groups,
     this.onMarkRead,
     this.onMarkAllRead,
+    this.onRefresh,
   });
 
   final List<V2NotificationGroup>? groups;
@@ -75,6 +77,10 @@ class V2NotificationsPage extends StatefulWidget {
 
   /// Dipanggil saat "Tandai semua dibaca" ditekan, berisi id yang belum dibaca.
   final ValueChanged<List<String>>? onMarkAllRead;
+
+  /// Mengambil grup notifikasi terbaru dari backend; null berarti galeri tanpa
+  /// tarik-turun/tombol muat ulang.
+  final Future<List<V2NotificationGroup>> Function()? onRefresh;
 
   static const List<V2NotificationGroup> designGroups = [
     V2NotificationGroup(
@@ -120,12 +126,14 @@ class V2NotificationsPage extends StatefulWidget {
     List<V2NotificationGroup>? groups,
     ValueChanged<String>? onMarkRead,
     ValueChanged<List<String>>? onMarkAllRead,
+    Future<List<V2NotificationGroup>> Function()? onRefresh,
   }) {
     return MaterialPageRoute<V2NotificationTarget>(
       builder: (_) => V2NotificationsPage(
         groups: groups,
         onMarkRead: onMarkRead,
         onMarkAllRead: onMarkAllRead,
+        onRefresh: onRefresh,
       ),
     );
   }
@@ -135,7 +143,7 @@ class V2NotificationsPage extends StatefulWidget {
 }
 
 class _V2NotificationsPageState extends State<V2NotificationsPage> {
-  late final List<V2NotificationGroup> _groups =
+  late List<V2NotificationGroup> _groups =
       widget.groups ?? V2NotificationsPage.designGroups;
 
   /// Id yang sudah dibaca selama halaman ini terbuka; diisi dari status awal.
@@ -172,6 +180,21 @@ class _V2NotificationsPageState extends State<V2NotificationsPage> {
     widget.onMarkAllRead?.call(ids);
   }
 
+  /// Tarik-turun/tombol: ambil grup terbaru, buang tanda "sudah dibaca" yang
+  /// id-nya tidak ada lagi di daftar baru.
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh == null) return;
+    final groups = await refresh();
+    if (!mounted) return;
+    setState(() {
+      _groups = groups;
+      _read.retainWhere(
+        (id) => groups.any((g) => g.items.any((item) => item.id == id)),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -185,35 +208,41 @@ class _V2NotificationsPageState extends State<V2NotificationsPage> {
               V2AppBar(
                 title: 'Notifikasi',
                 onBack: () => Navigator.of(context).maybePop(),
+                trailing: V2RefreshButton(
+                  onRefresh: widget.onRefresh == null ? null : _refresh,
+                ),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    V2Space.xl,
-                    V2Space.sm,
-                    V2Space.xl,
-                    V2Space.lg,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final group in _groups) ...[
-                        V2GroupLabel(group.label),
-                        for (final item in group.items) ...[
+                child: _refreshable(
+                  SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      V2Space.xl,
+                      V2Space.sm,
+                      V2Space.xl,
+                      V2Space.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final group in _groups) ...[
+                          V2GroupLabel(group.label),
+                          for (final item in group.items) ...[
+                            const SizedBox(height: V2Space.sm),
+                            V2ListItem(
+                              title: item.title,
+                              subtitle: item.subtitle,
+                              icon: item.icon,
+                              trailing: _read.contains(item.id)
+                                  ? null
+                                  : const _UnreadDot(key: v2NotifUnreadDotKey),
+                              onTap: () => _open(item),
+                            ),
+                          ],
                           const SizedBox(height: V2Space.sm),
-                          V2ListItem(
-                            title: item.title,
-                            subtitle: item.subtitle,
-                            icon: item.icon,
-                            trailing: _read.contains(item.id)
-                                ? null
-                                : const _UnreadDot(key: v2NotifUnreadDotKey),
-                            onTap: () => _open(item),
-                          ),
                         ],
-                        const SizedBox(height: V2Space.sm),
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -239,6 +268,12 @@ class _V2NotificationsPageState extends State<V2NotificationsPage> {
         ),
       ),
     );
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    if (widget.onRefresh == null) return child;
+    return RefreshIndicator(onRefresh: _refresh, child: child);
   }
 }
 

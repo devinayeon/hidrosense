@@ -24,21 +24,14 @@ class V2AppBar extends StatelessWidget {
       height: 64,
       color: background,
       padding: const EdgeInsets.symmetric(horizontal: V2Space.lg),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: onBack == null
-                ? null
-                : IconButton(
-                    onPressed: onBack,
-                    icon: const V2Icon(V2IconName.back),
-                    tooltip: 'Kembali',
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
-          Expanded(
+          // Judul selalu di tengah penuh. Padding simetris 48px sama dengan
+          // lebar tombol kembali, jadi judul tidak bergeser walau sisi kanan
+          // memuat lebih dari satu aksi.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
               title,
               textAlign: TextAlign.center,
@@ -47,10 +40,23 @@ class V2AppBar extends StatelessWidget {
               style: V2Type.h2,
             ),
           ),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: trailing == null ? null : Center(child: trailing),
+          Row(
+            children: [
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: onBack == null
+                    ? null
+                    : IconButton(
+                        onPressed: onBack,
+                        icon: const V2Icon(V2IconName.back),
+                        tooltip: 'Kembali',
+                        padding: EdgeInsets.zero,
+                      ),
+              ),
+              const Spacer(),
+              ?trailing,
+            ],
           ),
         ],
       ),

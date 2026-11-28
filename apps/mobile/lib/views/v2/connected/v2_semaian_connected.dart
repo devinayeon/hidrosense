@@ -36,9 +36,7 @@ int _jumlahBahan(String? amount) {
 
 /// Nama bahan dari inventaris; `Bahan` bila barisnya tak lagi ada di daftar.
 String _namaBahan(List<InventoryRecord> inventaris, String inventoryId) {
-  final item = inventaris
-      .where((row) => row.id == inventoryId)
-      .firstOrNull;
+  final item = inventaris.where((row) => row.id == inventoryId).firstOrNull;
   return item == null ? 'Bahan' : v2NamaBenih(item.name);
 }
 
@@ -136,6 +134,12 @@ class V2SemaianConnectedTab extends ConsumerWidget {
       initialStatusIndex: initialStatusIndex,
       onSegmentChanged: onSegmentChanged,
       onRetry: () => ref.read(connectedNurseryProvider.notifier).refresh(),
+      onRefresh: () async {
+        await Future.wait([
+          ref.read(connectedNurseryProvider.notifier).refresh(),
+          ref.read(connectedInventoryProvider.notifier).refresh(),
+        ]);
+      },
       onAdd: () => _tambah(context, ref),
       onTapItem: (item) => _bukaDetail(context, ref, item),
     );

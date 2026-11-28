@@ -21,6 +21,7 @@ import '../widgets/v2_banner.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_dialog.dart';
 import '../widgets/v2_group_list.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_penjualan_form_page.dart';
 
@@ -105,6 +106,7 @@ class V2SinkronPage extends StatefulWidget {
     this.lastSyncedAt,
     this.refreshLastSync,
     this.recordSync,
+    this.onRefresh,
   });
 
   /// Frame `11.2 Memuat status sinkron`.
@@ -118,7 +120,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.3 Izin notifikasi mati`.
   const V2SinkronPage.notifOff({super.key})
@@ -131,7 +134,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.4 Antrean, tanpa internet`.
   const V2SinkronPage.offline({super.key})
@@ -144,7 +148,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.5 Sinkron berjalan`.
   const V2SinkronPage.syncing({super.key})
@@ -157,7 +162,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.6 Sinkron selesai`.
   const V2SinkronPage.done({super.key})
@@ -170,7 +176,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.7 Sinkron gagal sebagian`.
   const V2SinkronPage.partial({super.key})
@@ -183,7 +190,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.8 Konflik data`: dialog sudah terbuka saat halaman dibuka.
   const V2SinkronPage.conflict({super.key})
@@ -196,7 +204,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   /// Frame `11.10 Sesi berakhir`: tanpa AppBar.
   const V2SinkronPage.sessionExpired({super.key})
@@ -209,7 +218,8 @@ class V2SinkronPage extends StatefulWidget {
       saleRepairer = null,
       lastSyncedAt = null,
       refreshLastSync = null,
-      recordSync = null;
+      recordSync = null,
+      onRefresh = null;
 
   final V2SinkronState state;
 
@@ -247,6 +257,10 @@ class V2SinkronPage extends StatefulWidget {
   /// atau penyelesaian konflik) dan mengembalikan jamnya.
   final Future<DateTime> Function()? recordSync;
 
+  /// Menyegarkan jam sinkron, memuat ulang antrean, dan/atau mengambil keadaan
+  /// terbaru dari backend; null berarti galeri tanpa tarik-turun/tombol.
+  final Future<void> Function()? onRefresh;
+
   static Route<void> route({
     V2SinkronState state = V2SinkronState.ready,
     String? toast,
@@ -258,6 +272,7 @@ class V2SinkronPage extends StatefulWidget {
     DateTime? lastSyncedAt,
     Future<DateTime?> Function()? refreshLastSync,
     Future<DateTime> Function()? recordSync,
+    Future<void> Function()? onRefresh,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2SinkronPage(
@@ -271,6 +286,7 @@ class V2SinkronPage extends StatefulWidget {
         lastSyncedAt: lastSyncedAt,
         refreshLastSync: refreshLastSync,
         recordSync: recordSync,
+        onRefresh: onRefresh,
       ),
     );
   }
@@ -331,6 +347,27 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     if (current == null || fresh.isAfter(current)) {
       setState(() => _lastSynced = fresh);
     }
+  }
+
+  /// Tarik-turun dan tombol "Muat ulang": pakai callback nyata bila ada, kalau
+  /// tidak segarkan jam sinkron lalu muat ulang antrean dari penyimpanan.
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh != null) return refresh();
+    await _refreshLastSync();
+    await widget.queue?.load();
+  }
+
+  /// Ada sumber muat ulang nyata; galeri murni tidak menampilkan tombol.
+  bool get _canRefresh =>
+      widget.onRefresh != null ||
+      widget.refreshLastSync != null ||
+      widget.queue != null;
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata dan sesi masih hidup.
+  Widget _refreshable(Widget child) {
+    if (!_canRefresh || _sessionEnded) return child;
+    return RefreshIndicator(onRefresh: _refresh, child: child);
   }
 
   /// Mencatat sinkron yang selesai di luar putaran biasa. Tanpa pencatat
@@ -622,8 +659,11 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
                 V2AppBar(
                   title: 'Sinkron',
                   onBack: () => Navigator.of(context).maybePop(),
+                  trailing: V2RefreshButton(
+                    onRefresh: _canRefresh ? _refresh : null,
+                  ),
                 ),
-              Expanded(child: _buildBody()),
+              Expanded(child: _refreshable(_buildBody())),
               if (_showFooter) _buildFooter(),
             ],
           ),
@@ -636,7 +676,7 @@ class _V2SinkronPageState extends State<V2SinkronPage> {
     if (_sessionEnded) return const _SessionEndedView();
 
     return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         V2Space.xl,
         V2Space.sm,
