@@ -1,5 +1,6 @@
 import type { Client, Row, Transaction } from '@libsql/client';
 import { backfillHarvest } from './harvest-weights.js';
+import { chunkSql, DEFAULT_MAX_REQUEST_BYTES } from './sql-split.js';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -63,7 +64,7 @@ export async function migrationStatus(client: Executor, migrations: Migration[])
   return migrations.map((migration, i) => ({ id: migration.id, status: i < applied.length ? 'applied' : 'pending', applied_at: applied[i]?.applied_at ?? null }));
 }
 
-export async function migrate(client: Client, migrations: Migration[], { direction = 'up', allowDataLoss = false }: { direction?: string; allowDataLoss?: boolean } = {}) {
+export async function migrate(client: Client, migrations: Migration[], { direction = 'up', allowDataLoss = false, maxRequestBytes = DEFAULT_MAX_REQUEST_BYTES }: { direction?: string; allowDataLoss?: boolean; maxRequestBytes?: number } = {}) {
   if (!['up', 'down'].includes(direction)) throw new Error('Migration direction must be up or down.');
   if (direction === 'down' && !allowDataLoss) throw new Error('Rollback may delete data; allowDataLoss must be explicitly enabled after taking a backup.');
   const tx = await client.transaction('write');
@@ -88,7 +89,11 @@ export async function migrate(client: Client, migrations: Migration[], { directi
       current = migration.id;
       // SQL is trusted, reviewed migration code; runtime values use bound parameters.
       // Do not put BEGIN/COMMIT or foreign_keys=OFF in migration files.
-      await tx.executeMultiple(direction === 'up' ? migration.up : migration.down);
+      // Migrasi besar (0026 ~413 KB) dikirim per potongan dalam transaksi yang sama:
+      // Turso membalas HTTP 502 untuk satu request sebesar itu.
+      for (const part of chunkSql(direction === 'up' ? migration.up : migration.down, maxRequestBytes)) {
+        await tx.executeMultiple(part);
+      }
       if (direction === 'up' && migration.id === '0011_harvest_weights') await backfillHarvest(tx);
       if (direction === 'up') {
         await tx.execute({ sql: 'INSERT INTO _schema_migrations (id, checksum) VALUES (?, ?)', args: [migration.id, migration.checksum] });
