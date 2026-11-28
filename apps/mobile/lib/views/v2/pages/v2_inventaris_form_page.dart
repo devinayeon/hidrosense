@@ -21,9 +21,10 @@ import '../widgets/v2_text_field.dart';
 /// jenis Obat, frame 4.11/4.12), nama barang, satuan, stok awal, dan stok
 /// minimum (opsional). Tombolnya "Simpan".
 ///
-/// Mode ubah (frame 4.24) memakai satu kolom lebih sedikit: tanpa "Stok awal",
-/// sebagai gantinya ada catatan "Stok diubah lewat Catat stok." Jumlah, riwayat,
-/// dan keadaan arsip tidak ikut berubah saat menyimpan.
+/// Mode ubah (frame 4.24) tidak menyentuh jumlah, jadi sebagai ganti "Stok awal"
+/// ada kolom hanya-baca "Stok tersedia" (mis. `12 pak`) supaya pengguna tahu
+/// sisa stok saat mengisi stok minimum. Riwayat dan keadaan arsip tidak ikut
+/// berubah saat menyimpan.
 ///
 /// Jarak antarbagian 16 saat bersih dan mengeras jadi 12 saat ada galat
 /// (frame 4.14). Hint tiap kolom ikut jenis barang dan disembunyikan saat
@@ -216,6 +217,10 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
   late final TextEditingController _stokAwal;
   late final TextEditingController _stokMin;
 
+  /// Saldo terkini mode ubah, hanya-baca: `12 pak`. Kosong di mode tambah
+  /// (kolomnya tidak dirender).
+  late final TextEditingController _stokTersedia;
+
   /// Frame 4.13 menampilkan form yang sudah digulir sampai kolom "Satuan"
   /// menempel di bawah AppBar; ruang itu dipakai sebagai padding bawah supaya
   /// `jumpTo(maxScrollExtent)` berhenti di posisi frame tersebut.
@@ -238,8 +243,6 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
       _stokAwalError != null ||
       _obatError != null ||
       _stokMinError != null;
-
-  bool get _showStokMin => _jenis != V2JenisBarang.obat;
 
   /// Barang jenis Obat mengambil namanya dari dropdown obat, jadi kolom "Nama
   /// barang" tidak ditampilkan.
@@ -270,6 +273,9 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
           : '',
     );
     _stokMin = TextEditingController(text: _minimumAwal(item));
+    _stokTersedia = TextEditingController(
+      text: item == null ? '' : '${formatAngka(item.jumlah)} ${item.satuan}',
+    );
 
     _obat = _obatDariItem(item);
 
@@ -305,6 +311,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     _satuan.dispose();
     _stokAwal.dispose();
     _stokMin.dispose();
+    _stokTersedia.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -477,28 +484,36 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
   static const String _pesanAngka =
       'Gunakan maksimal 10 digit dan 2 angka desimal.';
 
-  /// Galat isian stok awal (wajib, tidak negatif, bentuk angka benar).
-  /// Pesan negatif dicek lebih dulu supaya angka seperti `-3` tidak dilaporkan
-  /// sebagai bentuk angka yang salah.
+  /// Galat isian stok awal (wajib, minimal 1, tidak negatif, bentuk angka
+  /// benar). Pesan negatif dicek lebih dulu supaya angka seperti `-3` tidak
+  /// dilaporkan sebagai bentuk angka yang salah; nilai di bawah 1 (mis. `0`)
+  /// ditolak karena barang baru tidak boleh dicatat tanpa saldo awal.
   String? _stokAwalErrorFor(String text) {
     final value = text.trim();
     if (value.isEmpty) return 'Isi stok awal';
     final angka = double.tryParse(value.replaceAll(',', '.'));
     if (angka != null && angka < 0) return 'Angka tidak boleh negatif';
+    if (angka != null && angka < 1) return 'Stok awal minimal 1.';
     if (!_polaAngka.hasMatch(value)) return _pesanAngka;
     return null;
   }
 
-  /// Galat isian stok minimum: opsional, harus > 0, dan (saat menambah) tidak
-  /// boleh melebihi stok awal. [stokAwal] hanya diisi di mode tambah.
-  String? _stokMinErrorFor(String text, {double? stokAwal}) {
+  /// Galat isian stok minimum: opsional, harus > 0, dan harus kurang dari
+  /// [stokAwal]. Batas itu hanya dikirim saat relevan: mode tambah selalu
+  /// (dibanding stok awal), mode ubah hanya saat nilai minimum diubah
+  /// (dibanding stok tersedia). [batasLabel] memilih sebutan pada pesannya.
+  String? _stokMinErrorFor(
+    String text, {
+    double? stokAwal,
+    String batasLabel = 'stok awal',
+  }) {
     final value = text.trim();
     if (value.isEmpty) return null;
     final angka = double.tryParse(value.replaceAll(',', '.'));
     if (angka != null && angka <= 0) return 'Stok minimum harus lebih dari 0.';
     if (!_polaAngka.hasMatch(value)) return _pesanAngka;
-    if (stokAwal != null && angka! > stokAwal) {
-      return 'Stok minimum tidak boleh melebihi stok awal.';
+    if (stokAwal != null && angka! >= stokAwal) {
+      return 'Stok minimum harus kurang dari $batasLabel.';
     }
     return null;
   }
@@ -514,11 +529,17 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     if (item != null) {
       final minimumText = _stokMin.text.trim();
       final minimum = minimumText.isEmpty ? null : _parseAngka(minimumText);
+      // Batas atas hanya saat nilai minimum diubah: item yang stoknya sudah di
+      // bawah minimum tetap bisa diubah (mis. ganti nama) tanpa menyentuh
+      // minimum. Saat diubah, minimum harus kurang dari stok tersedia.
+      final minimumBerubah = minimum != item.minimum;
       // Stok minimum divalidasi di form supaya galat menempel pada kolomnya,
       // bukan muncul terlambat di halaman detail.
-      final stokMinError = _showStokMin
-          ? _stokMinErrorFor(minimumText)
-          : null;
+      final stokMinError = _stokMinErrorFor(
+        minimumText,
+        stokAwal: minimumBerubah ? item.jumlah : null,
+        batasLabel: 'stok tersedia',
+      );
       setState(() {
         _obatError = _isObat && _obat == null ? 'Pilih obat' : null;
         _namaError = _isObat
@@ -554,7 +575,7 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
     final stokAwal = _stokAwal.text.trim();
     final jumlah = _parseAngka(stokAwal);
     final stokAwalError = _stokAwalErrorFor(stokAwal);
-    final stokMinError = stokAwalError == null && _showStokMin
+    final stokMinError = stokAwalError == null
         ? _stokMinErrorFor(_stokMin.text, stokAwal: jumlah)
         : null;
     final minimum = _stokMin.text.trim().isEmpty
@@ -747,35 +768,36 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
         helper: edit ? 'Satuan tidak bisa diubah.' : null,
       ),
       // Mode ubah tidak menyentuh jumlah, jadi "Stok awal" tidak muncul
-      // (frame 4.24).
-      if (!edit) ...[
+      // (frame 4.24). Sebagai gantinya saldo terkini ditampilkan hanya-baca
+      // supaya pengguna tahu sisa stok saat mengisi stok minimum.
+      if (edit) ...[
+        SizedBox(height: gap),
+        V2TextField(
+          label: 'Stok tersedia',
+          controller: _stokTersedia,
+          enabled: false,
+          helper: 'Stok diubah lewat Catat stok.',
+        ),
+      ] else ...[
         SizedBox(height: gap),
         V2TextField(
           label: 'Stok awal',
-          hint: '0',
+          // Contoh mengikuti batas bawah baru (minimal 1), bukan `0`.
+          hint: 'Contoh: 1',
           controller: _stokAwal,
           error: _stokAwalError,
           keyboardType: TextInputType.number,
           forceFocus: widget.previewKeyboard,
         ),
       ],
-      if (_showStokMin) ...[
-        SizedBox(height: gap),
-        V2TextField(
-          label: 'Stok minimum (opsional)',
-          hint: _stokMinError == null ? 'Contoh: 3' : '',
-          controller: _stokMin,
-          error: _stokMinError,
-          keyboardType: TextInputType.number,
-        ),
-      ],
-      if (edit) ...[
-        SizedBox(height: gap),
-        Text(
-          'Stok diubah lewat Catat stok.',
-          style: V2Type.label.copyWith(color: V2Colors.muted),
-        ),
-      ],
+      SizedBox(height: gap),
+      V2TextField(
+        label: 'Stok minimum (opsional)',
+        hint: _stokMinError == null ? 'Contoh: 3' : '',
+        controller: _stokMin,
+        error: _stokMinError,
+        keyboardType: TextInputType.number,
+      ),
     ];
   }
 
