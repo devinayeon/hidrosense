@@ -5,7 +5,9 @@ import '../../../data/models/sync_queue_item.dart';
 import '../../../features/accounts/data/v2_employee_store.dart';
 import '../../../viewmodels/connected_inventory_viewmodel.dart';
 import '../../../viewmodels/connected_nursery_viewmodel.dart';
+import '../../../viewmodels/connected_table_viewmodel.dart';
 import '../../../viewmodels/session_viewmodel.dart';
+import '../../../viewmodels/weather_viewmodel.dart';
 import '../../../features/accounts/presentation/viewmodels/profile_viewmodel.dart';
 import '../../../viewmodels/v2_beranda_viewmodel.dart';
 import '../../../viewmodels/v2_penjualan_store.dart';
@@ -95,13 +97,55 @@ class _V2BerandaConnectedPageState
             .contains('profil:deactivate') ??
         false;
     await Navigator.of(context).push<void>(
-      V2ProfileDetailPage.route(
-        profile: profile,
-        canDeactivate: canDeactivate,
-      ),
+      V2ProfileDetailPage.route(profile: profile, canDeactivate: canDeactivate),
     );
     if (!mounted) return;
     await ref.read(profileViewModelProvider.notifier).load();
+  }
+
+  /// Menyegarkan semua sumber kartu Beranda sesuai izin pengguna: semaian,
+  /// stok, meja, cuaca, dan profil. Dipakai tarik-turun dan tombol di header.
+  Future<void> _refresh() async {
+    final permissions =
+        ref.read(sessionProvider).user?.permissions ?? const <String>[];
+    final tasks = <Future<void>>[
+      ref.read(connectedTableProvider.notifier).refresh(),
+      ref.read(weatherViewModelProvider.notifier).fetchWeatherData(),
+    ];
+    if (permissions.contains('penyemaian:read')) {
+      tasks.add(ref.read(connectedNurseryProvider.notifier).refresh());
+    }
+    if (permissions.contains('inventaris:read')) {
+      tasks.add(ref.read(connectedInventoryProvider.notifier).refresh());
+    }
+    if (permissions.contains('profil:read')) {
+      tasks.add(ref.read(profileViewModelProvider.notifier).load());
+    }
+    await Future.wait(tasks);
+  }
+
+  /// Mengambil ulang sumber notifikasi (semaian + stok) lalu menyusun grup
+  /// terbaru untuk halaman Notifikasi.
+  Future<List<V2NotificationGroup>> _refreshNotifications() async {
+    final permissions =
+        ref.read(sessionProvider).user?.permissions ?? const <String>[];
+    final tasks = <Future<void>>[];
+    if (permissions.contains('penyemaian:read')) {
+      tasks.add(ref.read(connectedNurseryProvider.notifier).refresh());
+    }
+    if (permissions.contains('inventaris:read')) {
+      tasks.add(ref.read(connectedInventoryProvider.notifier).refresh());
+    }
+    await Future.wait(tasks);
+    return v2BerandaNotifikasi(
+      nursery: permissions.contains('penyemaian:read')
+          ? ref.read(connectedNurseryProvider).records
+          : const [],
+      inventaris: permissions.contains('inventaris:read')
+          ? ref.read(connectedInventoryProvider).activeRecords
+          : const [],
+      sudahDibaca: ref.read(v2NotificationReadProvider),
+    );
   }
 
   @override
@@ -212,6 +256,8 @@ class _V2BerandaConnectedPageState
           : 'Antrean $menunggu',
       onLogOut: widget.onLogOut,
       onOpenProfile: _openProfile,
+      onRefresh: _refresh,
+      notificationsRefresh: _refreshNotifications,
     );
   }
 }

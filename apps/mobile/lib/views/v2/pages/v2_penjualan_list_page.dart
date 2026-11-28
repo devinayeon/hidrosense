@@ -22,6 +22,7 @@ import '../widgets/v2_error_state.dart';
 import '../widgets/v2_group_list.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_icon_button.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_penjualan_detail_page.dart';
 import 'v2_penjualan_form_page.dart';
@@ -65,6 +66,7 @@ class V2PenjualanListPage extends StatefulWidget {
     this.store,
     this.syncQueue,
     this.saleRepairer,
+    this.onRefresh,
   });
 
   /// Frame `8.2 Memuat penjualan`.
@@ -76,7 +78,8 @@ class V2PenjualanListPage extends StatefulWidget {
       panen = null,
       store = null,
       syncQueue = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      onRefresh = null;
 
   /// Frame `8.3 Gagal memuat penjualan`.
   V2PenjualanListPage.error({super.key})
@@ -87,7 +90,8 @@ class V2PenjualanListPage extends StatefulWidget {
       panen = null,
       store = null,
       syncQueue = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      onRefresh = null;
 
   /// Frame `8.4 Belum ada penjualan`.
   const V2PenjualanListPage.empty({super.key})
@@ -98,7 +102,8 @@ class V2PenjualanListPage extends StatefulWidget {
       panen = null,
       store = null,
       syncQueue = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      onRefresh = null;
 
   /// Frame `8.14 Penjualan dicatat`.
   V2PenjualanListPage.created({super.key})
@@ -109,7 +114,8 @@ class V2PenjualanListPage extends StatefulWidget {
       panen = null,
       store = null,
       syncQueue = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      onRefresh = null;
 
   /// Frame `8.16 Tersimpan di HP`.
   V2PenjualanListPage.offline({super.key})
@@ -120,7 +126,8 @@ class V2PenjualanListPage extends StatefulWidget {
       panen = null,
       store = null,
       syncQueue = null,
-      saleRepairer = null;
+      saleRepairer = null,
+      onRefresh = null;
 
   final List<V2Penjualan>? initialPenjualan;
   final V2PenjualanRingkasan ringkasan;
@@ -143,6 +150,10 @@ class V2PenjualanListPage extends StatefulWidget {
   /// baris antrean hanya bisa dilihat.
   final V2PenjualanRepairer? saleRepairer;
 
+  /// Callback muat ulang tambahan; null berarti memakai `_load()` saat [store]
+  /// tersedia.
+  final Future<void> Function()? onRefresh;
+
   static Route<void> route({
     List<V2Penjualan>? initialPenjualan,
     V2PenjualanRingkasan ringkasan = designRingkasanPenjualan,
@@ -151,6 +162,7 @@ class V2PenjualanListPage extends StatefulWidget {
     V2PenjualanStore? store,
     V2SyncQueue? syncQueue,
     V2PenjualanRepairer? saleRepairer,
+    Future<void> Function()? onRefresh,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2PenjualanListPage(
@@ -161,6 +173,7 @@ class V2PenjualanListPage extends StatefulWidget {
         store: store,
         syncQueue: syncQueue,
         saleRepairer: saleRepairer,
+        onRefresh: onRefresh,
       ),
     );
   }
@@ -261,6 +274,24 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
     } finally {
       if (mounted) setState(() => _fetching = false);
     }
+  }
+
+  /// Tarik-turun dan tombol "Muat ulang": pakai callback nyata bila ada,
+  /// kalau tidak jatuh ke `_load()` internal saat ada [V2PenjualanListPage.store].
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh != null) return refresh();
+    return _load();
+  }
+
+  /// Ada sumber muat ulang nyata (callback atau [V2PenjualanListPage.store]);
+  /// galeri tanpa keduanya tidak menampilkan tombol maupun tarik-turun.
+  bool get _canRefresh => widget.onRefresh != null || widget.store != null;
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    if (!_canRefresh) return child;
+    return RefreshIndicator(onRefresh: _refresh, child: child);
   }
 
   /// Ringkasan menghitung penjualan bulan berjalan (Jakarta), termasuk baris
@@ -405,15 +436,20 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
               V2AppBar(
                 title: 'Penjualan',
                 onBack: () => Navigator.of(context).maybePop(),
-                trailing: _showSummaryAction
-                    ? V2IconButton(
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    V2RefreshButton(onRefresh: _canRefresh ? _refresh : null),
+                    if (_showSummaryAction)
+                      V2IconButton(
                         icon: V2IconName.chart,
                         semanticLabel: 'Ringkasan',
                         onPressed: _openSummary,
-                      )
-                    : null,
+                      ),
+                  ],
+                ),
               ),
-              Expanded(child: _buildBody()),
+              Expanded(child: _refreshable(_buildBody())),
               if (!_loading && !_error) _buildFooter(),
             ],
           ),
@@ -425,7 +461,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
   Widget _buildBody() {
     if (_loading) {
       return SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: _scrollPadding,
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -443,7 +479,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
     if (_error) {
       return SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: _scrollPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -471,7 +507,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
     if (_emptyList) {
       return SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: _scrollPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -497,7 +533,7 @@ class _V2PenjualanListPageState extends State<V2PenjualanListPage> {
 
     final rows = _displayItems;
     return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: _scrollPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

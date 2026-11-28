@@ -39,17 +39,17 @@ final v2AllTransfersProvider = FutureProvider.autoDispose<List<TransferRecord>>(
 );
 
 /// Seluruh penyemaian untuk menerjemahkan batch menjadi nama benih.
-final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>(
-  (ref) async {
-    final user = ref.watch(sessionProvider.select((state) => state.user));
-    if (user == null) return const <SowingRecord>[];
-    try {
-      return await ref.watch(nurseryRepositoryProvider).listSowings();
-    } catch (_) {
-      return const <SowingRecord>[];
-    }
-  },
-);
+final v2AllSowingsProvider = FutureProvider.autoDispose<List<SowingRecord>>((
+  ref,
+) async {
+  final user = ref.watch(sessionProvider.select((state) => state.user));
+  if (user == null) return const <SowingRecord>[];
+  try {
+    return await ref.watch(nurseryRepositoryProvider).listSowings();
+  } catch (_) {
+    return const <SowingRecord>[];
+  }
+});
 
 /// Segarkan data setelah tulis pemindahan/tanaman/rusak (BUG-34): meja
 /// (kapasitas & terisi), daftar pemindahan, dan daftar penyemaian dimuat ulang
@@ -113,8 +113,7 @@ V2TanamanItem _tanamanFromTransfer(
     tanggalTanam: pindah,
     tanggalPanen: panen,
     tanggalPindah: pindah,
-    umurPanenHst:
-        transfer.remainingHarvestDays == null || transfer.hst == null
+    umurPanenHst: transfer.remainingHarvestDays == null || transfer.hst == null
         ? v2MejaUmurPanenHst
         : transfer.remainingHarvestDays! + transfer.hst!,
     hssPindah: transfer.hss ?? v2SemaianHssSiapPindah,
@@ -174,11 +173,7 @@ V2MejaItem v2MejaItemFromRecord(
         ? 'Tanaman meja'
         : v2NamaVarietasTransfer(transfer, sowings, inventaris) ??
               'Tanaman meja';
-    return v2KerusakanDariDamage(
-      damage,
-      varietas: varietas,
-      meja: record.code,
-    );
+    return v2KerusakanDariDamage(damage, varietas: varietas, meja: record.code);
   }).toList();
   return V2MejaItem(
     id: record.id,
@@ -223,11 +218,7 @@ Future<void> bukaDetailMeja(
   VoidCallback? onOpenSemaian,
 }) {
   return navigator.push<void>(
-    detailMejaRoute(
-      tableId: tableId,
-      item: item,
-      onOpenSemaian: onOpenSemaian,
-    ),
+    detailMejaRoute(tableId: tableId, item: item, onOpenSemaian: onOpenSemaian),
   );
 }
 
@@ -275,6 +266,12 @@ class V2MejaConnectedTab extends ConsumerWidget {
       initialStatusIndex: initialStatusIndex,
       onSegmentChanged: onSegmentChanged,
       onRetry: () => ref.read(connectedTableProvider.notifier).refresh(),
+      onRefresh: () async {
+        await Future.wait([
+          v2SegarkanSetelahTulis(ref),
+          ref.read(connectedInventoryProvider.notifier).refresh(),
+        ]);
+      },
       onAdd: () => _tambah(context, ref),
       onTapItem: (item) => _bukaDetail(context, ref, item),
     );
@@ -317,8 +314,9 @@ class V2MejaConnectedTab extends ConsumerWidget {
     final result = await Navigator.of(context).push<V2MejaItem>(
       V2MejaFormPage.route(
         takenCodes: takenCodes,
-        onSubmit: (meja) =>
-            ref.read(connectedTableProvider.notifier).createTable(
+        onSubmit: (meja) => ref
+            .read(connectedTableProvider.notifier)
+            .createTable(
               code: meja.kode,
               holeCount: meja.jumlahLubang,
               notes: meja.keterangan,
@@ -689,9 +687,12 @@ class _V2MejaConnectedDetailPageState
   /// Cari laporan yang baru disimpan berdasarkan sekumpulan id.
   V2KerusakanItem? _cariRusak(String tableId, Set<String> ids) {
     if (ids.isEmpty) return null;
-    for (final row in ref.read(damageProvider(tableId)).reports.values.expand(
-      (rows) => rows,
-    )) {
+    for (final row
+        in ref
+            .read(damageProvider(tableId))
+            .reports
+            .values
+            .expand((rows) => rows)) {
       if (!ids.contains(row.id)) continue;
       return v2KerusakanDariDamage(
         row,

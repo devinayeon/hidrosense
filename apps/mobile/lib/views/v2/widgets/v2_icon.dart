@@ -32,6 +32,7 @@ enum V2IconName {
   layers,
   calendar,
   chart,
+  refresh,
 }
 
 /// Pemetaan ikon garis 24px v2 ke Material Icons.
@@ -74,6 +75,7 @@ abstract final class V2Icons {
     V2IconName.layers => Icons.layers_outlined,
     V2IconName.calendar => Icons.calendar_today,
     V2IconName.chart => Icons.bar_chart,
+    V2IconName.refresh => Icons.refresh,
   };
 }
 

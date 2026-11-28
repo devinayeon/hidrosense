@@ -21,10 +21,7 @@ import 'v2_cuaca_connected.dart';
 /// Backend hanya menyimpan jenis kerusakan dan jumlah tanaman; tidak ada
 /// perawatan, obat, atau foto. Karena itu `meta`/`extra` diisi apa adanya dan
 /// kartu detail memakai [V2RawatDetailPage] tanpa kartu foto AI.
-V2RawatItem v2RawatItemFromDamage(
-  DamageRecord damage,
-  TableRecord table,
-) {
+V2RawatItem v2RawatItemFromDamage(DamageRecord damage, TableRecord table) {
   final catatan = damage.note?.trim();
   return V2RawatItem(
     id: damage.id,
@@ -113,7 +110,10 @@ class V2RawatConnectedTab extends ConsumerWidget {
     items.sort((a, b) => b.tanggal.compareTo(a.tanggal));
     final pindaian = [
       for (final entry in scans.value ?? const <ScanEntry>[])
-        v2PindaiItemFromScan(entry, _mejaLabel(tables.records, entry.scan.tableId)),
+        v2PindaiItemFromScan(
+          entry,
+          _mejaLabel(tables.records, entry.scan.tableId),
+        ),
     ];
     final kosong = items.isEmpty && pindaian.isEmpty;
     final state = switch ((loading, error, kosong)) {
@@ -127,6 +127,7 @@ class V2RawatConnectedTab extends ConsumerWidget {
       showPindaian: error == null,
       state: state,
       onRetry: () => _refresh(ref, tables.records),
+      onRefresh: () => _refresh(ref, tables.records),
       onOpenCuaca: () =>
           Navigator.of(context).push(V2CuacaConnectedPage.route()),
       onOpenRotasi: () => _openRotasi(context, ref),
@@ -137,9 +138,9 @@ class V2RawatConnectedTab extends ConsumerWidget {
         ),
       ),
       onFotoTanaman: () => _openScan(context, ref),
-      onTapItem: (item) => Navigator.of(context).push<void>(
-        V2RawatDetailPage.route(item, showFoto: false),
-      ),
+      onTapItem: (item) => Navigator.of(
+        context,
+      ).push<void>(V2RawatDetailPage.route(item, showFoto: false)),
     );
   }
 

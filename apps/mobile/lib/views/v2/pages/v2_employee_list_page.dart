@@ -12,6 +12,7 @@ import '../theme/v2_tokens.dart';
 import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_error_state.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_select_field.dart';
 import 'v2_employee_detail_page.dart';
 import 'v2_employee_form_page.dart';
@@ -29,6 +30,7 @@ class V2EmployeeListPage extends StatefulWidget {
     this.toast,
     this.onChanged,
     this.store,
+    this.onRefresh,
   });
 
   /// Frame `3.4 Akun pegawai kosong` dihasilkan dari daftar kosong.
@@ -37,6 +39,7 @@ class V2EmployeeListPage extends StatefulWidget {
     this.toast,
     this.onChanged,
     this.store,
+    this.onRefresh,
   }) : initialEmployees = const <V2Employee>[];
 
   final List<V2Employee> initialEmployees;
@@ -48,11 +51,16 @@ class V2EmployeeListPage extends StatefulWidget {
   /// Backend akun; null berarti mode pratinjau (hanya di memori).
   final V2EmployeeStore? store;
 
+  /// Callback muat ulang tambahan; null berarti memakai `_load()` saat [store]
+  /// tersedia.
+  final Future<void> Function()? onRefresh;
+
   static Route<void> route({
     List<V2Employee> initialEmployees = designEmployees,
     String? toast,
     ValueChanged<List<V2Employee>>? onChanged,
     V2EmployeeStore? store,
+    Future<void> Function()? onRefresh,
   }) {
     return MaterialPageRoute<void>(
       builder: (_) => V2EmployeeListPage(
@@ -60,6 +68,7 @@ class V2EmployeeListPage extends StatefulWidget {
         toast: toast,
         onChanged: onChanged,
         store: store,
+        onRefresh: onRefresh,
       ),
     );
   }
@@ -126,6 +135,18 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
       });
     }
   }
+
+  /// Tarik-turun dan tombol "Muat ulang": pakai callback nyata bila ada,
+  /// kalau tidak jatuh ke `_load()` internal saat ada [V2EmployeeListPage.store].
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh != null) return refresh();
+    return _load();
+  }
+
+  /// Ada sumber muat ulang nyata; galeri tanpa store/callback tidak
+  /// menampilkan tombol maupun tarik-turun.
+  bool get _canRefresh => widget.onRefresh != null || widget.store != null;
 
   List<V2Employee> get _filtered {
     final query = _query.trim().toLowerCase();
@@ -200,6 +221,9 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
               V2AppBar(
                 title: 'Akun pegawai',
                 onBack: () => Navigator.of(context).maybePop(),
+                trailing: V2RefreshButton(
+                  onRefresh: _canRefresh ? _refresh : null,
+                ),
               ),
               Expanded(child: _buildBody()),
               V2AkunActionBar(
@@ -220,7 +244,10 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
     if (_loading) return _buildLoading();
     final error = _loadError;
     if (error != null) return _buildLoadError(error);
-    return _employees.isEmpty ? _buildEmptyState() : _buildList();
+    if (_employees.isEmpty) return _buildEmptyState();
+    final list = _buildList();
+    if (!_canRefresh) return list;
+    return RefreshIndicator(onRefresh: _refresh, child: list);
   }
 
   Widget _buildLoading() {
@@ -280,6 +307,7 @@ class _V2EmployeeListPageState extends State<V2EmployeeListPage> {
   Widget _buildList() {
     final filtered = _filtered;
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         V2Space.xl,
         V2Space.sm,

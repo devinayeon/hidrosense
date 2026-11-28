@@ -14,6 +14,7 @@ import '../widgets/v2_button.dart';
 import '../widgets/v2_error_state.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_option_row.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_segmented.dart';
 import '../widgets/v2_stock_item.dart';
 
@@ -48,6 +49,7 @@ class V2CuacaPage extends StatefulWidget {
     this.lokasiList,
     this.lokasiLabel,
     this.onRetry,
+    this.onRefresh,
     this.onPilihLokasi,
   });
 
@@ -108,6 +110,10 @@ class V2CuacaPage extends StatefulWidget {
 
   /// Muat ulang BMKG nyata; null berarti jeda contoh 700 ms.
   final Future<void> Function()? onRetry;
+
+  /// Tarik-turun dan tombol "Muat ulang" di header; null berarti memakai
+  /// [onRetry] bila ada, kalau tidak keduanya disembunyikan.
+  final Future<void> Function()? onRefresh;
 
   /// Membuka pemilih lokasi nyata (GPS atau cari wilayah). Null berarti
   /// sheet tiga lokasi contoh milik galeri.
@@ -265,6 +271,24 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
     });
   }
 
+  /// Ada sumber muat ulang nyata; galeri murni tanpa keduanya tidak
+  /// menampilkan tombol maupun tarik-turun.
+  bool get _canRefresh => widget.onRefresh != null || widget.onRetry != null;
+
+  /// Tarik-turun/tombol: pakai callback khusus bila ada, kalau tidak muat ulang
+  /// BMKG seperti tombol "Coba lagi".
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh != null) return refresh();
+    return _muatUlangBmkg();
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    if (!_canRefresh) return child;
+    return RefreshIndicator(onRefresh: _refresh, child: child);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -278,17 +302,22 @@ class _V2CuacaPageState extends State<V2CuacaPage> {
               V2AppBar(
                 title: 'Cuaca',
                 onBack: () => Navigator.of(context).maybePop(),
+                trailing: V2RefreshButton(
+                  onRefresh: _canRefresh ? _refresh : null,
+                ),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    V2Space.xl,
-                    V2Space.sm,
-                    V2Space.xl,
-                    V2Space.xl,
+                child: _refreshable(
+                  SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      V2Space.xl,
+                      V2Space.sm,
+                      V2Space.xl,
+                      V2Space.xl,
+                    ),
+                    child: _isi(context),
                   ),
-                  child: _isi(context),
                 ),
               ),
             ],

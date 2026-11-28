@@ -12,6 +12,7 @@ import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
+import '../widgets/v2_refresh_button.dart';
 
 /// Isi tab "Lainnya" (Petani, frame 3.1) dan "Profil" (Pegawai, frame 3.2).
 ///
@@ -37,6 +38,7 @@ class V2AkunTabView extends StatelessWidget {
     this.onOpenSales,
     this.onOpenSync,
     this.onLogOut,
+    this.onRefresh,
   });
 
   final V2BerandaRole role;
@@ -54,99 +56,110 @@ class V2AkunTabView extends StatelessWidget {
   final VoidCallback? onOpenSync;
   final VoidCallback? onLogOut;
 
+  /// Tarik-turun dan tombol "Muat ulang"; null berarti galeri tanpa refresh.
+  final Future<void> Function()? onRefresh;
+
   @override
   Widget build(BuildContext context) {
     final petani = role == V2BerandaRole.petani;
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              V2Space.xl,
-              V2Space.lg,
-              V2Space.xl,
-              V2Space.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                V2ScreenHeader(title: petani ? 'Lainnya' : 'Profil'),
-                const SizedBox(height: V2Space.lg),
-                V2AkunProfilCard(
-                  initials: v2InitialsOf(userName),
-                  name: userName,
-                  role: petani ? 'Petani' : 'Pegawai',
-                ),
-                const SizedBox(height: V2Space.lg),
-                if (petani)
-                  V2AkunMenuGroup(
-                    children: [
-                      V2ListItem(
-                        icon: V2IconName.user,
-                        title: 'Akun saya',
-                        subtitle: 'Lihat & ubah profil',
-                        onTap: onOpenProfile,
-                      ),
-                      V2ListItem(
-                        icon: V2IconName.user,
-                        title: 'Akun pegawai',
-                        subtitle: 'Tambah, ubah, nonaktifkan',
-                        onTap: onOpenEmployees,
-                      ),
-                      V2ListItem(
-                        icon: V2IconName.chart,
-                        title: 'Penjualan',
-                        subtitle: 'Catatan penjualan',
-                        onTap: onOpenSales,
-                      ),
-                      V2ListItem(
-                        icon: V2IconName.sync,
-                        title: 'Sinkron',
-                        subtitle: syncLabel,
-                        trailing: syncBadge == null
-                            ? null
-                            : V2Badge(
-                                label: syncBadge!,
-                                status: V2BadgeStatus.pending,
-                              ),
-                        onTap: onOpenSync,
-                      ),
-                    ],
-                  )
-                else ...[
-                  V2AkunInfoCard(
-                    rows: [
-                      V2AkunInfoRow(label: 'Username', value: username),
-                      V2AkunInfoRow(label: 'Telepon', value: phone),
-                      V2AkunInfoRow(label: 'Alamat', value: address),
-                    ],
+          child: _refreshable(
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                V2Space.xl,
+                V2Space.lg,
+                V2Space.xl,
+                V2Space.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  V2ScreenHeader(
+                    title: petani ? 'Lainnya' : 'Profil',
+                    trailing: onRefresh == null
+                        ? null
+                        : V2RefreshButton(onRefresh: onRefresh),
                   ),
                   const SizedBox(height: V2Space.lg),
-                  V2AkunMenuGroup(
-                    elevated: false,
-                    children: [
-                      V2ListItem(
-                        icon: V2IconName.user,
-                        title: 'Akun saya',
-                        subtitle: 'Lihat & ubah profil',
-                        onTap: onOpenProfile,
-                      ),
-                      V2ListItem(
-                        icon: V2IconName.sync,
-                        title: 'Sinkron',
-                        subtitle: syncLabel,
-                        trailing: syncBadge == null
-                            ? null
-                            : V2Badge(
-                                label: syncBadge!,
-                                status: V2BadgeStatus.pending,
-                              ),
-                        onTap: onOpenSync,
-                      ),
-                    ],
+                  V2AkunProfilCard(
+                    initials: v2InitialsOf(userName),
+                    name: userName,
+                    role: petani ? 'Petani' : 'Pegawai',
                   ),
+                  const SizedBox(height: V2Space.lg),
+                  if (petani)
+                    V2AkunMenuGroup(
+                      children: [
+                        V2ListItem(
+                          icon: V2IconName.user,
+                          title: 'Akun saya',
+                          subtitle: 'Lihat & ubah profil',
+                          onTap: onOpenProfile,
+                        ),
+                        V2ListItem(
+                          icon: V2IconName.user,
+                          title: 'Akun pegawai',
+                          subtitle: 'Tambah, ubah, nonaktifkan',
+                          onTap: onOpenEmployees,
+                        ),
+                        V2ListItem(
+                          icon: V2IconName.chart,
+                          title: 'Penjualan',
+                          subtitle: 'Catatan penjualan',
+                          onTap: onOpenSales,
+                        ),
+                        V2ListItem(
+                          icon: V2IconName.sync,
+                          title: 'Sinkron',
+                          subtitle: syncLabel,
+                          trailing: syncBadge == null
+                              ? null
+                              : V2Badge(
+                                  label: syncBadge!,
+                                  status: V2BadgeStatus.pending,
+                                ),
+                          onTap: onOpenSync,
+                        ),
+                      ],
+                    )
+                  else ...[
+                    V2AkunInfoCard(
+                      rows: [
+                        V2AkunInfoRow(label: 'Username', value: username),
+                        V2AkunInfoRow(label: 'Telepon', value: phone),
+                        V2AkunInfoRow(label: 'Alamat', value: address),
+                      ],
+                    ),
+                    const SizedBox(height: V2Space.lg),
+                    V2AkunMenuGroup(
+                      elevated: false,
+                      children: [
+                        V2ListItem(
+                          icon: V2IconName.user,
+                          title: 'Akun saya',
+                          subtitle: 'Lihat & ubah profil',
+                          onTap: onOpenProfile,
+                        ),
+                        V2ListItem(
+                          icon: V2IconName.sync,
+                          title: 'Sinkron',
+                          subtitle: syncLabel,
+                          trailing: syncBadge == null
+                              ? null
+                              : V2Badge(
+                                  label: syncBadge!,
+                                  status: V2BadgeStatus.pending,
+                                ),
+                          onTap: onOpenSync,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -161,5 +174,12 @@ class V2AkunTabView extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    final refresh = onRefresh;
+    if (refresh == null) return child;
+    return RefreshIndicator(onRefresh: refresh, child: child);
   }
 }

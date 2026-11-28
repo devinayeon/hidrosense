@@ -24,6 +24,7 @@ import '../widgets/v2_dialog.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_icon_button.dart';
 import '../widgets/v2_list_item.dart';
+import '../widgets/v2_refresh_button.dart';
 import '../widgets/v2_tab_bar.dart';
 import 'v2_akun_tab_page.dart';
 import 'v2_cuaca_page.dart';
@@ -113,6 +114,8 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenWeather,
     this.onOpenProfile,
     this.onLogOut,
+    this.onRefresh,
+    this.notificationsRefresh,
   });
 
   /// Frame `2.3 Beranda memuat`.
@@ -133,6 +136,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenWeather,
     this.onOpenProfile,
     this.onLogOut,
+    this.notificationsRefresh,
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
@@ -156,6 +160,7 @@ class V2BerandaPage extends StatefulWidget {
        onSiapPindah = null,
        onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
+       onRefresh = null,
        weatherSubtitle = 'Hujan 14.00';
 
   /// Frame `2.5 Offline dan antrean sinkron`.
@@ -176,6 +181,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenWeather,
     this.onOpenProfile,
     this.onLogOut,
+    this.notificationsRefresh,
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
@@ -199,6 +205,7 @@ class V2BerandaPage extends StatefulWidget {
        onSiapPindah = null,
        onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
+       onRefresh = null,
        weatherSubtitle = 'Hujan 14.00';
 
   /// Frame `2.6 BMKG tidak tersedia`.
@@ -219,6 +226,7 @@ class V2BerandaPage extends StatefulWidget {
     this.onOpenWeather,
     this.onOpenProfile,
     this.onLogOut,
+    this.notificationsRefresh,
   }) : employeeStore = null,
        penjualanStore = null,
        syncQueue = null,
@@ -242,6 +250,7 @@ class V2BerandaPage extends StatefulWidget {
        onSiapPindah = null,
        onOpenCycleTable = null,
        weatherTitle = 'Berawan, 29°C',
+       onRefresh = null,
        weatherSubtitle = 'Hujan 14.00';
 
   final String userName;
@@ -342,6 +351,14 @@ class V2BerandaPage extends StatefulWidget {
 
   /// Menutup sesi (frame 3.3); diisi oleh `AppGate`.
   final Future<void> Function()? onLogOut;
+
+  /// Menyegarkan data backend untuk konten Beranda dan tab Lainnya; null
+  /// berarti galeri tanpa tarik-turun/tombol muat ulang.
+  final Future<void> Function()? onRefresh;
+
+  /// Mengambil ulang grup notifikasi dari backend saat halaman Notifikasi
+  /// ditarik/tombol muat ulang ditekan; null berarti galeri tanpa refresh.
+  final Future<List<V2NotificationGroup>> Function()? notificationsRefresh;
 
   static const String _tableName = 'Meja A2';
 
@@ -623,6 +640,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         groups: widget.notificationGroups,
         onMarkRead: widget.onNotificationRead,
         onMarkAllRead: widget.onNotificationMarkAllRead,
+        onRefresh: widget.notificationsRefresh,
       ),
     );
     if (!mounted || target == null) return;
@@ -698,6 +716,7 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                         onOpenSales: _petani ? _openSales : null,
                         onOpenSync: _openSync,
                         onLogOut: _confirmLogOut,
+                        onRefresh: widget.onRefresh,
                       )
                     : tanam
                     ? KeyedSubtree(
@@ -738,14 +757,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
                             toast: _rawatToast,
                             onFotoTanaman: _fotoTanamanRawat,
                           ))
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(
-                          V2Space.xl,
-                          V2Space.lg,
-                          V2Space.xl,
-                          V2Space.lg,
+                    : _refreshable(
+                        SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(
+                            V2Space.xl,
+                            V2Space.lg,
+                            V2Space.xl,
+                            V2Space.lg,
+                          ),
+                          child: _content(),
                         ),
-                        child: _content(),
                       ),
               ),
               V2TabBar(items: tabs, activeIndex: _activeTab, onTap: _onTabTap),
@@ -754,6 +776,13 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
         ),
       ),
     );
+  }
+
+  /// Tarik-turun hanya aktif bila ada sumber data nyata.
+  Widget _refreshable(Widget child) {
+    final refresh = widget.onRefresh;
+    if (refresh == null) return child;
+    return RefreshIndicator(onRefresh: refresh, child: child);
   }
 
   Widget _content() {
@@ -767,10 +796,17 @@ class _V2BerandaPageState extends State<V2BerandaPage> {
       children: [
         V2ScreenHeader(
           title: 'Halo, ${widget.userName}',
-          trailing: V2IconButton(
-            icon: V2IconName.bell,
-            onPressed: _openNotifications,
-            semanticLabel: 'Notifikasi',
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.onRefresh != null)
+                V2RefreshButton(onRefresh: widget.onRefresh),
+              V2IconButton(
+                icon: V2IconName.bell,
+                onPressed: _openNotifications,
+                semanticLabel: 'Notifikasi',
+              ),
+            ],
           ),
         ),
         const SizedBox(height: V2Space.lg),

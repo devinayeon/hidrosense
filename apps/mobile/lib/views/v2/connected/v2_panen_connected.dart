@@ -58,7 +58,7 @@ V2PanenEstimasi v2PanenEstimasiFromTransfer(
           : DateTime.tryParse(
                   transfer.estimatedHarvestDate!,
                 )?.difference(jakartaToday()).inDays ??
-              0);
+                0);
   return V2PanenEstimasi(
     meja: _kodeMeja(table, transfer.tableId),
     varietas:
@@ -119,7 +119,8 @@ V2PanenItem v2PanenItemFromRecord(
   return V2PanenItem(
     id: record.id,
     tanggal: DateTime.tryParse(record.date) ?? jakartaToday(),
-    meja: table?.displayName ??
+    meja:
+        table?.displayName ??
         (detail == null ? 'Meja' : 'Meja ${detail.tableCode}'),
     varietas:
         _varietasPanen(record, transfers, sowings, inventaris) ??
@@ -206,6 +207,13 @@ class V2PanenConnectedTab extends ConsumerWidget {
       riwayatLoading: !state.recordsLoaded,
       onSegmentChanged: onSegmentChanged,
       onRetry: () => ref.read(panenViewModelProvider.notifier).refresh(),
+      onRefresh: () async {
+        await Future.wait([
+          ref.read(panenViewModelProvider.notifier).refresh(),
+          ref.read(connectedTableProvider.notifier).refresh(),
+          ref.read(connectedInventoryProvider.notifier).refresh(),
+        ]);
+      },
       onCatatPanen: estimasi.isEmpty
           ? null
           : () => _catatPanen(context, ref, estimasi),
@@ -285,10 +293,7 @@ void _pesan(BuildContext context, String pesan) {
 ///
 /// Endpoint panen tidak mengembalikan angka terjual, jadi dihitung dari
 /// `stokTersedia` batch (`BatchPanen` = berat layak − terjual). BUG-43.
-double v2TerjualDariBatch(
-  HarvestRecord record,
-  List<BatchPanen> batches,
-) {
+double v2TerjualDariBatch(HarvestRecord record, List<BatchPanen> batches) {
   final batch = batches.where((row) => row.id == record.id).firstOrNull;
   if (batch == null) return 0;
   final terjual = _kg(record.saleable) - batch.stokTersedia;
@@ -365,9 +370,7 @@ class _V2PanenConnectedDetailPageState
     final tables = ref.read(connectedTableProvider).records;
     final transfers = ref.read(panenViewModelProvider).transfers;
     final sowings = ref.read(v2AllSowingsProvider).valueOrNull ?? const [];
-    final inventaris = ref
-        .read(connectedInventoryProvider)
-        .activeRecords;
+    final inventaris = ref.read(connectedInventoryProvider).activeRecords;
     final hasil = v2PanenItemFromRecord(
       terbaru,
       transfers: transfers,
