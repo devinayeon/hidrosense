@@ -10,6 +10,7 @@ import '../widgets/v2_app_bar.dart';
 import '../widgets/v2_badge.dart';
 import '../widgets/v2_button.dart';
 import '../widgets/v2_dialog.dart';
+import '../widgets/v2_icon.dart';
 import '../widgets/v2_summary_card.dart';
 import 'v2_inventaris_form_page.dart';
 
@@ -179,6 +180,21 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
   Timer? _toastTimer;
   String? _toast;
 
+  /// Halaman riwayat yang sedang dilihat; 0 berarti entri terbaru (frame 4.19).
+  int _riwayatPage = 0;
+
+  /// Satu halaman kartu "Riwayat" menampilkan tiga entri supaya kartu tidak
+  /// memanjang saat riwayat panjang.
+  static const int _riwayatPerHalaman = 3;
+
+  /// Jumlah halaman riwayat; minimal 1 supaya pembagian aman saat kosong.
+  int get _riwayatTotalHalaman {
+    final jumlah = _item.riwayat.length;
+    return jumlah == 0
+        ? 1
+        : (jumlah + _riwayatPerHalaman - 1) ~/ _riwayatPerHalaman;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -203,6 +219,10 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
   void didUpdateWidget(covariant V2InventarisDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.item, oldWidget.item)) {
+      // Halaman riwayat kembali ke entri terbaru hanya saat barangnya berganti,
+      // bukan saat riwayatnya menyegar, supaya halaman yang sedang dibuka tidak
+      // terlempar.
+      if (widget.item.id != oldWidget.item.id) _riwayatPage = 0;
       _item = widget.item;
     }
     if (widget.toast != null && widget.toast != oldWidget.toast) {
@@ -387,8 +407,14 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
     );
   }
 
-  /// Kartu putih "Riwayat": judul, lalu tiga catatan terbaru.
+  /// Kartu putih "Riwayat": judul, tiga catatan pada halaman aktif, lalu
+  /// kontrol halaman bila riwayatnya lebih dari satu halaman.
   Widget _riwayat() {
+    final total = _riwayatTotalHalaman;
+    final halaman = _riwayatPage.clamp(0, total - 1);
+    final mulai = halaman * _riwayatPerHalaman;
+    final akhir = (mulai + _riwayatPerHalaman).clamp(0, _item.riwayat.length);
+    final potongan = _item.riwayat.sublist(mulai, akhir);
     return Container(
       padding: const EdgeInsets.all(V2Space.xl),
       decoration: BoxDecoration(
@@ -400,7 +426,7 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Riwayat', style: V2Type.h2),
-          for (final baris in riwayatTampil(_item.riwayat)) ...[
+          for (final baris in potongan) ...[
             const SizedBox(height: V2Space.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,6 +435,34 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
                 Text(
                   baris.tanggal,
                   style: V2Type.label.copyWith(color: V2Colors.muted),
+                ),
+              ],
+            ),
+          ],
+          if (total > 1) ...[
+            const SizedBox(height: V2Space.lg),
+            Row(
+              children: [
+                _RiwayatPagerButton(
+                  icon: V2IconName.back,
+                  label: 'Riwayat sebelumnya',
+                  onTap: halaman > 0
+                      ? () => setState(() => _riwayatPage = halaman - 1)
+                      : null,
+                ),
+                Expanded(
+                  child: Text(
+                    '${halaman + 1}/$total',
+                    textAlign: TextAlign.center,
+                    style: V2Type.label.copyWith(color: V2Colors.muted),
+                  ),
+                ),
+                _RiwayatPagerButton(
+                  icon: V2IconName.chevronRight,
+                  label: 'Riwayat berikutnya',
+                  onTap: halaman < total - 1
+                      ? () => setState(() => _riwayatPage = halaman + 1)
+                      : null,
                 ),
               ],
             ),
@@ -438,5 +492,66 @@ class _V2InventarisDetailPageState extends State<V2InventarisDetailPage> {
         status: V2BadgeStatus.error,
       ),
     };
+  }
+}
+
+/// Tombol bulat panah untuk berpindah halaman riwayat.
+///
+/// Gayanya mengikuti tombol bulat `Stepper` (44px, border, redup saat nonaktif)
+/// supaya seragam dengan kontrol angka di aplikasi, dan ukurannya memenuhi tap
+/// target minimal. Saat nonaktif, tombol tidak bisa diketuk tetapi tetap
+/// terbaca oleh pembaca layar.
+class _RiwayatPagerButton extends StatelessWidget {
+  const _RiwayatPagerButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
+
+  final V2IconName icon;
+
+  /// Nama aksesibel, karena tombol hanya berisi ikon.
+  final String label;
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final aktif = onTap != null;
+    final content = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: aktif ? V2Colors.white : V2Colors.gray200,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: aktif ? V2Colors.slate400 : V2Colors.gray200,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: V2Icon(
+          icon,
+          size: V2Icons.size,
+          color: aktif ? V2Colors.ink : V2Colors.muted,
+        ),
+      ),
+    );
+    return Semantics(
+      button: true,
+      enabled: aktif,
+      label: label,
+      child: aktif
+          ? Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onTap,
+                customBorder: const CircleBorder(),
+                child: content,
+              ),
+            )
+          : content,
+    );
   }
 }

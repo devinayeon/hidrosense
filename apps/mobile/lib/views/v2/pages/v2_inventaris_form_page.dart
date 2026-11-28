@@ -484,16 +484,23 @@ class _V2InventarisFormPageState extends State<V2InventarisFormPage> {
   static const String _pesanAngka =
       'Gunakan maksimal 10 digit dan 2 angka desimal.';
 
-  /// Galat isian stok awal (wajib, minimal 1, tidak negatif, bentuk angka
-  /// benar). Pesan negatif dicek lebih dulu supaya angka seperti `-3` tidak
-  /// dilaporkan sebagai bentuk angka yang salah; nilai di bawah 1 (mis. `0`)
-  /// ditolak karena barang baru tidak boleh dicatat tanpa saldo awal.
+  /// Batas stok awal sekali input (permintaan klien 28 Nov 2026).
+  static const double _stokAwalMaks = 10000;
+
+  /// Galat isian stok awal (wajib, minimal 1, maksimal 10000, tidak negatif,
+  /// bentuk angka benar). Pesan negatif dan batas luar dicek lebih dulu supaya
+  /// angka di luar rentang tidak dilaporkan sebagai bentuk angka yang salah;
+  /// nilai di bawah 1 (mis. `0`) ditolak karena barang baru tidak boleh dicatat
+  /// tanpa saldo awal.
   String? _stokAwalErrorFor(String text) {
     final value = text.trim();
     if (value.isEmpty) return 'Isi stok awal';
     final angka = double.tryParse(value.replaceAll(',', '.'));
     if (angka != null && angka < 0) return 'Angka tidak boleh negatif';
     if (angka != null && angka < 1) return 'Stok awal minimal 1.';
+    if (angka != null && angka > _stokAwalMaks) {
+      return 'Stok awal maksimal ${_stokAwalMaks.toInt()}.';
+    }
     if (!_polaAngka.hasMatch(value)) return _pesanAngka;
     return null;
   }
