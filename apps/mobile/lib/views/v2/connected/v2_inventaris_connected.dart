@@ -267,6 +267,11 @@ class V2InventarisConnectedTab extends ConsumerWidget {
       ),
     );
     if (!context.mounted || hasil == null) return;
+    // Barang yang baru diarsipkan: beri tahu di daftar supaya pengguna tahu
+    // arsipnya berhasil (frame 4.27).
+    if (!item.arsip && hasil.arsip) {
+      _pesan(context, '${item.nama} diarsipkan.');
+    }
     // Barang arsip yang dipulihkan: beri tahu di daftar.
     if (item.arsip && !hasil.arsip) {
       _pesan(context, '${item.nama} diaktifkan kembali.');

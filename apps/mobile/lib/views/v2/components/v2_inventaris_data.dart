@@ -45,13 +45,8 @@ V2InventarisStatus statusStok(double jumlah, double? minimum) {
   return V2InventarisStatus.aman;
 }
 
-/// Riwayat yang tampil di kartu detail: paling banyak 3 entri terbaru.
-///
-/// Frame 4.23 menampilkan "Hari ini", "14 Nov", "10 Nov" — entri "7 Nov" yang
-/// ada di frame 4.19 keluar setelah satu catatan baru masuk. Jadi riwayat lama
-/// tetap disimpan, hanya tampilannya dibatasi tiga baris.
-List<V2InventarisRiwayat> riwayatTampil(List<V2InventarisRiwayat> riwayat) =>
-    riwayat.length <= 3 ? riwayat : riwayat.sublist(0, 3);
+/// Riwayat yang tampil di kartu detail dipotong per halaman oleh halaman detail
+/// (tiga entri per halaman), jadi tidak ada pemotongan tetap di data.
 
 /// Satu keluaran/masukan stok di kartu "Riwayat" halaman detail (frame 4.19).
 class V2InventarisRiwayat {

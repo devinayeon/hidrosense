@@ -145,6 +145,53 @@ void main() {
     expect(find.text('Stok awal minimal 1.'), findsOneWidget);
   });
 
+  testWidgets('stok awal 10000 diterima', (tester) async {
+    V2InventarisItem? tersimpan;
+    await _pumpForm(
+      tester,
+      V2InventarisFormPage(
+        onSubmit: (item) async {
+          tersimpan = item;
+        },
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField).at(0), 'Pupuk A7');
+    await tester.enterText(find.byType(TextField).at(1), 'kg');
+    await tester.enterText(find.byType(TextField).at(2), '10000');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tambah'));
+    await tester.pumpAndSettle();
+
+    expect(tersimpan, isNotNull);
+    expect(tersimpan!.jumlah, 10000);
+  });
+
+  testWidgets('stok awal 10001 ditolak dengan pesan maksimal 10000', (
+    tester,
+  ) async {
+    V2InventarisItem? tersimpan;
+    await _pumpForm(
+      tester,
+      V2InventarisFormPage(
+        onSubmit: (item) async {
+          tersimpan = item;
+        },
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField).at(0), 'Pupuk A8');
+    await tester.enterText(find.byType(TextField).at(1), 'kg');
+    await tester.enterText(find.byType(TextField).at(2), '10001');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stok awal maksimal 10000.'), findsOneWidget);
+    expect(tersimpan, isNull);
+    expect(find.text('Tambah barang'), findsOneWidget);
+  });
+
   testWidgets('stok awal 1 tanpa stok minimum tersimpan', (tester) async {
     V2InventarisItem? tersimpan;
     await _pumpForm(

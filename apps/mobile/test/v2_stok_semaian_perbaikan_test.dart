@@ -61,7 +61,7 @@ void main() {
       expect(_nilai(tester), 1);
     });
 
-    testWidgets('Masuk menolak jumlah di atas batas saldo di dalam sheet', (
+    testWidgets('Masuk menolak jumlah di atas 10000 di dalam sheet', (
       tester,
     ) async {
       await _pump(
@@ -71,10 +71,10 @@ void main() {
         ),
       );
 
-      // Stok 12, batas saldo backend 9999999999 -> maksimal masuk 9999999987.
-      await _ketik(tester, 9999999998);
+      // Stok 12; batas satu kali catat stok masuk adalah 10000.
+      await _ketik(tester, 10001);
 
-      expect(find.text('Maksimal 9999999987 pak'), findsOneWidget);
+      expect(find.text('Maksimal 10000 pak'), findsOneWidget);
       expect(
         tester.widget<V2QtyField>(find.byType(V2QtyField)).onPlus,
         isNull,
@@ -88,6 +88,20 @@ void main() {
         findsOneWidget,
         reason: 'sheet harus tetap terbuka saat jumlah melewati batas',
       );
+    });
+
+    testWidgets('Masuk menerima tepat 10000 sekali input', (tester) async {
+      await _pump(
+        tester,
+        const Scaffold(
+          body: V2CatatStokSheet(item: designDetailBiasa, initialMasuk: true),
+        ),
+      );
+
+      await _ketik(tester, 10000);
+
+      expect(find.text('Maksimal 10000 pak'), findsNothing);
+      expect(find.text('Masuk 10000 pak. Stok jadi 10012 pak.'), findsOneWidget);
     });
 
     testWidgets('Pakai tetap menolak jumlah melebihi stok di dalam sheet', (

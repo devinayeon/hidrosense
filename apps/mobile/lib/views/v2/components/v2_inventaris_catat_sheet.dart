@@ -45,8 +45,9 @@ Future<V2CatatStok?> showV2CatatStokSheet(
 ///
 /// - `Pakai`: tidak boleh melebihi stok yang ada, pesan "Stok hanya N satuan"
 ///   (frame 4.22).
-/// - `Masuk`: tidak boleh membuat saldo melewati batas backend
-///   (`stok_saldo` maksimal 9999999999.99), pesan "Maksimal N satuan".
+/// - `Masuk`: tidak boleh melebihi 10000 satuan dalam sekali input, dan tidak
+///   boleh membuat saldo melewati batas backend (`stok_saldo` maksimal
+///   9999999999.99), pesan "Maksimal N satuan".
 class V2CatatStokSheet extends StatefulWidget {
   const V2CatatStokSheet({
     super.key,
@@ -81,8 +82,17 @@ class _V2CatatStokSheetState extends State<V2CatatStokSheet> {
   /// sampai batas tersebut.
   static const int _batasSaldo = 9999999999;
 
-  /// Jumlah masuk paling besar agar saldo tidak melewati batas backend.
-  int get _maksMasuk => _batasSaldo - _stok < 0 ? 0 : _batasSaldo - _stok;
+  /// Batas satu kali catat stok masuk (permintaan klien 28 Nov 2026): jumlah
+  /// masuk per input paling banyak 10000, terpisah dari batas saldo.
+  static const int _batasMasuk = 10000;
+
+  /// Jumlah masuk paling besar: 10000 sekali input, atau sisa sampai batas
+  /// saldo backend bila lebih kecil.
+  int get _maksMasuk {
+    final sisaSaldo = _batasSaldo - _stok;
+    if (sisaSaldo <= 0) return 0;
+    return sisaSaldo < _batasMasuk ? sisaSaldo : _batasMasuk;
+  }
 
   /// Stok sesudah catatan dipakai.
   int get _stokJadi => _masuk ? _stok + _jumlah : _stok - _jumlah;
