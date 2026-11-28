@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-27T17:00:08Z",
+  "generated_at_utc": "2026-11-28T03:17:06Z",
   "zero_synthetic_confirmed": true,
   "synthetic_images_count": 0,
   "canonical_classes": {
@@ -103,19 +103,19 @@
   },
   "deduplication": {
     "total_scanned": 2722,
-    "duplicates_removed": 832,
+    "duplicates_removed": 824,
     "sha256_duplicates_removed": 2,
-    "phash_duplicates_removed": 830,
-    "collages_filtered": 171,
-    "empty_or_unmapped_skipped": 0,
-    "negative_images_kept": 589,
+    "phash_duplicates_removed": 822,
+    "collages_filtered": 194,
+    "empty_or_unmapped_skipped": 77,
+    "negative_images_kept": 496,
     "molted_skin_boxes_removed": 176,
-    "boxes_kept": 15581,
+    "boxes_kept": 15582,
     "boxes_dropped": 177,
     "boxes_dropped_unmapped": 176,
     "boxes_dropped_invalid": 1,
-    "groups_formed": 1124,
-    "roboflow_base_stems_grouped": 1065,
+    "groups_formed": 451,
+    "roboflow_base_stems_grouped": 986,
     "per_source_details": {
       "whitefly_0tong_v1": {
         "source_dir": "ml\\data\\raw_v2\\whitefly_0tong_v1",
@@ -123,14 +123,15 @@
           "0": "whitefly"
         },
         "images_scanned": 156,
-        "images_kept": 42,
-        "negative_images_kept": 2,
+        "images_kept": 41,
+        "negative_images_kept": 0,
         "sha256_duplicates_removed": 2,
-        "phash_duplicates_removed": 112,
-        "empty_or_unmapped_skipped": 0,
+        "phash_duplicates_removed": 109,
+        "collages_filtered": 0,
+        "empty_or_unmapped_skipped": 4,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 337,
-        "boxes_kept": 107,
+        "boxes_kept": 108,
         "boxes_dropped": 0,
         "molted_skin_boxes_removed": 0,
         "boxes_dropped_unmapped": 0,
@@ -147,11 +148,12 @@
           "1": "molted skin"
         },
         "images_scanned": 631,
-        "images_kept": 624,
-        "negative_images_kept": 73,
+        "images_kept": 551,
+        "negative_images_kept": 0,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 7,
-        "empty_or_unmapped_skipped": 0,
+        "collages_filtered": 0,
+        "empty_or_unmapped_skipped": 73,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 997,
         "boxes_kept": 799,
@@ -173,11 +175,12 @@
           "1": "whitefly"
         },
         "images_scanned": 1816,
-        "images_kept": 934,
-        "negative_images_kept": 395,
+        "images_kept": 916,
+        "negative_images_kept": 377,
         "sha256_duplicates_removed": 0,
-        "phash_duplicates_removed": 711,
-        "empty_or_unmapped_skipped": 171,
+        "phash_duplicates_removed": 706,
+        "collages_filtered": 194,
+        "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 35654,
         "boxes_kept": 14675,
@@ -199,6 +202,7 @@
         "negative_images_kept": 49,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 0,
+        "collages_filtered": 0,
         "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 0,
@@ -218,6 +222,7 @@
         "negative_images_kept": 14,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 0,
+        "collages_filtered": 0,
         "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 0,
@@ -237,6 +242,7 @@
         "negative_images_kept": 12,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 0,
+        "collages_filtered": 0,
         "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 0,
@@ -256,6 +262,7 @@
         "negative_images_kept": 44,
         "sha256_duplicates_removed": 0,
         "phash_duplicates_removed": 0,
+        "collages_filtered": 0,
         "empty_or_unmapped_skipped": 0,
         "unreadable_images_skipped": 0,
         "boxes_total_lines": 0,
@@ -270,141 +277,138 @@
     }
   },
   "visual_profile_sample": {
-    "mean_brightness": 0.5499,
-    "mean_contrast": 0.0997,
-    "mean_saturation": 0.5517,
-    "mean_edge_energy": 0.003616
+    "mean_brightness": 0.5333,
+    "mean_contrast": 0.1402,
+    "mean_saturation": 0.3983,
+    "mean_edge_energy": 0.007657
   },
   "train_count_quantiles": {
     "whitefly": {
-      "images": 224,
+      "images": 216,
       "p50": 19,
-      "p75": 44,
+      "p75": 53,
       "p90": 68,
       "max": 95
     },
     "aphids": {
-      "images": 696,
+      "images": 671,
       "p50": 2,
       "p75": 9,
-      "p90": 34,
+      "p90": 27,
       "max": 117
     }
   },
   "splits": {
     "train": {
-      "images": 1370,
-      "positive_images": 915,
-      "negative_images": 455,
+      "images": 1256,
+      "positive_images": 882,
+      "negative_images": 374,
       "negative_breakdown": {
-        "leaf_empty": 381,
-        "molted_skin_only": 1,
+        "leaf_empty": 301,
         "ood_drink_bottles_cups": 9,
         "ood_healthy_food": 8,
         "ood_people": 30,
         "ood_random_objects": 26
       },
-      "groups": 876,
-      "instances": 13363,
+      "groups": 363,
+      "instances": 13022,
       "per_class_instances": {
-        "whitefly": 6242,
-        "aphids": 7121
+        "whitefly": 6171,
+        "aphids": 6851
       },
       "per_source_images": {
-        "aphids_new_v1": 495,
+        "aphids_new_v1": 422,
         "ood_drink_bottles_cups": 9,
         "ood_healthy_food": 8,
         "ood_people": 30,
         "ood_random_objects": 26,
-        "puzzle-piece-detection_lettuce-pests_v6": 769,
-        "whitefly_0tong_v1": 33
+        "puzzle-piece-detection_lettuce-pests_v6": 729,
+        "whitefly_0tong_v1": 32
       },
       "scale_distribution": {
-        "small_lt_32px": 1050,
-        "medium_32_96px": 11066,
-        "large_ge_96px": 1247,
-        "small_ratio": 0.0786
+        "small_lt_32px": 1013,
+        "medium_32_96px": 10841,
+        "large_ge_96px": 1168,
+        "small_ratio": 0.0778
       },
-      "manifest_sha256": "b8adf53f7be08fb5218ed5c273e5ee833d290854c5278193f03e0ad960f8e318"
+      "manifest_sha256": "137d9f4d7842c55a1cb20d3ea1a0cdbdedc397056923cb5bc391787b65ab8c1c"
     },
     "val": {
-      "images": 171,
-      "positive_images": 107,
-      "negative_images": 64,
+      "images": 239,
+      "positive_images": 183,
+      "negative_images": 56,
       "negative_breakdown": {
-        "leaf_empty": 45,
-        "molted_skin_only": 1,
+        "leaf_empty": 38,
         "ood_drink_bottles_cups": 2,
         "ood_healthy_food": 2,
         "ood_people": 7,
         "ood_random_objects": 7
       },
-      "groups": 119,
-      "instances": 861,
+      "groups": 39,
+      "instances": 1039,
       "per_class_instances": {
-        "whitefly": 342,
-        "aphids": 519
+        "whitefly": 374,
+        "aphids": 665
       },
       "per_source_images": {
-        "aphids_new_v1": 60,
+        "aphids_new_v1": 122,
         "ood_drink_bottles_cups": 2,
         "ood_healthy_food": 2,
         "ood_people": 7,
         "ood_random_objects": 7,
-        "puzzle-piece-detection_lettuce-pests_v6": 88,
-        "whitefly_0tong_v1": 5
+        "puzzle-piece-detection_lettuce-pests_v6": 95,
+        "whitefly_0tong_v1": 4
       },
       "scale_distribution": {
-        "small_lt_32px": 25,
-        "medium_32_96px": 711,
-        "large_ge_96px": 125,
-        "small_ratio": 0.029
+        "small_lt_32px": 78,
+        "medium_32_96px": 650,
+        "large_ge_96px": 311,
+        "small_ratio": 0.0751
       },
-      "manifest_sha256": "3c4f587a8478acd9e40841ccf6d79c312d464abce6631005e2c27b5e1e257ff2"
+      "manifest_sha256": "d781e09608d07a4fcd3d8d9571566a80663605deeef13b530fef20328c84e226"
     },
     "test": {
-      "images": 178,
-      "positive_images": 108,
-      "negative_images": 70,
+      "images": 132,
+      "positive_images": 66,
+      "negative_images": 66,
       "negative_breakdown": {
-        "leaf_empty": 41,
-        "molted_skin_only": 1,
+        "leaf_empty": 38,
         "ood_drink_bottles_cups": 3,
         "ood_healthy_food": 2,
         "ood_people": 12,
         "ood_random_objects": 11
       },
-      "groups": 129,
-      "instances": 1357,
+      "groups": 49,
+      "instances": 1521,
       "per_class_instances": {
-        "whitefly": 698,
-        "aphids": 659
+        "whitefly": 738,
+        "aphids": 783
       },
       "per_source_images": {
-        "aphids_new_v1": 69,
+        "aphids_new_v1": 7,
         "ood_drink_bottles_cups": 3,
         "ood_healthy_food": 2,
         "ood_people": 12,
         "ood_random_objects": 11,
-        "puzzle-piece-detection_lettuce-pests_v6": 77,
-        "whitefly_0tong_v1": 4
+        "puzzle-piece-detection_lettuce-pests_v6": 92,
+        "whitefly_0tong_v1": 5
       },
       "scale_distribution": {
-        "small_lt_32px": 163,
-        "medium_32_96px": 1006,
-        "large_ge_96px": 188,
-        "small_ratio": 0.1201
+        "small_lt_32px": 147,
+        "medium_32_96px": 1292,
+        "large_ge_96px": 82,
+        "small_ratio": 0.0966
       },
-      "manifest_sha256": "232b534e74a78da8a4afc260ddeb629a2571737cacabda97493b70460a0f3f94"
+      "manifest_sha256": "9fa81753273b75ec04263e363ef2ddb04781c8252a0f7505522dcdc4b73f6eb1"
     }
   },
   "totals": {
-    "images": 1719,
-    "positive_images": 1130,
-    "negative_images": 589,
-    "instances": 15581,
+    "images": 1627,
+    "positive_images": 1131,
+    "negative_images": 496,
+    "instances": 15582,
     "per_class_instances": {
-      "whitefly": 7282,
+      "whitefly": 7283,
       "aphids": 8299
     }
   },
@@ -418,6 +422,8 @@
     "cross_split_phash_overlaps": 0,
     "cross_split_group_phash_overlaps": 0,
     "cross_split_base_stem_overlaps": 0,
+    "cross_split_temporal_session_overlaps": 0,
+    "cross_split_loose_scene_family_overlaps": 0,
     "group_hamming_distance": 4,
     "dihedral_orientations_checked": 8,
     "intra_split_sha256_duplicates": 0,
@@ -427,33 +433,33 @@
     "all_canonical_classes_present_in_all_splits": true,
     "splits": {
       "train": {
-        "images": 1370,
-        "positive_images": 915,
-        "negative_images": 455,
-        "instances": 13363,
+        "images": 1256,
+        "positive_images": 882,
+        "negative_images": 374,
+        "instances": 13022,
         "per_class_instances": {
-          "whitefly": 6242,
-          "aphids": 7121
+          "whitefly": 6171,
+          "aphids": 6851
         }
       },
       "val": {
-        "images": 171,
-        "positive_images": 107,
-        "negative_images": 64,
-        "instances": 861,
+        "images": 239,
+        "positive_images": 183,
+        "negative_images": 56,
+        "instances": 1039,
         "per_class_instances": {
-          "whitefly": 342,
-          "aphids": 519
+          "whitefly": 374,
+          "aphids": 665
         }
       },
       "test": {
-        "images": 178,
-        "positive_images": 108,
-        "negative_images": 70,
-        "instances": 1357,
+        "images": 132,
+        "positive_images": 66,
+        "negative_images": 66,
+        "instances": 1521,
         "per_class_instances": {
-          "whitefly": 698,
-          "aphids": 659
+          "whitefly": 738,
+          "aphids": 783
         }
       }
     }

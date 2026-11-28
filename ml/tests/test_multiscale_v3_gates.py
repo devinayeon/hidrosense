@@ -18,9 +18,11 @@ class TestMultiScaleV3Contracts:
         # Simulate v2 failure signature: high in-domain mAP50 (0.94), but 17% small-scale recall and 4.17% OOD FPR
         v2_failure_metrics = {
             "map50": 0.9423,
+            "map75": 0.78,
             "recall": 0.9114,
             "f1": 0.8970,
             "small_scale_recall": 0.17,
+            "overexposure_recall": 0.90,
             "tflite_map50_drop": 0.0,
             "ood_false_positive_rate": 0.0417,
             "model_size_mb": 5.158,

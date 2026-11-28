@@ -256,9 +256,11 @@ def test_f3_t1_assert_promotion_ready_accepts_valid_metrics() -> None:
     assert_promotion_ready(
         {
             "map50": 0.85,
+            "map75": 0.80,
             "recall": 0.80,
             "f1": 0.82,
             "small_scale_recall": 0.80,
+            "overexposure_recall": 0.90,
             "tflite_map50_drop": 0.004,
             "ood_false_positive_rate": 0.0,
             "model_size_mb": 5.2,
@@ -350,9 +352,11 @@ def test_f3_t1_evaluate_cli_uses_tflite_size_and_drop(
 def test_f3_t1_promotion_gates_contract_keys_and_directions() -> None:
     assert PROMOTION_GATES == {
         "map50": ("min", 0.72),
+        "map75": ("min", 0.72),
         "recall": ("min", 0.72),
         "f1": ("min", 0.72),
         "small_scale_recall": ("min", 0.70),
+        "overexposure_recall": ("min", 0.85),
         "tflite_map50_drop": ("max", 0.008),
         "ood_false_positive_rate": ("max", 0.03),
         "model_size_mb": ("max", 12.0),

@@ -1,15 +1,15 @@
 # HidroSense 2-Class (`whitefly` & `aphids`) + Real-Life OOD Dataset Provenance
 
-- **Generated (UTC)**: `2026-11-27T17:00:08Z`
+- **Generated (UTC)**: `2026-11-28T03:17:06Z`
 - **Canonical Classes (`nc = 2`)**: `0: whitefly`, `1: aphids`
 - **`molted skin` annotations stripped**: `176` (`0` surviving)
 - **Zero Synthetic Confirmed**: `True`
-- **Total Clean Unique Images**: `1719` (`1130` positive + `589` negative/OOD background)
+- **Total Clean Unique Images**: `1627` (`1131` positive + `496` negative/OOD background)
 
 ## Split Distribution
 
 | Split | Total Images | Positive | Negative (Leaf + OOD) | Instances | `whitefly` | `aphids` |
 |---|---:|---:|---:|---:|---:|---:|
-| `train` | 1370 | 915 | 455 | 13363 | 6242 | 7121 |
-| `val` | 171 | 107 | 64 | 861 | 342 | 519 |
-| `test` | 178 | 108 | 70 | 1357 | 698 | 659 |
+| `train` | 1256 | 882 | 374 | 13022 | 6171 | 6851 |
+| `val` | 239 | 183 | 56 | 1039 | 374 | 665 |
+| `test` | 132 | 66 | 66 | 1521 | 738 | 783 |

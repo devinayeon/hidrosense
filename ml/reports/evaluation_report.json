@@ -1,61 +1,61 @@
 {
   "baseline": {
-    "map50": 0.98,
-    "map75": 0.9032,
-    "map50_95": 0.7251,
-    "precision": 0.9702,
-    "recall": 0.9501,
-    "f1": 0.96
+    "map50": 0.9944,
+    "map75": 0.8717,
+    "map50_95": 0.7061,
+    "precision": 0.985,
+    "recall": 0.9862,
+    "f1": 0.9856
   },
   "finetuned": {
-    "map50": 0.9844,
-    "map75": 0.6317,
-    "map50_95": 0.5882,
-    "precision": 0.9772,
-    "recall": 0.9552,
-    "f1": 0.966
+    "map50": 0.9946,
+    "map75": 0.9228,
+    "map50_95": 0.7352,
+    "precision": 0.9905,
+    "recall": 0.9903,
+    "f1": 0.9904
   },
   "improvements": {
-    "map50_delta": 0.0044,
-    "map75_delta": -0.2715,
-    "map50_95_delta": -0.1369,
-    "precision_delta": 0.007,
-    "recall_delta": 0.0051,
-    "f1_delta": 0.006
+    "map50_delta": 0.0002,
+    "map75_delta": 0.0511,
+    "map50_95_delta": 0.0291,
+    "precision_delta": 0.0055,
+    "recall_delta": 0.0041,
+    "f1_delta": 0.0048
   },
   "beats_baseline": true,
-  "calibrated_threshold": 0.4,
+  "calibrated_threshold": 0.5,
   "kaggle_gpu_benchmark": {
     "baseline_test": {
-      "map50": 0.9796,
-      "map75": 0.9146,
-      "map50_95": 0.7402,
-      "precision": 0.9707,
-      "recall": 0.951,
-      "f1": 0.9607
+      "map50": 0.9954,
+      "map75": 0.8535,
+      "map50_95": 0.6957,
+      "precision": 0.9844,
+      "recall": 0.9854,
+      "f1": 0.9849
     },
     "improved_test": {
-      "map50": 0.9799,
-      "map75": 0.9008,
-      "map50_95": 0.7226,
-      "precision": 0.9756,
-      "recall": 0.951,
-      "f1": 0.9632
+      "map50": 0.9987,
+      "map75": 0.9051,
+      "map50_95": 0.7381,
+      "precision": 0.9928,
+      "recall": 0.9928,
+      "f1": 0.9928
     },
     "improved_per_class": {
       "whitefly": {
-        "precision": 0.997,
-        "recall": 0.9673,
-        "map50": 0.9858,
-        "map50_95": 0.7284,
-        "f1": 0.9819
+        "precision": 0.9997,
+        "recall": 0.9973,
+        "map50": 0.9994,
+        "map50_95": 0.767,
+        "f1": 0.9985
       },
       "aphids": {
-        "precision": 0.9542,
-        "recall": 0.9347,
-        "map50": 0.974,
-        "map50_95": 0.7167,
-        "f1": 0.9444
+        "precision": 0.986,
+        "recall": 0.9884,
+        "map50": 0.9979,
+        "map50_95": 0.7091,
+        "f1": 0.9872
       }
     },
     "kaggle_test_ood_and_small_scale": {
@@ -64,18 +64,11 @@
       "ood_false_positive_rate": 0.0056,
       "ood_breakdown": {
         "leaf_empty": {
-          "images": 41,
-          "true_negatives": 32,
-          "false_positives": 9,
-          "false_positive_rate": 0.2195,
-          "specificity_tnr": 0.7805
-        },
-        "molted_skin_only": {
-          "images": 1,
-          "true_negatives": 0,
+          "images": 38,
+          "true_negatives": 37,
           "false_positives": 1,
-          "false_positive_rate": 1.0,
-          "specificity_tnr": 0.0
+          "false_positive_rate": 0.0263,
+          "specificity_tnr": 0.9737
         },
         "ood_drink_bottles_cups": {
           "images": 41,
@@ -107,52 +100,52 @@
         }
       },
       "small_scale_025x": {
-        "images_evaluated": 80,
-        "hits": 79,
-        "overall_recall": 0.9875,
+        "images_evaluated": 66,
+        "hits": 66,
+        "overall_recall": 1.0,
         "whitefly_recall": 1.0,
-        "aphids_recall": 0.9868
+        "aphids_recall": 1.0
       }
     }
   },
   "per_class": {
     "whitefly": {
-      "precision": 0.9918,
-      "recall": 0.9771,
-      "map50": 0.9892,
-      "map50_95": 0.5867,
-      "f1": 0.9844
+      "precision": 0.9959,
+      "recall": 0.9971,
+      "map50": 0.995,
+      "map50_95": 0.7579,
+      "f1": 0.9965
     },
     "aphids": {
-      "precision": 0.9625,
-      "recall": 0.9332,
-      "map50": 0.9797,
-      "map50_95": 0.5896,
-      "f1": 0.9476
+      "precision": 0.9851,
+      "recall": 0.9834,
+      "map50": 0.9943,
+      "map50_95": 0.7125,
+      "f1": 0.9842
     }
   },
   "loss_metrics": {
-    "epochs_completed": 85,
-    "best_epoch": 74,
-    "train_box_loss": 1.14597,
-    "train_cls_loss": 0.49548,
-    "train_dfl_loss": 1.05827,
-    "val_box_loss": 0.70454,
-    "val_cls_loss": 1.89643,
-    "val_dfl_loss": 0.752,
+    "epochs_completed": 90,
+    "best_epoch": 79,
+    "train_box_loss": 1.0529,
+    "train_cls_loss": 0.50395,
+    "train_dfl_loss": 0.97971,
+    "val_box_loss": 0.72041,
+    "val_cls_loss": 0.82211,
+    "val_dfl_loss": 0.79211,
     "final_epoch_losses": {
-      "train_box_loss": 1.14093,
-      "train_cls_loss": 0.50346,
-      "train_dfl_loss": 1.06006,
-      "val_box_loss": 0.72757,
-      "val_cls_loss": 1.50145,
-      "val_dfl_loss": 0.75978
+      "train_box_loss": 1.00382,
+      "train_cls_loss": 0.47994,
+      "train_dfl_loss": 0.97385,
+      "val_box_loss": 0.72916,
+      "val_cls_loss": 0.75174,
+      "val_dfl_loss": 0.80433
     }
   },
   "tflite_eval": {
     "path": "ml/artifacts/yolo11n_lettuce_pests.tflite",
-    "sha256": "263d0e0ea87dd7b29d8d3cd09d6e3d85f6c23362a4a5c70498edf7ec3500b651",
-    "size_bytes": 5408829,
+    "sha256": "5c0424e871932b8ce26a128103a5027fdca4e9a58d3a29c49b795ad6ef9d78d2",
+    "size_bytes": 5408828,
     "size_mb": 5.158,
     "input_shape": [
       1,
@@ -169,65 +162,178 @@
     "output_dtype": "float32",
     "tflite_map50_drop": 0.0,
     "ultralytics_val_metrics": {
-      "map50": 0.9845,
-      "map75": 0.6338,
-      "map50_95": 0.5888,
-      "precision": 0.9772,
-      "recall": 0.9552,
-      "f1": 0.966
+      "map50": 0.9946,
+      "map75": 0.9221,
+      "map50_95": 0.7358,
+      "precision": 0.9897,
+      "recall": 0.9916,
+      "f1": 0.9906
     },
     "tensor_parity": {
-      "max_abs_diff": 0.002347,
-      "mean_abs_diff": 5.8e-05,
-      "cls_score_max_abs_diff": 1e-06
+      "max_abs_diff": 0.009538,
+      "mean_abs_diff": 0.000105,
+      "cls_score_max_abs_diff": 8e-06
     },
     "small_scale_eval": {
       "scale": 0.25,
-      "conf_threshold": 0.4,
+      "conf_threshold": 0.5,
       "match_iou": 0.3,
-      "images_evaluated": 108,
-      "hits": 107,
-      "overall_recall": 0.9907,
-      "box_level_recall": 0.7399,
-      "gt_boxes_total": 1357,
-      "gt_boxes_matched": 1004,
+      "images_evaluated": 66,
+      "hits": 66,
+      "overall_recall": 1.0,
+      "box_level_recall": 0.6312,
+      "gt_boxes_total": 1521,
+      "gt_boxes_matched": 960,
       "per_class_recall": {
-        "whitefly": 0.9615,
+        "whitefly": 1.0,
         "aphids": 1.0
       },
       "per_class_counts": {
         "whitefly": {
-          "hits": 25,
-          "total": 26
+          "hits": 28,
+          "total": 28
         },
         "aphids": {
-          "hits": 82,
-          "total": 82
+          "hits": 38,
+          "total": 38
+        }
+      }
+    },
+    "calibration_and_tide": {
+      "conf_threshold": 0.5,
+      "images_evaluated": 132,
+      "expected_calibration_error": 0.1855,
+      "reliability_bins": [
+        {
+          "range": "0.5-0.6",
+          "count": 17,
+          "mean_confidence": 0.5491,
+          "empirical_precision": 0.5294,
+          "gap": 0.0197
+        },
+        {
+          "range": "0.6-0.7",
+          "count": 31,
+          "mean_confidence": 0.6502,
+          "empirical_precision": 0.8387,
+          "gap": -0.1885
+        },
+        {
+          "range": "0.7-0.8",
+          "count": 504,
+          "mean_confidence": 0.7722,
+          "empirical_precision": 0.996,
+          "gap": -0.2238
+        },
+        {
+          "range": "0.8-0.9",
+          "count": 967,
+          "mean_confidence": 0.8315,
+          "empirical_precision": 1.0,
+          "gap": -0.1685
+        },
+        {
+          "range": "0.9-1.0",
+          "count": 2,
+          "mean_confidence": 0.9064,
+          "empirical_precision": 1.0,
+          "gap": -0.0936
+        }
+      ],
+      "tide_errors": {
+        "tp": 1506,
+        "background_fp": 15,
+        "localization_fp": 0,
+        "duplicate_fp": 0,
+        "class_confusion_fp": 0,
+        "missed_fn": 15
+      },
+      "matched_tp_iou": {
+        "mean": 0.8671,
+        "median": 0.8791,
+        "ge_0_75_ratio": 0.9449
+      },
+      "size_bucket_recall": {
+        "small_lt_32px": 0.966,
+        "medium_32_96px": 0.9923,
+        "large_ge_96px": 1.0
+      },
+      "size_bucket_counts": {
+        "small_lt_32px": {
+          "tp": 142,
+          "gt": 147
+        },
+        "medium_32_96px": {
+          "tp": 1282,
+          "gt": 1292
+        },
+        "large_ge_96px": {
+          "tp": 82,
+          "gt": 82
+        }
+      },
+      "count_mae": 0.197,
+      "fppi": 0.1136
+    },
+    "domain_shift_stress": {
+      "conf_threshold": 0.5,
+      "images_evaluated": 40,
+      "overexposure_recall": 0.9,
+      "scenarios": {
+        "clean_orig": {
+          "hits": 40,
+          "total": 40,
+          "image_recall": 1.0
+        },
+        "bright_sunlight_1_55x": {
+          "hits": 36,
+          "total": 40,
+          "image_recall": 0.9
+        },
+        "dark_lowlight_0_45x": {
+          "hits": 39,
+          "total": 40,
+          "image_recall": 0.975
+        },
+        "blur_9x9_defocus": {
+          "hits": 40,
+          "total": 40,
+          "image_recall": 1.0
+        },
+        "jpeg_q25": {
+          "hits": 40,
+          "total": 40,
+          "image_recall": 1.0
+        },
+        "portrait_9x16_nft_border": {
+          "hits": 40,
+          "total": 40,
+          "image_recall": 1.0
         }
       }
     },
     "metrics": {
-      "map50": 0.9845,
-      "map75": 0.6338,
-      "map50_95": 0.5888,
-      "precision": 0.9772,
-      "recall": 0.9552,
-      "f1": 0.966
+      "map50": 0.9946,
+      "map75": 0.9221,
+      "map50_95": 0.7358,
+      "precision": 0.9897,
+      "recall": 0.9916,
+      "f1": 0.9906
     },
     "per_class": {
       "whitefly": {
-        "precision": 0.9918,
-        "recall": 0.9771,
-        "map50": 0.9892,
-        "map50_95": 0.5877,
-        "f1": 0.9844
+        "precision": 0.9959,
+        "recall": 0.9978,
+        "map50": 0.995,
+        "map50_95": 0.7581,
+        "f1": 0.9969
       },
       "aphids": {
-        "precision": 0.9625,
-        "recall": 0.9332,
-        "map50": 0.9798,
-        "map50_95": 0.5898,
-        "f1": 0.9476
+        "precision": 0.9834,
+        "recall": 0.9854,
+        "map50": 0.9943,
+        "map50_95": 0.7136,
+        "f1": 0.9844
       }
     },
     "classification_and_ood": {
@@ -244,30 +350,30 @@
         ],
         "matrix": [
           [
-            687,
+            735,
             0,
-            8
+            2
           ],
           [
             0,
-            625,
-            40
+            771,
+            13
           ],
           [
-            11,
-            34,
+            3,
+            12,
             0
           ]
         ],
         "background_false_positives": {
-          "whitefly": 8,
-          "aphids": 40,
-          "total": 48
+          "whitefly": 2,
+          "aphids": 13,
+          "total": 15
         },
         "missed_false_negatives": {
-          "whitefly": 11,
-          "aphids": 34,
-          "total": 45
+          "whitefly": 3,
+          "aphids": 12,
+          "total": 15
         },
         "cross_pest_misclassifications": {
           "whitefly_as_aphids": 0,
@@ -275,40 +381,33 @@
         }
       },
       "matched_box_classification_accuracy": 1.0,
-      "box_event_accuracy": 0.9338,
+      "box_event_accuracy": 0.9805,
       "image_level": {
-        "total_images": 178,
-        "tp": 105,
-        "tn": 60,
-        "fp": 10,
-        "fn": 3,
-        "accuracy": 0.927,
-        "balanced_accuracy": 0.9147,
-        "precision": 0.913,
-        "recall_sensitivity": 0.9722,
-        "specificity_tnr": 0.8571,
-        "false_positive_rate": 0.1429,
-        "false_discovery_rate": 0.087,
-        "f1": 0.9417,
-        "mcc": 0.8472
+        "total_images": 132,
+        "tp": 66,
+        "tn": 65,
+        "fp": 1,
+        "fn": 0,
+        "accuracy": 0.9924,
+        "balanced_accuracy": 0.9924,
+        "precision": 0.9851,
+        "recall_sensitivity": 1.0,
+        "specificity_tnr": 0.9848,
+        "false_positive_rate": 0.0152,
+        "false_discovery_rate": 0.0149,
+        "f1": 0.9925,
+        "mcc": 0.985
       },
       "ood_false_positive_rate": 0.0,
       "ood_total_images": 28,
       "ood_false_positives": 0,
       "ood_breakdown": {
         "leaf_empty": {
-          "images": 41,
-          "true_negatives": 32,
-          "false_positives": 9,
-          "specificity_tnr": 0.7805,
-          "false_positive_rate": 0.2195
-        },
-        "molted_skin_only": {
-          "images": 1,
-          "true_negatives": 0,
+          "images": 38,
+          "true_negatives": 37,
           "false_positives": 1,
-          "specificity_tnr": 0.0,
-          "false_positive_rate": 1.0
+          "specificity_tnr": 0.9737,
+          "false_positive_rate": 0.0263
         },
         "ood_drink_bottles_cups": {
           "images": 3,
@@ -341,21 +440,21 @@
       }
     },
     "density_recall": {
-      "sparse": 0.9121,
-      "moderate": 0.9872,
-      "dense": 0.9779
+      "sparse": 0.9242,
+      "moderate": 1.0,
+      "dense": 0.9926
     },
-    "images_evaluated": 178,
-    "latency_ms_avg": 98.98,
-    "latency_ms_p50": 104.31,
-    "latency_ms_p95": 145.37,
+    "images_evaluated": 132,
+    "latency_ms_avg": 77.69,
+    "latency_ms_p50": 76.23,
+    "latency_ms_p95": 92.21,
     "interpreter_verification": {
       "backend": "ai_edge_litert.interpreter.Interpreter",
-      "images_verified": 178,
+      "images_verified": 132,
       "all_outputs_finite": true,
-      "sample_conf_threshold": 0.4,
+      "sample_conf_threshold": 0.5,
       "sample_iou_threshold": 0.45,
-      "sample_detections_total": 1360,
+      "sample_detections_total": 1521,
       "classes_detected": [
         "aphids",
         "whitefly"
@@ -363,10 +462,12 @@
     }
   },
   "gates": {
-    "map50": 0.9844,
-    "recall": 0.9552,
-    "f1": 0.966,
-    "small_scale_recall": 0.9907,
+    "map50": 0.9946,
+    "map75": 0.9221,
+    "recall": 0.9903,
+    "f1": 0.9904,
+    "small_scale_recall": 1.0,
+    "overexposure_recall": 0.9,
     "tflite_map50_drop": 0.0,
     "ood_false_positive_rate": 0.0056,
     "model_size_mb": 5.158
@@ -384,16 +485,16 @@
     "python_version": "3.13.16",
     "ultralytics_version": "8.4.220",
     "imgsz": 640,
-    "total_images": 1719,
+    "total_images": 1627,
     "split_counts": {
-      "train": 1370,
-      "val": 171,
-      "test": 178
+      "train": 1256,
+      "val": 239,
+      "test": 132
     },
     "negative_counts": {
-      "train": 455,
-      "val": 64,
-      "test": 70
+      "train": 374,
+      "val": 56,
+      "test": 66
     },
     "molted_skin_boxes_removed": 176,
     "split_leakage": 0,
@@ -401,12 +502,13 @@
     "synthetic_images_count": 0,
     "whitefly_oversample_factor": 2,
     "negative_oversample_factor": 1,
-    "whitefly_train_images": 224,
-    "negative_train_images": 815,
-    "balanced_train_images": 2274,
-    "zoomout_whitefly": 160,
-    "zoomout_aphids": 160,
-    "zoomout_total": 320,
+    "leaf_empty_oversample_factor": 1,
+    "whitefly_train_images": 216,
+    "negative_train_images": 734,
+    "balanced_train_images": 2192,
+    "zoomout_whitefly": 180,
+    "zoomout_aphids": 180,
+    "zoomout_total": 360,
     "coco_val2017_ood": {
       "attached": true,
       "source": "xthink/coco-2017-val-images + minhtngbi/instances-val2017",
@@ -439,27 +541,27 @@
         }
       }
     },
-    "val_manifest_sha256": "3f48ebfd651f68d241f4018e3109fd821d2b3d14163f9cc9c3d849d5ea5bc8a9",
-    "test_manifest_sha256": "9eb2dceb287208c8b63b85c2b59a402861204709e4c31d17c86f255e69c800de",
+    "val_manifest_sha256": "63e166106dfef1239e28fcf5b6d59359edbeff7abaf66925bb6789c494cb8a75",
+    "test_manifest_sha256": "e9c556b2c8bd33e0ec79b63a708ba945bffaba752f7b6d559b8a61eac9b48e75",
     "loss_summary": {
-      "epochs_completed": 85,
-      "best_epoch": 74,
-      "train_box_loss": 1.14597,
-      "train_cls_loss": 0.49548,
-      "train_dfl_loss": 1.05827,
-      "val_box_loss": 0.70454,
-      "val_cls_loss": 1.89643,
-      "val_dfl_loss": 0.752,
+      "epochs_completed": 90,
+      "best_epoch": 79,
+      "train_box_loss": 1.0529,
+      "train_cls_loss": 0.50395,
+      "train_dfl_loss": 0.97971,
+      "val_box_loss": 0.72041,
+      "val_cls_loss": 0.82211,
+      "val_dfl_loss": 0.79211,
       "final_epoch_losses": {
-        "train_box_loss": 1.14093,
-        "train_cls_loss": 0.50346,
-        "train_dfl_loss": 1.06006,
-        "val_box_loss": 0.72757,
-        "val_cls_loss": 1.50145,
-        "val_dfl_loss": 0.75978
+        "train_box_loss": 1.00382,
+        "train_cls_loss": 0.47994,
+        "train_dfl_loss": 0.97385,
+        "val_box_loss": 0.72916,
+        "val_cls_loss": 0.75174,
+        "val_dfl_loss": 0.80433
       }
     },
-    "calibrated_threshold": 0.4,
+    "calibrated_threshold": 0.5,
     "roboflow_sources": [
       {
         "name": "whitefly_0tong_v1",
@@ -533,35 +635,35 @@
     },
     "train_count_quantiles": {
       "whitefly": {
-        "images": 224,
+        "images": 216,
         "p50": 19,
-        "p75": 44,
+        "p75": 53,
         "p90": 68,
         "max": 95
       },
       "aphids": {
-        "images": 696,
+        "images": 671,
         "p50": 2,
         "p75": 9,
-        "p90": 34,
+        "p90": 27,
         "max": 117
       }
     },
     "deduplication": {
       "total_scanned": 2722,
-      "duplicates_removed": 832,
+      "duplicates_removed": 824,
       "sha256_duplicates_removed": 2,
-      "phash_duplicates_removed": 830,
-      "collages_filtered": 171,
-      "empty_or_unmapped_skipped": 0,
-      "negative_images_kept": 589,
+      "phash_duplicates_removed": 822,
+      "collages_filtered": 194,
+      "empty_or_unmapped_skipped": 77,
+      "negative_images_kept": 496,
       "molted_skin_boxes_removed": 176,
-      "boxes_kept": 15581,
+      "boxes_kept": 15582,
       "boxes_dropped": 177,
       "boxes_dropped_unmapped": 176,
       "boxes_dropped_invalid": 1,
-      "groups_formed": 1124,
-      "roboflow_base_stems_grouped": 1065,
+      "groups_formed": 451,
+      "roboflow_base_stems_grouped": 986,
       "per_source_details": {
         "whitefly_0tong_v1": {
           "source_dir": "ml\\data\\raw_v2\\whitefly_0tong_v1",
@@ -569,14 +671,15 @@
             "0": "whitefly"
           },
           "images_scanned": 156,
-          "images_kept": 42,
-          "negative_images_kept": 2,
+          "images_kept": 41,
+          "negative_images_kept": 0,
           "sha256_duplicates_removed": 2,
-          "phash_duplicates_removed": 112,
-          "empty_or_unmapped_skipped": 0,
+          "phash_duplicates_removed": 109,
+          "collages_filtered": 0,
+          "empty_or_unmapped_skipped": 4,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 337,
-          "boxes_kept": 107,
+          "boxes_kept": 108,
           "boxes_dropped": 0,
           "molted_skin_boxes_removed": 0,
           "boxes_dropped_unmapped": 0,
@@ -593,11 +696,12 @@
             "1": "molted skin"
           },
           "images_scanned": 631,
-          "images_kept": 624,
-          "negative_images_kept": 73,
+          "images_kept": 551,
+          "negative_images_kept": 0,
           "sha256_duplicates_removed": 0,
           "phash_duplicates_removed": 7,
-          "empty_or_unmapped_skipped": 0,
+          "collages_filtered": 0,
+          "empty_or_unmapped_skipped": 73,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 997,
           "boxes_kept": 799,
@@ -619,11 +723,12 @@
             "1": "whitefly"
           },
           "images_scanned": 1816,
-          "images_kept": 934,
-          "negative_images_kept": 395,
+          "images_kept": 916,
+          "negative_images_kept": 377,
           "sha256_duplicates_removed": 0,
-          "phash_duplicates_removed": 711,
-          "empty_or_unmapped_skipped": 171,
+          "phash_duplicates_removed": 706,
+          "collages_filtered": 194,
+          "empty_or_unmapped_skipped": 0,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 35654,
           "boxes_kept": 14675,
@@ -645,6 +750,7 @@
           "negative_images_kept": 49,
           "sha256_duplicates_removed": 0,
           "phash_duplicates_removed": 0,
+          "collages_filtered": 0,
           "empty_or_unmapped_skipped": 0,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 0,
@@ -664,6 +770,7 @@
           "negative_images_kept": 14,
           "sha256_duplicates_removed": 0,
           "phash_duplicates_removed": 0,
+          "collages_filtered": 0,
           "empty_or_unmapped_skipped": 0,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 0,
@@ -683,6 +790,7 @@
           "negative_images_kept": 12,
           "sha256_duplicates_removed": 0,
           "phash_duplicates_removed": 0,
+          "collages_filtered": 0,
           "empty_or_unmapped_skipped": 0,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 0,
@@ -702,6 +810,7 @@
           "negative_images_kept": 44,
           "sha256_duplicates_removed": 0,
           "phash_duplicates_removed": 0,
+          "collages_filtered": 0,
           "empty_or_unmapped_skipped": 0,
           "unreadable_images_skipped": 0,
           "boxes_total_lines": 0,
@@ -717,109 +826,106 @@
     },
     "split_manifests": {
       "train": {
-        "images": 1370,
-        "positive_images": 915,
-        "negative_images": 455,
+        "images": 1256,
+        "positive_images": 882,
+        "negative_images": 374,
         "negative_breakdown": {
-          "leaf_empty": 381,
-          "molted_skin_only": 1,
+          "leaf_empty": 301,
           "ood_drink_bottles_cups": 9,
           "ood_healthy_food": 8,
           "ood_people": 30,
           "ood_random_objects": 26
         },
-        "groups": 876,
-        "instances": 13363,
+        "groups": 363,
+        "instances": 13022,
         "per_class_instances": {
-          "whitefly": 6242,
-          "aphids": 7121
+          "whitefly": 6171,
+          "aphids": 6851
         },
         "per_source_images": {
-          "aphids_new_v1": 495,
+          "aphids_new_v1": 422,
           "ood_drink_bottles_cups": 9,
           "ood_healthy_food": 8,
           "ood_people": 30,
           "ood_random_objects": 26,
-          "puzzle-piece-detection_lettuce-pests_v6": 769,
-          "whitefly_0tong_v1": 33
+          "puzzle-piece-detection_lettuce-pests_v6": 729,
+          "whitefly_0tong_v1": 32
         },
         "scale_distribution": {
-          "small_lt_32px": 1050,
-          "medium_32_96px": 11066,
-          "large_ge_96px": 1247,
-          "small_ratio": 0.0786
+          "small_lt_32px": 1013,
+          "medium_32_96px": 10841,
+          "large_ge_96px": 1168,
+          "small_ratio": 0.0778
         },
-        "manifest_sha256": "b8adf53f7be08fb5218ed5c273e5ee833d290854c5278193f03e0ad960f8e318"
+        "manifest_sha256": "137d9f4d7842c55a1cb20d3ea1a0cdbdedc397056923cb5bc391787b65ab8c1c"
       },
       "val": {
-        "images": 171,
-        "positive_images": 107,
-        "negative_images": 64,
+        "images": 239,
+        "positive_images": 183,
+        "negative_images": 56,
         "negative_breakdown": {
-          "leaf_empty": 45,
-          "molted_skin_only": 1,
+          "leaf_empty": 38,
           "ood_drink_bottles_cups": 2,
           "ood_healthy_food": 2,
           "ood_people": 7,
           "ood_random_objects": 7
         },
-        "groups": 119,
-        "instances": 861,
+        "groups": 39,
+        "instances": 1039,
         "per_class_instances": {
-          "whitefly": 342,
-          "aphids": 519
+          "whitefly": 374,
+          "aphids": 665
         },
         "per_source_images": {
-          "aphids_new_v1": 60,
+          "aphids_new_v1": 122,
           "ood_drink_bottles_cups": 2,
           "ood_healthy_food": 2,
           "ood_people": 7,
           "ood_random_objects": 7,
-          "puzzle-piece-detection_lettuce-pests_v6": 88,
-          "whitefly_0tong_v1": 5
+          "puzzle-piece-detection_lettuce-pests_v6": 95,
+          "whitefly_0tong_v1": 4
         },
         "scale_distribution": {
-          "small_lt_32px": 25,
-          "medium_32_96px": 711,
-          "large_ge_96px": 125,
-          "small_ratio": 0.029
+          "small_lt_32px": 78,
+          "medium_32_96px": 650,
+          "large_ge_96px": 311,
+          "small_ratio": 0.0751
         },
-        "manifest_sha256": "3c4f587a8478acd9e40841ccf6d79c312d464abce6631005e2c27b5e1e257ff2"
+        "manifest_sha256": "d781e09608d07a4fcd3d8d9571566a80663605deeef13b530fef20328c84e226"
       },
       "test": {
-        "images": 178,
-        "positive_images": 108,
-        "negative_images": 70,
+        "images": 132,
+        "positive_images": 66,
+        "negative_images": 66,
         "negative_breakdown": {
-          "leaf_empty": 41,
-          "molted_skin_only": 1,
+          "leaf_empty": 38,
           "ood_drink_bottles_cups": 3,
           "ood_healthy_food": 2,
           "ood_people": 12,
           "ood_random_objects": 11
         },
-        "groups": 129,
-        "instances": 1357,
+        "groups": 49,
+        "instances": 1521,
         "per_class_instances": {
-          "whitefly": 698,
-          "aphids": 659
+          "whitefly": 738,
+          "aphids": 783
         },
         "per_source_images": {
-          "aphids_new_v1": 69,
+          "aphids_new_v1": 7,
           "ood_drink_bottles_cups": 3,
           "ood_healthy_food": 2,
           "ood_people": 12,
           "ood_random_objects": 11,
-          "puzzle-piece-detection_lettuce-pests_v6": 77,
-          "whitefly_0tong_v1": 4
+          "puzzle-piece-detection_lettuce-pests_v6": 92,
+          "whitefly_0tong_v1": 5
         },
         "scale_distribution": {
-          "small_lt_32px": 163,
-          "medium_32_96px": 1006,
-          "large_ge_96px": 188,
-          "small_ratio": 0.1201
+          "small_lt_32px": 147,
+          "medium_32_96px": 1292,
+          "large_ge_96px": 82,
+          "small_ratio": 0.0966
         },
-        "manifest_sha256": "232b534e74a78da8a4afc260ddeb629a2571737cacabda97493b70460a0f3f94"
+        "manifest_sha256": "9fa81753273b75ec04263e363ef2ddb04781c8252a0f7505522dcdc4b73f6eb1"
       }
     },
     "dataset_verification": {
@@ -832,6 +938,8 @@
       "cross_split_phash_overlaps": 0,
       "cross_split_group_phash_overlaps": 0,
       "cross_split_base_stem_overlaps": 0,
+      "cross_split_temporal_session_overlaps": 0,
+      "cross_split_loose_scene_family_overlaps": 0,
       "group_hamming_distance": 4,
       "dihedral_orientations_checked": 8,
       "intra_split_sha256_duplicates": 0,
@@ -841,33 +949,33 @@
       "all_canonical_classes_present_in_all_splits": true,
       "splits": {
         "train": {
-          "images": 1370,
-          "positive_images": 915,
-          "negative_images": 455,
-          "instances": 13363,
+          "images": 1256,
+          "positive_images": 882,
+          "negative_images": 374,
+          "instances": 13022,
           "per_class_instances": {
-            "whitefly": 6242,
-            "aphids": 7121
+            "whitefly": 6171,
+            "aphids": 6851
           }
         },
         "val": {
-          "images": 171,
-          "positive_images": 107,
-          "negative_images": 64,
-          "instances": 861,
+          "images": 239,
+          "positive_images": 183,
+          "negative_images": 56,
+          "instances": 1039,
           "per_class_instances": {
-            "whitefly": 342,
-            "aphids": 519
+            "whitefly": 374,
+            "aphids": 665
           }
         },
         "test": {
-          "images": 178,
-          "positive_images": 108,
-          "negative_images": 70,
-          "instances": 1357,
+          "images": 132,
+          "positive_images": 66,
+          "negative_images": 66,
+          "instances": 1521,
           "per_class_instances": {
-            "whitefly": 698,
-            "aphids": 659
+            "whitefly": 738,
+            "aphids": 783
           }
         }
       }

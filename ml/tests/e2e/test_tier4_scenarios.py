@@ -110,9 +110,11 @@ def test_tier4_scenario_audited_kaggle_regression_guard(ml_root: Path) -> None:
     """Reject CPU/non-GPU, synthetic data, OOD false positive spikes, and tensor shape mismatch."""
     bad_ood_metrics = {
         "map50": 0.90,
+        "map75": 0.85,
         "recall": 0.85,
         "f1": 0.87,
         "small_scale_recall": 0.85,
+        "overexposure_recall": 0.92,
         "tflite_map50_drop": 0.002,
         "ood_false_positive_rate": 0.25,
         "model_size_mb": 5.5,
