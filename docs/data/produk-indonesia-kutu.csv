@@ -1,0 +1,518 @@
+merk_dagang,nomor_pendaftaran,jenis_pestisida,bahan_aktif,komoditas,hama,hama_latin,dosis,satuan_dosis,tanggal_terbit,tanggal_berakhir,asal_data
+ABACUS 18 EC,01010120206801,Insektisida,abamektin 18 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2025-11-13,2030-11-13,utama
+ABISTER MAX 25/25 WG,01010120248564,Insektisida,Asetamiprid 25 %; Bifentrin 25 %,Cabai,Kutu kebul,Bemisia tabaci,1,g/l,2025-02-17,2030-02-17,utama
+ACARAMIK 18 EC,01010120144924,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-08-09,2029-08-09,utama
+ACCORA 100 EC,01010120155323,Insektisida,sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2020-09-18,2025-09-18,perluasan
+ACCORA 100 EC,01010120155323,Insektisida,sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2025-02-17,2030-02-17,utama
+ACEFLO 15/20 WG,01010120227607,Insektisida,Asetamiprid 15 %; Flonikamid 20 %,Cabai,kutu daun,Myzus persicae,0.5,g/l,2023-02-08,2028-02-08,utama
+ACERINE 25/50 ME,01010120258735,Insektisida,Acetamiprid 25 g/l; Beta Sipermetrin 50 g/l,Terung,Kutu daun,Aphis gossypii,1,ml/l,2025-07-11,2030-07-11,utama
+ACERO 4/40 WP,01010120258736,Insektisida,Acetamiprid 4 %; Diafenthiuron 40 %; Diafenthiuron. 40 %,Cabai,hama kutu kebul,Bemisia tabaci,2,g/l,2025-07-11,2030-07-11,utama
+ACERO 4/40 WP,01010120258736,Insektisida,Acetamiprid 4 %; Diafenthiuron 40 %; Diafenthiuron. 40 %,Tomat,hama kutu kebul,Bemisia tabaci,2,g/l,2025-07-11,2030-07-11,utama
+ACTARA 25 WG,01010119971357,Insektisida,Thiamethoxam 25 %,Cabai,"Kutu kebul (0,1 g/l)",Bemisia tabaci,0.1,g/l,2023-04-26,2028-04-26,utama
+ACTARA 25 WG,01010119971357,Insektisida,Thiamethoxam 25 %,Jeruk,"kutu daun (0,1 g/l)",Aphis sp,0.1,g/l,2023-04-26,2028-04-26,utama
+ACTARA 25 WG,01010119971357,Insektisida,Thiamethoxam 25 %,Kacang panjang,"kutu daun (0,075 g/l)",Aphis craccivora,0.2,g/l,2023-04-26,2028-04-26,utama
+ACTARA 25 WG,01010119971357,Insektisida,Thiamethoxam 25 %,Tomat,"Kutu kebul (0,1 g/l)",Bemisia tabaci,0.1,g/l,2023-04-26,2028-04-26,utama
+ACTIVE 280 EC,01010120196456,Insektisida,Carbosulfan 280 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2024-11-18,2029-11-18,utama
+ADAGUS 500 SC,01010120248228,Insektisida,Diafentiuron 500 g/l,Cabai,Kutu kebul,Bemisia tabaci,1,ml/l,2024-08-09,2029-08-09,utama
+AGADI 50 SC,01010120103627,Insektisida,Fipronil 50 g/l,Kacang hijau,Kutu kebul,Bemisia tabaci,3,ml/l,2024-09-19,2029-09-19,utama
+AGADI 50 SC,01010120103627,Insektisida,Fipronil 50 g/l,Kacang panjang,Kutu kebul (3 ml/l ),Bemisia tabaci,3,ml/l,2024-09-19,2029-09-19,utama
+AGADI 50 SC,01010120103627,Insektisida,Fipronil 50 g/l,Kacang panjang,kutu daun (4 ml/l ),Aphis craccivora,4,ml/l,2024-09-19,2029-09-19,utama
+AGAPRO 66/214 SL,01010120155288,Insektisida,Fipronil 66 g/l; Imidakloprid 214 g/l,Cabai,Kutu daun,Myzus persicae,"0,5",ml/l,2026-01-20,2031-01-20,utama
+AGAREL 500/55 EC,01010120155325,Insektisida,Klorpirifos 500 g/l; Sipermetrin 55 g/l,Cabai,Kutu daun,Myzus persicae,"1,5",ml/l,2026-01-20,2031-01-20,utama
+AGROBEST 36 EC,01010120165478,Insektisida,abamektin 36 g/l,Cabai,Kutu daun,Myzuz persicae,"0,375",ml/l,2026-01-20,2031-01-20,utama
+AGROVIN 200 SL,01010120103698,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2025-07-11,2030-07-11,utama
+AGROVIN 200 SL,01010120103698,Insektisida,Imidakloprid 200 g/l,Semangka,Kutu daun,Aphis gossypii,"1,5",g/l,2025-07-11,2030-07-11,utama
+AGUS 500 SC,01010120113938,Insektisida,Diafentiuron 500 g/l,Cabai,Kutu kebul,Bemisia tabaci,1,ml/l,2026-01-20,2031-01-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Cabai,"Kutu Daun (0,4 ml/l)",Myzus persicae,0.4,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Jagung,"Kutu Daun (0,3 ml/l)",Rhapalosiphum maydis,0.3,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Kacang hijau,"Kutu Daun (0,4 ml/l)",Aphis Craccivora,0.4,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Kacang panjang,"Kutu Daun (0,2 ml/l)",Aphis craccivora,0.2,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Kentang,"Kutu Daun (0,4 ml/l)",Myzus persicae,0.4,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Tembakau,"Kutu Daun (0,5 ml/l)",Myzus persicae,0.5,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Tomat,"Kutu Daun (0,2 ml/l)",Myzus persicae,0.2,ml/l,2026-04-20,2031-04-20,utama
+ALIKA 141/106 ZC,01010120072703,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Tomat,"Kutu Kebul (0,2 ml/l)",Bemisia tabaci,0.2,ml/l,2026-04-20,2031-04-20,utama
+ALMIX 141/106 SC,01010120248351,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2024-09-19,2029-09-19,utama
+ALONIC 50 WG,01010120248569,Insektisida,Flonicamid 50 %,Cabai,Kutu daun,Aphis gossypii,1,g/l,2025-02-17,2030-02-17,utama
+AMATIN 24 EC,01010120196409,Insektisida,Emamektin benzoat 24 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2024-09-19,2029-09-19,utama
+ANDAMECTIN 60 EC,01010120217019,Insektisida,emamektin benzoat 60 g/l,Cabai,Kutu daun,Myzus persicae,2,ml/l,2026-04-20,2031-04-20,utama
+ANJANIE 300 EC,01010120186004,Insektisida,klorfenapir 300 g/l,Bawang merah,hama kutu daun,Myzus percisae,"1,5",ml/l,2023-04-26,2028-04-26,utama
+ANOSAD 120 SC,01010120134658,Insektisida,Spinosad 120 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+APHISTAR 150/100 OD,01010120237727,Insektisida,asetamiprid 150 g/l; flonicamid 100 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+APPLAUD 10 WP,0101011984688,Insektisida,Buprofezin 10 %,Kedelai,kutu putih,Bemisia tabaci (4 g/l),4,g/l,2026-04-20,2031-04-20,utama
+APRISID 25 WP,01010120124417,Insektisida,Metidation 25 %,Kacang panjang,kutu daun,Aphis cracivora,"1,5",g/l,2023-02-08,2028-02-08,utama
+ARJUNA 200 EC,01010120083219,Insektisida,Chlorfenapyr 200 g/l; klorfenapir 200 g/l,Cabai,kutu daun,"Myzus persicae (1-1,5 ml/l)","1 - 1,5 ml/l",ml/l,2023-02-08,2028-02-08,utama
+ARRIVO 30 EC,0101011983634,Insektisida,Sipermetrin 30 g/l,Ketimun,Kutu daun,Myzus persicae,2,ml/l,2024-03-04,2029-03-04,utama
+ARRIVO 30 EC,0101011983634,Insektisida,Sipermetrin 30 g/l,Semangka,Kutu Daun (3 ml/l ),Myzus persicae,3,ml/l,2024-03-04,2029-03-04,utama
+ATTIC 18 EC,01010120134752,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-03-04,2029-03-04,utama
+AVENGER PLUS 50 SC,01010120165485,Insektisida,Fipronil 50 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2024-09-19,2029-09-19,utama
+AVIDOR 25 WP,01010120072712,Insektisida,imidakloprid 25 %,Cabai,Kutu daun,Myzus persicae,1,g/l,2026-01-20,2031-01-20,utama
+AVIDOR 25 WP,01010120072712,Insektisida,imidakloprid 25 %,Semangka,Kutu daun,Myzus persicae,1,g/l,2026-01-20,2031-01-20,utama
+AWAYMEC 50 EC,01010120269334,Insektisida,Abamektin (Abamectin) 50 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2026-04-20,2031-04-20,utama
+Agrimec 18 EC,01010119921065,Insektisida,Abamectin 18 g/l,Apel,kutu daun,"Aphis pomi (0,5 ml/l)",,,2023-08-28,2028-08-28,utama
+Amitesh 20 EC,01010120259028,Insektisida,Abamektin 20 g/l,Bawang merah,hama kutu daun,Neotoxoptera formosana,2,ml/l,2025-11-13,2030-11-13,utama
+BADIK 18 EC,01010120124445,Insektisida,abamektin 18 g/l,Cabai,Hama kutu daun,"Myzus persicae 0,75 ml/l","0,75",ml/l,2022-10-04,2027-10-04,utama
+BALEDO 250/50 SC,01010120206599,Insektisida,bifentrin 50 g/l; imidakloprid 250 g/l,Kacang panjang,Kutu daun,Aphis cracivora,"0,75",ml/l,2025-02-17,2030-02-17,utama
+BALISTIC 50 SC,01010120114027,Insektisida,fipronil 50 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2024-09-19,2029-09-19,utama
+BARETA 36 EC,01010120206813,Insektisida,abamektin 36 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2025-07-11,2030-07-11,utama
+BASTIANMAX 25 EC,01010120258743,Insektisida,Emamectin Benzoate 25 g/l,Cabai,hama kutu daun,Myzus persicae,1,ml/l,2025-07-11,2030-07-11,utama
+BATMAN 550/100 EC,01010120237734,Insektisida,klorpirifos 550 g/l; sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+BELU 50 EC,01010120227498,Insektisida,Beta-Siflutrin 50 g/l,Cabai,Hama Kutu Daun,Myzus Persicae,2,ml/l,2022-12-05,2027-12-05,utama
+BENAPIR 300 EC,01010120196503,Insektisida,klorfenapir 300 g/l,Bawang merah,Kutu daun,Aphis glycines,"2,5",ml/l,2024-09-19,2029-09-19,utama
+BESCLOFIR 450 SC,01010120196415,Insektisida,klorfenapir 450 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2024-09-19,2029-09-19,utama
+BESGRIMEX 36 EC,01010120113876,Insektisida,Abamektin 36 g/l,Cabai,kutu daun,Myzus persicae,"0,5 - 1",ml/l,2025-09-26,2030-09-26,utama
+BESTFAST 250 EC,01010120124424,Insektisida,Klorfenapir 250 g/l,Cabai,"Hama kutu daun (0,75 ml/l )",Myzus persicae,"0,75",ml/l,2023-04-26,2028-04-26,utama
+BESTMEC 36 EC,01010120124457,Insektisida,Abamektin 36 g/l,Cabai,Kutu daun,Myzus persicae,"0,725",ml/l,2023-08-28,2028-08-28,utama
+BESTMITE 500 EC,01010120269718,Insektisida,Ethion 500 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2026-10-20,2031-10-20,utama
+BESTOX 50 EC,01010119951177,Insektisida,Alfa sipermetrin 50 g/l,Jeruk,Kutu Daun,Toxoptera sp. 0.5 ml/l,0.5,ml/l,2022-10-04,2027-10-04,utama
+BESTOX 50 EC,01010119951177,Insektisida,Alfa sipermetrin 50 g/l,Tembakau,Kutu Daun,Myzus persicae 0.125 ml/l,0.125,ml/l,2022-10-04,2027-10-04,utama
+BESTRIN FORTE PLUS 100 EC,01010120134664,Insektisida,Cypermethrin 100 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2024-08-09,2029-08-09,utama
+BEVTEK WP,01010120196419,Insektisida,Beuveria bassiana 1 x 10^9 cfu/g,Cabai,Kutu Daun,Aphis sp.,5,g/l,2024-08-09,2029-08-09,utama
+BIMICIA 25 WP,01010120196506,Insektisida,Imidaclorpid 25.00 %,Cabai,kutu daun,Myzus persicae,2,g/l,2024-11-18,2029-11-18,utama
+BINTANG GOLD 55 EC,01010120196507,Insektisida,Emamectin Benzoat 55.00 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2024-11-18,2029-11-18,utama
+BIOBEVA WP,01010120206899,Insektisida,Beauveria bassiana 1 x 10^9 cfu/g,Cabai,Kutu daun,Aphis sp.,1,g/l,2025-11-13,2030-11-13,utama
+BIOKILLIA WP,01010120206816,Insektisida,Isaria fumosorosea 1 x 10^6 cfu/g; Verticillium lecanii 1 x 10^6 cfu/g,Tomat,Kutu Daun,Myzus persicae,1,g/l,2025-11-13,2030-11-13,utama
+BIONIK 400 EC,01010120185942,Insektisida,Dimetoat 400 g/l,Kubis,hama kutu daun,Myzus persicae,2,ml/l,2023-02-08,2028-02-08,utama
+BM BENAPE 50 WG,01010120227391,Insektisida,pimetrozin 50 %,Cabai,kutu daun,Myzus persicae (1 g/l),1,g/l,2022-10-04,2027-10-04,utama
+BM DAWN 100 EC,01010120175828,Insektisida,bifentrin 100 g/l,Tomat,Kutu Daun,Aphis sp.,1,ml/l,2022-06-27,2027-06-27,utama
+BM FLYTHRIN 100 EC,01010120103615,Insektisida,alfa-sipermetrin 100 g/l,Cabai,Kutu daun,Myzus persicae,0.75,ml/l,2024-08-09,2029-08-09,utama
+BM PROPERTHRIN 440 EC,01010120175891,Insektisida,profenofos 400 g/l; sipermetrin 40 g/l,Cabai,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2022-12-05,2027-12-05,utama
+BM SUCTHION 400 EC,01010120093524,Insektisida,dimetoat 400 g/l,Cabai,kutu daun,Myzus persicae,"1,125",ml/l,2024-03-04,2029-03-04,utama
+BO CHET 20 EC,01010120103781,Insektisida,Abamektin 20 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2024-11-18,2029-11-18,utama
+BOSBAN 200 EC,01010120186014,Insektisida,klorpirifos 200 g/l,Bawang merah,kutu daun,myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+BOSMEX 25 EC,01010120145045,Insektisida,abamektin 25 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2024-09-19,2029-09-19,utama
+BOSTRIN 100 EC,01010120186015,Insektisida,sipermetrin 100 g/l,Bawang merah,Hama kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+BRASSO 250 EC,01010120114114,Insektisida,sipermetrin 250 g/l,Cabai,Kutu daun,Aphis sp.,1,ml/l,2025-11-13,2030-11-13,utama
+BRASSO 250 EC,01010120114114,Insektisida,sipermetrin 250 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2025-11-13,2030-11-13,utama
+BRENERA 100 OD,01010120237980,Insektisida,Siantraniliprol 100 g/l,Cabai,kutu daun,Myzus persicae,2.0,ml/l,2024-03-04,2029-03-04,utama
+BRENERA 100 OD,01010120237980,Insektisida,Siantraniliprol 100 g/l,Tomat,kutu kebul,Bemisia tabaci,2,ml/l,2024-03-04,2029-03-04,utama
+BULDOK 25 EC,0101011990933,Insektisida,beta siflutrin (beta cyfluthrin) 25 g/l,Cabai,"Kutu daun (0,5 ml/l )",Myzus persicae,"0,5",ml/l,2025-11-13,2030-11-13,utama
+BULDOK 25 EC,0101011990933,Insektisida,beta siflutrin (beta cyfluthrin) 25 g/l,Jeruk,Hama (1 ml/l),Aphis sp.,1,ml/l,2025-11-13,2030-11-13,utama
+BURENG ULTRA 60/20 WG,01010120227625,Insektisida,Nitenpiram 20 %; Pimetrozin 60 %,Cabai,Kutu daun,Myzus persicae,1,g/l,2023-02-08,2028-02-08,utama
+BUROX 510 EC,01010120258749,Insektisida,Etion 510 g/l,Jeruk,kutu daun hitam,Toxoptera aurantii,1,ml/l,2025-07-11,2030-07-11,utama
+BUZZER 500 EC,01010120093527,Insektisida,Profenofos 500 g/l,Cabai,Kutu daun,"Myzus persicae (0,5 - 1 ml/l )","0,5 - 1",ml/l,2023-08-28,2028-08-28,utama
+CALLICRON 500 EC,01010119971352,Insektisida,Profenofos 500 g/l,Kentang,"kutu daun (1,5 ml/l)",Myzus persicae,,,2023-04-26,2028-04-26,utama
+CAPTURE 100 EC,01010120072927,Insektisida,sipermetrin 100 g/l,Cabai,Kutu daun,Myzus persicae,2,ml/l,2025-09-26,2030-09-26,utama
+CAPTURE 100 EC,01010120072927,Insektisida,sipermetrin 100 g/l,Kentang,Kutu daun,Myzus persicae,2,ml/l,2025-09-26,2030-09-26,utama
+CENTAFAT 80 SP,01010120196514,Insektisida,asefat 80 %,Cabai,kutu daun,Myzus persicae,2,g/l,2024-09-19,2029-09-19,utama
+CEVIDA 25/50 WP,01010120124439,Insektisida,asefat 50 %; imidakloprid 25 %,Cabai,Kutu daun,Myzus persicae,1,g/l,2023-04-26,2028-04-26,utama
+CHIX 25 EC,01010119981404,Insektisida,beta sipermetrin 25 g/l,Kentang,Kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+CHIX-GOLD 175/125 SC,01010120206605,Insektisida,Beta sipermetrin 125 g/l; Fipronil 175 g/l,Tomat,Kutu kebul,Bemisia tabaci,2,ml/l,2025-02-17,2030-02-17,utama
+CHLORIS 300 EC,01010120269344,Insektisida,Sipermetrin 300 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-04-20,2031-04-20,utama
+CHLORMITE PLUS 459/46 EC,01010120072654,Insektisida,"klorpirifos 459 g/l; sipermetrin 45,9 g/l",Cabai,kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2024-08-09,2029-08-09,utama
+CLARION 500 EC,01010120248587,Insektisida,Etion 500 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2025-02-17,2030-02-17,utama
+CLEVER 200 EC,01010120124216,Insektisida,Klorfenapir 200 g/l,Cabai,Kutu Daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+CLOBBER 200 EC,01010120042058,Insektisida,Klorpirifos 200 g/l,Bawang merah,Kutu daun,Aphis sp.,2,ml/l,2024-08-09,2029-08-09,utama
+COCORIN 100/100 SC,01010120237862,Insektisida,Bifentrin 100 g/l; Klotianidin 100 g/l,Cabai,Kutu Daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+COCORIN 100/100 SC,01010120237862,Insektisida,Bifentrin 100 g/l; Klotianidin 100 g/l,Tomat,Kutu Daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Apel,"kutu daun (0,250 ml/l)",Aphids sp.,0.25,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Cabai,"kutu daun (0,5 ml/l )",Myzus persicae,0.50,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Cabai,"kutu daun (0,5 ml/l )",Thrips sp,0.50,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Jagung,"kutu daun (0,5 ml/l )",Rhopalosiphum maidis,0.50,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Jeruk,kutu daun (1 ml/l ),Aphis sp.,1.00,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Ketimun,Kutu daun (1 ml/l ),Myzus persicae,1.00,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Semangka,"kutu daun (0,250 ml/l )",Aphis sp.,0.25,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Tembakau,"kutu daun Penyemprotan volume tinggi: 0,250 ml/l penyiraman pada pangkal batang : 1,25 - 2,5 ml/10 l air/100 tanaman",Myzus persicae,0.25,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR 200 SL,01010119921007,Insektisida,imidacloprid 200 g/l,Tomat,"kutu daun (0,250 ml/l )",Aphis sp.,0.25,ml/l,2023-04-26,2028-04-26,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Apel,hama kutu daun,Aphis sp. (150 ml/ha),150,ml/ha,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Cabai,Kutu daun,"Myzus persicae (0,75 ml/l)","0,75",ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Jeruk,hama kutu daun,Aphis sp. (100 ml/ha),100,ml/ha,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Kacang panjang,kutu daun,"Aphis craccivora (0,5 ml/l)",0.5,ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Kentang,kutu daun,"Myzus persicae (0,25 ml/l)","0,25",ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Mentimun,hama kutu daun,"Aphis sp. (0,2 ml/l)","0,2",ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Semangka,kutu daun,"Aphis sp. (0,66 ml/l)","0,66",ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Tembakau,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2024-03-05,2029-03-05,utama
+CONFIDOR EXTRA 350 SC,01010120144974,Insektisida,imidakloprid 350 g/l,Tomat,kutu daun,"Aphis sp. (0,75 ml/l)","0,75",ml/l,2024-03-05,2029-03-05,utama
+CONFIPRID 10 WP,01020120103655,Insektisida,Imidakloprid 10 %,Kedelai,hama kutu kebul,Bemisia tabaci,1,g/l,2025-09-26,2030-09-26,utama
+CORMORAN 80/100 EC,01010120145048,Insektisida,Asetamiprid 80 g/l; Novaluron 100 g/l,Apel,kutu daun,"Aphis glycines (1,5 ml/l)","1,5",ml/l,2024-11-18,2029-11-18,utama
+COWIN 550 EC,01010120186175,Insektisida,Klorpirifos 500 g/l; Sipermetrin 50 g/l,Cabai,kutu daun,Myzus persicae,"0,75",ml/l,2023-04-26,2028-04-26,utama
+CRUISER 350 FS,01010120083112,Insektisida,Thiamethoxam 350 g/l,Jagung,Kutu Daun,Rhopalosiphum maidis,3.375,ml/kg benih,2023-02-08,2028-02-08,utama
+CRUISER 350 FS,01010120083112,Insektisida,Thiamethoxam 350 g/l,Kacang tanah,Kutu Daun,Aphis glycines,4,ml/kg benih,2023-02-08,2028-02-08,utama
+CRUISER 350 FS,01010120083112,Insektisida,Thiamethoxam 350 g/l,Kedelai,Kutu daun,Aphis glycines,2.25,ml/kg benih,2023-02-08,2028-02-08,utama
+CUPOLA 200 EC,01010120124219,Insektisida,Fenvalerat 200 g/l,Jeruk,Kutu daun,Diaphorina citri (1 ml/l),1,ml/l,2026-10-20,2031-10-20,utama
+CURACRON 500 EC,0101011979381,Insektisida,Profenofos 500 g/l,Cabai,Kutu Daun,Myzus persicae,3,ml/l,2026-07-16,2031-07-16,utama
+CURACRON 500 EC,0101011979381,Insektisida,Profenofos 500 g/l,Semangka,Kutu Daun,Aphis sp.,1.5,ml/l,2026-07-16,2031-07-16,utama
+CURACRON 500 EC,0101011979381,Insektisida,Profenofos 500 g/l,Semangka,Kutu Daun,Myzus persicae,1.5,ml/l,2026-07-16,2031-07-16,utama
+CYPERBAN 590 EC,01010120186112,Insektisida,klorpirifos 530 g/l; sipermetrin 60 g/l,Cabai,Kutu daun,Myzus persicae,"1,0",ml/l,2023-04-26,2028-04-26,utama
+CYPERIN 250 EC,01010120052255,Insektisida,cypermethrin 250 g/l,Kubis,kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2024-11-18,2029-11-18,utama
+CYPIRAN 12.5 WP,01010120155294,Insektisida,Nitenpiram 12.5 %,Cabai,kutu daun,Myzus persicae,"1,5",g/l,2024-11-18,2029-11-18,utama
+CropCoat Pro 742 SC,01010120237987,Insektisida,Linseed Oil 742 g/l,Brokoli,kutu daun,Myzus persicae,"11,25",ml/l,2024-03-04,2029-03-04,utama
+CropCoat Pro 742 SC,01010120237987,Insektisida,Linseed Oil 742 g/l,Cabai,kutu kebul,Bemisia tabaci,"3,75",ml/l,2024-03-04,2029-03-04,utama
+Cruzz 500/300 EC,01010120186018,Insektisida,Chlorfenapyr 300 g/l; Chlorpyrifos methyl 500 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2024-03-05,2029-03-05,utama
+DAFAT 400 SL,01010120093328,Insektisida,Asefat 400 g/l,Cabai,kutu daun,Myzus Persicae,"1,5",ml/l,2024-03-04,2029-03-04,utama
+DAFAT 75 SP,01010120042063,Insektisida,Asefat 75 %,Jeruk,kutu Daun,Diaphorina citri (2 g/l),,-,2024-03-05,2029-03-05,utama
+DAFAT 75 SP,01010120042063,Insektisida,Asefat 75 %,Jeruk,kutu Daun,Toxoptera aurantii (2 g/l),2,g/l,2024-03-05,2029-03-05,utama
+DAFAT 75 SP,01010120042063,Insektisida,Asefat 75 %,Tomat,kutu daun,Myzus persicae (2 g/l),2,g/l,2024-03-05,2029-03-05,utama
+DAGGER 200 SL,01010120042064,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu daun,Myzus persicae,"0,5",ml/l,2024-03-04,2029-03-04,utama
+DAGGER 200 SL,01010120042064,Insektisida,Imidakloprid 200 g/l,Semangka,Kutu daun,Myzus persicae,"1,5",ml/l,2024-03-04,2029-03-04,utama
+DAIMON 60/150 SC,01010120206722,Insektisida,Fipronil 60 g/l; Tiametoksam 150 g/l,Cabai,Kutu kebul,Bemisia tabaci,1,ml/l,2025-11-13,2030-11-13,utama
+DALBO 500 SC,01010120269348,Insektisida,Diafentiuron 500 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-04-20,2031-04-20,utama
+DAMARON 50/550 EC,01010120186027,Insektisida,Cypermethrin 50 g/l; Profenofos 550 g/l,Cabai,kutu daun,Myzus persicae,"1,125",l/ha,2024-03-04,2029-03-04,utama
+DARBY 100/30 SC,01010120237865,Insektisida,Bifentrin 30 g/l; Imidakloprid 100 g/l,Tomat,Kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+DARGENT 55 SC,01010120269349,Insektisida,Fipronil 55 g/l,Cabai,kutu daun,Myzus persicae (2 g/l),2,g/l,2026-04-20,2031-04-20,utama
+DASATRIN 110 EC,01010120083268,Insektisida,Sipermetrin 110 g/l,Bawang merah,Kutu daun,Aphis glycines,"0,75",ml/l,2023-02-08,2028-02-08,utama
+DECIS 25 EC,0101011979387,Insektisida,deltamethrin 25 g/l,Cabai,Kutu daun,Myzus persicae,0.5,ml/l,2022-06-27,2027-06-27,utama
+DECIS 25 EC,0101011979387,Insektisida,deltamethrin 25 g/l,Kentang,Kutu daun,Myzus sp.,0.5,ml/l,2022-06-27,2027-06-27,utama
+DECIS 25 EC,0101011979387,Insektisida,deltamethrin 25 g/l,Ketimun,Kutu daun,Aulacophora femoralis,0.75-1,ml/l,2022-06-27,2027-06-27,utama
+DECIS 25 EC,0101011979387,Insektisida,deltamethrin 25 g/l,Melon,Kutu daun,Aulacophora femoralis,1,ml/l,2022-06-27,2027-06-27,utama
+DECIS 25 EC,0101011979387,Insektisida,deltamethrin 25 g/l,Semangka,,Aphis sp.,0.5,ml/l,2022-06-27,2027-06-27,utama
+DEKTIN 30 WG,01010120186021,Insektisida,Emamektin benzoat 10 %; Tiametoksam 20 %,Bawang merah,hama kutu daun,Myzus persicae,1,g/l,2023-02-08,2028-02-08,utama
+DELOUSE 200 SL,01010120052258,Insektisida,imidakloprid 200 g/l,Cabai,Kutu daun,"Myzus persicae (0,5 ml/l)","0,5",ml/l,2024-03-04,2029-03-04,utama
+DELOUSE 200 SL,01010120052258,Insektisida,imidakloprid 200 g/l,Jagung,kutu daun,Rhopalosiphum maydis (1 ml/l),1,ml/l,2024-03-04,2029-03-04,utama
+DELOUSE 200 SL,01010120052258,Insektisida,imidakloprid 200 g/l,Tembakau,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2024-03-04,2029-03-04,utama
+DELOUSE 200 SL,01010120052258,Insektisida,imidakloprid 200 g/l,Tomat,kutu kebul,Bemisia tabaci (1 ml/l),1,ml/l,2024-03-04,2029-03-04,utama
+DELOUSE 25 WP,01010120103727,Insektisida,imidakloprid 25 %,Kentang,kutu daun,Myzus percisae (1 g/l),1,g/l,2024-03-04,2029-03-04,utama
+DELTA 25 EC,01010120021684,Insektisida,deltametrin 25 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2022-12-05,2027-12-05,utama
+DEMOLISH 18 EC,01010120052259,Insektisida,abamektin 18 g/l,Tembakau,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2024-03-04,2029-03-04,utama
+DEMOLISH 18 EC,01010120052259,Insektisida,abamektin 18 g/l,Tembakau,kutu kebul,"Bemisia tabaci (0,5 ml/l)","0,5",ml/l,2024-03-04,2029-03-04,utama
+DENZUMEC 36 EC,01010120248250,Insektisida,abamektin 36 g/l,Kentang,Hama kutu daun,Myzus persicae,1,ml/l,2024-08-09,2029-08-09,utama
+DESTAN 400 EC,01010120042068,Insektisida,Dimetoat 400 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+DETAFOS 200 EC,01010120186022,Insektisida,triazofos 200 g/l,Cabai,hama kutu daun,Myzus persicae,1,ml/l,2023-02-08,2028-02-08,utama
+DETRON 300 SC,01010120227635,Insektisida,Permetrin 300 g/l,Cabai,Kutu Daun,Myzus persicae,2,ml/l,2023-02-08,2028-02-08,utama
+DEVILITO 500/50 EC,01010120237868,Insektisida,Deltamethrin 50.00 g/l; Propenofos 500.00 g/l,Cabai,hama kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+DIMECTIN 18 EC,01010120031755,Insektisida,Abamektin 18 g/l,Kentang,kutu daun,Myzus persicae,"0,375 - 0,5",ml/l,2023-08-28,2028-08-28,utama
+DIMETARI 400 EC,01010120237870,Insektisida,dimetoat 400 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+DIORIFT 40/20 WG,01010120237871,Insektisida,Dinotefuran 40 %; Flonicamid 20 %,Cabai,Kutu Daun,Myzus persicae,1,g/l,2023-08-28,2028-08-28,utama
+DIORIFT 40/20 WG,01010120237871,Insektisida,Dinotefuran 40 %; Flonicamid 20 %,Kacang panjang,Kutu Daun,Aphis craccivora,1,g/l,2023-08-28,2028-08-28,utama
+DIORIFT 40/20 WG,01010120237871,Insektisida,Dinotefuran 40 %; Flonicamid 20 %,Tomat,Kutu Daun,Myzus persicae,1,g/l,2023-08-28,2028-08-28,utama
+DIORIFT 40/20 WG,01010120237871,Insektisida,Dinotefuran 40 %; Flonicamid 20 %,Tomat,Kutu Kebul,Bemicia tabaci,1,g/l,2023-08-28,2028-08-28,utama
+DIROX 80 SP,01010120196522,Insektisida,Acepate 80 %,Cabai,kutu daun,Myzus persicae,2,g/l,2025-02-17,2030-02-17,utama
+DKMETOAR 400 EC,01010120165430,Insektisida,dimetoat 400 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2022-01-14,2027-01-14,utama
+DKPRO-NIL 50 SC,01010120155221,Insektisida,Fipronil 50 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2025-02-17,2030-02-17,utama
+DKVALERIA 25 WP,01010120259196,Insektisida,Imidakloprid 25 %,Cabai,hama kutu daun,Myzus persicae,2,g/l,2026-01-20,2031-01-20,utama
+DRACULA 300 SL,01010120206916,Insektisida,Nitenpiram 300 g/l,Bawang merah,Kutu daun,Myzus persicae,"0,5",ml/l,2026-04-20,2031-04-20,utama
+DUIT 18 EC,01010120114126,Insektisida,Abamektin 18 g/l,Cabai,Kutu Daun,Myzus persicae (1 ml/l),1,ml/l,2026-10-20,2031-10-20,utama
+DUIT 18 EC,01010120114126,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2022-01-14,2027-01-14,utama
+DURNO 100/100 SC,01010120248476,Insektisida,Bifentrin 100 g/l; Klotianidin 100 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2024-11-18,2029-11-18,utama
+DZEKO 36 EC,01010120258926,Insektisida,Abamectin 36 g/l,Cabai,kutu daun,Aphis gossypii,"0,4",ml/l,2025-09-26,2030-09-26,utama
+E-THIALAM 160/220 SC,01010120217185,Insektisida,lamda sihalotrin 160 g/l; tiametoksam 220 g/l,Cabai,Hama Kutu Daun,"Myzus persicae (0,5 ml/l)","0,5",ml/l,2026-10-20,2031-10-20,utama
+E-THOXAM 25 WP,01010120259198,Insektisida,tiametoksam 25 %,Cabai,kutu kebul,Bemisia tabaci,0.5,g/l,2026-01-20,2031-01-20,utama
+EFFICON 120 SL,01010120248607,Insektisida,Dimpropyridaz 120 g/l,Cabai,kutu daun,"Aphis gossypii (0,4 ml/l)",0.4,ml/l,2025-02-17,2030-02-17,utama
+EFFICON 120 SL,01010120248607,Insektisida,Dimpropyridaz 120 g/l,Cabai,kutu kebul,"Bemisia tabaci (1,5 ml/l)",1.5,ml/l,2025-02-17,2030-02-17,utama
+EFFICON 120 SL,01010120248607,Insektisida,Dimpropyridaz 120 g/l,Kentang,kutu daun,"Aphis gossypii (0,4 ml/l)",0.4,ml/l,2025-02-17,2030-02-17,utama
+EFFICON 120 SL,01010120248607,Insektisida,Dimpropyridaz 120 g/l,Kentang,kutu kebul,"Bemisia tabaci (1,2 ml/l)",1.2,ml/l,2025-02-17,2030-02-17,utama
+EFFICON 120 SL,01010120248607,Insektisida,Dimpropyridaz 120 g/l,Tomat,kutu kebul,"Bemisia tabaci (1,5 ml/l)",1.5,ml/l,2025-02-17,2030-02-17,utama
+EFICAZ 18 EC,01010120248371,Insektisida,Abamektin 18 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2024-09-19,2029-09-19,utama
+ELESTAL NEO 30/24 WG,01.01.01.2021.7272,Insektisida,Asetamiprid 24 %; Spiripidion 30 %,Cabai,Hama Kutu Kebul,Bemisia tabaci,0.6,g/l,2022-01-14,2027-01-14,utama
+ELESTAL NEO 30/24 WG,01.01.01.2021.7272,Insektisida,Asetamiprid 24 %; Spiripidion 30 %,Cabai,HamaKutu Daun,Aphis sp,0.6,g/l,2022-01-14,2027-01-14,utama
+ELESTAL NEO 30/24 WG,01.01.01.2021.7272,Insektisida,Asetamiprid 24 %; Spiripidion 30 %,Tomat,Hama Kutu Kebul,Bemisia tabaci,0.6,g/l,2022-01-14,2027-01-14,utama
+ELESTAL NEO 30/24 WG,01010120217272,Insektisida,Acetamiprid 24 %; Spiropidion 30 %,Cabai,Hama Kutu Daun,"Aphis sp. (0,6 g/l)",0.6,g/l,2026-10-20,2031-10-20,utama
+ELESTAL NEO 30/24 WG,01010120217272,Insektisida,Acetamiprid 24 %; Spiropidion 30 %,Cabai,Hama Kutu Kebul,"Bemisia tabaci (0,6 g/l)",0.6,g/l,2026-10-20,2031-10-20,utama
+ELESTAL NEO 30/24 WG,01010120217272,Insektisida,Acetamiprid 24 %; Spiropidion 30 %,Terung,Hama Kutu Daun,"Aphis sp. (0,6 g/l)",0.6,g/l,2026-10-20,2031-10-20,utama
+ELESTAL NEO 30/24 WG,01010120217272,Insektisida,Acetamiprid 24 %; Spiropidion 30 %,Terung,Hama Kutu Kebul,"Bemisia tabaci (0,6 g/l)",0.6,g/l,2026-10-20,2031-10-20,utama
+ELESTAL NEO 30/24 WG,01010120217272,Insektisida,Acetamiprid 24 %; Spiropidion 30 %,Tomat,Hama Kutu Kebul,"Bemisia tabaci (0,6 g/l)",0.6,g/l,2026-10-20,2031-10-20,utama
+EMATOAT 500 EC,01010120206919,Insektisida,Dimetoat 500 g/l,Jeruk,Kutu Daun,Toxoptera citridus,1,ml/l,2026-01-20,2031-01-20,utama
+EMATOX 50 EC,01010120237995,Insektisida,Emamektin Benzoat 50 g/l,Cabai,Kutu daun,Myzus persicae,1.5,ml/l,2024-03-04,2029-03-04,utama
+EMIMOR 50 EC,01010120217129,Insektisida,Heksaflumuron 50 g/l,Bawang merah,Hama kutu daun,Aphis glycines,"1,5",ml/l,2025-11-13,2030-11-13,utama
+ENREKA 100 EC,01010120185949,Insektisida,sipermetrin 100 g/l,Cabai,hama kutu daun,Myzus persicae,2,ml/l,2022-12-05,2027-12-05,utama
+EVISET 50 SP,01010120083040,Insektisida,tiosiklam hidrogen oksalat 50 %,Cabai,Kutu daun,Myzus persicae (1 - 2 g/l),1 - 2,g/l,2023-02-08,2028-02-08,utama
+EVISET 50 SP,01010120083040,Insektisida,tiosiklam hidrogen oksalat 50 %,Cabai,Kutu putih,Bemisia tabaci (1 - 2 g/l),1 - 2,g/l,2023-02-08,2028-02-08,utama
+EVISET 50 SP,01010120083040,Insektisida,tiosiklam hidrogen oksalat 50 %,Kentang,Kutu daun,"Myzus persicae (1,5 g/l)","1,5",g/l,2023-02-08,2028-02-08,utama
+EVISET 50 SP,01010120083040,Insektisida,tiosiklam hidrogen oksalat 50 %,Tomat,Kutu daun,"Myzus persicae (1,5 g/l)","1,5",g/l,2023-02-08,2028-02-08,utama
+EVISET 50 SP,01010120083040,Insektisida,tiosiklam hidrogen oksalat 50 %,Tomat,Kutu kebul,"Bemisia tabaci (1,5 g/l)","1,5",g/l,2023-02-08,2028-02-08,utama
+FAMDATRIN 50 EC,01010120124356,Insektisida,Lamda sihalotrin 50 g/l,Bawang merah,kutu daun,Myzus persicae,2,ml/l,2022-10-04,2027-10-04,utama
+FASTAC 15 EC,0101011986738,Insektisida,Alfa sipermetrin 15 g/l,Cabai,kutu daun,Myzus persicae (3 ml/l),3,ml/l,2026-10-20,2031-10-20,utama
+FASTAC 15 EC,0101011986738,Insektisida,Alfa sipermetrin 15 g/l,Semangka,Kutu daun,Myzus persicae (2 ml/l),2,ml/l,2026-10-20,2031-10-20,utama
+FASTRIN 100 EC,01010120072865,Insektisida,sipermetrin 100 g/l,Cabai,Kutu daun,"Myzus persicae (1,5 - 2 ml/l)","1,5 - 2",ml/l,2023-02-08,2028-02-08,utama
+FENAPIR 450 SC,01010120196530,Insektisida,Klorfenapir 450 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-09-19,2029-09-19,utama
+FIDARID 200 SL,01010120124460,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu daun,Myzus persicae,"2,5",ml/l,2023-08-28,2028-08-28,utama
+FIPKILL 50 SC,01010120155145,Insektisida,Fipronil 50 g/l,Kentang,kutu daun,Myzus persicae,"1,5",ml/l,2024-09-19,2029-09-19,utama
+FIPROS 55 SC,01010120093437,Insektisida,fipronil 55 g/l,Cabai,kutu daun,"Myzus persicae (0,25 l/ha)","0,25",l/ha,2023-02-08,2028-02-08,utama
+FLONIMAT 100/200 SC,01010120248257,Insektisida,Flonicamid 100 g/l; Spirotetramat 200 g/l,Tomat,Kutu Kebul,Bemicia tabaci,1,ml/l,2024-08-09,2029-08-09,utama
+FLONIPRO 75/75 SE,01010120248484,Insektisida,Flonicamid 75 g/l; Piriproksifen 75 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2024-11-18,2029-11-18,utama
+GALIL 300 SC,01010120124463,Insektisida,bifentrin 50 g/l; imidakloprid 250 g/l,Tomat,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2023-04-26,2028-04-26,utama
+GALIL 300 SC,01010120124463,Insektisida,bifentrin 50 g/l; imidakloprid 250 g/l,Tomat,kutu kebul,Bemisia tabaci (1 ml/l),1,ml/l,2023-04-26,2028-04-26,utama
+GAUCHO 350 FS,01010120001536,Insektisida,imidakloprid (imidacloprid) 350 g/l,Kacang panjang,Kutu daun,"Aphis craccivora (12,5 ml/kg benih)",12.5,ml/kg benih,2025-02-17,2030-02-17,utama
+GENIUS 20/125 OD,01010120237757,Insektisida,Abamektin 20 g/l; Nitenpiram 125 g/l,Cabai,kutu kebul,Bemisia tabaci (2 ml/l),2,ml/l,2023-04-26,2028-04-26,utama
+GOREX 500 EC,01010120145065,Insektisida,Dimetoat 500 g/l,Jeruk,Kutu daun,"Diaphorina citri (1,5 ml/l)",1.5,ml/l,2024-09-19,2029-09-19,utama
+GOREX 500 EC,01010120145065,Insektisida,Dimetoat 500 g/l,Jeruk,Kutu daun,"Toxoptera citricidus (1,5 ml/l)",1.5,ml/l,2024-09-19,2029-09-19,utama
+GRACIA 103 EC,01010120217053,Insektisida,Fluksametamid 103 g/l,Cabai,Kutu kebul,Bemisia tabaci (1 ml/l),1,ml/l,2025-07-11,2030-07-11,utama
+GUNTUR 75 WP,01010120041964,Insektisida,Siromazin 75 %,Kentang,kutu daun,"Myzus persicae (1,2 g/l)","1,2",g/l,2023-02-08,2028-02-08,utama
+HEROLE PLUS 100/20 SC,01010120237887,Insektisida,Emamektin benzoat 20 g/l; Klorfenapir 100 g/l,Cabai,Kutu Daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+HOPTARA 500 EC,01010120186043,Insektisida,Buprofezin 100 g/l; Klorpirifos 400 g/l,Kedelai,kutu daun,Aphis sp.,1,ml/l,2023-08-28,2028-08-28,utama
+HORNET 150 EC,01010120186080,Insektisida,sipermetrin 150 g/l,Bawang merah,Hama kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+IMAR 200 SL,01010120206742,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu daun,Myzus persicae,1,ml/l,2025-07-11,2030-07-11,utama
+IMAR 6 WP,01010120062427,Insektisida,imidakloprid 6 %,Kedelai,Kutu daun,Bemisia tabaci,0.5,g/l,2025-11-13,2030-11-13,utama
+IMIDAPLUS 200 SL,01010120042090,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu daun,Myzus persicae,1.5,ml/l,2024-08-09,2029-08-09,utama
+IMIDASAL 10 WP,01010120041976,Insektisida,Imidakloprid 10 %,Cabai,kutu daun,"Myzus persicae (0,5 g/l)","0,5",g/l,2024-03-05,2029-03-05,utama
+IMIDASAL 10 WP,01010120041976,Insektisida,Imidakloprid 10 %,Kedelai,kutu kebul,Bemisia tabaci (1 g/l),1,g/l,2024-03-05,2029-03-05,utama
+IMIDO 200 SL,01010120248395,Insektisida,Imidakloprid 200 g/l,Bawang merah,kutu daun,Myzus persicae,2,ml/l,2024-09-19,2029-09-19,utama
+INDOAT 400 EC,01010120248285,Insektisida,Dimetoat 400 g/l,Cabai,Kutu daun,Myzus persicae,2,ml/l,2024-08-09,2029-08-09,utama
+INDOCRON 500 EC,01010120062428,Insektisida,profenofos 500 g/l,Cabai,Kutu daun,"Myzus persicae (1,5 ml/l)",1.5,ml/l,2025-11-13,2030-11-13,utama
+INNOCENT 480 SC,01010120259220,Insektisida,Spinosad 480 g/l,Cabai,hama kutu daun,Myzus persicae,1,ml/l,2026-01-20,2031-01-20,utama
+INOVATE 100 EC,01010120134839,Insektisida,deltametrin 100 g/l,Cabai,kutu daun,Myzus persicae,"0,3",ml/l,2026-07-16,2031-07-16,utama
+INTEGRATE 20/20 WG,01010120155361,Insektisida,Spinetoram 20 %; Sulfoxaflor 20 %,Cabai,Kutu daun,Myzus persicae (200 g/ha),200,g/ha,2025-07-11,2030-07-11,utama
+INTEGRATE 20/20 WG,01010120155361,Insektisida,Spinetoram 20 %; Sulfoxaflor 20 %,Tomat,Kutu daun,Myzus persicae (200 g/ha),200,g/ha,2025-07-11,2030-07-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Cabai,Kutu Kebul,"Bemisia tabaci (1,2 ml/l)",1.2,ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Cabai,kutu daun,"Myzus persicae (0,6 ml/l)","0,6",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Jeruk,hama kutu daun,"Helopeltis sp. (0,8 ml/l)","0,8",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Melon,kutu daun,Myzus persicae,"0,6",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Melon,kutu kebul,"Bemisia tabaci (1,2 ml/l)","1,2",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Semangka,kutu daun,"Myzus persicae (0,6 ml/l)","0,6",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Semangka,kutu kebul,"Bemisia tabaci (1,2 ml/l)","1,2",ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Tomat,Kutu Kebul,"Bemisia tabaci (1,2 ml/l)",1.2,ml/l,2025-11-11,2030-11-11,utama
+INVERIS GOLD 50/25 DC,01010120206933,Insektisida,Abamectin 25 g/l; Afidopyropen 50 g/l,Tomat,kutu daun,"Aphis gossypii (1,2 ml/l)","1,2",ml/l,2025-11-11,2030-11-11,utama
+INVINSI 70 WG,01010120124368,Insektisida,Imidakloprid 70 %,Kacang panjang,Kutu daun,Aphis craccivora (1 g/l),1,g/l,2023-08-28,2028-08-28,utama
+JAGABAYA 200 EC,01010120011614,Insektisida,karbosulfan 200 g/l,Cabai,Kutu daun,Myzuz persicae,1.5,ml/l,2025-11-13,2030-11-13,utama
+JAGOAN 550/100 EC,01010120175742,Insektisida,Klorpirifos 550 g/l; Sipermetrin 100 g/l,Cabai,Kutu Daun,Myzus Persicae,1,ml/l,2022-06-27,2027-06-27,utama
+JAGONA 400 SL,01010120093581,Insektisida,Dimehipo 400 g/l,Kentang,kutu daun,Myzus persicae,3,ml/l,2024-08-09,2029-08-09,utama
+JITSU 200 SL,01010120103754,Insektisida,Asetamiprid 200 g/l,Cabai,Kutu daun,"Myzus persicae (0,75 ml/l)",0.75,ml/l,2025-07-11,2030-07-11,utama
+JOEWTRINE 350 EC,01010120269580,Insektisida,Cypermethrin 350 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2026-07-16,2031-07-16,utama
+JOSSBAN 600 EC,01010120185961,Insektisida,klorpirifos 500 g/l; sipermetrin 100 g/l,Bawang merah,hama kutu daun,Myzus persicae,0.75,ml/l,2023-04-26,2028-04-26,utama
+K-CYMONEX 500/50 EC,01010120258804,Insektisida,Klorpirifos 500 g/l; Sipermetrin 50 g/l,Cabai,Hama kutu daun,Myzus persicae,2,ml/l,2025-07-11,2030-07-11,utama
+K-FENOPHOS 500 EC,01010120237900,Insektisida,Profenofos 500 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+KAISUS 250 SC,01010120269582,Insektisida,Diafentiuron 250 g/l,Cabai,kutu kebul,Bemisia tabaci,2,ml/l,2026-07-16,2031-07-16,utama
+KAKUTE 60 SP,01010120196450,Insektisida,metomil 60 %,Cabai,Kutu Daun,Myzus persicae (2 g/l),2,g/l,2024-03-04,2029-03-04,utama
+KANON 400 EC,01010119981414,Insektisida,dimetoat 400 g/l,Apel,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2022-10-04,2027-10-04,utama
+KANON 400 EC,01010119981414,Insektisida,dimetoat 400 g/l,Jeruk,kutu daun,Toxoptera citridus (2 ml/l),2,ml/l,2022-10-04,2027-10-04,utama
+KANON 400 EC,01010119981414,Insektisida,dimetoat 400 g/l,Kentang,kutu daun,"Myzus persicae (0,25 l/ha)","0,25",l/ha,2022-10-04,2027-10-04,utama
+KANON RX 100 EC,01010120227670,Insektisida,Fosthiazate 100 g/l,Kacang panjang,kutu daun,Aphis sp.,1,ml/l,2023-02-08,2028-02-08,utama
+KENDAX 400 EC,01010120144940,Insektisida,Dimetoat (Dimethoate) 400 g/l,Jeruk,Kutu Daun,Toxoptera citridus (1 ml/l ),1,ml/l,2024-08-09,2029-08-09,utama
+KENMECTIN 39 EC,01010120175764,Insektisida,Abamektin 39 g/l,Cabai,Kutu Daun,Aphids,1,ml/l,2022-12-05,2027-12-05,utama
+KENSBAN 400 EC,01010120124318,Insektisida,Klorpirifos 400 g/l,Cabai,kutu daun,Myzus persicae (2 ml/l),2,ml/l,2023-02-08,2028-02-08,utama
+KENTAP 50 SP,01010120155188,Insektisida,Kartap hidroklorida (Cartap hydrochloride) 50 %,Cabai,Hama Trips,"Myzus persicae (0,75 g/l)","0,75",g/l,2025-11-13,2030-11-13,utama
+KLIMAX 20 EC,01010120031895,Insektisida,Abamektin 20 g/l,Cabai,Kutu Daun,"Myzus persicae (0,5 ml/l)",0.5,ml/l,2025-11-13,2030-11-13,utama
+KLOPINDO 10 WP,01010120042093,Insektisida,imidakloprid 10 %,Cabai,Kutu daun,Myzus persicae (1 g/l),1,g/l,2024-08-09,2029-08-09,utama
+KOMPITOR 200 SL,01010120041977,Insektisida,Imidakloprid 200 g/l,Kacang panjang,Kutu daun,"Aphis craccivora (0,5 ml/l)","0,5",ml/l,2024-03-05,2029-03-05,utama
+LAMLO 50 EC,01010120227672,Insektisida,Lamda Sihalotrin 50 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2023-02-08,2028-02-08,utama
+LANDOH 400 EC,01010120248401,Insektisida,Klorpirifos 400 g/l,Kedelai,kutu kebul,Bemisia tabaci,2,ml/l,2024-09-19,2029-09-19,utama
+LANIDOR 200 SL,01010120042097,Insektisida,Imidacloprid 200 g/l,Cabai,Kutu daun,Myzus persicae (1 ml/l ),1,ml/l,2024-08-09,2029-08-09,utama
+LANNATE 40 SP,01010119991490,Insektisida,metomil 40 %,Semangka,Kutu Daun,Myzus persicae (2 g/l),2,g/l,2025-07-11,2030-07-11,utama
+LANNATE 40 SP,01010119991490,Insektisida,metomil 40 %,Semangka,Kutu Kebul,Bemisia tabaci (2 g/l),2,g/l,2025-07-11,2030-07-11,utama
+LARBAN 500/50 EC,01010120124476,Insektisida,Klorpirifos 500 g/l; Sipermetrin 50 g/l,Cabai,Kutu daun,"Myzus persicae (1,5 ml/l)",1.5,ml/l,2023-04-26,2028-04-26,utama
+LASER 300 EC,01010120093465,Insektisida,Permetrin 300 g/l,Kentang,Kutu daun,Myzus percisae (1 ml/l),1,ml/l,2024-03-05,2029-03-05,utama
+LOGAMATE 440 EC,01010120144991,Insektisida,Dimethoate 440 g/l,Cabai,Kutu daun,Myzus persicae (2 ml/l),2,ml/l,2024-09-19,2029-09-19,utama
+LW-THIAMETHRIN 106/141 SC,01010120248404,Insektisida,lamda sihalotrin 106 g/l; tiametoksam 141 g/l,Jagung,kutu daun,Rhopalosiphum maidis,1,ml/l,2024-09-19,2029-09-19,utama
+MAGU 420 EC,01010120258827,Insektisida,Klorpirifos 420 g/l,Bawang merah,kutu daun,Aphid sp.,2,ml/l,2025-07-11,2030-07-11,utama
+MAIZOATE 50 SG,01010120144942,Insektisida,Emamektin benzoat 50 %,Cabai merah,Kutu daun,Myzus persicae,2,g/l,2024-09-19,2029-09-19,utama
+MALLOT 50 DC,01010120206942,Insektisida,Afidopyropen 50 g/l,Cabai,Kutu Daun,"Myzus persicae (0,4 ml/l)",0.4,ml/l,2025-11-13,2030-11-13,utama
+MALLOT 50 DC,01010120206942,Insektisida,Afidopyropen 50 g/l,Cabai,Kutu Kebul,Bemisia tabaci (2 ml/l),2,ml/l,2025-11-13,2030-11-13,utama
+MALLOT 50 DC,01010120206942,Insektisida,Afidopyropen 50 g/l,Tomat,Kutu Daun,"Aphis gossypii (0,4 ml/l)",0.4,ml/l,2025-11-13,2030-11-13,utama
+MALLOT 50 DC,01010120206942,Insektisida,Afidopyropen 50 g/l,Tomat,Kutu Kebul,Bemisia tabaci (2 ml/l),2,ml/l,2025-11-13,2030-11-13,utama
+MAMPU 18 EC,01010120217151,Insektisida,Abamektin 18 g/l,Bawang merah,Kutu daun,Myzus persicae,"1,5",ml/l,2026-01-20,2031-01-20,utama
+MANTHENE 75 SP,01010120072671,Insektisida,asefat 75 %,Kedelai,kutu kebul,"Bemisia tabaci (1,5 g/l)","1,5",g/l,2024-08-09,2029-08-09,utama
+MARSHAL 200 EC,0101011981489,Insektisida,Karbosulfan 200 g/l,Cabai merah,Kutu daun,Myzus persicae (4 ml/l),4,ml/l,2026-10-20,2031-10-20,utama
+MARSHAL 200 EC,0101011981489,Insektisida,Karbosulfan 200 g/l,Mentimun,Kutu daun,"Aphis sp. (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+MARSHAL 200 EC,0101011981489,Insektisida,Karbosulfan 200 g/l,Mentimun,Kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+MARSHAL 200 EC,0101011981489,Insektisida,Karbosulfan 200 g/l,Semangka,Kutu daun,"Aphis sp. (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+MARSHAL 200 EC,0101011981489,Insektisida,Karbosulfan 200 g/l,Semangka,Kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+MARSHAL 200 SC,01010120001545,Insektisida,Karbosulfan 200 g/l,Nenas,kutu daun/kutuputih,Dysmicoccus sp. (2 ml/l),2,ml/l,2022-10-04,2027-10-04,utama
+MATAPEL 25 EC,01010120072775,Insektisida,Lamda sihalotrin 25 g/l,Cabai,Kutu daun,Myzus persicae,0.5,ml/l,2023-04-26,2028-04-26,utama
+MATARIN 50 EC,01010119992101,Insektisida,Lamda sihalotrin 50 g/l,Cabai,kutu daun,"Myzus persicae (0,5 ml/l)",0.5,ml/l,2024-09-19,2029-09-19,utama
+MATIKABE 180/120 SC,01010120248658,Insektisida,Indoksakarb 120 g/l; Klorfenapir 180 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2025-02-17,2030-02-17,utama
+MATROS 18 EC,01010120042102,Insektisida,abamektin 18 g/l,Cabai,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2024-09-19,2029-09-19,utama
+MATROS 18 EC,01010120042102,Insektisida,abamektin 18 g/l,Jeruk,Kutu daun,"Toxoptera citricidus (0,5 ml/l)",0.5,ml/l,2024-09-19,2029-09-19,utama
+MATROS 18 EC,01010120042102,Insektisida,abamektin 18 g/l,Kentang,Kutu daun,"Myzus persicae (0,5 ml/l)",0.5,ml/l,2024-09-19,2029-09-19,utama
+MAZOTAM 200 SC,01010120144994,Insektisida,Fipronil 200 g/l,Cabai,kutu daun,Myzus persicae (1 ml/l),1,ml/l,2024-09-19,2029-09-19,utama
+MECKING 36 EC,01010120114145,Insektisida,Abamektin 36 g/l,Cabai,Kutu daun,Myzus persicae,0.5,ml/l,2026-07-16,2031-07-16,utama
+MECTIMAX 18 EC,01010120093548,Insektisida,Abamektin 18 g/l,Cabai,Kutu daun,"Myzus persicae (0,75 ml/l)",0.75,ml/l,2024-11-18,2029-11-18,utama
+MEOTHRIN 50 EC,0101011984717,Insektisida,Fenpropatrin 50 g/l,Jeruk,Kutu daun,"Toxoptera aurantii (0,75 ml/l)",0.75,ml/l,2023-08-28,2028-08-28,utama
+METABAN 550/100 EC,01010120238026,Insektisida,Klorpirifos 550 g/l; Sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-03-04,2029-03-04,utama
+METAMEC 50 EC,01010120238027,Insektisida,Emamektin benzoat 50 g/l,Cabai,kutu daun,Myzus persicae,,,2024-03-04,2029-03-04,utama
+METARIZEP WP,01010120175772,Insektisida,Beauveria bassiana 1 x 10^6 cfu/gr; Metarhizium anisopliae 1 x 10^6 cfu/gr,Kacang panjang,kutu daun,Aphis cracivora (2 g/l),2,g/l,2022-10-04,2027-10-04,utama
+METHA 400 EC,01010120062530,Insektisida,Dimetoat 400 g/l,Cabai,Kutu daun,Myzus persicae (2 ml/l),2,ml/l,2022-12-05,2027-12-05,utama
+METOAT 400 EC,01.01.01.2021.7257,Insektisida,Dimetoat 400 g/l,Cabai,Kutu daun,Myzus persicae,2,ml/l,2022-01-14,2027-01-14,utama
+METPLUS 40 SP,01010120175773,Insektisida,Metomil 40 %,Kacang panjang,Kutu daun,"Aphis craccivora (1,5 g/l)","1,5",g/l,2026-10-20,2031-10-20,utama
+MIDADOR 25 WP,01010120145057,Insektisida,Imidakloprid 25 %,Cabai,Kutu daun,Myzus persicae (1 g/l),1,g/l,2025-07-11,2030-07-11,utama
+MIPCIDIN 30/270 SC,01010120258839,Insektisida,Dinotefuran 30 g/l; Isoprocarb 270 g/l,Cabai,kutu kebul,Bemisia tabaci,1,ml/l,2025-07-11,2030-07-11,utama
+MORADO 168/84 SC,01010120269819,Insektisida,Piriproksifen 84 g/l; Spirotetramat 168 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-10-20,2031-10-20,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Apel,Kutu daun,"Aphis pomi (0,5 ml/l)",0.5,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Bawang merah,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Cabai,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Cabai,Kutu kebul,"Bemisia tabaci (0,75 l/ha)",0.75,l/ha,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Jeruk,Kutu daun,"Toxoptera citridus (0,25 ml/l)",0.25,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Kentang,Hama kutu daun,Aphis sp. (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Kentang,Kutu kebul,Bemisia tabaci (2 ml/l),2,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Melon,Kutu kebul,Bemisia tabaci (2 ml/l),2,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Semangka,Kutu kebul,"Bemisia tabaci (1,5 ml/l)",1.5,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Tembakau,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Tembakau,Kutu kebul,Bemisia tabaci (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+MOVENTO ENERGY 120/120 SC,01010120113981,Insektisida,imidakloprid (imidacloprid) 120 g/l; spirotetramat (spirotetramat) 120 g/l,Tomat,Kutu kebul,Bemisia tabaci (2 ml/l),2,ml/l,2025-11-13,2030-11-13,utama
+Matador 25 EC,0101011984716,Insektisida,Lamda sihalotrin 25 g/l,Kacang panjang,Kutu Daun,Aphis craccivora (1 ml/l),1,ml/l,2024-03-04,2029-03-04,utama
+Minecto Forte 80/400 SC,01010120238030,Insektisida,Diafentiuron 400 g/l; Siantraniliprol 80 g/l,Tomat,kutu kebul,Bemisia tabaci,"1,5",ml/l,2024-03-04,2029-03-04,utama
+NAGANO 30/50 EC,01010120227679,Insektisida,emamektin benzoat 30 g/l; lufenuron 50 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2023-02-08,2028-02-08,utama
+NAPIR-PLUS 100/50 EC,01010120113909,Insektisida,Beta-siflutrin (Beta-cyfluthrin) 50 g/l; Klorfenapyr (Chlorfenapyr ) 100 g/l,Cabai,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2026-10-20,2031-10-20,utama
+NARACEL 18 EC,01010120134544,Insektisida,Abamektin 18 g/l,Cabai,Kutu Daun,Myzus persicae 1 ml/l,1,ml/l,2022-10-04,2027-10-04,utama
+NARAZOL 18 EC,01010120238032,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,Myzus Persicae,2,ml/l,2024-03-04,2029-03-04,utama
+NATION 200 EC,01010120259249,Insektisida,Triazofos 200 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-01-20,2031-01-20,utama
+NAVOX 60 EC,01010120186055,Insektisida,Lambda Cyhalothrin 60 g/l,Cabai,Kutu Daun,Myzus persicae,"0,75",ml/l,2023-04-26,2028-04-26,utama
+NEXUS 40 SP,01010120196562,Insektisida,Metomil 40 %,Bawang merah,Kutu daun,Myzus persicae,1,g/l,2024-09-19,2029-09-19,utama
+NITEN 100 SL,01010120165450,Insektisida,Nitenpiram 100 g/l,Semangka,Kutu daun,Myzus persicae (1 ml/l),1,ml/l,2025-11-13,2030-11-13,utama
+NJEPAT 400 EC,01010120237792,Insektisida,Dimetoat 400 g/l,Kubis,kutu daun,Myzus persicae,2,ml/l,2023-04-26,2028-04-26,utama
+NUGOR 400 EC,01010120042113,Insektisida,Dimetoat 400 g/l,Kubis,Kutu daun,Myzus persicae,1,ml/l,2024-08-09,2029-08-09,utama
+NUMECTIN 20 EC,01010120042299,Insektisida,abamektin 20 g/l,Cabai,kutu daun,"Myzus persicae (2,25 ml/l)","2,25",ml/l,2024-11-18,2029-11-18,utama
+NUMECTIN 20 EC,01010120042299,Insektisida,abamektin 20 g/l,Kentang,kutu daun,"Myzus persicae (0,5 ml/l)","0,5",ml/l,2024-11-18,2029-11-18,utama
+OBR 25 WP,01010120103780,Insektisida,Imidakloprid 25 %,Cabai,Kutu daun,Myzus persicae (1 g/l),1,g/l,2025-09-26,2030-09-26,utama
+ODEYA 200 SC,01010120248412,Insektisida,Siantraniliprol 200 g/l,Tomat,kutu kebul,Bemisia tabaci,10,ml/l,2024-09-19,2029-09-19,utama
+ORIZ 50 WG,01010120258845,Insektisida,pymetrozine 50 %,Cabai,kutu kebul,Bemisia tabaci,"0,6",g/l,2025-07-11,2030-07-11,utama
+ORIZTIN 100 EC,01010120206956,Insektisida,Sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2025-11-13,2030-11-13,utama
+PACERS 40 SP,01010120206850,Insektisida,metomil 40 %,Cabai,Kutu daun,Myzus persicae,1.5,g/l,2025-11-13,2030-11-13,utama
+PASDOR 27 WP,01010120248311,Insektisida,imidakloprid 27 %,Cabai,kutu daun,Myzus persicae,2,g/l,2024-08-09,2029-08-09,utama
+PEGASUS 500 SC,01010119921031,Insektisida,Diafenthiuron 500 g/l,Apel,hama Kutu Daun,"Aphids Sp. (0,5 ml/l)",0.5,ml/l,2025-09-26,2030-09-26,utama
+PEGASUS 500 SC,01010119921031,Insektisida,Diafenthiuron 500 g/l,Cabai,Kutu Daun,Myzus persicae (1 ml/l),1,ml/l,2025-09-26,2030-09-26,utama
+PEGASUS 500 SC,01010119921031,Insektisida,Diafenthiuron 500 g/l,Cabai,Kutu Kebul,"Bemisia tabaci (0,5 ml/l)",0.5,ml/l,2025-09-26,2030-09-26,utama
+PEGASUS 500 SC,01010119921031,Insektisida,Diafenthiuron 500 g/l,Semangka,Kutu Daun,Myzus persicae (1 ml/l),1,ml/l,2025-09-26,2030-09-26,utama
+PEGASUS 500 SC,01010119921031,Insektisida,Diafenthiuron 500 g/l,Tomat,Kutu Kebul,Bemisia tabaci (1 ml/l),1,ml/l,2025-09-26,2030-09-26,utama
+PENALTY 50 SC,01010120093588,Insektisida,fipronil 50 g/l,Kentang,Kutu daun,"Myzus percsicae (0,5 ml/l)","0,5",ml/l,2023-04-26,2028-04-26,utama
+PERFEKTAN 405 EC,01010120011583,Insektisida,dimetoat 405 g/l,Jeruk,hama kutu daun,Toxoptera citricida (1 ml/l),1,ml/l,2026-07-16,2031-07-16,utama
+PERKILL 50 EC,01010120042119,Insektisida,Permetrin 50 g/l,Bawang merah,kutu daun,Aphis sp.,2,ml/l,2024-08-09,2029-08-09,utama
+"PESTOR 20,02 EC",01010120196376,Insektisida,"Azadirachtin 0,02 g/l; Eugenol 20 g/l",Cabai,Hama Kutu Kebul,Bemicia tabaci (10 ml/l),10,ml/l,2024-08-09,2029-08-09,utama
+"PESTOR 20,02 EC",01010120196376,Insektisida,"Azadirachtin 0,02 g/l; Eugenol 20 g/l",Kelapa,Kutu daun,Aspidiotus destructor (10 ml/l),10,ml/l,2024-08-09,2029-08-09,utama
+PHOSCORMITE 18 EC,01010120103645,Insektisida,Abamektin 18 g/l,Cabai,Kutu daun,"Myzus persicae (0,50 ml/l)","0,5",ml/l,2024-09-19,2029-09-19,utama
+PHOSTHENE 97 WG,01010120124498,Insektisida,Asefat 97 %,Jeruk,hama kutu daun,Toxoptera citridus,1,g/l,2023-08-28,2028-08-28,utama
+PHOURMIDA 200 SL,01010120259264,Insektisida,Imidakloprid 200 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2026-01-20,2031-01-20,utama
+PILARFIN 81/101 OD,01010120269437,Insektisida,asetamiprid 81 g/l; flonicamid 101 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-04-20,2031-04-20,utama
+POUNCE 20 EC,0101011981493,Insektisida,Permetrin 20 g/l,Semangka,Kutu daun,Aphis sp. (3 ml/l),3,ml/l,2024-03-04,2029-03-04,utama
+PRADO 25 EC,01010120186062,Insektisida,beta siflutrin 25 g/l,Cabai,hama kutu daun,Myzus persicae,1,ml/l,2023-02-08,2028-02-08,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Cabai,Kutu Kebul,"Bemisia tabaci (3,75 ml/l)",3.75,ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Cabai,Kutu daun,"Myzus persicae (2,5 ml/l)",2.5,ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Kacang panjang,Kutu Kebul,Bemisia tabaci (2 ml/l),2,ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Kacang panjang,Kutu daun,Aphis craccivora (2 ml/l),2,ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Melon,Kutu Kebul,"Bemisia tabaci (2,5 ml/l)","2,5",ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Melon,Kutu daun,"Myzus persicae (2,25 ml/l)","2,25",ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Mentimun,Hama Kutu kebul,"Bemisia tabaci (1,25 l/ha)","1,25",l/ha,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Tomat,Kutu Kebul,Bemisia tabaci (2 ml/l),2,ml/l,2023-04-26,2028-04-26,utama
+PREZA100 OD,01010120134700,Insektisida,Siantraniliprol 100 g/l,Tomat,Kutu daun,Myzus persicae (2 ml/l),2,ml/l,2023-04-26,2028-04-26,utama
+PRIMA-PRO 55 SC,01010120186069,Insektisida,Fipronil 55 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+PRIMA-TOAT 400 EC,01010120217257,Insektisida,Dimetoat 400 g/l,Cabai,Kutu Daun,Myzus persicae (2 ml/l),2,ml/l,2026-10-20,2031-10-20,utama
+PRIMADOR 25 WP,01010120217259,Insektisida,Imidakloprid 25 %,Cabai,Kutu Daun,Myzus persicae (2 g/l),2,g/l,2026-10-20,2031-10-20,utama
+PROACE 75 SP,01010120217161,Insektisida,Asefat 75 %,Cabai,Kutu daun,"Myzus persicae (1,5 ml/l)","1,5",ml/l,2026-10-20,2031-10-20,utama
+PROKSI 500 EC,01010120093479,Insektisida,profenofos 500 g/l,Jeruk,hama kutu daun,Toxoptera citridus,2,ml/l,2023-04-26,2028-04-26,utama
+PROKSI 500 EC,01010120093479,Insektisida,profenofos 500 g/l,Kentang,kutu daun,Myzus persicae,3,l/ha,2023-04-26,2028-04-26,utama
+PROMECTIN 60 EC,01010120124379,Insektisida,abamektin 60 g/l,Cabai,Kutu daun,Myzus persicae,"0,75",ml/l,2022-06-27,2027-06-27,utama
+PROMECTIN 60 EC,01010120124379,Insektisida,abamektin 60 g/l,Cabai,Kutu daun,"Myzus persicae (0,75 ml/l)","0,75",ml/l,2026-10-20,2031-10-20,utama
+PROSID 150 EC,01010120124245,Insektisida,metidation 150 g/l,Kacang panjang,Kutu Daun,Aphis craccivora,1.5 - 2,ml/l,2025-09-26,2030-09-26,utama
+PROSID 25 WP,01010120186063,Insektisida,metidation 25 %,Cabai,hama kutu daun,Myzus persicae,1,g/l,2023-04-26,2028-04-26,utama
+PROTECT 40/35 WP,01010120196379,Insektisida,imidakloprid 35 %; tiametoksam 40 %,Cabai,kutu daun,Myzus Persicae,1,g/l,2024-03-05,2029-03-05,utama
+PROTEK 300/50 EC,01010120124312,Insektisida,Lamda sihalotrin 50 g/l; Profenofos 300 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2023-02-08,2028-02-08,utama
+PROVIDOR 30 WP,01010120113913,Insektisida,Imidakloprid 30.00 %,Cabai,Kutu daun,Myzus persicae (1 g/l),1,g/l,2026-01-20,2031-01-20,utama
+PROZINON 600 EC,01010120186144,Insektisida,diazinon 600 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2023-02-08,2028-02-08,utama
+PUNGGAWA 50 SC,01010120103791,Insektisida,fipronil 50 g/l,Cabai,Kutu daun,Myzus persicae,"1,5",ml/l,2024-11-18,2029-11-18,utama
+PUNTO 200 SL,01010120134612,Insektisida,Imidakloprid 200 g/l,Cabai,Kutu Daun,"Myzus persicae 1,5 ml/l","1,5",ml/l,2022-10-04,2027-10-04,utama
+PUSAKA 660 EC,01010120185976,Insektisida,Klorpirifos 600 g/l; Sipermetrin 60 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+Plenum 50 WG,01010120093558,Insektisida,Pimetrozin 50 %,Cabai,Kutu Kebul,Bemisia tabaci (300 g/ha),300,g/ha,2024-03-05,2029-03-05,utama
+RAFAT 75 SP,01010120258985,Insektisida,Asefat 75 %,Cabai,kutu daun,Myzus persicae,"1,5",g/l,2025-09-26,2030-09-26,utama
+RAGASA 500 EC,01010120186147,Insektisida,dimetoat 500 g/l,Kedelai,kutu daun,Aphis glycines,2,ml/l,2023-04-26,2028-04-26,utama
+RAINFOS 550 EC,01010120134815,Insektisida,Lufenuron 50 g/l; Profenofos 500 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2023-04-26,2028-04-26,utama
+RAMPAGE 100 EC,01010119971310,Insektisida,klorfenapir 100 g/l,Apel,kutu daun,"Aphis sp. (0,75 ml/l)","0,75",ml/l,2022-12-05,2027-12-05,utama
+RAMPAGE 100 EC,01010119971310,Insektisida,klorfenapir 100 g/l,Cabai,kutu daun,Myzus persicae,"1,125",l/ha,2022-12-05,2027-12-05,utama
+RAMPAGE 100 EC,01010119971310,Insektisida,klorfenapir 100 g/l,Kentang,kutu daun,"Myzus persicae (0,75 l/ha)","0,75",l/ha,2022-12-05,2027-12-05,utama
+REBEL 500/50 EC,01010120124513,Insektisida,Klorpirifos 500 g/l; Sipermetrin 50 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+REFORA 18 EC,01010120114120,Insektisida,Abamektin 18 g/l,Cabai,Hama kutu daun,"Myzus persicae (1,5 ml/l)",1.5,ml/l,2026-10-20,2031-10-20,utama
+REFORA 18 EC,01010120114120,Insektisida,Abamektin 18 g/l,Tomat,Hama kutu daun,Myzus persicae (1 ml/l),1,ml/l,2026-10-20,2031-10-20,utama
+REGENT 50 SC,01010119951192,Insektisida,Fipronil 50 g/l,Jeruk,kutu daun,Diaphorina citri,"1,5",ml/l,2025-09-26,2030-09-26,utama
+REGIONT 55 SC,01010120259275,Insektisida,Fipronil 55 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2026-01-20,2031-01-20,utama
+REIBENT 50 SC,01010120269458,Insektisida,Fipronil 50 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2026-04-20,2031-04-20,utama
+RENTRION-CS 500/100 EC,01010120237925,Insektisida,Klorpirifos 500 g/l; Sipermetrin 100 g/l,Cabai,Kutu daun,Myzus persicae,2,ml/l,2023-08-28,2028-08-28,utama
+RESPECT 200 EC,01010120134880,Insektisida,karbosulfan 200 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2023-04-26,2028-04-26,utama
+RIP 200 EC,01010120145012,Insektisida,Klorfenapir 200 g/l,Bawang merah,kutu daun,Aphis glycines,2,ml/l,2024-08-09,2029-08-09,utama
+RIZETO 200 SC,01010120206773,Insektisida,Dinotefuron 200 g/l,Cabai,Kutu daun,Myzus persicae,1.5,ml/l,2026-01-20,2031-01-20,utama
+ROOSFAT 75 SP,01010120145094,Insektisida,Asefat 75 %,Cabai,kutu daun,Myzus persicae,2,g/l,2024-11-18,2029-11-18,utama
+ROTEEN 75 SP,01010120031845,Insektisida,Asefat 75 %,Tembakau,kutu daun,Myzus persicae,1,g/l,2023-02-08,2028-02-08,utama
+RUTIN 18 EC,01010120072797,Insektisida,Abamektin 18 g/l,Cabai,Kutu daun,Myzus Persicae,0.75,l/ha,2022-06-27,2027-06-27,utama
+SAGRI-CLEAR 30/30 WP,01010120206975,Insektisida,klotianidin 30 %; metidation 30 %,Jeruk,Kutu daun,Diaphorina citri,1,g/l,2025-09-26,2030-09-26,utama
+SAGRI-PURE 400/200 EC,01010120196476,Insektisida,fipronil 200 g/l; metidation 400 g/l,Apel,kutu daun,Aphis pomi,1,ml/l,2024-08-09,2029-08-09,utama
+SAMBAS 700 EC,01010120186152,Insektisida,Klorpirifos 400 g/l; Permetrin 300 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2023-04-26,2028-04-26,utama
+SANCIS 25 EC,01010120072799,Insektisida,Deltametrin 25 g/l,Cabai merah,kutu daun,Myzus persicae,"0,25",ml/l,2023-08-28,2028-08-28,utama
+SCALIN 80/220 SC,01010120237931,Insektisida,Bifentrin 80 g/l; Spirotetramat 220 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+SCALIN 80/220 SC,01010120237931,Insektisida,Bifentrin 80 g/l; Spirotetramat 220 g/l,Kacang panjang,kutu daun,Aphis craccivora,1,ml/l,2023-08-28,2028-08-28,utama
+SCALIN 80/220 SC,01010120237931,Insektisida,Bifentrin 80 g/l; Spirotetramat 220 g/l,Tomat,kutu daun,Myzus persicae,1,ml/l,2023-08-28,2028-08-28,utama
+SCALIN 80/220 SC,01010120237931,Insektisida,Bifentrin 80 g/l; Spirotetramat 220 g/l,Tomat,kutu kebul,Bemicia tabaci,1,ml/l,2023-08-28,2028-08-28,utama
+SCOTIN 100 EC,01010120237808,Insektisida,Sipermetrin 100 g/l,Bawang merah,kutu daun,Myzus persicae,"1,5",ml/l,2023-04-26,2028-04-26,utama
+SERGAP 410 EC,01010120186153,Insektisida,Klorpirifos 410 g/l,Bawang merah,kutu daun,Neotoxoptera formosana,"2,5",ml/l,2023-02-08,2028-02-08,utama
+SHOGUN 440 SC,0101011986745,Insektisida,Buprofezin 440 g/l,Kedelai,Kutu Kebul,"Bemisia tabaci (0,5 ml/l)","0,5",ml/l,2025-09-26,2030-09-26,utama
+SIDACRON 510 EC,01010120072685,Insektisida,Profenofos 510 g/l,Cabai,Kutu daun,myzus persicae,"0,5",ml/l,2022-01-14,2027-01-14,utama
+SIDADOR 30 EC,01010120042316,Insektisida,lamda sihalotrin 30 g/l,Tembakau,Kutu kebul,"Bemisia tabaci (0,5 ml/l)","0,5",l/ha,2024-11-18,2029-11-18,utama
+SIDAJOS 430 EC,01010120072894,Insektisida,Dimetoat 430 g/l,Cabai,Kutu daun,Myzus persicae 1 ml/l,1,ml/l,2022-10-04,2027-10-04,utama
+SIDAMEC 20 EC,01010120042317,Insektisida,abamektin 20 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2025-09-26,2030-09-26,utama
+SIDAPYR 325 EC,01010120175924,Insektisida,klorfenapir 325 g/l,Cabai,kutu daun,Myzus persicae,"0,25",ml/l,2023-02-08,2028-02-08,utama
+"SIKLON 5,7 WG",01010120134882,Insektisida,"emamectin benzoate 5,7 %; emamektin benzoat 5,7 %",Cabai,hama kutu daun,Myzus persicae,"0,3",g/l,2023-02-08,2028-02-08,utama
+SILENT KILL 50/160 SC,01010120259126,Insektisida,Flonikamid 50 g/l; Klotianidin 160 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2025-11-13,2030-11-13,utama
+SIMODIS 100 DC,01010120237932,Insektisida,Isosikloseram 100 g/l,Kubis,kutu daun,Plutella xylostella,"0,6",ml/l,2023-08-28,2028-08-28,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Cabai,kutu daun,Aphis sp.,1,ml/l,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Cabai,kutu kebul,Bemisia tabaci,"1,5",ml/l,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Jeruk,kutu daun,Aphis sp.,"0,5",ml/l,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Tembakau,kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Tembakau,kutu kebul,Bemisia tabaci,1,ml/l,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Terung,kutu kebul,Bemisia tabaci,750,ml/ha,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Tomat,kutu daun,Aphis sp.,500,ml/ha,2023-04-26,2028-04-26,utama
+SIVANTO PRIME 200 SL,01010120186081,Insektisida,flupiradifuron (flupyradifurone) 200 g/l; flupyradifurone 200 g/l,Tomat,kutu kebul,Bemisia tabaci,750,ml/ha,2023-04-26,2028-04-26,utama
+SOCOTRA 18 EC,01010120259130,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2025-11-13,2030-11-13,utama
+SPIKE 75 WG,01010120206779,Insektisida,Thiamethoxam 75 %,Cabai,Kutu daun,Myzus persicae,"1,5",g/l,2025-07-11,2030-07-11,utama
+SPIROTEK 500 SC,01010120248329,Insektisida,spirotetramat 500 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-08-09,2029-08-09,utama
+SRI BITAMENG 350 SF,01010120175926,Insektisida,tiamektosam 350 g/l,Kedelai,kutu daun,Aphis glycine,"2,5",ml/kg benih,2023-04-26,2028-04-26,utama
+STADIUM 18 EC,01010120103648,Insektisida,Abamektin 18 g/l,Cabai,kutu daun,"Myzus persicae (0,5 ml/l)",0.5,ml/l,2024-03-05,2029-03-05,utama
+STADIUM 18 EC,01010120103648,Insektisida,Abamektin 18 g/l,Mentimun,kutu daun,Myzus persicae (0.75 ml/l),0.75,ml/l,2024-03-05,2029-03-05,utama
+STARGATE 600 SC,01010120155191,Insektisida,Klotianidin 600 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2024-09-19,2029-09-19,utama
+STARMEK 18 EC,01010120031935,Insektisida,abamektin 18 g/l,Cabai,Kutu daun,Myzus persicae 1 ml/l,1-2,ml/l,2022-10-04,2027-10-04,utama
+STARMETRIN 100 EC,01010120134822,Insektisida,alfa sipermetrin 100 g/l,Jeruk,kutu daun,Diaphorina citri,"1,5 - 2",ml/l,2023-04-26,2028-04-26,utama
+STARMETRIN 100 EC,01010120134822,Insektisida,alfa sipermetrin 100 g/l,Jeruk,kutu daun,Toxoptera citricidus,1,ml/l,2023-04-26,2028-04-26,utama
+STARNATE 40 SP,01010120217221,Insektisida,Metomil (Methomyl) 40 %,Cabai,Kutu daun,Myzus persicae,2,g/l,2026-04-20,2031-04-20,utama
+STARPYR 500 SC,01010120186094,Insektisida,klorfenapir 500 g/l,Bawang merah,kutu daun,Myzus persicae,1,ml/l,2023-04-26,2028-04-26,utama
+STRONG 333 EC,01010120217176,Insektisida,Sipermetrin 333 g/l,Cabai,Kutu Daun,Myzus persicae,3,ml/l,2025-11-13,2030-11-13,utama
+SUPEMEC 18 EC,01010120042151,Insektisida,abamektin 18 g/l,Cabai,kutu daun,"Aphids sp (1,5 ml/l)","1,5",ml/l,2024-03-05,2029-03-05,utama
+SUPEMEC 18 EC,01010120042151,Insektisida,abamektin 18 g/l,Melon,kutu kebul,"Bemisia tabaci (0,5 ml/l)","0,5",ml/l,2024-03-05,2029-03-05,utama
+SUPERCYTRIN 50 EC,01010120269480,Insektisida,Sipermetrin 50 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-04-20,2031-04-20,utama
+SYMPHONY 100 EC,01010120175928,Insektisida,Piridalil 100 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2022-12-05,2027-12-05,utama
+TALSTAR 25 EC,01010119951196,Insektisida,Bifentrin 25 g/l,Jeruk,Kutu daun,Toxoptera sp. 1 ml/l,1,ml/l,2022-10-04,2027-10-04,utama
+TAMACRON 500 EC,01010120062340,Insektisida,Profenofos 500 g/l,Cabai,Kutu daun,Myzus persicae,1.5,ml/l,2025-11-13,2030-11-13,utama
+TARANTULA 50 WP,01010120227709,Insektisida,Pimetrozin 50 %,Cabai,kutu daun,Myzus persicae,1,g/l,2023-02-08,2028-02-08,utama
+TEKSECT 106/141 SC,01010120269482,Insektisida,Lamda sihalotrin 106 g/l; Tiametoksam 141 g/l,Cabai,kutu daun,Myzus persicae,"0,4",ml/l,2026-04-20,2031-04-20,utama
+TENCHU 20 SG,01010120103852,Insektisida,dinotefuron 20 %,Cabai,Kutu daun,Myzus persicae,1,g/l,2025-09-26,2030-09-26,utama
+TENCHU 20 SG,01010120103852,Insektisida,dinotefuron 20 %,Cabai,kutu kebul,Bemisia tabaci,2,g/l,2025-09-26,2030-09-26,utama
+TENCHU 20 SG,01010120103852,Insektisida,dinotefuron 20 %,Kacang panjang,Kutu daun,Aphis craccivora,2,g/l,2025-09-26,2030-09-26,utama
+TENCHU 20 SG,01010120103852,Insektisida,dinotefuron 20 %,Kacang panjang,Kutu kebul,Bemisia tabaci,2,g/l,2025-09-26,2030-09-26,utama
+TENCHU 20 SG,01010120103852,Insektisida,dinotefuron 20 %,Tomat,Kutu kebul,Bemisia tabaci,"1,5",g/l,2025-09-26,2030-09-26,utama
+TETRIN 36 EC,01010120083299,Insektisida,alfa sipermetrin 36 g/l,Cabai,Kutu daun,Myzus persicae 125 ml/ha,125,ml/ha,2022-10-04,2027-10-04,utama
+THIOXAM 4/50 WP,01010120165468,Insektisida,lamda sihalotrin 4 %; tiametoksam 50 %,Cabai,Kutu daun,Myzus persicae,0.75,g/l,2026-07-16,2031-07-16,utama
+TINK 70 WG,01010120227712,Insektisida,asetamiprid 70 %,Cabai,kutu daun,Myzus persicae,1,g/l,2023-02-08,2028-02-08,utama
+TIVOLI 45 SP,01010120196481,Insektisida,Metomil 45 %,Cabai,kutu daun,Myzus persicae,2,g/l,2024-09-19,2029-09-19,utama
+TOKSI 141/106 ZC,01010120217223,Insektisida,Lamda Sihalotrin 106 g/l; Tiametoksam 141 g/l,Cabai,Kutu Daun,Myzus persicae,"0,4",ml/l,2026-01-20,2031-01-20,utama
+TOMBAK 189 EC,01010120093382,Insektisida,sipermetrin 189 g/l,Cabai,hama kutu daun,Myzus persicae,200,ml/ha,2023-04-26,2028-04-26,utama
+TOP DOR 10 WP,01010120062482,Insektisida,imidaklorid 10 %,Cabai,Kutu daun (1 g/l),Myzus persicae,1,g/l,2026-04-20,2031-04-20,utama
+TOPTER MAX 15/20 WG,01010120248714,Insektisida,Asetamiprid 15 %; Flonikamid 20 %,Cabai,kutu kebul,Bemisia tabacii,"1,2",g/l,2025-02-17,2030-02-17,utama
+TOPTRUST 50/100 SC,01010120269488,Insektisida,Bifenthrin 50.00 g/l; Flonicamid 100.00 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2026-04-20,2031-04-20,utama
+TORAM 25 SP,01010120196312,Insektisida,nitenpiram 25 %,Cabai,kutu daun,Myzus persicae,1.5,g/l,2024-03-05,2029-03-05,utama
+TORRES 150 SC,01010120196581,Insektisida,Nitenpyram 150 g/l,Cabai,Kutu daun,Aphis gossypii,"0,5",ml/l,2024-11-18,2029-11-18,utama
+TOTAL MAX 200 EC,01010120134728,Insektisida,Imidakloprid 100 g/l; Sipermetrin 100 g/l,Cabai,kutu kebul,Bemisia tabaci,2,ml/l,2023-04-26,2028-04-26,utama
+TRESNA 25 EC,01010119961284,Insektisida,Deltametrin 25 g/l,Semangka,Kutu daun,"Aphis sp. (2,4 ml/l)","2,4",ml/l,2025-02-17,2030-02-17,utama
+TRIANA 100 EC,01010120237822,Insektisida,sipermetrin 100 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2023-04-26,2028-04-26,utama
+TRIDAMEX 36 EC,01010120113927,Insektisida,Abamektin 36 g/l,Cabai,Kutu daun,Myzus persicae,"0,75 - 1",ml/l,2025-07-11,2030-07-11,utama
+TRINICA-CAPS 250 CS,01010120196398,Insektisida,lamda sihalotrin 250 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2024-03-05,2029-03-05,utama
+TRISAGRA 50 EC,01010120238071,Insektisida,Asetamiprid 50 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-03-04,2029-03-04,utama
+TUBLES 40 SP,01010120186229,Insektisida,Metomil 40 %,Bawang merah,Kutu daun,Myzus persicae,0.75,g/l,2024-03-04,2029-03-04,utama
+TURBO 300/200 SC,01010120186091,Insektisida,Chlorfenapyr 300 g/l; Chlorpyrifos methyl 200 g/l,Cabai,kutu daun,Myzus persicae,0.25,ml/l,2024-03-05,2029-03-05,utama
+TamiStar 100/100 SC,01010120238201,Insektisida,Bifentrin 100 g/l; Klotianidin 100 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2024-03-05,2029-03-05,utama
+Teku 100 EC,01010120103868,Insektisida,piriproksifen 100 g/l,Cabai,kutu kebul,Bemisia tabaci,2,ml/l,2026-07-16,2031-07-16,utama
+ULTIMARAC 360 SC,01010120258887,Insektisida,Klorfenapir (Chlorfenapyr) 360 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2025-07-11,2030-07-11,utama
+UNICYTHRIN 50 EC,01010120134643,Insektisida,Lamda sihalotrin 50 g/l,Cabai,kutu daun,Myzus persicae,3,ml/l,2023-04-26,2028-04-26,utama
+VALERA 200 EC,01010120073004,Insektisida,Fenvalerat 200 g/l,Jeruk,Kutu daun,Aphis sp,0.5,ml/l,2025-11-13,2030-11-13,utama
+VALETUDO 600 SC,01010120186162,Insektisida,Klorfenapir 600 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2023-08-28,2028-08-28,utama
+VALIANT 50 EC,01010120042161,Insektisida,Alfa sipermetrin 50 g/l,Cabai,kutu daun,Myzus persicae,2,ml/l,2024-08-09,2029-08-09,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Apel,kutu daun,Aphis pomi,"0,3",ml/l,2024-03-05,2029-03-05,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Cabai,kutu daun,Myzus persicae,"0,8",ml/l,2024-03-05,2029-03-05,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Kentang,kutu daun,Aphis sp.,"0,5",ml/l,2024-03-05,2029-03-05,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Kubis,kutu daun,Aphis sp.,"0,8",ml/l,2024-03-05,2029-03-05,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Semangka,kutu daun,Aphis sp.,"0,8",ml/l,2024-03-05,2029-03-05,utama
+VAYEGO DUO 120/240 SC,01010120238213,Insektisida,spirotetramat 240 g/l; tetraniliprol 120 g/l,Tomat,kutu daun,Aphis sp.,"0,8",ml/l,2024-03-05,2029-03-05,utama
+VERIMARK 200 SC,01010120165544,Insektisida,Siantraniliprol 200 g/l,Pembibitan cabai,Kutu daun,Myzus persicae,25 ml/1000 bibit,,2026-01-20,2031-01-20,utama
+VERIMARK 200 SC,01010120165544,Insektisida,Siantraniliprol 200 g/l,Tomat,Kutu kebul,Bemisia tabaci,"25 ml/2,5 l air/1000 bibit",,2026-01-20,2031-01-20,utama
+VERPECTION 400 EC,01010120175814,Insektisida,Dimetoat 400 g/l,Cabai,kutu daun,Myzus persicae,"1,5",ml/l,2022-12-05,2027-12-05,utama
+VERTIPLUS WP,01010120237834,Insektisida,Beauveria bassiana 1 x 10^6 cfu/g; Verticillium lecanii 1 x 10^6 cfu/g,Cabai,kutu kebul,Bemisia tabaci,2,g/l,2023-04-26,2028-04-26,perluasan
+VERTIPLUS WP,01010120237834,Insektisida,Beauveria bassiana 1 x 10^6 cfu/g; Verticillium lecanii 1 x 10^6 cfu/g,Cabai,kutu kebul,Bemisia tabaci,2,g/l,2023-04-26,2028-04-26,utama
+WELCHEM 500 SL,01010120175815,Insektisida,klorfenapir 500 g/l,Cabai,hama kutu daun,Myzus persicae,1.5,ml/l,2022-06-27,2027-06-27,utama
+WELCHEM 500 SL,01010120175815,Insektisida,klorfenapir 500 g/l,Cabai,hama kutu daun,Thrips parvispinus,1,ml/l,2022-06-27,2027-06-27,utama
+WINDER 100 EC,01010120011591,Insektisida,Imidakloprid 100 g/l,Cabai,Kutu daun,Myzus persicae,"0,5",ml/l,2025-11-13,2030-11-13,utama
+WINDER 100 EC,01010120011591,Insektisida,Imidakloprid 100 g/l,Jeruk,Kutu daun aphid,Toxoptera citricida,1,ml/l,2025-11-13,2030-11-13,utama
+WINDER 100 EC,01010120011591,Insektisida,Imidakloprid 100 g/l,Kentang,Hama kutu daun,Aphis sp,"0,5",ml/l,2025-11-13,2030-11-13,utama
+WINDER 25 WP,01010119981452,Insektisida,imidakloprid 25 %,Cabai,kutu daun,Myzus persicae,200,g/ha,2023-04-26,2028-04-26,utama
+WIPER 50 EC,01010120134886,Insektisida,abamektin 50 g/l,Kentang,hama kutu daun,"Myzus persicae (0,45 ml/l)","0,45",ml/l,2026-07-16,2031-07-16,utama
+XYMO BUGTROL 0.30 EC,01010120248442,Insektisida,Azadirachtan 600 g/l,Bawang merah,kutu daun,Myzus persicae,3,ml/l,2024-09-19,2029-09-19,utama
+Xinlong Lvchong 100/200 SC,01010120259321,Insektisida,klorantraniliprol 100 g/l; klorfenapir 200 g/l,Cabai,kutu daun,Myzus persicae,1,ml/l,2026-01-20,2031-01-20,utama
+YAPEN 400/25 EC,01010120196405,Insektisida,Dimetoat 400 g/l; Imidakloprid 25 g/l,Cabai,kutu daun,Myzus persicae,"0,5",ml/l,2024-08-09,2029-08-09,utama
+YUTACLOR 200 EC,01010120248563,Insektisida,Klorpirifos 200 g/l,Kedelai,kutu kebul,Bemisia tabaci,2,ml/l,2024-11-18,2029-11-18,utama
+ZEDELIS 300 OD,01010120269506,Insektisida,Siantraniliprol 300 g/l,Cabai,kutu daun,Myzus persicae,"0,66",ml/l,2026-04-20,2031-04-20,utama
+ZEDELIS 300 OD,01010120269506,Insektisida,Siantraniliprol 300 g/l,Cabai,kutu kebul,Bemisia tabaci,"0,66",ml/l,2026-04-20,2031-04-20,utama
+ZEDELIS 300 OD,01010120269506,Insektisida,Siantraniliprol 300 g/l,Tomat,kutu daun,Myzus persicae,"0,66",ml/l,2026-04-20,2031-04-20,utama
+ZEDELIS 300 OD,01010120269506,Insektisida,Siantraniliprol 300 g/l,Tomat,kutu kebul,Bemisia tabaci,"0,66",ml/l,2026-04-20,2031-04-20,utama
+ZOMBA 200/50 SC,01020120206885,Insektisida,Emamektin Benzoat 50.00 g/l; Fipronil 200.00 g/l,Bawang merah,Kutu daun,Myzus persicae,0.75,ml/l,2025-09-26,2030-09-26,utama
+noAphidss WP,01010120259253,Insektisida,Cladosporium colocasiae voucher UFMGCB9604 1 x 10^6 cfu/g; Metarhizium viride VS10220 1 x 10^6 cfu/g,Mentimun,kutu daun,Myzus persicae,"0,833",g/l,2026-01-20,2031-01-20,utama

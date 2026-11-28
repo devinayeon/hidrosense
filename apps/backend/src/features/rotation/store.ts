@@ -1,7 +1,9 @@
 import type { Client, Row } from '@libsql/client';
 import { ApiError } from '../../common/errors.js';
+import { GROWTH_DAYS_ON_TABLE } from '../../common/growth-rules.js';
 import { fromMinor } from '../../common/quantities.js';
-import type { Aplikasi, Jenis, Obat } from './engine.js';
+import { batchActive } from '../transfers/store.js';
+import type { Aplikasi, Jenis, Obat, RotationResult } from './engine.js';
 import type { ListRecommendationQuery } from './contracts.js';
 
 type Executor = Pick<Client, 'execute'>;
@@ -11,11 +13,17 @@ const columns = `
   CAST(r.id_meja AS TEXT) AS id_meja,
   m.kode_meja,
   CAST(r.id_hasil_deteksi AS TEXT) AS id_hasil_deteksi,
-  r.kode_hama AS hama, r.tingkat,
+  r.kode_hama AS hama, r.tingkat, r.tingkat_model,
   CAST(r.id_katalog AS TEXT) AS id_katalog,
   k.bahan_aktif, k.jenis, k.sumber, k.catatan AS catatan_obat, k.phi_hari, k.phi_sumber, k.terverifikasi,
   r.kode_moa, g.nama AS nama_moa,
-  r.rule_id, r.alasan, r.status_rekomendasi AS status, r.alasan_penolakan, r.catatan_penolakan,
+  k.status_registrasi, k.catatan_registrasi,
+  (SELECT group_concat(lower(h2.nama), ' dan ') FROM rekomendasi_perawatan r2 JOIN hama h2 ON h2.kode_hama = r2.kode_hama
+    WHERE r.id_hasil_deteksi IS NOT NULL AND r2.id_hasil_deteksi = r.id_hasil_deteksi AND r2.id_katalog = r.id_katalog
+      AND r2.id_rekomendasi <> r.id_rekomendasi AND r2.status_rekomendasi <> 'ditolak') AS hama_bersama,
+  (SELECT lower(nama) FROM hama WHERE kode_hama = r.kode_hama) AS hama_nama,
+  r.rule_id, r.alasan, r.rencana, r.status_rekomendasi AS status, r.alasan_diisi,
+  r.alasan_penolakan, r.catatan_penolakan,
   r.tanggal_rekomendasi, r.tanggal_keputusan,
   p.tanggal_perawatan AS tanggal_aplikasi, p.catatan AS catatan_perawatan,
   CAST(p.id_perawatan AS TEXT) AS id_perawatan
@@ -77,6 +85,7 @@ function recommendationRow(row: Row) {
     id_hasil_deteksi: text(row.id_hasil_deteksi),
     hama: String(row.hama),
     tingkat: String(row.tingkat),
+    tingkat_model: text(row.tingkat_model),
     status: String(row.status),
     obat: {
       id_katalog: String(row.id_katalog),
@@ -89,11 +98,16 @@ function recommendationRow(row: Row) {
       phi_sumber: text(row.phi_sumber),
       sumber: String(row.sumber),
       terverifikasi: Number(row.terverifikasi) === 1,
+      status_registrasi: String(row.status_registrasi),
+      catatan_registrasi: text(row.catatan_registrasi),
     },
+    rencana: row.rencana == null ? null : JSON.parse(String(row.rencana)) as RotationResult['rencana'],
     rule_id: String(row.rule_id),
-    alasan: String(row.alasan),
-    alasan_penolakan: text(row.alasan_penolakan),
-    catatan_penolakan: text(row.catatan_penolakan),
+    alasan: row.hama_bersama == null
+      ? String(row.alasan)
+      : `${row.alasan} Satu semprotan untuk ${row.hama_nama} dan ${row.hama_bersama} pada foto ini.`,
+    alasan_penolakan: Number(row.alasan_diisi) === 1 ? text(row.alasan_penolakan) : null,
+    catatan_penolakan: Number(row.alasan_diisi) === 1 ? text(row.catatan_penolakan) : null,
     tanggal_aplikasi: text(row.tanggal_aplikasi),
     catatan_perawatan: text(row.catatan_perawatan),
     tanggal_rekomendasi: String(row.tanggal_rekomendasi),
@@ -128,12 +142,12 @@ export async function listRecommendations(db: Executor, query: ListRecommendatio
   };
 }
 
-/** Obat yang berlaku untuk satu hama, dalam bentuk yang dimengerti mesin rotasi. */
+/** Obat yang boleh disarankan untuk satu hama, dalam bentuk yang dimengerti mesin rotasi. */
 export async function loadCatalog(db: Executor, hama: string): Promise<Obat[]> {
   const rows = (await db.execute({
-    sql: `SELECT CAST(k.id_katalog AS TEXT) AS id, k.bahan_aktif, k.jenis, k.kode_moa
+    sql: `SELECT CAST(k.id_katalog AS TEXT) AS id, k.bahan_aktif, k.jenis, k.kode_moa, k.phi_hari
       FROM obat_katalog k JOIN katalog_hama h ON h.id_katalog = k.id_katalog
-      WHERE h.kode_hama = ?`,
+      WHERE h.kode_hama = ? AND k.boleh_direkomendasikan = 1`,
     args: [hama],
   })).rows;
   return rows.map((r) => ({
@@ -141,25 +155,43 @@ export async function loadCatalog(db: Executor, hama: string): Promise<Obat[]> {
     bahan_aktif: String(r.bahan_aktif),
     jenis: String(r.jenis) as Jenis,
     kode_moa: text(r.kode_moa),
+    phi_hari: r.phi_hari == null ? null : Number(r.phi_hari),
   }));
 }
 
 /**
+ * Sisa hari menuju panen paling awal di meja (batch tertua yang masih punya tanaman aktif).
+ * Lewat jadwal dihitung 0. Null bila meja kosong.
+ */
+export async function daysToHarvest(db: Executor, idMeja: string, today: string): Promise<number | null> {
+  const row = (await db.execute({
+    sql: `SELECT MIN(p.tanggal_pemindahan) AS pindah FROM pemindahan p
+      WHERE p.id_meja = ? AND (${batchActive}) > 0`,
+    args: [idMeja],
+  })).rows[0];
+  if (row?.pindah == null) return null;
+  const sejakPindah = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${row.pindah}T00:00:00Z`)) / 86_400_000;
+  return Math.max(0, GROWTH_DAYS_ON_TABLE - sejakPindah);
+}
+
+/**
  * Tindakan nyata (perawatan) pada meja ini. Semua hama dihitung: satu semprotan mengenai semuanya.
- * Urutan kejadian memakai id_perawatan, jadi dua tindakan pada hari yang sama tetap terurut.
+ * Saran untuk beberapa hama dari foto yang sama dengan obat yang sama adalah satu semprotan,
+ * jadi dihitung sekali (tanggal paling awal).
  */
 export async function loadHistory(db: Executor, idMeja: string): Promise<Aplikasi[]> {
   const rows = (await db.execute({
-    sql: `SELECT CAST(r.id_katalog AS TEXT) AS id_obat, r.kode_moa, p.tanggal_perawatan AS tanggal, p.id_perawatan AS seq
+    sql: `SELECT CAST(r.id_katalog AS TEXT) AS id_obat, MIN(r.kode_moa) AS kode_moa, MIN(p.tanggal_perawatan) AS tanggal
       FROM perawatan p JOIN rekomendasi_perawatan r ON r.id_rekomendasi = p.id_rekomendasi
-      WHERE r.id_meja = ?`,
+      WHERE r.id_meja = ?
+      GROUP BY CASE WHEN r.id_hasil_deteksi IS NULL THEN 'p' || p.id_perawatan
+        ELSE 'f' || r.id_hasil_deteksi || '-' || r.id_katalog END`,
     args: [idMeja],
   })).rows;
   return rows.map((r) => ({
     id_obat: String(r.id_obat),
     kode_moa: text(r.kode_moa),
     tanggal: String(r.tanggal),
-    seq: Number(r.seq),
   }));
 }
 

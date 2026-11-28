@@ -12,7 +12,7 @@ const nullableId = (value: Row[string]) => (value == null ? null : String(value)
 
 // Tanaman aktif = dipindahkan - rusak - dipanen. Rumus yang sama ada di tables/store.ts,
 // harvest/service.ts, damage/service.ts, dan migrasi 0012; ubah semuanya bersamaan.
-const batchActive = `p.jumlah_tanaman
+export const batchActive = `p.jumlah_tanaman
   - COALESCE((SELECT SUM(k.jumlah_tanaman) FROM kerusakan_tanaman k WHERE k.id_pemindahan=p.id_pemindahan), 0)
   - COALESCE((SELECT SUM(d.jumlah_tanaman) FROM detail_panen d WHERE d.id_pemindahan=p.id_pemindahan), 0)`;
 

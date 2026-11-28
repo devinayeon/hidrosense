@@ -59,7 +59,7 @@ export function registerRotation(app: FastifyInstance, db: Client, clock: () => 
   app.post('/api/v1/rekomendasi-obat/:id/tolak', { preHandler: decide }, async (request) => {
     const { id } = parseInput(idParamSchema, request.params);
     parseInput(emptyQuerySchema, request.query);
-    const input = parseInput(rejectSchema, request.body);
+    const input = parseInput(rejectSchema, request.body ?? {});
     return rotationWrite(db, request, clock, { action: 'reject', id, input });
   });
 }

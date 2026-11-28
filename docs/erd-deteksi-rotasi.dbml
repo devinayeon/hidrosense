@@ -23,6 +23,9 @@ Table obat_katalog {
   catatan text
   sumber varchar(300) [not null]
   terverifikasi int [not null, default: 0]
+  boleh_direkomendasikan int [not null, default: 1, note: '0 = hanya data, tidak disarankan']
+  status_registrasi varchar [not null, default: 'belum_diperiksa', note: 'tercatat_komoditas_lain | tidak_ditemukan | bukan_pestisida | belum_diperiksa']
+  catatan_registrasi varchar(500)
 }
 
 Table katalog_hama {
@@ -59,6 +62,9 @@ Table rekomendasi_perawatan {
   alasan varchar(500) [not null]
   status_rekomendasi varchar [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak; final setelah diputuskan (trigger)']
   alasan_penolakan varchar [note: 'tidak_tersedia | harga | sudah_ditangani | tidak_yakin_hama | lainnya']
+  alasan_diisi int [not null, default: 1, note: '0 = ditolak tanpa alasan; alasan_penolakan hanya pengisi']
+  rencana text [note: 'JSON rencana rotasi saat saran dibuat']
+  tingkat_model varchar [note: 'tingkat dari jumlah hama di foto; null tanpa foto']
   catatan_penolakan varchar(500) [note: 'wajib bila lainnya']
   id_user int [not null, ref: > users.id_user]
   tanggal_rekomendasi text [not null]
@@ -94,4 +100,20 @@ Table meja_tanam {
 
 Table users {
   id_user int [pk]
+}
+
+Table merek_obat {
+  id_merek int [pk]
+  nama_merek varchar(200) [not null]
+  kunci varchar(200) [not null, note: 'nama dinormalkan; sama dengan kunciMerek di material.ts']
+  kunci_dasar varchar(200) [not null, note: 'tanpa konsentrasi dan formulasi']
+  nomor_pendaftaran varchar(40) [not null]
+  tanggal_berakhir text [not null]
+  Note: 'Merek insektisida/akarisida terdaftar Kementan (diambil 28 Nov 2026), dibuat docs/data/registri/susun_merek.py'
+}
+
+Table merek_bahan {
+  id_merek int [pk, ref: > merek_obat.id_merek]
+  nama_bahan varchar(200) [pk]
+  id_katalog int [ref: > obat_katalog.id_katalog, note: 'null: bahan di luar katalog']
 }

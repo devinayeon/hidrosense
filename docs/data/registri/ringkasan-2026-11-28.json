@@ -1,0 +1,520 @@
+{
+ "diambil": "2026-11-28",
+ "entri_unik": 8085,
+ "total_dilaporkan_server": 8090,
+ "baris_perluasan": 30,
+ "entri_selada": 0,
+ "baris_csv": 517,
+ "produk_csv": 359,
+ "bahan": {
+  "Abamektin": {
+   "kutu daun": {
+    "produk": 40,
+    "komoditas": [
+     "Cabai",
+     "Kentang",
+     "Jeruk",
+     "Tomat",
+     "Bawang merah",
+     "Melon"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 4,
+    "komoditas": [
+     "Cabai",
+     "Melon",
+     "Tomat",
+     "Semangka",
+     "Tembakau"
+    ]
+   },
+   "thrips": {
+    "produk": 99,
+    "komoditas": [
+     "Cabai",
+     "Bawang merah",
+     "Kentang",
+     "Tomat",
+     "Jeruk",
+     "Mentimun"
+    ]
+   }
+  },
+  "Asetamiprid": {
+   "kutu daun": {
+    "produk": 10,
+    "komoditas": [
+     "Cabai",
+     "Terung",
+     "Apel"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 5,
+    "komoditas": [
+     "Cabai",
+     "Tomat",
+     "Terung"
+    ]
+   },
+   "thrips": {
+    "produk": 9,
+    "komoditas": [
+     "Cabai",
+     "Tomat",
+     "Apel"
+    ]
+   }
+  },
+  "Azadirachtin (neem)": {
+   "kutu daun": {
+    "produk": 2,
+    "komoditas": [
+     "Kelapa",
+     "Bawang merah"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai",
+     "Bawang putih"
+    ]
+   }
+  },
+  "Beauveria bassiana": {
+   "kutu daun": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai",
+     "Kacang panjang"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 2,
+    "komoditas": [
+     "Bawang merah",
+     "Cabai"
+    ]
+   }
+  },
+  "Buprofezin": {
+   "kutu daun": {
+    "produk": 1,
+    "komoditas": [
+     "Kedelai"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 2,
+    "komoditas": [
+     "Kedelai"
+    ]
+   },
+   "thrips": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai"
+    ]
+   }
+  },
+  "Diafentiuron": {
+   "kutu daun": {
+    "produk": 2,
+    "komoditas": [
+     "Cabai",
+     "Apel",
+     "Semangka"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 6,
+    "komoditas": [
+     "Cabai",
+     "Tomat"
+    ]
+   },
+   "thrips": {
+    "produk": 6,
+    "komoditas": [
+     "Cabai",
+     "Bawang merah",
+     "Cabai merah",
+     "Tomat",
+     "Kentang",
+     "Semangka"
+    ]
+   }
+  },
+  "Dimpropiridaz": {
+   "kutu daun": {
+    "produk": 1,
+    "komoditas": [
+     "Kentang",
+     "Cabai"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 1,
+    "komoditas": [
+     "Tomat",
+     "Kentang",
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 0,
+    "komoditas": []
+   }
+  },
+  "Dinotefuran": {
+   "kutu daun": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai",
+     "Kacang panjang",
+     "Tomat"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai",
+     "Tomat",
+     "Kacang panjang"
+    ]
+   },
+   "thrips": {
+    "produk": 5,
+    "komoditas": [
+     "Bawang merah",
+     "Cabai",
+     "Tomat"
+    ]
+   }
+  },
+  "Flonikamid": {
+   "kutu daun": {
+    "produk": 8,
+    "komoditas": [
+     "Cabai",
+     "Kacang panjang",
+     "Tomat"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 3,
+    "komoditas": [
+     "Tomat",
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 4,
+    "komoditas": [
+     "Bawang merah",
+     "Cabai"
+    ]
+   }
+  },
+  "Flupiradifuron": {
+   "kutu daun": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai",
+     "Jeruk",
+     "Tembakau",
+     "Tomat"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai",
+     "Tembakau",
+     "Terung",
+     "Tomat"
+    ]
+   },
+   "thrips": {
+    "produk": 0,
+    "komoditas": []
+   }
+  },
+  "Imidakloprid": {
+   "kutu daun": {
+    "produk": 38,
+    "komoditas": [
+     "Cabai",
+     "Kacang panjang",
+     "Semangka",
+     "Jeruk",
+     "Tembakau",
+     "Kentang"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 7,
+    "komoditas": [
+     "Kedelai",
+     "Tomat",
+     "Cabai",
+     "Melon",
+     "Semangka",
+     "Tembakau"
+    ]
+   },
+   "thrips": {
+    "produk": 48,
+    "komoditas": [
+     "Cabai",
+     "Kentang",
+     "Semangka",
+     "Bawang merah",
+     "Tomat",
+     "Apel"
+    ]
+   }
+  },
+  "Lambda-sihalotrin": {
+   "kutu daun": {
+    "produk": 16,
+    "komoditas": [
+     "Cabai",
+     "Jagung",
+     "Kacang panjang",
+     "Tomat",
+     "Tembakau",
+     "Kentang"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 2,
+    "komoditas": [
+     "Tomat",
+     "Tembakau"
+    ]
+   },
+   "thrips": {
+    "produk": 9,
+    "komoditas": [
+     "Cabai",
+     "Bawang merah"
+    ]
+   }
+  },
+  "Lecanicillium lecanii": {
+   "kutu daun": {
+    "produk": 1,
+    "komoditas": [
+     "Tomat"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 0,
+    "komoditas": []
+   }
+  },
+  "Metarhizium anisopliae": {
+   "kutu daun": {
+    "produk": 1,
+    "komoditas": [
+     "Kacang panjang"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "thrips": {
+    "produk": 1,
+    "komoditas": [
+     "Cabai"
+    ]
+   }
+  },
+  "Pimetrozin": {
+   "kutu daun": {
+    "produk": 3,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 2,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "thrips": {
+    "produk": 1,
+    "komoditas": [
+     "Ketimun"
+    ]
+   }
+  },
+  "Siantraniliprol": {
+   "kutu daun": {
+    "produk": 4,
+    "komoditas": [
+     "Cabai",
+     "Tomat",
+     "Kacang panjang",
+     "Melon",
+     "Pembibitan cabai"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 6,
+    "komoditas": [
+     "Tomat",
+     "Cabai",
+     "Kacang panjang",
+     "Melon",
+     "Mentimun"
+    ]
+   },
+   "thrips": {
+    "produk": 6,
+    "komoditas": [
+     "Cabai",
+     "Tomat",
+     "Bawang merah",
+     "Kentang",
+     "Kacang panjang",
+     "Pembibitan cabai"
+    ]
+   }
+  },
+  "Spinosad": {
+   "kutu daun": {
+    "produk": 2,
+    "komoditas": [
+     "Cabai"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "thrips": {
+    "produk": 2,
+    "komoditas": [
+     "Cabai",
+     "Kentang"
+    ]
+   }
+  },
+  "Spiromesifen": {
+   "kutu daun": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "kutu kebul": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "thrips": {
+    "produk": 0,
+    "komoditas": []
+   }
+  },
+  "Spirotetramat": {
+   "kutu daun": {
+    "produk": 5,
+    "komoditas": [
+     "Cabai",
+     "Apel",
+     "Tomat",
+     "Kentang",
+     "Semangka",
+     "Kubis"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 3,
+    "komoditas": [
+     "Tomat",
+     "Melon",
+     "Cabai",
+     "Semangka",
+     "Tembakau",
+     "Kentang"
+    ]
+   },
+   "thrips": {
+    "produk": 6,
+    "komoditas": [
+     "Cabai",
+     "Semangka",
+     "Bawang merah",
+     "Tomat",
+     "Melon",
+     "Apel"
+    ]
+   }
+  },
+  "Tiametoksam": {
+   "kutu daun": {
+    "produk": 13,
+    "komoditas": [
+     "Cabai",
+     "Jagung",
+     "Kacang panjang",
+     "Kedelai",
+     "Tomat",
+     "Tembakau"
+    ]
+   },
+   "kutu kebul": {
+    "produk": 4,
+    "komoditas": [
+     "Cabai",
+     "Tomat"
+    ]
+   },
+   "thrips": {
+    "produk": 8,
+    "komoditas": [
+     "Bawang merah",
+     "Cabai",
+     "Jeruk",
+     "Padi"
+    ]
+   }
+  },
+  "Sabun insektisida": {
+   "kutu daun": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "kutu kebul": {
+    "produk": 0,
+    "komoditas": []
+   },
+   "thrips": {
+    "produk": 0,
+    "komoditas": []
+   }
+  }
+ }
+}

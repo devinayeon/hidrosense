@@ -14,9 +14,11 @@ async function setup(t) {
   `);
   const call = (method, url, payload, extra = {}) =>
     f.app.inject({ method, url, payload, headers: { ...headers, 'idempotency-key': randomUUID(), ...extra } });
+  const rec = (await call('POST', '/api/v1/rekomendasi-obat', { id_meja: '1', hama: 'thrips', tingkat: 'berat' })).json().data;
+  // Bahan yang dipotong adalah obat yang disarankan; obat lain kini ditolak (MATERIAL_MISMATCH, 2026-11-28).
   const jenis = (await call('POST', '/api/v1/jenis-inventaris', { nama_jenis: 'Obat' })).json().data;
   const item = (await call('POST', '/api/v1/inventaris', {
-    id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: 'Spinosad 25 SC', satuan: 'ml', stok_minimum: null,
+    id_jenis_inventaris: jenis.id_jenis_inventaris, nama_barang: `${rec.obat.bahan_aktif} 25 SC`, satuan: 'ml', stok_minimum: null,
   })).json().data;
   const stockIn = await call('POST', '/api/v1/stok', {
     jenis_stok: 'masuk', details: [{ id_inventaris: item.id_inventaris, jumlah: '100', satuan: 'ml' }],
@@ -25,7 +27,6 @@ async function setup(t) {
   const balance = async () => (await f.app.inject({
     url: `/api/v1/inventaris/${item.id_inventaris}/saldo`, headers,
   })).json().data;
-  const rec = (await call('POST', '/api/v1/rekomendasi-obat', { id_meja: '1', hama: 'thrips', tingkat: 'berat' })).json().data;
   const accept = (body, extra) => call('POST', `/api/v1/rekomendasi-obat/${rec.id_rekomendasi}/terima`, body, extra);
   const line = (jumlah = '10', over = {}) => ({ id_inventaris: item.id_inventaris, jumlah, satuan: 'ml', ...over });
   return { ...f, headers, call, item, balance, rec, accept, line };
@@ -45,7 +46,7 @@ test('terima dengan bahan: stok keluar milik perawatan, saldo turun, bahan tampi
   check(res, 200);
   const d = res.json().data;
   assert.equal(d.status, 'diterima');
-  assert.deepEqual(d.bahan_terpakai, [{ id_inventaris: s.item.id_inventaris, nama_barang: 'Spinosad 25 SC', jumlah: '10', satuan: 'ml' }]);
+  assert.deepEqual(d.bahan_terpakai, [{ id_inventaris: s.item.id_inventaris, nama_barang: s.item.nama_barang, jumlah: '10', satuan: 'ml' }]);
   const after = await s.balance();
   assert.equal(Number(before.saldo) - Number(after.saldo), 10);
   assert.equal(await count(s.db, "SELECT COUNT(*) n FROM stok WHERE id_perawatan IS NOT NULL AND jenis_stok = 'keluar'"), 1);

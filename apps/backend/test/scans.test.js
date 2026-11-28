@@ -34,9 +34,10 @@ test('menyimpan pindaian: satu foto, hitungan per kelas urut indeks model', asyn
   const d = res.json().data;
   assert.equal(d.id_meja, '1');
   assert.equal(d.gambar, photo);
-  assert.deepEqual(d.deteksi.map((x) => x.hama), ['thrips', 'aphids'], 'urut indeks model: thrips 0, aphids 2');
-  assert.equal(d.deteksi[1].confidence_maks, 0.91);
-  assert.equal(d.deteksi[0].confidence_maks, null);
+  // Model v4.2 (labels.txt): 0 whitefly, 1 aphids; thrips di luar model, indeks 2.
+  assert.deepEqual(d.deteksi.map((x) => x.hama), ['aphids', 'thrips'], 'urut indeks model: aphids 1, thrips 2');
+  assert.equal(d.deteksi[0].confidence_maks, 0.91);
+  assert.equal(d.deteksi[1].confidence_maks, null);
   const rows = (await s.db.execute('SELECT COUNT(*) n FROM hasil_deteksi')).rows;
   assert.equal(Number(rows[0].n), 1, 'satu foto = satu baris, bukan satu per hama');
 });

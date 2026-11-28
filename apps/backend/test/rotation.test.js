@@ -11,6 +11,8 @@ async function setup(t) {
     INSERT INTO meja_tanam (kode_meja, jumlah_lubang, status_meja) VALUES ('M-01', 250, 'tersedia'), ('M-02', 250, 'tersedia');
     INSERT INTO pemindahan (id_penyemaian, id_meja, tanggal_pemindahan, jumlah_tanaman) VALUES (1, 1, '2026-09-16', 200);
     INSERT INTO hasil_deteksi (id_pemindahan, id_user, gambar, versi_model, tanggal_deteksi) VALUES (1, 1, 'https://res.cloudinary.com/demo/a.jpg', 'm1', '2026-09-30T00:00:00.000Z');
+    -- Foto nyata selalu membawa hitungan per hama (POST /pindaian); saran dari foto harus cocok dengannya.
+    INSERT INTO deteksi_hama (id_hasil_deteksi, kode_hama, jumlah, confidence_maks) VALUES (1, 'thrips', 9, 0.9);
   `);
   const send = (method, path = '', payload, extra = {}) =>
     f.app.inject({ method, url: `/api/v1/rekomendasi-obat${path}`, payload, headers: { ...headers, ...extra } });
@@ -76,13 +78,14 @@ test('penolakan "tidak tersedia" membuat obat itu tidak disarankan lagi; "sudah 
 
 test('penolakan "tidak tersedia" kedaluwarsa setelah 30 hari', async (t) => {
   const s = await setup(t);
-  const a = (await s.create({ tingkat: 'berat' })).json().data;
+  // Meja M-02 kosong, jadi masa tunggu panen tidak ikut mengubah pilihan.
+  const a = (await s.create({ id_meja: '2', tingkat: 'berat' })).json().data;
   check(await s.reject(a.id_rekomendasi, { alasan: 'tidak_tersedia' }), 200);
   s.advance(31 * 24 * 60 * 60 * 1000);
   const token = (await s.login('petani')).json().data.access_token;
   const res = await s.app.inject({
     method: 'POST', url: '/api/v1/rekomendasi-obat', headers: bearer(token),
-    payload: { id_meja: '1', hama: 'thrips', tingkat: 'berat' },
+    payload: { id_meja: '2', hama: 'thrips', tingkat: 'berat' },
   });
   check(res, 201);
   assert.equal(res.json().data.obat.id_katalog, a.obat.id_katalog);
@@ -107,20 +110,20 @@ test('membuat dua kali (ketuk ganda): 200 dan id sama, tidak menumpuk', async (t
   assert.equal(list.meta.total, 1);
 });
 
-test('rotasi: MoA dari 2 aplikasi terakhir tidak muncul lagi pada meja yang sama', async (t) => {
+test('rotasi: dalam 30 hari tidak ada cara kerja yang dipakai lebih dari 2 kali', async (t) => {
   const s = await setup(t);
   const used = [];
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 6; i += 1) {
     const rec = (await s.create({ tingkat: 'berat' })).json().data;
-    assert.ok(!used.slice(-2).includes(rec.obat.kode_moa), `MoA ${rec.obat.kode_moa} berulang dalam jendela ${used.slice(-2)}`);
-    check(await s.accept(rec.id_rekomendasi), 200);
     used.push(rec.obat.kode_moa);
+    check(await s.accept(rec.id_rekomendasi), 200);
     s.advance(1000);
   }
-  assert.equal(new Set(used).size, 3);
+  for (const moa of used) assert.ok(used.filter((m) => m === moa).length <= 2, used.join(','));
+  assert.equal(new Set(used.slice(0, 3)).size, 3, used.join(','));
 });
 
-test('riwayat per meja: aplikasi di M-01 tidak memblokir M-02', async (t) => {
+test('riwayat per meja: aplikasi di M-01 tidak memakai jatah M-02', async (t) => {
   const s = await setup(t);
   const m1 = (await s.create({ tingkat: 'berat' })).json().data;
   check(await s.accept(m1.id_rekomendasi), 200);
@@ -128,12 +131,12 @@ test('riwayat per meja: aplikasi di M-01 tidak memblokir M-02', async (t) => {
   assert.equal(m2.obat.kode_moa, m1.obat.kode_moa);
 });
 
-test('satu semprotan mengenai semua hama: MoA terpakai pada thrips memblokir whitefly di meja yang sama', async (t) => {
+test('satu semprotan mengenai semua hama: MoA terpakai pada thrips tidak didahulukan untuk whitefly', async (t) => {
   const s = await setup(t);
   const thrips = (await s.create({ tingkat: 'berat' })).json().data;
   check(await s.accept(thrips.id_rekomendasi), 200);
   const whitefly = (await s.create({ hama: 'whitefly', tingkat: 'berat' })).json().data;
-  assert.notEqual(whitefly.obat.kode_moa, thrips.obat.kode_moa);
+  assert.notEqual(whitefly.obat.kode_moa?.[0], thrips.obat.kode_moa?.[0]);
 });
 
 test('menolak tidak memblokir MoA: rekomendasi berikutnya boleh obat yang sama', async (t) => {
@@ -196,16 +199,114 @@ test('balapan terima vs tolak: tepat satu menang, yang lain 409', async (t) => {
   assert.equal(final.status, a.statusCode === 200 ? 'diterima' : 'ditolak');
 });
 
-test('menolak wajib beralasan terstruktur; "lainnya" wajib catatan', async (t) => {
+test('alasan menolak opsional; "lainnya" tetap wajib catatan', async (t) => {
   const s = await setup(t);
   const rec = (await s.create()).json().data;
-  check(await s.reject(rec.id_rekomendasi, {}), 400);
   check(await s.reject(rec.id_rekomendasi, { alasan: 'asal' }), 400);
   check(await s.reject(rec.id_rekomendasi, { alasan: 'lainnya' }), 400);
   check(await s.reject(rec.id_rekomendasi, { alasan: 'lainnya', catatan: '   ' }), 400);
   const ok = await s.reject(rec.id_rekomendasi, { alasan: 'lainnya', catatan: 'Sudah dilepas predator minggu lalu' });
   check(ok, 200);
   assert.equal(ok.json().data.catatan_penolakan, 'Sudah dilepas predator minggu lalu');
+});
+
+test('menolak tanpa alasan: tersimpan kosong, ulangan aman, alasan susulan 409', async (t) => {
+  const s = await setup(t);
+  const rec = (await s.create()).json().data;
+  const res = await s.reject(rec.id_rekomendasi, {});
+  check(res, 200);
+  assert.equal(res.json().data.status, 'ditolak');
+  assert.equal(res.json().data.alasan_penolakan, null);
+  assert.equal(res.json().data.catatan_penolakan, null);
+  check(await s.reject(rec.id_rekomendasi, { alasan: null }), 200);
+  check(await s.reject(rec.id_rekomendasi, { alasan: 'harga' }), 409, 'RECOMMENDATION_ALREADY_DECIDED');
+});
+
+test('catatan tanpa pilihan alasan dicatat sebagai "lainnya"', async (t) => {
+  const s = await setup(t);
+  const rec = (await s.create()).json().data;
+  const res = await s.reject(rec.id_rekomendasi, { catatan: 'Tunggu hujan reda' });
+  check(res, 200);
+  assert.equal(res.json().data.alasan_penolakan, 'lainnya');
+  assert.equal(res.json().data.catatan_penolakan, 'Tunggu hujan reda');
+});
+
+test('rekomendasi menyimpan rencana rotasi dan status registrasi obat', async (t) => {
+  const s = await setup(t);
+  const created = (await s.create({ hama: 'aphids', tingkat: 'berat' })).json().data;
+  const read = (await s.send('GET', `/${created.id_rekomendasi}`)).json().data;
+  assert.deepEqual(read.rencana, created.rencana);
+  assert.equal(read.rencana.langkah[0].id_katalog, read.obat.id_katalog);
+  assert.equal(read.rencana.langkah.length, 3);
+  assert.ok(read.rencana.jumlah_kombinasi >= 1);
+  assert.ok(['tercatat_komoditas_lain', 'tidak_ditemukan'].includes(read.obat.status_registrasi));
+});
+
+test('mendekati panen: hanya kimia dengan masa tunggu yang muat', async (t) => {
+  const s = await setup(t);
+  // Pindah 2026-09-16 + 45 hari = 2026-10-31; maju ke 2026-10-29 (sisa 2 hari).
+  s.advance(29 * 24 * 60 * 60 * 1000);
+  const token = (await s.login('petani')).json().data.access_token;
+  const res = await s.app.inject({
+    method: 'POST', url: '/api/v1/rekomendasi-obat', headers: bearer(token),
+    payload: { id_meja: '1', hama: 'aphids', tingkat: 'berat' },
+  });
+  check(res, 201);
+  const { obat, rencana } = res.json().data;
+  assert.ok(obat.phi_hari <= 2, `${obat.bahan_aktif} PHI ${obat.phi_hari}`);
+  for (const l of rencana.langkah) {
+    const row = (await s.db.execute({ sql: 'SELECT phi_hari FROM obat_katalog WHERE id_katalog = ?', args: [l.id_katalog] })).rows[0];
+    assert.ok(row.phi_hari !== null && Number(row.phi_hari) <= 2, l.bahan_aktif);
+  }
+});
+
+test('saran menunggu yang jatahnya keburu habis: terima ditolak 409, minta ulang mengganti cara kerja', async (t) => {
+  const s = await setup(t);
+  const waiting = (await s.create({ hama: 'aphids', tingkat: 'berat' })).json().data;
+  // Dua semprot MoA yang sama tercatat di meja itu lewat saran hama lain.
+  for (let i = 0; i < 2; i += 1) {
+    const row = (await s.db.execute({
+      sql: `INSERT INTO rekomendasi_perawatan (id_meja, kode_hama, tingkat, id_katalog, kode_moa, rule_id, alasan,
+          id_user, tanggal_rekomendasi, status_rekomendasi, tanggal_keputusan)
+        VALUES (1, 'thrips', 'berat', ?, ?, 'ROT-MOA', 'uji', 1, 't', 'diterima', 't') RETURNING id_rekomendasi AS id`,
+      args: [waiting.obat.id_katalog, waiting.obat.kode_moa],
+    })).rows[0];
+    await s.db.execute({
+      sql: "INSERT INTO perawatan (id_rekomendasi, id_user, tanggal_perawatan) VALUES (?, 1, '2026-09-29')",
+      args: [row.id],
+    });
+  }
+  check(await s.accept(waiting.id_rekomendasi), 409, 'ROTATION_LIMIT');
+  const again = await s.create({ hama: 'aphids', tingkat: 'berat' });
+  check(again, 200);
+  const fresh = again.json().data;
+  assert.equal(fresh.id_rekomendasi, waiting.id_rekomendasi);
+  assert.notEqual(fresh.obat.kode_moa, waiting.obat.kode_moa);
+  assert.equal(again.json().replayed, false);
+  check(await s.accept(fresh.id_rekomendasi), 200);
+});
+
+test('saran kimia yang menunggu sampai dekat panen tidak bisa diterima', async (t) => {
+  const s = await setup(t);
+  const waiting = (await s.create({ hama: 'aphids', tingkat: 'berat' })).json().data;
+  assert.ok(waiting.obat.phi_hari > 0, waiting.obat.bahan_aktif);
+  s.advance(31 * 24 * 60 * 60 * 1000);
+  const token = (await s.login('petani')).json().data.access_token;
+  const res = await s.app.inject({
+    method: 'POST', url: `/api/v1/rekomendasi-obat/${waiting.id_rekomendasi}/terima`, headers: bearer(token), payload: {},
+  });
+  check(res, 409, 'HARVEST_TOO_SOON');
+});
+
+test('bahan tanpa data masa tunggu selada tidak pernah disarankan', async (t) => {
+  const s = await setup(t);
+  const blocked = (await s.db.execute(
+    'SELECT bahan_aktif FROM obat_katalog WHERE boleh_direkomendasikan = 0 ORDER BY bahan_aktif')).rows.map((r) => r.bahan_aktif);
+  assert.deepEqual(blocked,
+    ['Buprofezin', 'Diafentiuron', 'Dimpropiridaz', 'Lambda-sihalotrin', 'Siantraniliprol']);
+  const unsafe = (await s.db.execute(
+    "SELECT COUNT(*) n FROM obat_katalog WHERE jenis = 'kimia' AND boleh_direkomendasikan = 1 AND phi_hari IS NULL")).rows[0];
+  assert.equal(Number(unsafe.n), 0);
 });
 
 test('filter daftar: status, meja, hama; status tidak dikenal 400', async (t) => {

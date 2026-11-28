@@ -44,14 +44,20 @@ export const acceptSchema = z.strictObject({
     }),
 });
 
-/** Menolak tidak murni "tidak": alasan terstruktur wajib, catatan wajib bila alasan "lainnya". */
+/**
+ * Alasan menolak opsional. Bila "lainnya" dipilih, catatannya wajib; catatan tanpa pilihan
+ * alasan dicatat sebagai "lainnya".
+ */
 export const rejectSchema = z.strictObject({
-  alasan: alasanTolakSchema,
+  alasan: alasanTolakSchema.nullable().optional(),
   catatan: noteSchema,
 }).refine((v) => v.alasan !== 'lainnya' || v.catatan !== null, {
   message: 'Catatan wajib diisi bila alasan "lainnya".',
   path: ['catatan'],
-});
+}).transform((v) => ({
+  alasan: v.alasan ?? (v.catatan === null ? null : 'lainnya' as const),
+  catatan: v.catatan,
+}));
 
 export const listRecommendationQuerySchema = z.strictObject({
   page: activeListQuerySchema.shape.page,
