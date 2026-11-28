@@ -4,7 +4,6 @@ import '../theme/v2_tokens.dart';
 import '../widgets/v2_badge.dart';
 import '../widgets/v2_icon.dart';
 import '../widgets/v2_list_item.dart';
-import '../widgets/v2_skeleton.dart';
 import 'v2_meja_data.dart';
 
 /// Kartu grid lubang meja tanam di halaman detail (frame 6.10, 6.11, 6.13,
@@ -145,25 +144,16 @@ class _Legenda extends StatelessWidget {
 /// Saat meja tersedia dan kosong kartu memakai judul "Tanaman di meja" di atas
 /// isinya (6.10/6.11); saat meja penuh atau perawatan judulnya tidak digambar
 /// dan hanya baris tanaman yang tampil (6.13/6.16/6.17), sama seperti frame.
-///
-/// Saat [loading] kartu menampilkan kerangka pemuatan, bukan pesan "Belum ada
-/// tanaman": daftar yang kosong karena data belum datang tidak sama dengan meja
-/// yang benar-benar kosong.
 class V2MejaTanamanCard extends StatelessWidget {
   const V2MejaTanamanCard({
     super.key,
     required this.item,
     this.showTitle = true,
-    this.loading = false,
     this.onTapTanaman,
   });
 
   final V2MejaItem item;
   final bool showTitle;
-
-  /// Pemindahan/penyemaian masih dimuat dari server.
-  final bool loading;
-
   final ValueChanged<V2TanamanItem>? onTapTanaman;
 
   @override
@@ -186,9 +176,7 @@ class V2MejaTanamanCard extends StatelessWidget {
             Text('Tanaman di meja', style: V2Type.h2),
             const SizedBox(height: V2Space.sm),
           ],
-          if (loading)
-            const _TanamanSkeleton()
-          else if (item.tanaman.isEmpty)
+          if (item.tanaman.isEmpty)
             Text(
               'Belum ada tanaman di meja ini.',
               style: V2Type.body.copyWith(color: V2Colors.muted),
@@ -196,7 +184,11 @@ class V2MejaTanamanCard extends StatelessWidget {
           else
             for (var index = 0; index < item.tanaman.length; index++) ...[
               if (index > 0)
-                const Divider(height: 1, thickness: 1, color: V2Colors.border),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: V2Colors.border,
+                ),
               V2ListItem(
                 title: item.tanaman[index].varietas,
                 subtitle: item.tanaman[index].labelPanen,
@@ -207,59 +199,6 @@ class V2MejaTanamanCard extends StatelessWidget {
               ),
             ],
         ],
-      ),
-    );
-  }
-}
-
-/// Kerangka dua baris tanaman; bentuknya mengikuti [V2ListItem] (lingkaran 48
-/// dan dua garis teks) supaya ruang yang dipesan sama dengan isi aslinya.
-class _TanamanSkeleton extends StatelessWidget {
-  const _TanamanSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Memuat tanaman di meja',
-      container: true,
-      child: ExcludeSemantics(
-        child: Column(
-          children: [
-            for (var index = 0; index < 2; index++) ...[
-              if (index > 0)
-                const Divider(height: 1, thickness: 1, color: V2Colors.border),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: V2Space.sm),
-                child: Row(
-                  children: [
-                    const V2Skeleton.circle(size: 48),
-                    const SizedBox(width: V2Space.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 140),
-                            child: const V2Skeleton.line(
-                              width: double.infinity,
-                            ),
-                          ),
-                          const SizedBox(height: V2Space.sm),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 96),
-                            child: const V2Skeleton.line(
-                              width: double.infinity,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

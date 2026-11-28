@@ -34,7 +34,6 @@ class V2MejaDetailPage extends StatefulWidget {
     super.key,
     required this.item,
     this.toast,
-    this.loading = false,
     this.openStatusOnStart = false,
     this.onCatatPanen,
     this.onUbahStatus,
@@ -74,10 +73,6 @@ class V2MejaDetailPage extends StatefulWidget {
 
   /// Toast yang sudah tampil saat halaman dibuka (frame 6.13/6.20).
   final String? toast;
-
-  /// Daftar tanaman masih dimuat dari server; kartu "Tanaman di meja"
-  /// menampilkan kerangka, bukan pesan kosong.
-  final bool loading;
 
   /// Membuka sheet "Ubah status meja" begitu halaman tampil (frame 6.12).
   final bool openStatusOnStart;
@@ -374,7 +369,6 @@ class _V2MejaDetailPageState extends State<V2MejaDetailPage> {
                         const SizedBox(height: V2Space.md),
                         V2MejaTanamanCard(
                           item: _item,
-                          loading: widget.loading,
                           showTitle: _item.status == V2MejaStatus.tersedia,
                           onTapTanaman: _bukaTanaman,
                         ),

@@ -28,7 +28,7 @@ class V2PindahMejaFormPage extends StatefulWidget {
   const V2PindahMejaFormPage({
     super.key,
     required this.item,
-    this.mejaAwal,
+    this.mejaAwal = 0,
     this.jumlahAwal,
     this.previewSisa = false,
     this.previewLubangKurang = false,
@@ -64,13 +64,8 @@ class V2PindahMejaFormPage extends StatefulWidget {
   /// Semaian yang dipindah; sisa benihnya menentukan jumlah awal.
   final V2SemaianItem item;
 
-  /// Indeks meja pada daftar mentah yang terpilih saat halaman dibuka.
-  ///
-  /// `null` berarti pilih meja paling atas setelah diurutkan, yaitu meja
-  /// tersedia dengan lubang kosong terbanyak (D-27). Nilai eksplisit dipakai
-  /// alur yang memang menunjuk satu meja, mis. "Tambah tanaman" dari Detail
-  /// meja (D-25) dan frame galeri.
-  final int? mejaAwal;
+  /// Indeks meja yang terpilih saat halaman dibuka.
+  final int mejaAwal;
 
   /// Jumlah tanaman awal; kosong berarti semua benih yang masih di semaian.
   final int? jumlahAwal;
@@ -134,22 +129,17 @@ class _V2PindahMejaFormPageState extends State<V2PindahMejaFormPage> {
         : widget.previewSisa
         ? designMejaPindahSisa
         : designMejaPindah;
-    // Urutkan daftar sesuai D-27. Tanpa pilihan awal, meja paling atas hasil
-    // urutan (lubang kosong terbanyak) yang dipakai; pilihan awal eksplisit
-    // tetap dicari lewat identitasnya supaya tidak meleset setelah urutan
-    // berubah.
+    final awal = widget.mejaAwal.clamp(0, sumber.length - 1);
+    final acuan = sumber[awal];
+    // Urutkan daftar sesuai D-27, lalu cari lagi meja awal supaya pilihannya
+    // tidak meleset setelah urutan berubah.
     _meja = urutkanMejaPindah(sumber);
-    var terpilih = 0;
-    final awal = widget.mejaAwal;
-    if (awal != null) {
-      final acuan = sumber[awal.clamp(0, sumber.length - 1)];
-      terpilih = _meja.indexWhere(
-        (meja) => acuan.tableId != null
-            ? meja.tableId == acuan.tableId
-            : meja.nama == acuan.nama,
-      );
-      if (terpilih < 0) terpilih = 0;
-    }
+    var terpilih = _meja.indexWhere(
+      (meja) => acuan.tableId != null
+          ? meja.tableId == acuan.tableId
+          : meja.nama == acuan.nama,
+    );
+    if (terpilih < 0) terpilih = 0;
     // Bawaan tidak boleh meja penuh/perawatan: pilih meja tersedia pertama
     // kalau pilihan awal tidak bisa dipakai (BUG-29).
     if (!_meja[terpilih].tersedia) {
