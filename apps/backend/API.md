@@ -130,6 +130,8 @@ Izin: `inventaris:read` untuk `GET`, `inventaris:write` untuk lainnya. Daftar me
 
 `id_obat` dan `id_katalog` tidak boleh terisi bersamaan (`400`). Saat `id_katalog` diisi, `nama_barang` diturunkan server dari `obat_katalog.bahan_aktif` dan nilai kiriman diabaikan. Nama barang unik untuk semua baris (termasuk arsip): `409 INVENTARIS_NAME_TAKEN`.
 
+Barang yang sudah diarsipkan (`status_aktif=0`) hanya boleh dilihat dan diaktifkan kembali. `PATCH /inventaris/:id` dan `POST /inventaris/:id/deactivate` ditolak `409 INVENTARIS_ARCHIVED`, sedangkan `GET` dan `POST /inventaris/:id/activate` tetap jalan. Panggilan ulang dengan kunci idempotensi yang sama tetap di-replay. Mutasi stok untuk barang arsip ditolak `422 INVENTARIS_NOT_AVAILABLE`; transaksi pembalik (`POST /stok/:id/reverse`) tetap boleh untuk mengoreksi catatan lama.
+
 Satuan yang sudah punya riwayat stok tidak bisa diubah: `409 UNIT_LOCKED`.
 
 ## Stok
