@@ -277,10 +277,15 @@ yang dicatat dengan status apa adanya.
 | Kode | Perbaikan | Langkah uji di HP | Status |
 |---|---|---|---|
 | MC-FIX-70a | Nama barang unik | Tambah barang "Pupuk A"; lalu tambah lagi "  pupuk a " | `FIXED di kode, belum diuji ulang di HP` — pesan "Nama barang sudah dipakai" tampil di kolom nama, form tetap terbuka; nama barang arsip tetap dipesan |
-| MC-FIX-70b | Batas stok awal & minimum | Tambah barang: stok awal `5`, stok minimum `10`; lalu coba stok awal `1.234` | `FIXED di kode, belum diuji ulang di HP` — "Stok minimum tidak boleh melebihi stok awal." / "Gunakan maksimal 10 digit dan 2 angka desimal." |
+| MC-FIX-70b | Batas stok awal & minimum | Tambah barang: stok awal `5`, stok minimum `10`; lalu coba stok awal `1.234` | `FIXED di kode, belum diuji ulang di HP` — "Stok minimum harus kurang dari stok awal." / "Gunakan maksimal 10 digit dan 2 angka desimal." |
 | MC-FIX-70c | Obat dari katalog | Tambah barang → pilih jenis Obat | `FIXED di kode, belum diuji ulang di HP` — kolom "Nama barang" hilang, dropdown obat dari `obat_katalog`, nama barang = nama obat |
 | MC-FIX-70d | Galat stok minimum saat Ubah | Ubah barang → isi stok minimum `0` atau `3,555` → Simpan | `FIXED di kode, belum diuji ulang di HP` — pesan tampil di form sesuai penyebab, tidak muncul di halaman detail |
 | MC-FIX-70e | Aktifkan kembali barang arsip | Arsipkan barang → chip "Arsip" → buka barang → "Aktifkan kembali" | `FIXED di kode, belum diuji ulang di HP` — tombol ada, minta konfirmasi, barang kembali ke "Semua" + toast |
+| MC-FIX-71a | Stok awal minimal 1 | Tambah barang: coba stok awal `0` dan `0,5` | `FIXED di kode, belum diuji ulang di HP` — "Stok awal minimal 1.", form tetap terbuka; `1` diterima |
+| MC-FIX-71b | Stok minimum kurang dari stok awal | Tambah barang: stok awal `5`, stok minimum `5` | `FIXED di kode, belum diuji ulang di HP` — "Stok minimum harus kurang dari stok awal."; `4` diterima, kosong tetap diterima |
+| MC-FIX-72a | Stok tersedia di Ubah barang | Ubah barang → lihat kolom "Stok tersedia" | `FIXED di kode, belum diuji ulang di HP` — saldo terkini tampil (mis. `12 pak`), kolom terkunci, ada keterangan "Stok diubah lewat Catat stok." |
+| MC-FIX-72b | Stok minimum untuk jenis Obat | Ubah barang jenis Obat | `FIXED di kode, belum diuji ulang di HP` — kolom "Stok minimum (opsional)" muncul (sebelumnya tersembunyi) |
+| MC-FIX-72c | Batas maksimum stok minimum saat Ubah | Ubah barang stok `12` → stok minimum `12` lalu `13` | `FIXED di kode, belum diuji ulang di HP` — "Stok minimum harus kurang dari stok tersedia."; `11` diterima; minimum yang tidak diubah tidak diblokir (stok `2`, minimum `3` tetap bisa Simpan) |
 
 ---
 
